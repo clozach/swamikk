@@ -159,6 +159,14 @@ export const responses = {
     provider_invalid_configuration: "Invalid provider configuration",
     page_id_already_exists:
         "This URL slug is already in use. Please choose a different one.",
+    stripe_not_configured:
+        "Connect Stripe in Settings > Payment before managing coupons",
+    coupon_discount_invalid:
+        "Provide exactly one of a percentage discount or a fixed amount off",
+    coupon_duration_invalid:
+        "Coupon duration must be once, repeating, or forever",
+    coupon_duration_months_required:
+        "A repeating coupon needs the number of months it repeats for",
 };
 
 export const internal = {
