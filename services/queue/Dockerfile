@@ -25,7 +25,7 @@ COPY apps/queue ./apps/queue
 # build step that exceeds Docker Desktop's default memory ceiling.
 RUN pnpm install
 RUN pnpm --filter "!@courselit/queue" build
-RUN pnpm --filter @courselit/queue build -- --no-dts
+RUN pnpm --filter @courselit/queue exec tsup --no-dts
 
 # Production image
 FROM base AS runner
