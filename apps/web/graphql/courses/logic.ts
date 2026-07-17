@@ -2,6 +2,7 @@
  * Business logic for managing courses.
  */
 import CourseModel from "@/models/Course";
+import { deleteCohortsForCourse } from "../cohorts/logic";
 import {
     deleteProductDiscussionData,
     InternalCourse,
@@ -356,6 +357,7 @@ export const deleteCourse = async (id: string, ctx: GQLContext) => {
         entityId: course.courseId,
         entityType: Constants.MembershipEntityType.COURSE,
     });
+    await deleteCohortsForCourse(course.courseId, ctx);
     await PaymentPlanModel.deleteMany({
         domain: ctx.subdomain._id,
         entityId: course.courseId,

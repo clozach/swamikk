@@ -73,4 +73,5 @@ export * from "./email-event-action";
 export * from "./login-provider";
 export * from "./features";
 export * from "./product-discussion";
+export * from "./cohort";
 export type { ScormContent } from "./scorm-content";

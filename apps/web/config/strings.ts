@@ -106,6 +106,9 @@ export const responses = {
     sequence_not_active: "Sequence not active",
     sequence_already_started: "Sequence already started",
     mailing_address_too_short: "Mailing address is too short",
+    cohort_exists: "A cohort with the same name already exists for this course",
+    mail_settings_incomplete:
+        "Email sending is not configured for this school. Set a mailing address and mail quota first",
     mandatory_tags_missing: "Mandatory tags are missing",
     cannot_delete_last_email: "Cannot delete the last email in the sequence",
     invalid_drip_email: "Drip email needs a subject and a body",

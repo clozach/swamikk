@@ -28,6 +28,7 @@ import {
     type Event,
 } from "@courselit/common-models";
 import { recordActivity } from "@/lib/record-activity";
+import { cohortTagPrefix } from "../cohorts/helpers";
 import { triggerSequences } from "@/lib/trigger-sequences";
 import { getCourseOrThrow } from "../courses/logic";
 import pug from "pug";
@@ -150,7 +151,17 @@ export const updateUser = async (userData: UserData, ctx: GQLContext) => {
 
     for (const key of keys.filter((key) => key !== "id")) {
         if (key === "tags") {
-            await addTags(userData["tags"]!, ctx);
+            // cohort:* tags mirror Cohort.members and are managed solely by
+            // the cohorts module: user edits can neither add nor remove them,
+            // and they stay out of the domain tag registry.
+            const reservedTags = (user.tags || []).filter((tag) =>
+                tag.startsWith(cohortTagPrefix),
+            );
+            const editableTags = userData.tags!.filter(
+                (tag) => !tag.startsWith(cohortTagPrefix),
+            );
+            await addTags(editableTags, ctx);
+            userData.tags = [...editableTags, ...reservedTags];
         }
 
         user[key] = userData[key];

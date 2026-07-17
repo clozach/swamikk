@@ -29,6 +29,7 @@ import DownloadLinkModel from "@models/DownloadLink";
 import CommunityReportModel from "@models/CommunityReport";
 import CertificateModel from "@models/Certificate";
 import ActivityModel from "@models/Activity";
+import CohortModel from "@models/Cohort";
 import EmailEventModel from "@models/EmailEvent";
 import CommunityPostSubscriberModel from "@models/CommunityPostSubscriber";
 import ProductDiscussionCommentModel from "@models/ProductDiscussionComment";
@@ -263,6 +264,13 @@ export async function cleanupPersonalData(
     ctx: GQLContext,
 ): Promise<void> {
     await Promise.all([
+        CohortModel.updateMany(
+            {
+                domain: ctx.subdomain._id,
+                members: userToDelete.userId,
+            },
+            { $pull: { members: userToDelete.userId } },
+        ),
         NotificationModel.deleteMany({
             domain: ctx.subdomain._id,
             $or: [
