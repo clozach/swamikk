@@ -36,6 +36,14 @@ RUN pnpm install
 FROM base AS builder
 WORKDIR /app
 
+# The standalone Next.js build evaluates next.config.js at build time, so
+# the media server origin must be known here for next/image to allowlist
+# it. Only needed when MediaLit is served over plain HTTP or from a
+# private host (e.g. local rigs); leaving it unset produces exactly the
+# previous behavior.
+ARG MEDIALIT_SERVER
+ENV MEDIALIT_SERVER=$MEDIALIT_SERVER
+
 COPY --from=deps /app/ ./
 
 # Build all workspaces
