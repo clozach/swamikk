@@ -1413,7 +1413,7 @@ function Composer({
     const inputStyles = theme.theme?.interactives?.input;
     const currentContentRef = useRef<TextEditorContent>(content);
     const form = useForm<ComposerForm>({
-        resolver: zodResolver(composerSchema),
+        resolver: zodResolver(composerSchema as any),
         defaultValues: { content },
         mode: "onChange",
     });
