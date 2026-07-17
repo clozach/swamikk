@@ -37,6 +37,7 @@ import {
     MY_CONTENT_HEADER,
     SEQUENCES,
     SIDEBAR_MENU_BLOGS,
+    SIDEBAR_MENU_COHORTS,
     SIDEBAR_MENU_MAILS,
     SIDEBAR_MENU_PAGES,
     SIDEBAR_MENU_SETTINGS,
@@ -206,7 +207,9 @@ function getSidebarItems({
             title: SIDEBAR_MENU_USERS,
             url: "#",
             icon: Users,
-            isActive: path?.startsWith("/dashboard/users"),
+            isActive:
+                path?.startsWith("/dashboard/users") ||
+                path?.startsWith("/dashboard/cohorts"),
             items: [
                 {
                     title: "All users",
@@ -217,6 +220,11 @@ function getSidebarItems({
                     title: "Tags",
                     url: "/dashboard/users/tags",
                     isActive: path === "/dashboard/users/tags",
+                },
+                {
+                    title: SIDEBAR_MENU_COHORTS,
+                    url: "/dashboard/cohorts",
+                    isActive: path?.startsWith("/dashboard/cohorts"),
                 },
             ],
         });

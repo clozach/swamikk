@@ -1,0 +1,56 @@
+---
+title: Cohorts
+description: Run a course with a group of learners on a shared schedule
+---
+
+A cohort is a named group of users attached to a single course, optionally with a start and an end date. Use cohorts to run the same course with successive groups (say, a spring batch and a fall batch) and to message each group independently.
+
+You need the `Manage Users` permission to see and manage cohorts. Find them under **Users > Cohorts** in the dashboard sidebar.
+
+## The reserved cohort tag
+
+Every cohort mirrors its member list into a reserved user tag of the form `cohort:<cohortId>`. CourseLit manages this tag for you:
+
+- Adding a member applies the tag; removing a member strips it.
+- The tag is what cohort messaging filters on (see below).
+- It is deliberately kept out of the regular tag pickers. Do not create or edit `cohort:` tags by hand — use the cohort pages instead.
+
+## Create a cohort
+
+1. Navigate to **Users > Cohorts** and click `New cohort`.
+2. Enter a name and pick the course the cohort belongs to.
+3. Optionally set the start and end dates.
+4. Click `Continue`.
+
+Cohort names are unique per course. If a cohort with the same name already exists for the selected course, you will be asked to pick a different name.
+
+## Manage the roster
+
+Open a cohort from the list to manage its members:
+
+- **Add one user**: pick any user enrolled in the course from the dropdown and click `Add`.
+- **Add from course**: pulls every active enrollee of the course into the cohort in one go. The operation is idempotent — existing members are untouched, so you can re-run it after new signups (it also repairs the mirrored tag if it has drifted).
+- **Remove**: removes the member from the roster and strips their cohort tag. The user keeps their access to the course.
+
+## Message a cohort
+
+Click `Message this cohort` on the cohort page. This creates a broadcast pre-filtered to the cohort's tag (`cohort:<cohortId>`) and takes you to the regular broadcast composer, where you write the email and either send it immediately or schedule it.
+
+Two things to keep in mind:
+
+- Broadcasts respect the user's subscription preference. Members marked `Unsubscribed` in the roster (users who have opted out of updates) will **not** receive cohort messages.
+- Since a cohort message is just a broadcast, it shows up under **Mails > Broadcasts** like any other broadcast.
+
+## Schedule
+
+The start and end dates are informational: they are displayed on the cohort pages so you and your team know when a batch runs. They do not gate course content or send any emails by themselves. You can change or clear them at any time from the cohort's details.
+
+## Delete a cohort
+
+Deleting a cohort:
+
+- removes the cohort and its roster,
+- strips the `cohort:<cohortId>` tag from every member,
+- pauses scheduled cohort broadcasts that have not been sent yet.
+
+Members keep their access to the course. Only the grouping (and its pending messages) goes away.

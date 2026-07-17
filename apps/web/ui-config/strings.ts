@@ -946,3 +946,43 @@ export const FIRST_MONTH_FREE_DESC =
     "Creates a 100%-off, one-time coupon plus a promotion code. On a subscription this waives the first payment only; the buyer must enter the code at checkout.";
 export const FIRST_MONTH_FREE_BUTTON = "Create first-month-free offer";
 export const FIRST_MONTH_FREE_CREATED_TOAST = "First-month-free offer created";
+
+export const COHORTS_PAGE_HEADING = "Cohorts";
+export const SIDEBAR_MENU_COHORTS = "Cohorts";
+export const BTN_NEW_COHORT = "New cohort";
+export const BTN_MESSAGE_COHORT = "Message this cohort";
+export const BTN_SYNC_FROM_COURSE = "Add from course";
+export const COHORT_NEW_HEADER = "New cohort";
+export const PAGE_HEADER_EDIT_COHORT = "Edit cohort";
+export const COHORT_TABLE_HEADER_NAME = "Name";
+export const COHORT_TABLE_HEADER_COURSE = "Course";
+export const COHORT_TABLE_HEADER_MEMBERS = "Members";
+export const COHORT_TABLE_HEADER_SCHEDULE = "Schedule";
+export const COHORTS_LIST_EMPTY_TITLE = "No Cohorts Found";
+export const COHORTS_LIST_EMPTY_DESCRIPTION =
+    "Create a cohort to run a course with a group of learners on a shared schedule.";
+export const COHORT_DETAILS_HEADER = "Details";
+export const COHORT_NAME_LABEL = "Name";
+export const COHORT_COURSE_LABEL = "Course";
+export const COHORT_COURSE_PLACEHOLDER = "Select a course";
+export const COHORT_SCHEDULE_START_LABEL = "Starts";
+export const COHORT_SCHEDULE_END_LABEL = "Ends";
+export const COHORT_SCHEDULE_EMPTY = "—";
+export const COHORT_MEMBERS_HEADER = "Members";
+export const COHORT_MEMBERS_EMPTY_TITLE = "No members yet";
+export const COHORT_MEMBERS_EMPTY_DESCRIPTION =
+    "Add enrolled users one at a time or pull in everyone from the course.";
+export const COHORT_MEMBER_UNSUBSCRIBED_BADGE = "Unsubscribed";
+export const COHORT_ADD_MEMBER_PLACEHOLDER = "Select an enrolled user";
+export const BTN_ADD_COHORT_MEMBER = "Add";
+export const BTN_REMOVE_COHORT_MEMBER = "Remove";
+export const BTN_DELETE_COHORT = "Delete cohort";
+export const COHORT_DELETE_DIALOG_TITLE = "Delete this cohort?";
+export const COHORT_DELETE_DIALOG_DESCRIPTION =
+    "This deletes the cohort and its roster, removes the cohort tag from every member, and pauses scheduled cohort messages that have not been sent yet. Members keep their access to the course.";
+export const APP_MESSAGE_COHORT_CREATED = "Cohort created";
+export const APP_MESSAGE_COHORT_UPDATED = "Cohort updated";
+export const APP_MESSAGE_COHORT_DELETED = "Cohort deleted";
+export const APP_MESSAGE_COHORT_MEMBER_ADDED = "Member added";
+export const APP_MESSAGE_COHORT_MEMBER_REMOVED = "Member removed";
+export const APP_MESSAGE_COHORT_SYNCED = "Synced from course. Total members:";

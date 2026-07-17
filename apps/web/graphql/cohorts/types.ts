@@ -15,12 +15,12 @@ const cohortSchedule = new GraphQLObjectType({
     fields: {
         startAt: {
             type: GraphQLFloat,
-            resolve: (schedule: { startAt?: Date }) =>
+            resolve: (schedule: { startAt?: Date; endAt?: Date }) =>
                 toEpochMillis(schedule?.startAt),
         },
         endAt: {
             type: GraphQLFloat,
-            resolve: (schedule: { endAt?: Date }) =>
+            resolve: (schedule: { startAt?: Date; endAt?: Date }) =>
                 toEpochMillis(schedule?.endAt),
         },
     },
