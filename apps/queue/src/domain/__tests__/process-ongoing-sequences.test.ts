@@ -416,7 +416,9 @@ describe("processOngoingSequence", () => {
             await processOngoingSequence(ongoingSeq._id as any);
 
             // Should clean up
-            expect(deleteSpy).toHaveBeenCalledWith("nonexistent-sequence");
+            expect(deleteSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ sequenceId: "nonexistent-sequence" }),
+            );
 
             await OngoingSequenceModel.deleteOne({ _id: ongoingSeq._id });
         });

@@ -134,7 +134,7 @@ async function cleanUpResources(
     ongoingSequence: OngoingSequence,
     completed?: boolean,
 ) {
-    await deleteOngoingSequence(ongoingSequence.sequenceId);
+    await deleteOngoingSequence(ongoingSequence);
     if (completed) {
         await updateSequenceReports(ongoingSequence.sequenceId);
     }
@@ -261,7 +261,7 @@ async function attemptMailSending({
                     },
                 },
             );
-            await deleteOngoingSequence(ongoingSequence.sequenceId);
+            await deleteOngoingSequence(ongoingSequence);
         } else {
             await ongoingSequence.save();
         }

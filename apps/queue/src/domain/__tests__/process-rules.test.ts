@@ -312,9 +312,7 @@ describe("cohort broadcast pipeline (rule -> recipients -> delivery)", () => {
         expect(sequence.report.broadcast.sentAt).toBeFalsy();
         expect(await RuleModel.findOne({ ruleId: RULE_ID })).toBeNull();
 
-        // Stage 2: sending. Process in insertion order, mirroring the queue's
-        // sequential dispatch (cleanUpResources deletes by sequenceId in
-        // natural order, so out-of-order processing would strand a doc).
+        // Stage 2: sending
         for (const doc of ongoing) {
             await processOngoingSequence(doc._id as any);
         }
@@ -344,6 +342,48 @@ describe("cohort broadcast pipeline (rule -> recipients -> delivery)", () => {
         expect(
             await OngoingSequenceModel.find({ sequenceId: SEQUENCE_ID }),
         ).toHaveLength(0);
+    });
+
+    it("delivers to every member even when docs are processed out of order", async () => {
+        const memberA = await createUser("a", {
+            tagged: true,
+            subscribed: true,
+        });
+        const memberB = await createUser("b", {
+            tagged: true,
+            subscribed: true,
+        });
+
+        const firedAt = Date.now() - 60 * 1000;
+        await seedBroadcast({
+            sequenceId: `${SEQUENCE_ID}-ooo`,
+            ruleId: `${RULE_ID}-ooo`,
+            tag: COHORT_TAG,
+            firedAt,
+        });
+
+        const { stopError } = mockStopLoopAfterFirstIteration();
+        await expect(processRules()).rejects.toThrow(stopError);
+        jest.restoreAllMocks();
+
+        const ongoing = await OngoingSequenceModel.find({
+            sequenceId: `${SEQUENCE_ID}-ooo`,
+        }).sort({ _id: 1 });
+        expect(ongoing).toHaveLength(2);
+
+        // Newest first: cleanup used to deleteOne({sequenceId}), which
+        // removed the OLDEST doc — dropping the other member silently.
+        for (const doc of [...ongoing].reverse()) {
+            await processOngoingSequence(doc._id as any);
+        }
+
+        const deliveries = await EmailDelivery.find({
+            sequenceId: `${SEQUENCE_ID}-ooo`,
+        });
+        expect(deliveries.map((delivery) => delivery.userId).sort()).toEqual(
+            [memberA.userId, memberB.userId].sort(),
+        );
+        expect(mockedSendMail).toHaveBeenCalledTimes(2);
     });
 
     it("does not fire a rule scheduled in the future", async () => {

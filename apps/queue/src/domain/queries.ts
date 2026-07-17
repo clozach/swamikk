@@ -43,8 +43,10 @@ export async function getUser(userId: string): Promise<InternalUser | null> {
     }).lean<InternalUser | null>();
 }
 
-export async function deleteOngoingSequence(sequenceId: string): Promise<any> {
-    await OngoingSequenceModel.deleteOne({ sequenceId });
+export async function deleteOngoingSequence(
+    ongoingSequence: OngoingSequence,
+): Promise<any> {
+    await OngoingSequenceModel.deleteOne({ _id: ongoingSequence._id });
 }
 
 export async function removeRuleForBroadcast(sequenceId: string) {
