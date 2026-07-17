@@ -1,5 +1,6 @@
-import Payment, { InitiateProps } from "./payment";
+import Payment, { InitiateProps, WebhookContext } from "./payment";
 import { responses } from "../config/strings";
+import { error, warn } from "../services/logger";
 import Stripe from "stripe";
 import {
     Constants,
@@ -77,9 +78,31 @@ export default class StripePayment implements Payment {
         return this.siteinfo.currencyISOCode!;
     }
 
-    async verify(event: Stripe.Event) {
+    async verify(event: Stripe.Event, context?: WebhookContext) {
         if (!event) {
             return false;
+        }
+        if (this.siteinfo.stripeWebhookSecret) {
+            const signature = context?.headers.get("stripe-signature");
+            if (!context || !signature) {
+                return false;
+            }
+            try {
+                event = this.stripe.webhooks.constructEvent(
+                    context.rawBody,
+                    signature,
+                    this.siteinfo.stripeWebhookSecret,
+                );
+            } catch (err: any) {
+                await error(
+                    `Stripe webhook signature verification failed: ${err.message}`,
+                );
+                return false;
+            }
+        } else {
+            await warn(
+                "Stripe webhook secret is not configured; skipping webhook signature verification. Set it in Settings > Payment to reject forged webhook events.",
+            );
         }
         if (
             event.type === "checkout.session.completed" &&

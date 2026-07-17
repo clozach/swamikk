@@ -16,10 +16,15 @@ interface Metadata {
     invoiceId: string;
 }
 
+export interface WebhookContext {
+    rawBody: string;
+    headers: Headers;
+}
+
 export default interface Payment {
     setup: () => void;
     initiate: (obj: InitiateProps) => void;
-    verify: (event: any) => Promise<boolean>;
+    verify: (event: any, context?: WebhookContext) => Promise<boolean>;
     getPaymentIdentifier: (event: any) => unknown;
     getMetadata: (event: any) => Record<string, unknown>;
     getName: () => string;

@@ -17,7 +17,10 @@ import { activateMembership } from "../helpers";
 
 export async function POST(req: NextRequest) {
     try {
-        const body = await req.json();
+        // Keep the raw payload around: payment processors sign the exact
+        // bytes they send, so signature verification needs it verbatim.
+        const rawBody = await req.text();
+        const body = JSON.parse(rawBody);
         const domainName = req.headers.get("domain");
 
         const domain = await getDomain(domainName);
@@ -33,7 +36,12 @@ export async function POST(req: NextRequest) {
             return Response.json({ message: "Payment method not found" });
         }
 
-        if (!(await paymentMethod.verify(body))) {
+        if (
+            !(await paymentMethod.verify(body, {
+                rawBody,
+                headers: req.headers,
+            }))
+        ) {
             return Response.json({ message: "Payment not verified" });
         }
 
