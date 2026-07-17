@@ -91,6 +91,7 @@ import {
 import dynamic from "next/dynamic";
 
 const MiscellaneousTab = dynamic(() => import("./tabs/miscellaneous"));
+const CouponsManager = dynamic(() => import("./coupons-manager"));
 
 const {
     PAYMENT_METHOD_PAYPAL,
@@ -1209,6 +1210,12 @@ const Settings = (props: SettingsProps) => {
                             },
                         ]}
                     />
+                    {settings.paymentMethod === PAYMENT_METHOD_STRIPE && (
+                        <CouponsManager
+                            address={address}
+                            currencyISOCode={settings.currencyISOCode}
+                        />
+                    )}
                 </div>
                 <Form
                     onSubmit={handleMailsSettingsSubmit}

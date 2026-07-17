@@ -903,3 +903,46 @@ export const LESSON_CONTENT_LABEL = "Content";
 export const EMAIL_EDITOR_EMAIL_EDIT_HEADER = "Editing email";
 export const EMAIL_EDITOR_TEMPLATE_EDIT_HEADER = "Editing template";
 export const LOGIN_FORM_PERSONAL_INFORMATION_LABEL = "Personal Information";
+
+// Coupons (E1) — Stripe coupon & promotion-code management in Settings > Payment
+export const COUPONS_SECTION_HEADER = "Coupons";
+export const COUPONS_SECTION_SUBHEADER =
+    "Create discounts and share promotion codes buyers can enter at checkout. Codes work on any checkout in this school.";
+export const COUPONS_TABLE_HEADER_DISCOUNT = "Discount";
+export const COUPONS_TABLE_HEADER_DURATION = "Duration";
+export const COUPONS_TABLE_HEADER_CODES = "Promotion codes";
+export const COUPONS_TABLE_HEADER_ACTIONS = "Actions";
+export const COUPONS_TABLE_EMPTY = "No coupons yet.";
+export const COUPONS_NO_CODES = "No codes yet";
+export const COUPON_CONTEXT_MENU_DELETE = "Delete coupon";
+export const COUPON_DELETE_POPUP_HEADER = "Delete coupon";
+export const COUPON_DELETE_POPUP_DESC =
+    "This removes the coupon from Stripe. Existing promotion codes for it stop working. This cannot be undone.";
+export const COUPON_CODE_DEACTIVATE = "Deactivate";
+export const COUPON_CODE_INACTIVE_BADGE = "inactive";
+export const COUPON_CREATE_FORM_HEADER = "New coupon";
+export const COUPON_FIELD_DISCOUNT_TYPE = "Discount type";
+export const COUPON_DISCOUNT_TYPE_PERCENT = "Percentage";
+export const COUPON_DISCOUNT_TYPE_AMOUNT = "Fixed amount";
+export const COUPON_FIELD_PERCENT_OFF = "Percent off (1–100)";
+export const COUPON_FIELD_AMOUNT_OFF = "Amount off";
+export const COUPON_FIELD_DURATION = "Duration";
+export const COUPON_DURATION_ONCE = "Once";
+export const COUPON_DURATION_REPEATING = "Repeating";
+export const COUPON_DURATION_FOREVER = "Forever";
+export const COUPON_FIELD_DURATION_MONTHS = "Repeats for (months)";
+export const COUPON_FIELD_NAME = "Name (optional)";
+export const COUPON_CREATE_BUTTON = "Create coupon";
+export const COUPON_CREATED_TOAST = "Coupon created";
+export const COUPON_DELETED_TOAST = "Coupon deleted";
+export const PROMO_CODE_ADD = "Add code";
+export const PROMO_CODE_FIELD_CODE =
+    "Code (optional — auto-generated if blank)";
+export const PROMO_CODE_CREATE_BUTTON = "Create code";
+export const PROMO_CODE_CREATED_TOAST = "Promotion code created";
+export const PROMO_CODE_DEACTIVATED_TOAST = "Promotion code deactivated";
+export const FIRST_MONTH_FREE_HEADER = "First month free";
+export const FIRST_MONTH_FREE_DESC =
+    "Creates a 100%-off, one-time coupon plus a promotion code. On a subscription this waives the first payment only; the buyer must enter the code at checkout.";
+export const FIRST_MONTH_FREE_BUTTON = "Create first-month-free offer";
+export const FIRST_MONTH_FREE_CREATED_TOAST = "First-month-free offer created";
