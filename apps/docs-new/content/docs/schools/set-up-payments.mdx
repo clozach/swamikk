@@ -121,6 +121,16 @@ If you want to stop using the currently selected payment platform, go to `Settin
 
 ![Reset payment paid plan error](/assets/schools/checkout-payment-invalid.png)
 
+## Coupons
+
+Once Stripe is connected and saved, a **Coupons** section appears at the bottom of `Settings > Payment`. It lets you run discounts without leaving CourseLit — no need to open the Stripe dashboard.
+
+- **Create a coupon** — choose a percentage (for example, 25% off) or a fixed amount off, and how long it lasts: `Once`, `Repeating` (for a set number of months), or `Forever`.
+- **Promotion codes** — a coupon is applied at checkout through a promotion code. Use **Add code** to mint a code (Stripe generates one automatically). Buyers enter the code on the Stripe checkout page. A code can be **deactivated** at any time; Stripe has no way to delete a code, so deactivating it is how you turn it off.
+- **First month free** — a one-click shortcut that creates a 100%-off, one-time coupon plus a promotion code. On a subscription plan this waives only the first payment. You can supply a memorable code (for example, `FREEMONTH`) or leave it blank to have one generated.
+
+> Coupons apply to **any** checkout in your school — CourseLit does not restrict a code to a specific product or plan. Because checkout uses Stripe's "allow promotion codes" option, the buyer must **type** the code at checkout; codes are not applied automatically.
+
 ## Looking for developer docs?
 
 We have created detailed documentation to help you understand the payment flow in CourseLit. Check it out [here]().
