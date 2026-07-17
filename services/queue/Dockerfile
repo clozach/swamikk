@@ -19,9 +19,13 @@ COPY packages/orm-models ./packages/orm-models
 COPY packages/utils ./packages/utils
 COPY apps/queue ./apps/queue
 
-# Install dependencies and build
+# Install dependencies and build. Declaration-file generation for
+# @courselit/queue itself is skipped: it's a runnable service, not a
+# package anything imports types from, and its dts rollup is the one
+# build step that exceeds Docker Desktop's default memory ceiling.
 RUN pnpm install
-RUN pnpm build
+RUN pnpm --filter "!@courselit/queue" build
+RUN pnpm --filter @courselit/queue build -- --no-dts
 
 # Production image
 FROM base AS runner
