@@ -346,6 +346,7 @@ describe("deleteCommunityPost", () => {
 
             expect(medialit.deleteMedia).toHaveBeenCalledWith(
                 "media-to-delete",
+                expect.anything(),
             );
 
             // Post should be deleted regardless of deleteMedia failure
@@ -389,7 +390,10 @@ describe("deleteCommunityPost", () => {
                 ctx: regularCtx,
             });
 
-            expect(medialit.deleteMedia).toHaveBeenCalledWith("media-success");
+            expect(medialit.deleteMedia).toHaveBeenCalledWith(
+                "media-success",
+                expect.anything(),
+            );
 
             const dbPost = await CommunityPostModel.findOne({
                 postId: existingPost.postId,

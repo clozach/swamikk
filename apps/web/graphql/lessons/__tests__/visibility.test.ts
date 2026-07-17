@@ -415,7 +415,7 @@ describe("Lesson visibility and progress", () => {
             } as any,
         );
 
-        expect(sealMedia).toHaveBeenCalledWith(tempMediaId);
+        expect(sealMedia).toHaveBeenCalledWith(tempMediaId, expect.anything());
         expect(lesson.media?.mediaId).toBe(tempMediaId);
         expect(lesson.media?.file).toBeUndefined();
 

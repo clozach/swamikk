@@ -485,7 +485,10 @@ describe("deleteCourse - Comprehensive Test Suite", () => {
 
             await deleteCourse(course.courseId, mockCtx);
 
-            expect(deleteMedia).toHaveBeenCalledWith("media-123");
+            expect(deleteMedia).toHaveBeenCalledWith(
+                "media-123",
+                expect.anything(),
+            );
         });
 
         it("should delete course with description media", async () => {
@@ -775,8 +778,14 @@ describe("deleteCourse - Comprehensive Test Suite", () => {
 
             await deleteCourse(course.courseId, mockCtx);
 
-            expect(deleteMedia).toHaveBeenCalledWith("sig-media-123");
-            expect(deleteMedia).toHaveBeenCalledWith("logo-media-456");
+            expect(deleteMedia).toHaveBeenCalledWith(
+                "sig-media-123",
+                expect.anything(),
+            );
+            expect(deleteMedia).toHaveBeenCalledWith(
+                "logo-media-456",
+                expect.anything(),
+            );
         });
     });
 
@@ -1431,10 +1440,16 @@ describe("deleteCourse - Comprehensive Test Suite", () => {
             expect(hasCoursePurchase).toBe(false);
 
             // Verify media deletion
-            expect(deleteMedia).toHaveBeenCalledWith("featured-media");
+            expect(deleteMedia).toHaveBeenCalledWith(
+                "featured-media",
+                expect.anything(),
+            );
             // Note: desc-media is not extracted from JSON stringified description
             // This is a known limitation of extractMediaIDs
-            expect(deleteMedia).toHaveBeenCalledWith("sig-media");
+            expect(deleteMedia).toHaveBeenCalledWith(
+                "sig-media",
+                expect.anything(),
+            );
         });
 
         it("should NOT cancel subscriptions when deleting course (current behavior)", async () => {

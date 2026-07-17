@@ -120,6 +120,10 @@ services:
     #     - COURSELIT_JWT_SECRET=${COURSELIT_JWT_SECRET?'COURSELIT_JWT_SECRET environment variable is not defined'}
     #     - REDIS_HOST=redis
     #     - DOMAIN=courselit.app
+    #     # Use the same MediaLit connection as the app. The queue performs
+    #     # reference-safe physical media deletion after the 24-hour grace period.
+    #     - MEDIALIT_APIKEY=${MEDIALIT_APIKEY}
+    #     - MEDIALIT_SERVER=${MEDIALIT_SERVER:-http://medialit}
     #   expose:
     #     - "80"
     #   restart: on-failure

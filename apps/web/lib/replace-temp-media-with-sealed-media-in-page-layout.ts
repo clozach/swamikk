@@ -1,13 +1,15 @@
 import { sealMedia } from "@/services/medialit";
 import { extractMediaIDs } from "@courselit/utils";
 import { Media } from "@courselit/common-models";
+import mongoose from "mongoose";
 
 export async function replaceTempMediaWithSealedMediaInPageLayout(
     layout: any,
+    domain: mongoose.Types.ObjectId | string,
 ): Promise<any> {
     const mediaIds = Array.from(extractMediaIDs(JSON.stringify(layout)));
     for (const mediaId of mediaIds) {
-        const media = await safeSealMedia(mediaId);
+        const media = await safeSealMedia(mediaId, domain);
         if (media) {
             layout = replaceMediaURLinPageLayout(layout, mediaId, media);
         }
@@ -16,9 +18,12 @@ export async function replaceTempMediaWithSealedMediaInPageLayout(
     return layout;
 }
 
-export async function safeSealMedia(mediaId: string) {
+export async function safeSealMedia(
+    mediaId: string,
+    domain: mongoose.Types.ObjectId | string,
+) {
     try {
-        return await sealMedia(mediaId);
+        return await sealMedia(mediaId, domain);
     } catch (err) {
         console.error(`Error while sealing media`, mediaId);
     }

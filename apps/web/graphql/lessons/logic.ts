@@ -31,6 +31,7 @@ import LessonEvaluation from "../../models/LessonEvaluation";
 import { checkPermission, extractMediaIDs } from "@courselit/utils";
 import { recordActivity } from "../../lib/record-activity";
 import { InternalCourse } from "@courselit/orm-models";
+import mongoose from "mongoose";
 import CertificateModel from "../../models/Certificate";
 import { error } from "@/services/logger";
 import getDeletedMediaIds from "@/lib/get-deleted-media-ids";
@@ -176,12 +177,15 @@ export type LessonWithStringContent = Omit<Lesson, "content"> & {
     content: string;
 };
 
-async function sealLessonMedia(media?: Partial<Media> | null) {
+async function sealLessonMedia(
+    media: Partial<Media> | null | undefined,
+    domain: mongoose.Types.ObjectId | string,
+) {
     if (!media?.mediaId) {
         return undefined;
     }
 
-    const sealedMedia = await sealMedia(media.mediaId);
+    const sealedMedia = await sealMedia(media.mediaId, domain);
     if (!sealedMedia) {
         return media as Media;
     }
@@ -222,8 +226,9 @@ export const createLesson = async (
             type: lessonData.type,
             content: await replaceTempMediaWithSealedMediaInProseMirrorDoc(
                 lessonData.content || "",
+                ctx.subdomain._id,
             ),
-            media: await sealLessonMedia(lessonData.media),
+            media: await sealLessonMedia(lessonData.media, ctx.subdomain._id),
             downloadable: lessonData.downloadable,
             creatorId: ctx.user.userId,
             courseId: course.courseId,
@@ -307,16 +312,20 @@ export const updateLesson = async (
                 lessonData.type === Constants.LessonType.TEXT
                     ? await replaceTempMediaWithSealedMediaInProseMirrorDoc(
                           lessonData.content || "",
+                          ctx.subdomain._id,
                       )
                     : JSON.parse(lessonData.content);
         } else if (key === "media" && lessonData.media) {
-            lesson.media = await sealLessonMedia(lessonData.media);
+            lesson.media = await sealLessonMedia(
+                lessonData.media,
+                ctx.subdomain._id,
+            );
         } else if (key !== "lessonId" && key !== "id") {
             lesson[key] = lessonData[key];
         }
     }
     for (const mediaId of contentMediaIdsMarkedForDeletion) {
-        await deleteMedia(mediaId);
+        await deleteMedia(mediaId, ctx.subdomain._id);
     }
 
     lesson = await (lesson as any).save();
@@ -330,7 +339,9 @@ export const deleteLesson = async (id: string, ctx: GQLContext) => {
         const cleanupTasks: Promise<any>[] = [];
 
         if (lesson.media?.mediaId) {
-            cleanupTasks.push(deleteMedia(lesson.media.mediaId));
+            cleanupTasks.push(
+                deleteMedia(lesson.media.mediaId, ctx.subdomain._id),
+            );
         }
 
         if (lesson.type === Constants.LessonType.TEXT && lesson.content) {
@@ -338,7 +349,7 @@ export const deleteLesson = async (id: string, ctx: GQLContext) => {
                 JSON.stringify(lesson.content),
             );
             for (const mediaId of Array.from(extractedMediaIds)) {
-                cleanupTasks.push(deleteMedia(mediaId));
+                cleanupTasks.push(deleteMedia(mediaId, ctx.subdomain._id));
             }
         }
 
@@ -348,7 +359,10 @@ export const deleteLesson = async (id: string, ctx: GQLContext) => {
             (lesson.content as ScormContent).mediaId
         ) {
             cleanupTasks.push(
-                deleteMedia((lesson.content as ScormContent).mediaId!),
+                deleteMedia(
+                    (lesson.content as ScormContent).mediaId!,
+                    ctx.subdomain._id,
+                ),
             );
         }
 

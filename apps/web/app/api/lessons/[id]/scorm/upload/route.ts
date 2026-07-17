@@ -6,8 +6,8 @@ import DomainModel, { Domain } from "@models/Domain";
 import User from "@models/User";
 import Lesson from "@models/Lesson";
 import { extractScormPackage } from "@/lib/scorm/extractor";
-import { MediaLit } from "medialit";
 import { error as logError } from "@/services/logger";
+import { deleteMedia, getMedia, sealMedia } from "@/services/medialit";
 import appConstants from "@config/constants";
 
 /**
@@ -98,14 +98,8 @@ export async function POST(
             );
         }
 
-        // Initialize MediaLit client
-        const medialit = new MediaLit({
-            apiKey: process.env.MEDIALIT_APIKEY,
-            endpoint: process.env.MEDIALIT_SERVER,
-        });
-
         // Get the uploaded ZIP file URL from MediaLit
-        const media = await medialit.get(mediaId);
+        const media = await getMedia(mediaId);
         if (!media?.file) {
             return Response.json(
                 { message: "SCORM package not found in MediaLit" },
@@ -136,9 +130,9 @@ export async function POST(
         const { packageInfo } = result;
 
         if (lesson.content?.mediaId && lesson.content.mediaId !== mediaId) {
-            await medialit.delete(lesson.content.mediaId);
+            await deleteMedia(lesson.content.mediaId, domain._id);
         }
-        await medialit.seal(mediaId);
+        await sealMedia(mediaId, domain._id);
         // Update lesson content with SCORM metadata
         await Lesson.updateOne(
             { lessonId, domain: domain._id },

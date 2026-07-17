@@ -2067,6 +2067,7 @@ describe("updateCourse", () => {
 
         expect(deleteMedia).toHaveBeenCalledWith(
             "w3caqs2p1NtqO7p95vnScR6EEWLoxTf1gsJQPWTG",
+            expect.anything(),
         );
     });
 
@@ -2139,6 +2140,7 @@ describe("updateCourse", () => {
 
         expect(sealMedia).toHaveBeenCalledWith(
             "8U1v2-_1oh9kC-iA1JtD5lQ1m0Y8L1M8AWm_9hH7",
+            expect.anything(),
         );
         expect(updatedCourse.description).toEqual(
             JSON.stringify(expectedDescription),

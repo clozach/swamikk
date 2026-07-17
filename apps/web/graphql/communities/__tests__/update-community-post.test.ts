@@ -429,14 +429,24 @@ describe("updateCommunityPost", () => {
             });
 
             // old-media-1 should be deleted
-            expect(medialit.deleteMedia).toHaveBeenCalledWith("old-media-1");
+            expect(medialit.deleteMedia).toHaveBeenCalledWith(
+                "old-media-1",
+                expect.anything(),
+            );
             expect(medialit.deleteMedia).not.toHaveBeenCalledWith(
                 "old-media-2",
+                expect.anything(),
             );
 
             // new-media should be sealed
-            expect(medialit.sealMedia).toHaveBeenCalledWith("new-media");
-            expect(medialit.sealMedia).not.toHaveBeenCalledWith("old-media-2");
+            expect(medialit.sealMedia).toHaveBeenCalledWith(
+                "new-media",
+                expect.anything(),
+            );
+            expect(medialit.sealMedia).not.toHaveBeenCalledWith(
+                "old-media-2",
+                expect.anything(),
+            );
         });
 
         it("should clear all media when providing an empty array", async () => {
@@ -474,7 +484,10 @@ describe("updateCommunityPost", () => {
                 ctx: regularCtx,
             });
 
-            expect(medialit.deleteMedia).toHaveBeenCalledWith("old-media-1");
+            expect(medialit.deleteMedia).toHaveBeenCalledWith(
+                "old-media-1",
+                expect.anything(),
+            );
 
             const dbPost = await CommunityPostModel.findOne({
                 postId: existingPost.postId,

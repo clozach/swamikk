@@ -171,7 +171,7 @@ export const updateUser = async (userData: UserData, ctx: GQLContext) => {
 
     if (Object.prototype.hasOwnProperty.call(userData, "avatar")) {
         user.avatar = userData.avatar?.mediaId
-            ? await sealMedia(userData.avatar.mediaId)
+            ? await sealMedia(userData.avatar.mediaId, ctx.subdomain._id)
             : undefined;
     }
 

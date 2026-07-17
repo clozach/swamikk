@@ -425,8 +425,14 @@ describe("createCommunityPost", () => {
             });
 
             expect(sealMedia).toHaveBeenCalledTimes(2);
-            expect(sealMedia).toHaveBeenCalledWith("temp-media-1");
-            expect(sealMedia).toHaveBeenCalledWith("temp-media-2");
+            expect(sealMedia).toHaveBeenCalledWith(
+                "temp-media-1",
+                expect.anything(),
+            );
+            expect(sealMedia).toHaveBeenCalledWith(
+                "temp-media-2",
+                expect.anything(),
+            );
             expect(result.postId).toBeDefined();
         });
     });

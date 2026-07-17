@@ -152,8 +152,14 @@ describe("updatePage media handling", () => {
 
         expect(result).toBeDefined();
         expect(deleteMediaMock).toHaveBeenCalledTimes(1);
-        expect(deleteMediaMock).toHaveBeenCalledWith("orphan-block");
-        expect(deleteMediaMock).not.toHaveBeenCalledWith("protected-block");
+        expect(deleteMediaMock).toHaveBeenCalledWith(
+            "orphan-block",
+            expect.anything(),
+        );
+        expect(deleteMediaMock).not.toHaveBeenCalledWith(
+            "protected-block",
+            expect.anything(),
+        );
 
         const updatedPage = (await PageModel.findOne({
             domain: ctx.subdomain._id,
@@ -199,7 +205,10 @@ describe("updatePage media handling", () => {
 
         const deleteMediaMock = deleteMedia as jest.Mock;
         expect(deleteMediaMock).toHaveBeenCalledTimes(1);
-        expect(deleteMediaMock).toHaveBeenCalledWith("orphan-block");
+        expect(deleteMediaMock).toHaveBeenCalledWith(
+            "orphan-block",
+            expect.anything(),
+        );
     });
 
     it("throws when requester lacks permission", async () => {
@@ -675,7 +684,7 @@ describe("Media cleanup", () => {
         }
 
         // Assertion: media1 should NOT be deleted
-        expect(deleteMedia).not.toHaveBeenCalledWith(media1);
+        expect(deleteMedia).not.toHaveBeenCalledWith(media1, expect.anything());
     });
 
     it("orphans social image when replaced", async () => {
@@ -700,7 +709,7 @@ describe("Media cleanup", () => {
         });
 
         // Assertion: media1 should be deleted (replaced by media2 and Is not published)
-        expect(deleteMedia).toHaveBeenCalledWith(media1);
+        expect(deleteMedia).toHaveBeenCalledWith(media1, expect.anything());
     });
 
     it("existing social image is deleted when publishing", async () => {
@@ -721,7 +730,7 @@ describe("Media cleanup", () => {
         await publish(page.pageId, ctx);
 
         // Assertion: media1 should be deleted as it is replaced by media2
-        expect(deleteMedia).toHaveBeenCalledWith(media1);
+        expect(deleteMedia).toHaveBeenCalledWith(media1, expect.anything());
     });
 
     describe("updatePage media cleanup", () => {
@@ -755,7 +764,7 @@ describe("Media cleanup", () => {
                 ]),
             });
 
-            expect(deleteMedia).toHaveBeenCalledWith(media1);
+            expect(deleteMedia).toHaveBeenCalledWith(media1, expect.anything());
         });
 
         it("does NOT delete media still present in published layout", async () => {
@@ -798,7 +807,10 @@ describe("Media cleanup", () => {
                 ]),
             });
 
-            expect(deleteMedia).not.toHaveBeenCalledWith(media1);
+            expect(deleteMedia).not.toHaveBeenCalledWith(
+                media1,
+                expect.anything(),
+            );
         });
 
         it("deletes old draftSocialImage when replaced with new one", async () => {
@@ -819,7 +831,7 @@ describe("Media cleanup", () => {
                 socialImage: mediaObj2 as any,
             });
 
-            expect(deleteMedia).toHaveBeenCalledWith(media1);
+            expect(deleteMedia).toHaveBeenCalledWith(media1, expect.anything());
         });
 
         it("does NOT delete draftSocialImage if it is the same as published socialImage", async () => {
@@ -841,7 +853,10 @@ describe("Media cleanup", () => {
                 socialImage: mediaObj2 as any,
             });
 
-            expect(deleteMedia).not.toHaveBeenCalledWith(media1);
+            expect(deleteMedia).not.toHaveBeenCalledWith(
+                media1,
+                expect.anything(),
+            );
         });
 
         it("sets draftSocialImage to null when socialImage is null", async () => {
@@ -867,7 +882,7 @@ describe("Media cleanup", () => {
             });
 
             expect(refreshedPage?.draftSocialImage).toBeNull();
-            expect(deleteMedia).toHaveBeenCalledWith(media1);
+            expect(deleteMedia).toHaveBeenCalledWith(media1, expect.anything());
         });
 
         it("does NOT delete the cleared draftSocialImage if published socialImage still uses it", async () => {
@@ -894,7 +909,10 @@ describe("Media cleanup", () => {
             });
 
             expect(refreshedPage?.draftSocialImage).toBeNull();
-            expect(deleteMedia).not.toHaveBeenCalledWith(media1);
+            expect(deleteMedia).not.toHaveBeenCalledWith(
+                media1,
+                expect.anything(),
+            );
         });
 
         it("does not delete the existing draftSocialImage when sealing the new social image fails", async () => {
@@ -921,7 +939,10 @@ describe("Media cleanup", () => {
                 }),
             ).rejects.toThrow("seal failed");
 
-            expect(deleteMedia).not.toHaveBeenCalledWith(media1);
+            expect(deleteMedia).not.toHaveBeenCalledWith(
+                media1,
+                expect.anything(),
+            );
 
             const refreshedPage = await PageModel.findOne({
                 _id: page._id,
@@ -970,8 +991,11 @@ describe("Media cleanup", () => {
                 ]),
             });
 
-            expect(deleteMedia).toHaveBeenCalledWith(media1);
-            expect(deleteMedia).not.toHaveBeenCalledWith(media2);
+            expect(deleteMedia).toHaveBeenCalledWith(media1, expect.anything());
+            expect(deleteMedia).not.toHaveBeenCalledWith(
+                media2,
+                expect.anything(),
+            );
         });
 
         it("handles deeply nested media in widget settings", async () => {
@@ -1014,7 +1038,7 @@ describe("Media cleanup", () => {
                 ]),
             });
 
-            expect(deleteMedia).toHaveBeenCalledWith(media1);
+            expect(deleteMedia).toHaveBeenCalledWith(media1, expect.anything());
         });
 
         it("does not delete any media when updating only metadata (title/description)", async () => {
@@ -1083,7 +1107,7 @@ describe("Media cleanup", () => {
 
             await publish(page.pageId, ctx);
 
-            expect(deleteMedia).toHaveBeenCalledWith(media1);
+            expect(deleteMedia).toHaveBeenCalledWith(media1, expect.anything());
         });
 
         it("does NOT delete media that exists in both old and new layouts", async () => {
@@ -1126,8 +1150,14 @@ describe("Media cleanup", () => {
 
             await publish(page.pageId, ctx);
 
-            expect(deleteMedia).not.toHaveBeenCalledWith(media1);
-            expect(deleteMedia).not.toHaveBeenCalledWith(media2);
+            expect(deleteMedia).not.toHaveBeenCalledWith(
+                media1,
+                expect.anything(),
+            );
+            expect(deleteMedia).not.toHaveBeenCalledWith(
+                media2,
+                expect.anything(),
+            );
         });
 
         it("deletes old socialImage when replaced during publish", async () => {
@@ -1145,8 +1175,11 @@ describe("Media cleanup", () => {
 
             await publish(page.pageId, ctx);
 
-            expect(deleteMedia).toHaveBeenCalledWith(media1);
-            expect(deleteMedia).not.toHaveBeenCalledWith(media2);
+            expect(deleteMedia).toHaveBeenCalledWith(media1, expect.anything());
+            expect(deleteMedia).not.toHaveBeenCalledWith(
+                media2,
+                expect.anything(),
+            );
         });
 
         it("does NOT delete socialImage if it still exists in draftLayout", async () => {
@@ -1174,7 +1207,10 @@ describe("Media cleanup", () => {
 
             await publish(page.pageId, ctx);
 
-            expect(deleteMedia).not.toHaveBeenCalledWith(media1);
+            expect(deleteMedia).not.toHaveBeenCalledWith(
+                media1,
+                expect.anything(),
+            );
         });
 
         it("clears published socialImage when draftSocialImage is null", async () => {
@@ -1197,7 +1233,7 @@ describe("Media cleanup", () => {
             });
 
             expect(refreshedPage?.socialImage).toBeUndefined();
-            expect(deleteMedia).toHaveBeenCalledWith(media1);
+            expect(deleteMedia).toHaveBeenCalledWith(media1, expect.anything());
         });
 
         it("handles publishing with empty draftLayout - media is deleted", async () => {
@@ -1227,7 +1263,7 @@ describe("Media cleanup", () => {
             await publish(page.pageId, ctx);
 
             // Media IS deleted because the diff is: {media1} - {} = {media1}
-            expect(deleteMedia).toHaveBeenCalledWith(media1);
+            expect(deleteMedia).toHaveBeenCalledWith(media1, expect.anything());
         });
 
         it("deletes multiple media removed during publish", async () => {
@@ -1270,9 +1306,12 @@ describe("Media cleanup", () => {
 
             await publish(page.pageId, ctx);
 
-            expect(deleteMedia).toHaveBeenCalledWith(media1);
-            expect(deleteMedia).toHaveBeenCalledWith(media2);
-            expect(deleteMedia).not.toHaveBeenCalledWith(media3);
+            expect(deleteMedia).toHaveBeenCalledWith(media1, expect.anything());
+            expect(deleteMedia).toHaveBeenCalledWith(media2, expect.anything());
+            expect(deleteMedia).not.toHaveBeenCalledWith(
+                media3,
+                expect.anything(),
+            );
         });
     });
 
@@ -1345,8 +1384,8 @@ describe("Media cleanup", () => {
                 ]),
             });
 
-            expect(deleteMedia).toHaveBeenCalledWith(media1);
-            expect(deleteMedia).toHaveBeenCalledWith(media2);
+            expect(deleteMedia).toHaveBeenCalledWith(media1, expect.anything());
+            expect(deleteMedia).toHaveBeenCalledWith(media2, expect.anything());
         });
 
         it("does not crash when draftLayout is empty array", async () => {
@@ -1412,7 +1451,10 @@ describe("Media cleanup", () => {
                 ]),
             });
 
-            expect(deleteMedia).toHaveBeenCalledWith(complexMediaId);
+            expect(deleteMedia).toHaveBeenCalledWith(
+                complexMediaId,
+                expect.anything(),
+            );
         });
     });
 });

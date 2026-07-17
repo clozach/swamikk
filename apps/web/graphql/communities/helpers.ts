@@ -185,7 +185,10 @@ export async function deleteCommunityData(
             for (const media of post.media) {
                 if (media.media) {
                     try {
-                        await deleteMedia(media.media.mediaId);
+                        await deleteMedia(
+                            media.media.mediaId,
+                            ctx.subdomain._id,
+                        );
                     } catch (err) {
                         error(err.message, {
                             stack: err.stack,

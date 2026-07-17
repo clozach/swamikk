@@ -267,11 +267,12 @@ export const updateCourse = async (
     course = await validateCourse(course, ctx);
     if (Object.prototype.hasOwnProperty.call(courseData, "description")) {
         for (const mediaId of mediaIdsMarkedForDeletion) {
-            await deleteMedia(mediaId);
+            await deleteMedia(mediaId, ctx.subdomain._id);
         }
         const descriptionWithSealedMedia =
             await replaceTempMediaWithSealedMediaInProseMirrorDoc(
                 course.description || "",
+                ctx.subdomain._id,
             );
         course.description = JSON.stringify(descriptionWithSealedMedia);
     }
@@ -279,7 +280,10 @@ export const updateCourse = async (
         Object.prototype.hasOwnProperty.call(courseData, "featuredImage") &&
         courseData.featuredImage
     ) {
-        const featuredImage = await sealMedia(courseData.featuredImage.mediaId);
+        const featuredImage = await sealMedia(
+            courseData.featuredImage.mediaId,
+            ctx.subdomain._id,
+        );
         if (featuredImage) {
             course.featuredImage = featuredImage;
         }
@@ -339,10 +343,13 @@ export const deleteCourse = async (id: string, ctx: GQLContext) => {
             courseId: course.courseId,
         });
     if (certificateTemplate?.signatureImage?.mediaId) {
-        await deleteMedia(certificateTemplate.signatureImage.mediaId);
+        await deleteMedia(
+            certificateTemplate.signatureImage.mediaId,
+            ctx.subdomain._id,
+        );
     }
     if (certificateTemplate?.logo?.mediaId) {
-        await deleteMedia(certificateTemplate.logo.mediaId);
+        await deleteMedia(certificateTemplate.logo.mediaId, ctx.subdomain._id);
     }
     await CertificateTemplateModel.deleteOne({
         domain: ctx.subdomain._id,
@@ -388,7 +395,7 @@ export const deleteCourse = async (id: string, ctx: GQLContext) => {
     await deleteAllLessons(course.courseId, ctx);
     if (course.featuredImage) {
         try {
-            await deleteMedia(course.featuredImage.mediaId);
+            await deleteMedia(course.featuredImage.mediaId, ctx.subdomain._id);
         } catch (err) {
             error(err.message, {
                 stack: err.stack,
@@ -398,7 +405,7 @@ export const deleteCourse = async (id: string, ctx: GQLContext) => {
     if (course.description) {
         const extractedMediaIds = extractMediaIDs(course.description || "");
         for (const mediaId of Array.from(extractedMediaIds)) {
-            await deleteMedia(mediaId);
+            await deleteMedia(mediaId, ctx.subdomain._id);
         }
     }
     await UserModel.updateMany(
@@ -1305,14 +1312,17 @@ export const updateCourseCertificateTemplate = async ({
     const course = await getCourseOrThrow(undefined, ctx, courseId);
 
     if (signatureImage) {
-        const sealedImage = await sealMedia(signatureImage.mediaId);
+        const sealedImage = await sealMedia(
+            signatureImage.mediaId,
+            ctx.subdomain._id,
+        );
         if (sealedImage) {
             signatureImage = sealedImage;
         }
     }
 
     if (logo) {
-        const sealedLogo = await sealMedia(logo.mediaId);
+        const sealedLogo = await sealMedia(logo.mediaId, ctx.subdomain._id);
         if (sealedLogo) {
             logo = sealedLogo;
         }

@@ -129,7 +129,9 @@ To self host, follow the following steps.
 
 5.  Update the `MEDIALIT_APIKEY` value in `.env` file and restart the service once again.
 
-6.  That's it! You now have a fully functioning LMS powered by CourseLit and MediaLit.
+6.  If you enable CourseLit's queue service, give it the same `MEDIALIT_APIKEY` and `MEDIALIT_SERVER` values as the app. The queue waits 24 hours, verifies that no CourseLit record still references a media file, and only then deletes the physical file.
+
+7.  That's it! You now have a fully functioning LMS powered by CourseLit and MediaLit.
 
 ## Hosted version
 

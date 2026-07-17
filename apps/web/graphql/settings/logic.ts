@@ -167,7 +167,10 @@ export const updateSiteInfo = async (
 
     if (Object.prototype.hasOwnProperty.call(siteData, "logo")) {
         domain.settings.logo = (siteData.logo as Media)?.mediaId
-            ? await sealMedia((siteData.logo as Media).mediaId)
+            ? await sealMedia(
+                  (siteData.logo as Media).mediaId,
+                  ctx.subdomain._id,
+              )
             : undefined;
     }
 

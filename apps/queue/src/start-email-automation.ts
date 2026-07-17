@@ -4,6 +4,7 @@ import { processOngoingSequences } from "./domain/process-ongoing-sequences";
 import { processRules } from "./domain/process-rules";
 import { captureError, getDomainId } from "./observability/posthog";
 import { logger } from "./logger";
+import { processMediaDeletionCandidates } from "./media/process-media-deletion-candidates";
 
 export async function startEmailAutomation() {
     try {
@@ -39,6 +40,14 @@ export async function startEmailAutomation() {
         captureError({
             error: err,
             source: "processDrip.loop",
+            domainId: getDomainId(),
+        });
+    });
+    processMediaDeletionCandidates().catch((err) => {
+        logger.error(err);
+        captureError({
+            error: err,
+            source: "processMediaDeletionCandidates.loop",
             domainId: getDomainId(),
         });
     });

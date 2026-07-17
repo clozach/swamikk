@@ -1023,7 +1023,10 @@ describe("deleteUser - Comprehensive Test Suite", () => {
         it("should delete user avatar media", async () => {
             await deleteUser(targetUser.userId, mockCtx);
 
-            expect(deleteMedia).toHaveBeenCalledWith(duId("avatar"));
+            expect(deleteMedia).toHaveBeenCalledWith(
+                duId("avatar"),
+                expect.anything(),
+            );
         });
 
         it("should delete the user document", async () => {
@@ -1181,7 +1184,10 @@ describe("deleteUser - Comprehensive Test Suite", () => {
             expect(user).toBeNull();
 
             // Verify avatar deleted
-            expect(deleteMedia).toHaveBeenCalledWith(duId("avatar"));
+            expect(deleteMedia).toHaveBeenCalledWith(
+                duId("avatar"),
+                expect.anything(),
+            );
         });
 
         it("should successfully delete user with no owned entities", async () => {

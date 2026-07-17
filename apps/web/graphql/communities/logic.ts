@@ -367,6 +367,7 @@ export async function updateCommunity({
             community.description =
                 await replaceTempMediaWithSealedMediaInProseMirrorDoc(
                     nextDescription,
+                    ctx.subdomain._id,
                 );
         }
     }
@@ -384,6 +385,7 @@ export async function updateCommunity({
             community.banner =
                 await replaceTempMediaWithSealedMediaInProseMirrorDoc(
                     nextBanner,
+                    ctx.subdomain._id,
                 );
         }
     }
@@ -398,7 +400,7 @@ export async function updateCommunity({
 
     if (featuredImage !== undefined) {
         community.featuredImage = featuredImage?.mediaId
-            ? await sealMedia(featuredImage.mediaId)
+            ? await sealMedia(featuredImage.mediaId, ctx.subdomain._id)
             : undefined;
     }
 
@@ -423,7 +425,7 @@ export async function updateCommunity({
     for (const mediaId of descriptionMediaIdsMarkedForDeletion.concat(
         bannerMediaIdsMarkedForDeletion,
     )) {
-        await deleteMedia(mediaId);
+        await deleteMedia(mediaId, ctx.subdomain._id);
     }
 
     await (community as any).save();
@@ -669,7 +671,10 @@ export async function createCommunityPost({
     if (media?.length) {
         for (const med of media) {
             if (med.media?.mediaId) {
-                med.media = await sealMedia(med.media.mediaId);
+                med.media = await sealMedia(
+                    med.media.mediaId,
+                    ctx.subdomain._id,
+                );
             }
         }
     }
@@ -799,7 +804,10 @@ export async function updateCommunityPost({
         for (const med of media) {
             if (med.media?.mediaId && med.media.mediaId !== "none") {
                 if (!oldMediaIds.includes(med.media.mediaId)) {
-                    med.media = await sealMedia(med.media.mediaId);
+                    med.media = await sealMedia(
+                        med.media.mediaId,
+                        ctx.subdomain._id,
+                    );
                 } else {
                     const oldMedItem = oldMediaList.find(
                         (m: any) => m.media?.mediaId === med.media?.mediaId,
@@ -819,7 +827,7 @@ export async function updateCommunityPost({
     for (const mediaId of removedMediaIds) {
         if (mediaId && mediaId !== "none") {
             try {
-                await deleteMedia(mediaId);
+                await deleteMedia(mediaId, ctx.subdomain._id);
             } catch (err: any) {
                 error(err.message, { stack: err.stack });
             }
@@ -869,7 +877,7 @@ export async function deleteCommunityPost({
             const mediaId = media.media?.mediaId;
             if (mediaId) {
                 try {
-                    await deleteMedia(mediaId);
+                    await deleteMedia(mediaId, ctx.subdomain._id);
                 } catch (err: any) {
                     error(err.message, { stack: err.stack });
                 }
@@ -2144,7 +2152,7 @@ export async function deleteCommunity({
 
     const mediaToBeDeleted = extractMediaIDs(JSON.stringify(community));
     for (const mediaId of Array.from(mediaToBeDeleted)) {
-        await deleteMedia(mediaId);
+        await deleteMedia(mediaId, ctx.subdomain._id);
     }
     await CommunityModel.deleteOne({
         domain: ctx.subdomain._id,
@@ -2208,7 +2216,7 @@ export async function deleteCommunityPosts(
         for (const media of post.media) {
             const mediaId = media.media?.mediaId;
             if (mediaId) {
-                await deleteMedia(mediaId);
+                await deleteMedia(mediaId, ctx.subdomain._id);
             }
         }
     }

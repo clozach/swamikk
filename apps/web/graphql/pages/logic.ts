@@ -182,6 +182,7 @@ export const updatePage = async ({
             const draftLayoutWithSealedMedia =
                 await replaceTempMediaWithSealedMediaInPageLayout(
                     layoutWithSharedWidgetsSettings,
+                    ctx.subdomain._id,
                 );
             page.draftLayout = draftLayoutWithSealedMedia;
         } catch (err: any) {
@@ -200,7 +201,10 @@ export const updatePage = async ({
         if (socialImage === null) {
             page.draftSocialImage = null;
         } else if (socialImage.mediaId) {
-            const sealedMedia = await sealMedia(socialImage.mediaId);
+            const sealedMedia = await sealMedia(
+                socialImage.mediaId,
+                ctx.subdomain._id,
+            );
             page.draftSocialImage = sealedMedia;
         }
 
@@ -218,7 +222,7 @@ export const updatePage = async ({
 
     for (const mediaId of deletableMediaIds) {
         try {
-            await deleteMedia(mediaId);
+            await deleteMedia(mediaId, ctx.subdomain._id);
         } catch (err) {
             // eslint-disable-next-line no-console
             console.log(`Error while deleting media`, mediaId);
@@ -312,7 +316,7 @@ export const publish = async (
         },
     );
     for (const mediaId of mediaToDelete) {
-        await deleteMedia(mediaId);
+        await deleteMedia(mediaId, ctx.subdomain._id);
     }
     await (page as any).save();
 
@@ -523,7 +527,7 @@ export const deletePageInternal = async (ctx: GQLContext, id: string) => {
 
     const mediaToBeDeleted = extractMediaIDs(JSON.stringify(page));
     for (const mediaId of Array.from(mediaToBeDeleted)) {
-        await deleteMedia(mediaId);
+        await deleteMedia(mediaId, ctx.subdomain._id);
     }
 
     await PageModel.deleteOne({
@@ -570,7 +574,7 @@ export const deleteBlock = async ({
         (mediaId) => !publishedLayoutMediaIds.has(mediaId),
     );
     for (const mediaId of deletableMediaIds) {
-        await deleteMedia(mediaId);
+        await deleteMedia(mediaId, ctx.subdomain._id);
     }
 
     page.draftLayout = page.draftLayout.filter(

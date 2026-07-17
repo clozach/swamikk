@@ -1,9 +1,12 @@
 import { replaceTempMediaWithSealedMediaInPageLayout } from "../replace-temp-media-with-sealed-media-in-page-layout";
 import { sealMedia } from "@/services/medialit";
 
-jest.mock("@/services/medialit");
+jest.mock("@/services/medialit", () => ({
+    sealMedia: jest.fn(),
+}));
 
 const mockSealMedia = sealMedia as jest.Mock;
+const domain = "domain-1";
 
 describe("replaceTempMediaWithSealedMediaInPageLayout", () => {
     beforeEach(() => {
@@ -34,10 +37,12 @@ describe("replaceTempMediaWithSealedMediaInPageLayout", () => {
             thumbnail: sealedThumbUrl,
         });
 
-        const result =
-            await replaceTempMediaWithSealedMediaInPageLayout(layout);
+        const result = await replaceTempMediaWithSealedMediaInPageLayout(
+            layout,
+            domain,
+        );
 
-        expect(sealMedia).toHaveBeenCalledWith(mediaId);
+        expect(sealMedia).toHaveBeenCalledWith(mediaId, domain);
         expect(result[0].settings.media.file).toBe(sealedFileUrl);
     });
 
@@ -62,8 +67,10 @@ describe("replaceTempMediaWithSealedMediaInPageLayout", () => {
             thumbnail: sealedThumbUrl,
         });
 
-        const result =
-            await replaceTempMediaWithSealedMediaInPageLayout(layout);
+        const result = await replaceTempMediaWithSealedMediaInPageLayout(
+            layout,
+            domain,
+        );
 
         expect(result.someProp.nested.thumbnail).toBe(sealedThumbUrl);
     });
@@ -90,8 +97,10 @@ describe("replaceTempMediaWithSealedMediaInPageLayout", () => {
             return null;
         });
 
-        const result =
-            await replaceTempMediaWithSealedMediaInPageLayout(layout);
+        const result = await replaceTempMediaWithSealedMediaInPageLayout(
+            layout,
+            domain,
+        );
 
         expect(result[0].items[0].image).toBe(sealedUrl1);
         expect(result[0].items[1].image).toBe(sealedUrl2);
@@ -102,8 +111,10 @@ describe("replaceTempMediaWithSealedMediaInPageLayout", () => {
             url: "https://google.com/some/path",
         };
 
-        const result =
-            await replaceTempMediaWithSealedMediaInPageLayout(layout);
+        const result = await replaceTempMediaWithSealedMediaInPageLayout(
+            layout,
+            domain,
+        );
         expect(result.url).toBe("https://google.com/some/path");
     });
 
@@ -162,8 +173,10 @@ describe("replaceTempMediaWithSealedMediaInPageLayout", () => {
             thumbnail: sealedThumb,
         });
 
-        const result =
-            await replaceTempMediaWithSealedMediaInPageLayout(inputLayout);
+        const result = await replaceTempMediaWithSealedMediaInPageLayout(
+            inputLayout,
+            domain,
+        );
 
         // Assertions based on "This is the final URL with media object containing sealed URLs"
         const mediaWidget = result.find((w: any) => w.name === "media");

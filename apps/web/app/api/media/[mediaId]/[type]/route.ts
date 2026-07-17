@@ -70,7 +70,7 @@ export async function DELETE(
     }
 
     try {
-        await medialitService.deleteMedia(<string>mediaId);
+        await medialitService.deleteMedia(<string>mediaId, domain._id);
         return Response.json({ message: responses.success });
     } catch (err: any) {
         return Response.json(

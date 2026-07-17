@@ -427,7 +427,7 @@ export async function cleanupPersonalData(
     });
 
     if (userToDelete.avatar?.mediaId) {
-        await deleteMedia(userToDelete.avatar.mediaId);
+        await deleteMedia(userToDelete.avatar.mediaId, ctx.subdomain._id);
     }
 
     await UserModel.deleteOne({

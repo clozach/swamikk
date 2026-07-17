@@ -1,15 +1,17 @@
 import { sealMedia } from "@/services/medialit";
 import { extractMediaIDs } from "@courselit/utils";
 import { TextEditorContent } from "@courselit/common-models";
+import mongoose from "mongoose";
 
 export async function replaceTempMediaWithSealedMediaInProseMirrorDoc(
     doc: string,
+    domain: mongoose.Types.ObjectId | string,
 ): Promise<TextEditorContent> {
     if (!doc) return { type: "doc", content: [] };
 
     const mediaIds = Array.from(extractMediaIDs(doc));
     for (const mediaId of mediaIds) {
-        const media = await sealMedia(mediaId);
+        const media = await sealMedia(mediaId, domain);
         if (media) {
             doc = replaceMediaURLinProseMirrorDoc(doc, mediaId, media.file!);
         }
