@@ -56,14 +56,19 @@ export const DEFAULT_BACKGROUND: SectionBackground = {
     // callout image darkens markedly toward its right, and cocoa body text over
     // it was measured (per-pixel, across the middle 70% where the text sits) at
     // 8.84:1 on average but only 3.09:1 at worst, with 11.5% of that region
-    // under the 4.5:1 floor. Sampling opacities against the real image, 0.25 is
-    // the first that clears it everywhere — worst case 4.82:1 — while staying
-    // light enough to read as the same photo. Raise it if the image is ever
-    // swapped for a darker one; the floor is what matters, not the number.
+    // under the 4.5:1 floor.
+    //
+    // ⚠️ `opacity` here is on a 0–10 scale, NOT 0–1: section.tsx renders it as
+    // `overlay.opacity / 10`, and the Background panel drives it with a 0–10
+    // slider. A CSS-style 0.25 silently becomes 0.025 — an overlay that is
+    // present, valid, and does nothing. 3 renders as 0.3, which sampling
+    // against the real image puts at 5.24:1 worst-case (2.5 would just clear
+    // the floor at 4.82:1, but the slider is integer-stepped, so 3 is both
+    // safer and actually reachable by hand afterwards).
     overlay: {
         color: "#f7f4eb",
         blendMode: "normal",
-        opacity: 0.25,
+        opacity: 3,
     },
 };
 
