@@ -35,6 +35,7 @@ export function generateThemeStyles(theme: Theme): string {
             --accent: ${lightColors.accent ? formatHSL(convert.hex.hsl(lightColors.accent.replace("#", ""))) : ""};
             --accent-foreground: ${lightColors.accentForeground ? formatHSL(convert.hex.hsl(lightColors.accentForeground.replace("#", ""))) : ""};
             --destructive: ${lightColors.destructive ? formatHSL(convert.hex.hsl(lightColors.destructive.replace("#", ""))) : ""};
+            --destructive-foreground: ${lightColors.destructiveForeground ? formatHSL(convert.hex.hsl(lightColors.destructiveForeground.replace("#", ""))) : ""};
             --border: ${lightColors.border ? formatHSL(convert.hex.hsl(lightColors.border.replace("#", ""))) : ""};
             --input: ${lightColors.input ? formatHSL(convert.hex.hsl(lightColors.input.replace("#", ""))) : ""};
             --ring: ${lightColors.ring ? formatHSL(convert.hex.hsl(lightColors.ring.replace("#", ""))) : ""};
@@ -77,6 +78,7 @@ export function generateThemeStyles(theme: Theme): string {
             --accent: ${darkColors.accent ? formatHSL(convert.hex.hsl(darkColors.accent.replace("#", ""))) : ""};
             --accent-foreground: ${darkColors.accentForeground ? formatHSL(convert.hex.hsl(darkColors.accentForeground.replace("#", ""))) : ""};
             --destructive: ${darkColors.destructive ? formatHSL(convert.hex.hsl(darkColors.destructive.replace("#", ""))) : ""};
+            --destructive-foreground: ${darkColors.destructiveForeground ? formatHSL(convert.hex.hsl(darkColors.destructiveForeground.replace("#", ""))) : ""};
             --border: ${darkColors.border ? formatHSL(convert.hex.hsl(darkColors.border.replace("#", ""))) : ""};
             --input: ${darkColors.input ? formatHSL(convert.hex.hsl(darkColors.input.replace("#", ""))) : ""};
             --ring: ${darkColors.ring ? formatHSL(convert.hex.hsl(darkColors.ring.replace("#", ""))) : ""};

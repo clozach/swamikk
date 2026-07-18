@@ -32,6 +32,13 @@ const ColorsSchema = new mongoose.Schema(
         accent: { type: String, required: true },
         accentForeground: { type: String, required: true },
         destructive: { type: String, required: true },
+        // Optional, unlike its siblings, so existing themes stay valid. Without
+        // it a theme could restyle the destructive colour but never the text on
+        // it, which is unsatisfiable in dark mode: the same token has to serve
+        // as error text on a dark surface (wants light) and as a button ground
+        // under near-white text (wants dark), and those luminance windows do
+        // not overlap.
+        destructiveForeground: { type: String, required: false },
         border: { type: String, required: true },
         input: { type: String, required: true },
         ring: { type: String, required: true },

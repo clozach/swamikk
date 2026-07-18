@@ -151,6 +151,8 @@ export interface Colors {
     accent: string;
     accentForeground: string;
     destructive: string;
+    /** Optional so existing themes remain valid; falls back to the global. */
+    destructiveForeground?: string;
     border: string;
     input: string;
     ring: string;
