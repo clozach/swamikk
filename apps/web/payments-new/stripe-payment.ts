@@ -71,7 +71,18 @@ export default class StripePayment implements Payment {
         const session =
             await this.stripe.checkout.sessions.create(sessionPayload);
 
-        return session.id;
+        // Return the hosted Checkout URL so the browser can redirect with a
+        // plain top-level navigation. This keeps Stripe.js out of our checkout
+        // page entirely — no client SDK, no m-outer/inner.html metrics iframe
+        // (which Safari was downloading), and no deprecated redirectToCheckout.
+        // The webhook correlates via metadata.invoiceId, not this value, so
+        // returning the URL instead of session.id is functionally safe.
+        if (!session.url) {
+            throw new Error(
+                "Stripe Checkout session did not include a redirect URL",
+            );
+        }
+        return session.url;
     }
 
     async getCurrencyISOCode() {

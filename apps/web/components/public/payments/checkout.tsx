@@ -30,7 +30,6 @@ import {
 } from "@components/contexts";
 import { FetchBuilder } from "@courselit/utils";
 import { useRouter } from "next/navigation";
-import { loadStripe } from "@stripe/stripe-js";
 import { getSymbolFromCurrency, useToast } from "@courselit/components-library";
 import Script from "next/script";
 import { Button, Header3, Text1 } from "@courselit/page-primitives";
@@ -90,18 +89,6 @@ export default function Checkout({
     >();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Construct the Stripe object once per mount, not on every render.
-    // Calling loadStripe() directly in the render body runs it on every
-    // re-render (plan selection, email entry, membership fetch, isSubmitting
-    // toggles…), and each call builds a fresh Stripe instance that injects its
-    // own controller + `m-outer`/`inner.html` ("StripeM") metrics iframes.
-    // Those duplicate cross-origin metrics frames are what Safari was saving
-    // into ~/Downloads. Stripe's docs: "Call loadStripe outside of a
-    // component's render to avoid recreating the Stripe object on every
-    // render." A lazy useState keeps it to a single instance for this mount.
-    const [stripePromise] = useState(() =>
-        siteinfo.stripeKey ? loadStripe(siteinfo.stripeKey as string) : null,
-    );
     const router = useRouter();
     const { toast } = useToast();
     const { theme } = useContext(ThemeContext);
@@ -206,10 +193,12 @@ export default function Checkout({
             const response = await fetch.exec();
             if (response.status === "initiated") {
                 if (paymentMethod === UIConstants.PAYMENT_METHOD_STRIPE) {
-                    await redirectToStripeCheckout({
-                        stripe: await stripePromise,
-                        sessionId: response.paymentTracker,
-                    });
+                    // paymentTracker is the hosted Stripe Checkout URL. Redirect
+                    // with a plain top-level navigation instead of loading
+                    // Stripe.js and calling the deprecated redirectToCheckout —
+                    // that kept injecting the m-outer/inner.html metrics iframe
+                    // Safari saves to disk, especially on bfcache back-and-forth.
+                    window.location.assign(response.paymentTracker);
                 }
                 if (paymentMethod === UIConstants.PAYMENT_METHOD_RAZORPAY) {
                     const razorpayPayload = {
@@ -295,35 +284,6 @@ export default function Checkout({
             toast({
                 title: "Error",
                 description: err.message,
-                variant: "destructive",
-            });
-        }
-    };
-
-    const redirectToStripeCheckout = async ({
-        stripe,
-        sessionId,
-    }: {
-        stripe: any;
-        sessionId: string;
-    }) => {
-        if (!stripe) {
-            toast({
-                title: "Error",
-                description:
-                    "Payment could not be started. Stripe is not configured for this site.",
-                variant: "destructive",
-            });
-            return;
-        }
-        const result = await stripe.redirectToCheckout({
-            sessionId,
-        });
-        if (result.error) {
-            toast({
-                title: "Error",
-                description:
-                    result.error.message || "Unable to redirect to checkout.",
                 variant: "destructive",
             });
         }
