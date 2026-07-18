@@ -317,6 +317,47 @@ describe("getPage entity validation", () => {
             expect(result?.pageId).toBe(page.pageId);
         });
 
+        it("includes the course description in pageData", async () => {
+            const courseId = "test-course-id-description";
+            const description = JSON.stringify({
+                type: "doc",
+                content: [
+                    {
+                        type: "paragraph",
+                        content: [{ type: "text", text: "Course details" }],
+                    },
+                ],
+            });
+
+            await Course.create({
+                courseId,
+                domain: ctx.subdomain._id,
+                published: true,
+                title: "Test Course With Description",
+                description,
+                creatorId: "creator-1",
+                slug: "test-course-with-description",
+                type: "course",
+                privacy: "public",
+                costType: "free",
+                cost: 0,
+            });
+
+            const page = await PageModel.create({
+                domain: ctx.subdomain._id,
+                pageId: "product-page-description",
+                type: constants.product,
+                entityId: courseId,
+                creatorId: "creator-1",
+                name: "Product Page With Description",
+                layout: [makeHeaderWidget(), makeFooterWidget()],
+            });
+
+            const result = await getPage({ id: page.pageId, ctx });
+
+            expect((result as any)?.pageData?.description).toBe(description);
+        });
+
         it("returns undefined when course does not exist", async () => {
             const page = await PageModel.create({
                 domain: ctx.subdomain._id,

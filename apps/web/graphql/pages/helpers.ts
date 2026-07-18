@@ -92,6 +92,7 @@ export async function getPageResponse(
                 pageData = {
                     pageType: Constants.PageType.PRODUCT,
                     title: course.title,
+                    description: course.description,
                     cost: course.cost,
                     costType: course.costType,
                     type: course.type,
