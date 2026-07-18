@@ -14,6 +14,14 @@ import {
     Media,
     Marquee,
     Embed,
+    AnahataHeader,
+    AnahataHero,
+    AnahataTour,
+    AnahataPrivateSessions,
+    AnahataGatherings,
+    AnahataPosts,
+    AnahataNewsletter,
+    AnahataFooter,
 } from "@courselit/page-blocks";
 
 function loadWidgets(): Record<string, any> {
@@ -34,6 +42,22 @@ function loadWidgets(): Record<string, any> {
     widgets[EmailForm.metadata.name] = EmailForm;
     widgets[Footer.metadata.name] = Object.assign({}, Footer, { shared: true });
     widgets[Header.metadata.name] = Object.assign({}, Header, { shared: true });
+
+    // Anahata Yoga Retreat blocks. The header and footer declare a `role` in
+    // their metadata, so the page template hoists them into the chrome slots
+    // the same way it does the stock pair — see WidgetMetadata.role.
+    widgets[AnahataHero.metadata.name] = AnahataHero;
+    widgets[AnahataTour.metadata.name] = AnahataTour;
+    widgets[AnahataPrivateSessions.metadata.name] = AnahataPrivateSessions;
+    widgets[AnahataGatherings.metadata.name] = AnahataGatherings;
+    widgets[AnahataPosts.metadata.name] = AnahataPosts;
+    widgets[AnahataNewsletter.metadata.name] = AnahataNewsletter;
+    widgets[AnahataHeader.metadata.name] = Object.assign({}, AnahataHeader, {
+        shared: true,
+    });
+    widgets[AnahataFooter.metadata.name] = Object.assign({}, AnahataFooter, {
+        shared: true,
+    });
 
     return widgets;
 }

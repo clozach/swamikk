@@ -12,3 +12,15 @@ export * from "./pricing";
 export * from "./media";
 export * from "./marquee";
 export * from "./embed";
+
+// Anahata Yoga Retreat blocks — the retreat's own visual language, composed
+// into the site's home page. Ordinary blocks: everything they render is a
+// setting with an Anahata default, so the page stays editable in the builder.
+export * from "./anahata-header";
+export * from "./anahata-hero";
+export * from "./anahata-tour";
+export * from "./anahata-private-sessions";
+export * from "./anahata-gatherings";
+export * from "./anahata-posts";
+export * from "./anahata-newsletter";
+export * from "./anahata-footer";
