@@ -43,24 +43,28 @@ import MobileOverlay, { MobileMenuState } from "./mobile-overlay";
  * scroll distance) and `fixed` + a flow spacer is used instead.
  *
  * A 1px sentinel sits in normal flow immediately above the band, right
- * where the band's own un-pinned top would be. At rest both are near the
- * top of the page and the sentinel intersects the viewport. Once the
- * page scrolls far enough that the band's native position would cross
- * the viewport's top edge, the sentinel scrolls out from under that
- * edge first (it precedes the band in flow) — the observer's
- * `isIntersecting` flips to false at exactly the instant the band
- * should switch to fixed.
+ * where the band's own un-pinned top would be. Once the page scrolls far
+ * enough that the band's native position would cross the viewport's top
+ * edge, the sentinel crosses it first (it precedes the band in flow), and
+ * the band switches to fixed at exactly that instant.
+ *
+ * The crossing is detected by reading the sentinel's own position on a
+ * passive, rAF-throttled scroll listener rather than with an
+ * IntersectionObserver. IO is the more usual tool here and was tried
+ * first, but it made the whole feature depend on a callback that some
+ * embedded/automated browsers never deliver — observed firsthand: in one
+ * such runtime `IntersectionObserver` was present and constructible yet
+ * never invoked its callback even once, for any element, so the header
+ * simply never pinned and nothing in the DOM hinted at why. A scroll
+ * listener has no such failure mode, and one getBoundingClientRect per
+ * animation frame is not a cost worth optimising away for a header.
  * ------------------------------------------------------------------ */
 function useStuck(enabled: boolean) {
     const sentinelRef = useRef<HTMLDivElement | null>(null);
     const [stuck, setStuck] = useState(false);
 
     useEffect(() => {
-        if (
-            !enabled ||
-            typeof window === "undefined" ||
-            typeof IntersectionObserver === "undefined"
-        ) {
+        if (!enabled || typeof window === "undefined") {
             setStuck(false);
             return;
         }
@@ -68,12 +72,30 @@ function useStuck(enabled: boolean) {
         if (!sentinel) {
             return;
         }
-        const observer = new IntersectionObserver(
-            ([entry]) => setStuck(!entry.isIntersecting),
-            { threshold: 0 },
-        );
-        observer.observe(sentinel);
-        return () => observer.disconnect();
+
+        let frame = 0;
+        const measure = () => {
+            frame = 0;
+            // Pin as soon as the sentinel's top edge reaches the viewport's.
+            setStuck(sentinel.getBoundingClientRect().top <= 0);
+        };
+        const onScroll = () => {
+            if (frame) {
+                return;
+            }
+            frame = requestAnimationFrame(measure);
+        };
+
+        measure(); // deep-linked/restored scroll positions start stuck
+        window.addEventListener("scroll", onScroll, { passive: true });
+        window.addEventListener("resize", onScroll, { passive: true });
+        return () => {
+            if (frame) {
+                cancelAnimationFrame(frame);
+            }
+            window.removeEventListener("scroll", onScroll);
+            window.removeEventListener("resize", onScroll);
+        };
     }, [enabled]);
 
     return { sentinelRef, stuck: enabled && stuck };
