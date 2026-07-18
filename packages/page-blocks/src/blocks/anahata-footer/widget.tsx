@@ -65,19 +65,30 @@ function VimeoGlyph({ size }: { size: number }): JSX.Element {
 }
 
 /**
- * Desktop track count. The keys are literal Tailwind classes so the
- * static scanner emits them; the 960px boundary is the theme's own
- * footer-widget breakpoint.
+ * Desktop track sizing, as an inline style rather than a Tailwind class.
+ *
+ * This used to be `min-[960px]:grid-cols-N`, and the rule was emitted
+ * correctly into this package's stylesheet — but it never won. Every
+ * @courselit package ships its own full Tailwind build, and the app imports
+ * page-blocks' sheet FIRST, so a later sheet's unmediated `.grid-cols-1`
+ * (same specificity, later in source order) beat this one's media-scoped
+ * `.grid-cols-3` at every width. The footer silently stacked into a single
+ * column on desktop.
+ *
+ * `auto-fit` + `minmax` gets the same result without depending on which
+ * package's stylesheet loaded last, and without a breakpoint at all: tracks
+ * fold to one column when there is no room for two, and an inline style
+ * cannot be overridden by any sheet. The 220px floor is what keeps a column
+ * of uppercase link text from wrapping mid-word.
  */
-const gridColumnsByCount: Record<number, string> = {
-    1: "min-[960px]:grid-cols-1",
-    2: "min-[960px]:grid-cols-2",
-    3: "min-[960px]:grid-cols-3",
-    4: "min-[960px]:grid-cols-4",
-};
+const COLUMN_MIN_WIDTH = 220;
 
-function gridColumnsClass(count: number): string {
-    return gridColumnsByCount[Math.min(Math.max(count, 1), 4)];
+function gridTemplateColumns(count: number): string {
+    const tracks = Math.min(Math.max(count, 1), 4);
+    if (tracks === 1) {
+        return "minmax(0, 1fr)";
+    }
+    return `repeat(auto-fit, minmax(min(${COLUMN_MIN_WIDTH}px, 100%), 1fr))`;
 }
 
 const socialLabels: Record<SocialPlatform, string> = {
@@ -489,14 +500,13 @@ export default function Widget({
                     }}
                 >
                     <div
-                        className={cn(
-                            "grid grid-cols-1",
-                            // Single column at <=959px, one track per column
-                            // above it. Literal classes so Tailwind's static
-                            // scanner emits them.
-                            gridColumnsClass(columns.length),
-                        )}
-                        style={{ columnGap: `${COLUMN_GAP}px` }}
+                        className="grid"
+                        style={{
+                            gridTemplateColumns: gridTemplateColumns(
+                                columns.length,
+                            ),
+                            columnGap: `${COLUMN_GAP}px`,
+                        }}
                     >
                         {columns.map((column: FooterColumn) =>
                             column.kind === "links" ? (
