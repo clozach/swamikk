@@ -15,6 +15,7 @@ import themes from "./themes";
 import productDiscussions from "./product-discussions";
 import coupons from "./coupons";
 import cohorts from "./cohorts";
+import media from "./media";
 
 const schema = new graphql.GraphQLSchema({
     query: new graphql.GraphQLObjectType({
@@ -35,6 +36,7 @@ const schema = new graphql.GraphQLSchema({
             ...productDiscussions.queries,
             ...coupons.queries,
             ...cohorts.queries,
+            ...media.queries,
         },
     }),
     mutation: new graphql.GraphQLObjectType({

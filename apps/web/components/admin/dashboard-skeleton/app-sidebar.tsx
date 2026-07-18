@@ -3,6 +3,7 @@
 import {
     Box,
     Globe,
+    Images,
     LibraryBig,
     LifeBuoy,
     Mail,
@@ -39,6 +40,7 @@ import {
     SIDEBAR_MENU_BLOGS,
     SIDEBAR_MENU_COHORTS,
     SIDEBAR_MENU_MAILS,
+    SIDEBAR_MENU_MEDIA,
     SIDEBAR_MENU_PAGES,
     SIDEBAR_MENU_SETTINGS,
     SIDEBAR_MENU_USERS,
@@ -199,6 +201,15 @@ function getSidebarItems({
             isActive:
                 path === "/dashboard/pages" ||
                 path?.startsWith("/dashboard/page"),
+            items: [],
+        });
+    }
+    if (profile.permissions!.includes(permissions.manageMedia)) {
+        navMainItems.push({
+            title: SIDEBAR_MENU_MEDIA,
+            url: "/dashboard/media",
+            icon: Images,
+            isActive: path === "/dashboard/media",
             items: [],
         });
     }

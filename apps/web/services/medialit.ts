@@ -27,6 +27,20 @@ export async function getMedia(mediaId: string): Promise<Media> {
     return media as unknown as Media;
 }
 
+export async function listMedia(
+    group: string,
+    page: number,
+    limit: number,
+    filters?: { access?: "public" | "private" },
+): Promise<Media[]> {
+    const medialitClient = getMediaLitClient();
+    const media = await medialitClient.list(page, limit, {
+        group,
+        ...(filters?.access ? { access: filters.access } : {}),
+    });
+    return media as unknown as Media[];
+}
+
 export async function getPresignedUrlForUpload(
     domain: string,
 ): Promise<string> {
