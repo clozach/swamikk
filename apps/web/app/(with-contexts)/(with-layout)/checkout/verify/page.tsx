@@ -1,14 +1,14 @@
 "use client";
 
-import { CheckCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Check } from "lucide-react";
 import Link from "next/link";
 import { PaymentVerificationStatus } from "./payment-verification-status";
 import { useSearchParams } from "next/navigation";
 import { useContext, useEffect, useState } from "react";
-import { AddressContext } from "@components/contexts";
+import { AddressContext, ThemeContext } from "@components/contexts";
 import { FetchBuilder } from "@courselit/utils";
 import { InvoicesStatus } from "@courselit/common-models";
+import { Button, Header2, Section, Text1 } from "@courselit/page-primitives";
 
 export default function Page() {
     const params = useSearchParams();
@@ -17,6 +17,7 @@ export default function Page() {
         useState<InvoicesStatus>("pending");
     const [loading, setLoading] = useState(false);
     const address = useContext(AddressContext);
+    const { theme } = useContext(ThemeContext);
 
     const verifyPayment = async () => {
         setPaymentStatus("pending"); // Hide check status again
@@ -45,55 +46,65 @@ export default function Page() {
     }, []);
 
     return (
-        <div className="flex flex-col items-center justify-center space-y-6 text-center max-w-md mx-auto pt-20">
-            {paymentStatus === "paid" ? (
-                <>
-                    {/* <CheckCircle className="w-16 h-16 text-green-500" /> */}
-                    <h2 className="text-2xl font-bold">
-                        Thank you for your purchase!
-                    </h2>
-                    <p className="text-muted-foreground">
-                        Your order number is:{" "}
-                        <span className="font-medium">{id}</span>
-                    </p>
-                    <CheckCircle className="w-8 h-8 text-green-500" />
-                    <p className="text-lg font-medium text-green-600">
-                        Payment verified successfully!
-                    </p>
-                    <p className="text-muted-foreground">
-                        We have sent a confirmation email with order details and
-                        tracking information.
-                    </p>
-                </>
-            ) : (
-                <>
-                    <h2 className="text-2xl font-bold">
-                        Thank you for your order!
-                    </h2>
-                    <p className="text-muted-foreground">
-                        Your order number is:{" "}
-                        <span className="font-medium">{id}</span>
-                    </p>
-                    <PaymentVerificationStatus
-                        status={paymentStatus}
-                        onRetryVerification={verifyPayment}
-                        loading={loading}
-                    />
-                </>
-            )}
-
-            <div className="flex space-x-4 mt-6">
-                {paymentStatus === "paid" && (
-                    <Button asChild>
-                        <Link href="/dashboard/my-content">
-                            Go to Dashboard
-                        </Link>
-                    </Button>
+        <Section theme={theme.theme}>
+            <div className="mx-auto flex max-w-md flex-col items-center justify-center space-y-6 pb-16 pt-20 text-center">
+                {paymentStatus === "paid" ? (
+                    <>
+                        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                            <Check
+                                className="h-8 w-8 text-secondary"
+                                aria-hidden="true"
+                            />
+                        </span>
+                        <Header2 theme={theme.theme}>You&apos;re in.</Header2>
+                        <Text1
+                            theme={theme.theme}
+                            className="text-muted-foreground"
+                        >
+                            Your content is ready whenever you are.
+                        </Text1>
+                        {id && (
+                            <Text1
+                                theme={theme.theme}
+                                className="text-muted-foreground"
+                            >
+                                Order reference:{" "}
+                                <span className="font-medium text-foreground">
+                                    {id}
+                                </span>
+                            </Text1>
+                        )}
+                        <Button theme={theme.theme} asChild>
+                            <Link href="/dashboard/my-content">
+                                Go to my content
+                            </Link>
+                        </Button>
+                    </>
+                ) : (
+                    <>
+                        <Header2 theme={theme.theme}>
+                            Thank you for your order
+                        </Header2>
+                        {id && (
+                            <Text1
+                                theme={theme.theme}
+                                className="text-muted-foreground"
+                            >
+                                Order reference:{" "}
+                                <span className="font-medium text-foreground">
+                                    {id}
+                                </span>
+                            </Text1>
+                        )}
+                        <PaymentVerificationStatus
+                            status={paymentStatus}
+                            onRetryVerification={verifyPayment}
+                            loading={loading}
+                            theme={theme.theme}
+                        />
+                    </>
                 )}
-                {/* <Button variant="outline" asChild>
-          <Link href="/support">Need Help?</Link>
-        </Button> */}
             </div>
-        </div>
+        </Section>
     );
 }
