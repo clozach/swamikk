@@ -16,9 +16,12 @@
 //
 // The closing is a letter convention rather than a footer: the "Hari Om!"
 // signoff with Karuna's handwritten signature set below and indented right
-// of it, the way a signed letter sits. Centering a signature makes it read
-// as a certificate, so this block is left-aligned on purpose even though the
-// hero above it is centered.
+// of it, the way a signed letter sits. It is offset to start just right of
+// the card's centre — dead-centre would read as a certificate, hard left
+// left the lower half of the card visually empty under a centred hero. The
+// offset is a two-cell spacer table rather than padding or a margin, because
+// percentage padding is unreliable across email clients while table cell
+// widths are the one layout primitive all of them agree on.
 const magicCodeEmail = `
 doctype html
 html
@@ -62,16 +65,21 @@ html
                                         td(height="1" style="height:1px; line-height:1px; font-size:1px; background-color:#e7dfcc;")
                                             | &nbsp;
                         tr
-                            td(align="left" style="padding:24px 36px 32px 36px; text-align:left;")
-                                div(style="font-family:'Playfair Display', Georgia, 'Times New Roman', serif; font-size:20px; line-height:1.3; color:#312110;") Hari Om!
-                                if signatureUrl
-                                    img(
-                                        src=signatureUrl
-                                        width="190"
-                                        height="64"
-                                        alt=schoolName
-                                        style="display:block; width:190px; height:64px; border:0; outline:none; text-decoration:none; margin:14px 0 0 28px;"
-                                    )
+                            td(style="padding:24px 36px 32px 36px;")
+                                table(role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%")
+                                    tr
+                                        td(width="45%" style="width:45%; font-size:1px; line-height:1px;")
+                                            | &nbsp;
+                                        td(align="left" style="text-align:left;")
+                                            div(style="font-family:'Playfair Display', Georgia, 'Times New Roman', serif; font-size:20px; line-height:1.3; color:#312110;") Hari Om!
+                                            if signatureUrl
+                                                img(
+                                                    src=signatureUrl
+                                                    width="190"
+                                                    height="64"
+                                                    alt=schoolName
+                                                    style="display:block; width:190px; height:64px; border:0; outline:none; text-decoration:none; margin:14px 0 0 28px;"
+                                                )
 `;
 
 export default magicCodeEmail;

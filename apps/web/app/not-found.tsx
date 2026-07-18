@@ -47,8 +47,40 @@ export default async function NotFound() {
                     />
                 </Link>
             ) : null}
-            <Header1 theme={theme} className="text-foreground">
+            <Header1
+                theme={theme}
+                className="flex flex-wrap items-center justify-center gap-x-4 text-foreground"
+            >
                 {NOT_FOUND_TITLE}
+                {/* The status code, set on its side so it reads as a fat
+                    exclamation mark closing the sentence rather than as a
+                    second heading. `writing-mode: vertical-rl` is a real
+                    90°-clockwise rotation that still occupies layout, unlike
+                    `transform: rotate()`, which would leave its old box behind
+                    and overlap the title.
+
+                    Size is inherited from the heading rather than pinned to a
+                    scale step: the brief was to match the cap height of the
+                    "W", and Playfair and Open Sans have near-identical cap
+                    ratios (~0.70 and ~0.714 em), so one inherited font-size
+                    matches to within about two percent — and keeps matching if
+                    the theme ever resizes h1. A fixed 32px or 60px token would
+                    only be right at one heading size.
+
+                    Light weight and the body sans are what let it read as a
+                    mark rather than as more title. Rust on cream is 6.75:1. */}
+                <span
+                    aria-hidden="true"
+                    className="leading-none text-secondary"
+                    style={{
+                        writingMode: "vertical-rl",
+                        fontFamily: "var(--font-open-sans), sans-serif",
+                        fontWeight: 300,
+                        letterSpacing: "0.05em",
+                    }}
+                >
+                    404
+                </span>
             </Header1>
             <div className="mt-4 max-w-prose">
                 <Text1 theme={theme} className="text-muted-foreground">
