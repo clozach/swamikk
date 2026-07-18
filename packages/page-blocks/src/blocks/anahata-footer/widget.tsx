@@ -106,6 +106,16 @@ function SocialGlyph({
     }
 }
 
+/* The title block's own vertical extent, kept in one place because an
+   untitled column has to reserve exactly this much to stay in line. */
+const COLUMN_TITLE_LINE_HEIGHT = 1.2;
+const COLUMN_TITLE_PADDING_Y = 5;
+const COLUMN_TITLE_MARGIN_BOTTOM = 15;
+const COLUMN_TITLE_SLOT_HEIGHT =
+    COLUMN_TITLE_SIZE * COLUMN_TITLE_LINE_HEIGHT +
+    COLUMN_TITLE_PADDING_Y * 2 +
+    COLUMN_TITLE_MARGIN_BOTTOM;
+
 /** Playfair Display, uppercase, 30px — the footer's column titles. */
 function ColumnTitle({
     children,
@@ -121,14 +131,43 @@ function ColumnTitle({
                 fontFamily: FONT_DISPLAY,
                 fontSize: `${COLUMN_TITLE_SIZE}px`,
                 fontWeight: 400,
-                lineHeight: 1.2,
+                lineHeight: COLUMN_TITLE_LINE_HEIGHT,
                 color,
-                padding: "5px 10px 5px 0",
-                margin: "0 0 15px",
+                padding: `${COLUMN_TITLE_PADDING_Y}px 10px ${COLUMN_TITLE_PADDING_Y}px 0`,
+                margin: `0 0 ${COLUMN_TITLE_MARGIN_BOTTOM}px`,
             }}
         >
             {children}
         </h2>
+    );
+}
+
+/**
+ * The title row of a footer column — the real heading when there is one, an
+ * equally tall inert spacer when there isn't.
+ *
+ * Without this, a column with no title (the contact column, whose first
+ * element is the logo) starts its content at the top of the grid cell while
+ * its titled neighbours start a title-height lower, so the three columns
+ * visibly fail to line up. Reserving the slot unconditionally makes the
+ * alignment structural rather than something that happens to hold while
+ * every column has a heading.
+ */
+function ColumnTitleSlot({
+    title,
+    color,
+}: {
+    title?: string;
+    color: string;
+}): JSX.Element {
+    if (title) {
+        return <ColumnTitle color={color}>{title}</ColumnTitle>;
+    }
+    return (
+        <div
+            aria-hidden="true"
+            style={{ height: `${COLUMN_TITLE_SLOT_HEIGHT}px` }}
+        />
     );
 }
 
@@ -145,9 +184,7 @@ function LinksColumnView({
 
     return (
         <div style={{ paddingBottom: `${WIDGET_PADDING_BOTTOM}px` }}>
-            {column.title ? (
-                <ColumnTitle color={textColor}>{column.title}</ColumnTitle>
-            ) : null}
+            <ColumnTitleSlot title={column.title} color={textColor} />
             <ul className="m-0 flex w-full list-none flex-col justify-start p-0">
                 {links.map((link, index) => (
                     <li
@@ -197,9 +234,7 @@ function ContactColumnView({
 
     return (
         <div className="text-center">
-            {column.title ? (
-                <ColumnTitle color={textColor}>{column.title}</ColumnTitle>
-            ) : null}
+            <ColumnTitleSlot title={column.title} color={textColor} />
             {column.logoUrl ? (
                 // A plain <img>: the footer logo is a fixed-size static
                 // asset, not a responsive medialit upload, so the
