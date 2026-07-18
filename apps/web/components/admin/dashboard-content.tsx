@@ -19,6 +19,8 @@ import LoadingScreen from "./loading-screen";
 import PermissionError from "./permission-error";
 
 import NextThemeSwitcher from "./next-theme-switcher";
+import { NavUser } from "./dashboard-skeleton/nav-user";
+import { ADMIN_PERMISSIONS } from "@ui-config/constants";
 
 export default function DashboardContent({
     breadcrumbs,
@@ -38,12 +40,27 @@ export default function DashboardContent({
         return <LoadingScreen />;
     }
 
+    // Students get no sidebar (see layout-with-sidebar), so the two things it
+    // used to hold — the collapse toggle and the account menu — have to live
+    // here instead, or they lose their way to sign out entirely.
+    const isAdmin = checkPermission(
+        profile.permissions ?? [],
+        ADMIN_PERMISSIONS,
+    );
+
     return (
         <>
             <header className="flex h-16 shrink-0 items-center gap-2">
                 <div className="flex items-center gap-2 px-4">
-                    <SidebarTrigger className="-ml-1" />
-                    <Separator orientation="vertical" className="mr-2 h-4" />
+                    {isAdmin ? (
+                        <>
+                            <SidebarTrigger className="-ml-1" />
+                            <Separator
+                                orientation="vertical"
+                                className="mr-2 h-4"
+                            />
+                        </>
+                    ) : null}
                     {breadcrumbs.length > 0 && (
                         <Breadcrumb>
                             <BreadcrumbList>
@@ -92,6 +109,11 @@ export default function DashboardContent({
                 <div className="ml-auto flex items-center gap-2 px-3">
                     <NextThemeSwitcher variant="ghost" />
                     <NotificationsViewer />
+                    {isAdmin ? null : (
+                        <div className="w-56">
+                            <NavUser />
+                        </div>
+                    )}
                 </div>
             </header>
             <div className="flex flex-1 flex-col gap-4 p-4 pt-0">

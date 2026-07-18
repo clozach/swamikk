@@ -164,3 +164,22 @@
     --sidebar-border: 209 27% 70%;
     --input: 209 27% 70%;
 }
+
+/* Orange headings on the blue ground.
+ *
+ * The brief was "blue with orange headers and buttons". Buttons already come
+ * out orange — --primary is saffron and the flag leaves it alone — with cocoa
+ * text on the fill at 7.24:1.
+ *
+ * Headings are the part that needs care. Saffron as TYPE measures 1.90:1 on
+ * the page tint and 1.63:1 on the sidebar tint; the design system retired it
+ * as a text colour at any size for exactly this reason, and a private page
+ * full of unreadable headings would be a worse outcome than a less literal
+ * orange. Rust is the same family two steps down and lands at 6.59:1 on the
+ * page, 7.43:1 on white cards, 5.65:1 on the sidebar — orange to the eye,
+ * legible by the numbers. Saffron keeps every job it can actually hold: it
+ * stays the fill under buttons and table headers.
+ */
+.courselit-theme.anahata-private-blue :is(h1, h2, h3) {
+    color: #993300;
+}

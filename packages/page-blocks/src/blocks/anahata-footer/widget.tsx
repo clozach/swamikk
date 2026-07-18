@@ -122,10 +122,6 @@ function SocialGlyph({
 const COLUMN_TITLE_LINE_HEIGHT = 1.2;
 const COLUMN_TITLE_PADDING_Y = 5;
 const COLUMN_TITLE_MARGIN_BOTTOM = 15;
-const COLUMN_TITLE_SLOT_HEIGHT =
-    COLUMN_TITLE_SIZE * COLUMN_TITLE_LINE_HEIGHT +
-    COLUMN_TITLE_PADDING_Y * 2 +
-    COLUMN_TITLE_MARGIN_BOTTOM;
 
 /** Playfair Display, uppercase, 30px — the footer's column titles. */
 function ColumnTitle({
@@ -154,15 +150,15 @@ function ColumnTitle({
 }
 
 /**
- * The title row of a footer column — the real heading when there is one, an
- * equally tall inert spacer when there isn't.
+ * The title row of a footer column — the heading, or nothing.
  *
- * Without this, a column with no title (the contact column, whose first
- * element is the logo) starts its content at the top of the grid cell while
- * its titled neighbours start a title-height lower, so the three columns
- * visibly fail to line up. Reserving the slot unconditionally makes the
- * alignment structural rather than something that happens to hold while
- * every column has a heading.
+ * An earlier pass had this reserve a title-height spacer for the untitled
+ * contact column, so that every column started its content on one line.
+ * Against the real footer that reads worse: the contact column leads with a
+ * tall logo, and holding it down by a title height leaves it visibly
+ * bottom-heavy beside two columns of short links. The source site starts
+ * that logo ABOVE the neighbouring headings, so the slot collapses when
+ * empty and the block finds its own balance.
  */
 function ColumnTitleSlot({
     title,
@@ -170,16 +166,11 @@ function ColumnTitleSlot({
 }: {
     title?: string;
     color: string;
-}): JSX.Element {
-    if (title) {
-        return <ColumnTitle color={color}>{title}</ColumnTitle>;
+}): JSX.Element | null {
+    if (!title) {
+        return null;
     }
-    return (
-        <div
-            aria-hidden="true"
-            style={{ height: `${COLUMN_TITLE_SLOT_HEIGHT}px` }}
-        />
-    );
+    return <ColumnTitle color={color}>{title}</ColumnTitle>;
 }
 
 function LinksColumnView({
