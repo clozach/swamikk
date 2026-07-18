@@ -104,12 +104,23 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link href="/">
-                                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground overflow-hidden">
+                                {/* No background behind the logo. The tile used
+                                    to be filled with `bg-sidebar-primary`,
+                                    which was invisible only because the
+                                    dashboard rendered outside the theme and
+                                    that variable fell back to a dark neutral.
+                                    Once the theme reached this shell the fill
+                                    became the brand's primary, putting a
+                                    coloured plate behind a logo that already
+                                    carries its own ground. A logo supplies its
+                                    own backdrop; the chrome should not add
+                                    one. */}
+                                <div className="flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg">
                                     <Image
                                         borderRadius={1}
                                         src={siteInfo.logo?.file || ""}
                                         alt="logo"
-                                        className="w-full h-full object-cover"
+                                        className="w-full h-full object-contain"
                                     />
                                 </div>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
