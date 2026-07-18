@@ -93,7 +93,7 @@ export default function SubscribersView() {
         setLoading(true);
         const query = `
             query ($page: Int, $limit: Int) {
-                subscribers: getSubscribers(page: $page, limit: $limit) {
+                subscribers: getNewsletterSubscribers(page: $page, limit: $limit) {
                     userId
                     email
                     name

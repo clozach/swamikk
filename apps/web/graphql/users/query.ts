@@ -10,7 +10,7 @@ import {
     getUser,
     getUsers,
     getUsersCount,
-    getSubscribers,
+    getNewsletterSubscribers,
     getSegments,
     getTagsWithDetails,
     getTags,
@@ -64,7 +64,7 @@ const queries = {
             context: GQLContext,
         ) => getUsersCount(context, filters),
     },
-    getSubscribers: {
+    getNewsletterSubscribers: {
         type: new GraphQLList(types.subscriberType),
         args: {
             page: { type: GraphQLInt },
@@ -74,7 +74,7 @@ const queries = {
             _: any,
             { page, limit }: { page?: number; limit?: number },
             context: GQLContext,
-        ) => getSubscribers(context, { page, limit }),
+        ) => getNewsletterSubscribers(context, { page, limit }),
     },
     inviteCustomer: {
         type: types.userType,

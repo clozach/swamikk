@@ -407,7 +407,7 @@ const defaultGetSubscribersDeps: GetSubscribersDeps = {
     },
 };
 
-export const getSubscribers = async (
+export const getNewsletterSubscribers = async (
     ctx: GQLContext,
     { page = 1, limit = 50 }: { page?: number; limit?: number },
     deps: GetSubscribersDeps = defaultGetSubscribersDeps,

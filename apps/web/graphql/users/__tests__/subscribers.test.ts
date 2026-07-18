@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 
-import { getSubscribers } from "../logic";
+import { getNewsletterSubscribers } from "../logic";
 import { UIConstants } from "@courselit/common-models";
 import GQLContext from "@/models/GQLContext";
 import { responses } from "@/config/strings";
@@ -16,13 +16,17 @@ function makeCtx(perms: string[]): GQLContext {
     } as unknown as GQLContext;
 }
 
-describe("getSubscribers", () => {
+describe("getNewsletterSubscribers", () => {
     it("rejects a manageMedia-only caller (subscriber emails are PII)", async () => {
         // auth.ts grants manageMedia to every signup so members can attach
         // images to community posts. That must not open the subscriber roster.
         const deps = { listSubscribers: jest.fn() };
         await expect(
-            getSubscribers(makeCtx([permissions.manageMedia]), {}, deps as any),
+            getNewsletterSubscribers(
+                makeCtx([permissions.manageMedia]),
+                {},
+                deps as any,
+            ),
         ).rejects.toThrow(responses.action_not_allowed);
         expect(deps.listSubscribers).not.toHaveBeenCalled();
     });
@@ -30,7 +34,7 @@ describe("getSubscribers", () => {
     it("rejects an anonymous (unauthenticated) caller", async () => {
         const deps = { listSubscribers: jest.fn() };
         await expect(
-            getSubscribers(
+            getNewsletterSubscribers(
                 { subdomain: { _id: "domain-oid" }, user: null } as any,
                 {},
                 deps as any,
@@ -41,7 +45,7 @@ describe("getSubscribers", () => {
 
     it("scopes to the tenant with default paging for a manageUsers caller", async () => {
         const deps = { listSubscribers: jest.fn().mockResolvedValue([]) };
-        await getSubscribers(
+        await getNewsletterSubscribers(
             makeCtx([permissions.manageUsers]),
             {},
             deps as any,
@@ -51,7 +55,7 @@ describe("getSubscribers", () => {
 
     it("passes page and limit through when provided", async () => {
         const deps = { listSubscribers: jest.fn().mockResolvedValue([]) };
-        await getSubscribers(
+        await getNewsletterSubscribers(
             makeCtx([permissions.manageUsers]),
             { page: 3, limit: 25 },
             deps as any,
@@ -77,7 +81,7 @@ describe("getSubscribers", () => {
             ]),
         };
 
-        const result = await getSubscribers(
+        const result = await getNewsletterSubscribers(
             makeCtx([permissions.manageUsers]),
             {},
             deps as any,
@@ -108,7 +112,7 @@ describe("getSubscribers", () => {
                 ]),
         };
 
-        const result = await getSubscribers(
+        const result = await getNewsletterSubscribers(
             makeCtx([permissions.manageUsers]),
             {},
             deps as any,
