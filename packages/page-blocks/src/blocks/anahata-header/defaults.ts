@@ -122,7 +122,10 @@ export const menu: MenuItem[] = [
         label: "Shop",
         href: "/products",
         children: [
-            { id: "shop-account", label: "My account", href: "#" },
+            // Self-routes both personas: signed out -> the OTP sign-in form;
+            // signed in -> /dashboard, which CourseLit renders differently
+            // for an admin vs. an enrolled student. One link, either role.
+            { id: "shop-account", label: "My account", href: "/login" },
             { id: "shop-all", label: "All Products", href: "/products" },
             { id: "shop-books", label: "Books", href: "#" },
             { id: "shop-audio", label: "Audio", href: "#" },
