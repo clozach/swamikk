@@ -94,9 +94,15 @@ function useFlyoutClamp(open: boolean, placement: Placement) {
     const [flipped, setFlipped] = useState(false);
 
     useIsomorphicLayoutEffect(() => {
-        if (!open || typeof window === "undefined") {
+        if (typeof window === "undefined") {
             return;
         }
+        // Deliberately not gated on `open`. A closed panel is only `invisible`,
+        // not `display: none`, so it still occupies layout and still widens the
+        // document if it sits past the right edge — the rightmost nav item's
+        // flyout did exactly that. `offsetWidth` is measurable under
+        // `visibility: hidden`, so clamping while closed is both valid and
+        // necessary.
 
         const measure = () => {
             const el = ref.current;
