@@ -16,7 +16,7 @@ export default function TopBar({
     return (
         // The whole strip drops out below 560px, as on the live site.
         <div
-            className="hidden min-[560px]:block"
+            className="max-[559px]:hidden"
             style={{ backgroundColor: COCOA, color: "#ffffff" }}
         >
             <div

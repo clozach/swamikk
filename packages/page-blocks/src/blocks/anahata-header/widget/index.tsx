@@ -76,8 +76,14 @@ function useStuck(enabled: boolean) {
         let frame = 0;
         const measure = () => {
             frame = 0;
-            // Pin as soon as the sentinel's top edge reaches the viewport's.
-            setStuck(sentinel.getBoundingClientRect().top <= 0);
+            // Strictly less than zero, not <=. With the utility bar hidden the
+            // band's natural position IS the top of the page, so the sentinel
+            // rests at exactly 0 — and <= would latch the header pinned from
+            // first paint, before it had ever scrolled. That also poisoned the
+            // spacer: the band's height would be measured while already fixed
+            // rather than in flow, leaving the spacer short and the page
+            // content jumping.
+            setStuck(sentinel.getBoundingClientRect().top < 0);
         };
         const onScroll = () => {
             if (frame) {
@@ -260,7 +266,7 @@ export default function Widget({
 
                     <nav
                         aria-label="Main"
-                        className="hidden md:block min-[1140px]:ml-auto"
+                        className="max-[767px]:hidden min-[1140px]:ml-auto"
                     >
                         <ul className="m-0 flex list-none flex-wrap items-center justify-center p-0 min-[1140px]:justify-end">
                             {menu.map((item) => (
