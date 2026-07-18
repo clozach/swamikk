@@ -28,8 +28,7 @@ export function BlogContentCard({ product }: { product: Course }) {
             >
                 <PageCardImage
                     src={
-                        product.featuredImage?.file ||
-                        "/courselit_backdrop_square.webp"
+                        product.featuredImage?.file || "/placeholder-image.svg"
                     }
                     alt={product.title}
                     className="aspect-video object-cover"

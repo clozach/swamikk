@@ -8,7 +8,6 @@ import {
     AvatarFallback,
     AvatarImage,
     Checkbox,
-    Image,
     MediaSelector,
     useToast,
 } from "@courselit/components-library";
@@ -292,14 +291,8 @@ export default function Page() {
                     <CardContent className="flex flex-col items-center gap-4">
                         <Avatar className="w-40 h-40">
                             <AvatarImage src={avatar?.file} />
-                            <AvatarFallback>
-                                <Image
-                                    src="/courselit_backdrop_square.webp"
-                                    alt="profile pic"
-                                    sizes="16vw"
-                                    height="h-40"
-                                    width="w-40"
-                                />
+                            <AvatarFallback className="text-5xl font-semibold text-foreground">
+                                {name?.trim()?.charAt(0)?.toUpperCase() || ""}
                             </AvatarFallback>
                         </Avatar>
                         <MediaSelector

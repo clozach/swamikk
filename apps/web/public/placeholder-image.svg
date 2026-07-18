@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Image placeholder">
+  <rect width="320" height="180" fill="#efe9da"/>
+  <g transform="translate(115 58)" fill="#9c7f52">
+    <rect x="0" y="0" width="90" height="64" rx="8" fill="none" stroke="#9c7f52" stroke-width="4"/>
+    <circle cx="26" cy="22" r="9"/>
+    <path d="M8 56 L34 30 L50 44 L66 24 L82 56 Z"/>
+  </g>
+</svg>

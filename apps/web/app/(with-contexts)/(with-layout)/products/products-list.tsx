@@ -74,7 +74,7 @@ export function ProductsList({
                               }}
                               image={
                                   product.featuredImage?.file ||
-                                  "/courselit_backdrop_square.webp"
+                                  "/placeholder-image.svg"
                               }
                               href={`/p/${product.pageId}`}
                               badgeChildren={getBadgeText(product, siteinfo)}

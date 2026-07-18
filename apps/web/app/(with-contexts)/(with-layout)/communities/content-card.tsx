@@ -44,7 +44,7 @@ export function CommunityContentCard({
                 <PageCardImage
                     src={
                         community.featuredImage?.file ||
-                        "/courselit_backdrop_square.webp"
+                        "/placeholder-image.svg"
                     }
                     alt={community.name}
                     className="aspect-video object-cover"
