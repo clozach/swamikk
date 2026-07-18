@@ -39,6 +39,10 @@ export const MEDIA_SEARCH_INPUT_PLACEHOLDER = "Search your media";
 export const LOAD_MORE_TEXT = "Load more";
 export const MANAGE_MEDIA_BUTTON_TEXT = "Insert media";
 export const MANAGE_COURSES_PAGE_HEADING = "Products";
+// Storefront-facing name for the same listing. Deliberately separate from
+// MANAGE_COURSES_PAGE_HEADING, which 13 dashboard breadcrumbs also read —
+// the admin section stays "Products" while visitors see the site's own word.
+export const STOREFRONT_PRODUCTS_PAGE_HEADING = "Shop";
 export const COURSE_CUSTOMERS_PAGE_HEADING = "Customers";
 export const MANAGE_COMMUNITIES_PAGE_HEADING = "Communities";
 export const MANAGE_PAGES_PAGE_HEADING = "Pages";
