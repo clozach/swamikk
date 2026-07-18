@@ -183,13 +183,23 @@ const createAuthConfig = (baseURL = ""): any => ({
             overrideDefaultEmailVerification: true,
             storeOTP: "hashed",
             async sendVerificationOTP({ email, otp, type }, ctx) {
+                // The email is branded as the school itself, so it needs an
+                // absolute logo URL — mail clients won't resolve a relative
+                // path. proxy.ts sets x-forwarded-proto on every request;
+                // fall back to http for the local rig, which has no TLS.
+                const host = ctx!.headers?.get("host");
+                const proto = ctx!.headers?.get("x-forwarded-proto") || "http";
+                const schoolName =
+                    ctx!.headers?.get("domaintitle") ||
+                    ctx!.headers?.get("domain") ||
+                    "";
+
                 const emailBody = pug.render(MagicCodeEmailTemplate, {
                     code: otp,
-                    hideCourseLitBranding: ctx!.headers?.get(
-                        "hidecourselitbranding",
-                    )
-                        ? ctx!.headers?.get("hidecourselitbranding") === "true"
-                        : false,
+                    schoolName,
+                    // Served from apps/web/public, so it's baked into the
+                    // image rather than depending on a bind mount.
+                    logoUrl: host ? `${proto}://${host}/swami-kk-logo.png` : "",
                 });
 
                 await addMailJob({
