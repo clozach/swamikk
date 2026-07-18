@@ -6,7 +6,6 @@ import { generateUniqueId, getEmailFrom } from "@courselit/utils";
 import { addMailJob } from "@/services/queue";
 import pug from "pug";
 import MagicCodeEmailTemplate from "@/templates/magic-code-email";
-import { responses } from "@/config/strings";
 import { mongodbAdapter } from "@/ba-multitenant-adapter";
 import { getBackendAddress } from "./app/actions";
 import { sso } from "@better-auth/sso";
@@ -194,17 +193,51 @@ const createAuthConfig = (baseURL = ""): any => ({
                     ctx!.headers?.get("domain") ||
                     "";
 
+                // One code serves three different moments, and telling a
+                // member "sign in" while they're confirming a new address is
+                // the kind of small wrongness that erodes trust in the rest
+                // of it. better-auth gives us the type; use it.
+                const copy = {
+                    "sign-in": {
+                        heading: "Your sign-in code",
+                        intro: `Welcome back — here is the code to sign in to ${schoolName}. It stays valid for five minutes.`,
+                    },
+                    "email-verification": {
+                        heading: "Confirm your email",
+                        intro: `Nearly there — enter this code to confirm your email address with ${schoolName}. It stays valid for five minutes.`,
+                    },
+                    "forget-password": {
+                        heading: "Reset your password",
+                        intro: `Use this code to set a new password for ${schoolName}. It stays valid for five minutes.`,
+                    },
+                }[type as string] ?? {
+                    heading: "Your code",
+                    intro: `Here is your code for ${schoolName}. It stays valid for five minutes.`,
+                };
+
                 const emailBody = pug.render(MagicCodeEmailTemplate, {
                     code: otp,
                     schoolName,
-                    // Served from apps/web/public, so it's baked into the
+                    heading: copy.heading,
+                    intro: copy.intro,
+                    // Served from apps/web/public, so both are baked into the
                     // image rather than depending on a bind mount.
                     logoUrl: host ? `${proto}://${host}/swami-kk-logo.png` : "",
+                    signatureUrl: host
+                        ? `${proto}://${host}/swami-signature.png`
+                        : "",
                 });
 
                 await addMailJob({
                     to: [email],
-                    subject: `${responses.sign_in_mail_prefix} ${ctx!.headers?.get("host")}`,
+                    // Was `${responses.sign_in_mail_prefix} ${host}`, which
+                    // put a bare hostname in front of the member ("Sign in to
+                    // localhost:3001"). The school's name is what they
+                    // recognise in a crowded inbox, and the heading already
+                    // says which of the three moments this is.
+                    subject: schoolName
+                        ? `${copy.heading} — ${schoolName}`
+                        : copy.heading,
                     body: emailBody,
                     from: getEmailFrom({
                         name:
