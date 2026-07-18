@@ -243,19 +243,23 @@ export const inviteCustomer = async (
     await activateMembership(ctx.subdomain!, membership, paymentPlan);
 
     try {
+        const schoolName = ctx.subdomain?.settings?.title || ctx.subdomain.name;
+
         const emailBody = pug.render(courseEnrollTemplate, {
             courseName: course.title,
             loginLink: `${ctx.address}/login`,
-            hideCourseLitBranding:
-                ctx.subdomain.settings?.hideCourseLitBranding,
+            schoolName,
+            // Served from apps/web/public, baked into the image.
+            logoUrl: `${ctx.address}/swami-kk-logo.png`,
+            signatureUrl: `${ctx.address}/swami-signature.png`,
         });
 
         await addMailJob({
             to: [user.email],
-            subject: `You have been invited to ${course.title}`,
+            subject: `You're enrolled — ${course.title}`,
             body: emailBody,
             from: getEmailFrom({
-                name: ctx.subdomain?.settings?.title || ctx.subdomain.name,
+                name: schoolName,
                 email: process.env.EMAIL_FROM || "",
             }),
         });

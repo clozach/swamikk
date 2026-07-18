@@ -92,12 +92,18 @@ export async function createTemplateAndSendMail({
         userId: course.creatorId,
     }).select("name");
 
+    const schoolName =
+        ctx.subdomain.settings?.title || ctx.subdomain.name || "";
+
     const emailBody = pug.render(digitalDownloadTemplate, {
         downloadLink: `${ctx.address}/api/download/${downloadLink.token}`,
         loginLink: `${ctx.address}/login`,
         courseName: course.title,
-        name: creator?.name || ctx.subdomain.settings.title || "",
-        hideCourseLitBranding: ctx.subdomain.settings?.hideCourseLitBranding,
+        name: creator?.name || schoolName,
+        schoolName,
+        // Served from apps/web/public, baked into the image.
+        logoUrl: `${ctx.address}/swami-kk-logo.png`,
+        signatureUrl: `${ctx.address}/swami-signature.png`,
     });
 
     await addMailJob({
