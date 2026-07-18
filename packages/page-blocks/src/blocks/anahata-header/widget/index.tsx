@@ -73,9 +73,18 @@ function useStuck(enabled: boolean) {
             return;
         }
 
-        let frame = 0;
+        // Read straight through, with no requestAnimationFrame coalescing in
+        // between. The usual reason to rAF-throttle a scroll handler is to
+        // avoid doing layout work more than once a frame, but browsers already
+        // deliver scroll at most once per frame to the main thread, so a single
+        // getBoundingClientRect here buys nothing measurable — while the rAF
+        // hop adds a real failure mode: anywhere frame callbacks are suspended,
+        // the header silently stops pinning. Any backgrounded document does
+        // exactly that (verified: in a headless pane reporting
+        // document.hidden === true, rAF, IntersectionObserver and scroll
+        // callbacks were all suspended together, which is what made this
+        // behaviour untestable in the first place).
         const measure = () => {
-            frame = 0;
             // Strictly less than zero, not <=. With the utility bar hidden the
             // band's natural position IS the top of the page, so the sentinel
             // rests at exactly 0 — and <= would latch the header pinned from
@@ -85,22 +94,13 @@ function useStuck(enabled: boolean) {
             // content jumping.
             setStuck(sentinel.getBoundingClientRect().top < 0);
         };
-        const onScroll = () => {
-            if (frame) {
-                return;
-            }
-            frame = requestAnimationFrame(measure);
-        };
 
-        measure(); // deep-linked/restored scroll positions start stuck
-        window.addEventListener("scroll", onScroll, { passive: true });
-        window.addEventListener("resize", onScroll, { passive: true });
+        measure(); // deep-linked/restored scroll positions start pinned
+        window.addEventListener("scroll", measure, { passive: true });
+        window.addEventListener("resize", measure, { passive: true });
         return () => {
-            if (frame) {
-                cancelAnimationFrame(frame);
-            }
-            window.removeEventListener("scroll", onScroll);
-            window.removeEventListener("resize", onScroll);
+            window.removeEventListener("scroll", measure);
+            window.removeEventListener("resize", measure);
         };
     }, [enabled]);
 
