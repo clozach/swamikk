@@ -32,6 +32,7 @@ import {
     mobileCtaLabel as defaultMobileCtaLabel,
     mobileMenuLabel as defaultMobileMenuLabel,
     showTopBar as defaultShowTopBar,
+    sticky as defaultSticky,
     topBarLeftItems as defaultTopBarLeftItems,
     topBarRightItems as defaultTopBarRightItems,
 } from "./defaults";
@@ -392,6 +393,7 @@ export default function AdminWidget({
     const [showTopBar, setShowTopBar] = useState(
         settings.showTopBar ?? defaultShowTopBar,
     );
+    const [sticky, setSticky] = useState(settings.sticky ?? defaultSticky);
     const [topBarLeftItems, setTopBarLeftItems] = useState<TopBarItem[]>(
         settings.topBarLeftItems ?? defaultTopBarLeftItems,
     );
@@ -422,6 +424,7 @@ export default function AdminWidget({
             logoHeight,
             homeHref,
             showTopBar,
+            sticky,
             topBarLeftItems,
             topBarRightItems,
             menu,
@@ -439,6 +442,7 @@ export default function AdminWidget({
         logoHeight,
         homeHref,
         showTopBar,
+        sticky,
         topBarLeftItems,
         topBarRightItems,
         menu,
@@ -580,6 +584,20 @@ export default function AdminWidget({
             </AdminWidgetPanel>
 
             <AdminWidgetPanel title="Advanced" value="advanced">
+                <div className="flex items-center gap-2">
+                    <Checkbox
+                        checked={sticky}
+                        onChange={(value: boolean) => setSticky(value)}
+                    />
+                    <span className="text-sm font-medium">
+                        Pin header to top while scrolling
+                    </span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                    Matches anahata-retreat.org.nz: the top bar scrolls away
+                    normally, and the logo/nav band stays pinned to the top of
+                    the screen.
+                </p>
                 <CssIdField
                     value={cssId || ""}
                     onChange={(value: string) => setCssId(value)}

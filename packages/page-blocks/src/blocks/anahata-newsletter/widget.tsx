@@ -2,6 +2,7 @@ import React, { FormEvent, useEffect, useRef, useState } from "react";
 import { WidgetProps } from "@courselit/common-models";
 import type { SectionBackground, ThemeStyle } from "@courselit/page-models";
 import { Section } from "@courselit/page-primitives";
+import { FetchBuilder } from "@courselit/utils";
 import Settings from "./settings";
 import {
     BORDER_WARM,
@@ -16,6 +17,7 @@ import {
     DEFAULT_HEADING,
     DEFAULT_INVALID_EMAIL_MESSAGE,
     DEFAULT_MISSING_EMAIL_MESSAGE,
+    DEFAULT_SUBMISSION_ERROR_MESSAGE,
     DEFAULT_SUBSCRIBE_LINK,
     DEFAULT_SUBSCRIBE_MODE,
     DEFAULT_SUCCESS_MESSAGE,
@@ -29,21 +31,38 @@ import {
 } from "./defaults";
 
 /**
- * The band's interaction has exactly four modes, so it is a tagged union
+ * The band's interaction has exactly five states, so it is a tagged union
  * rather than a bag of `isSubmitting` / `hasError` / `didSucceed` booleans:
- * "submitting and invalid at the same time" cannot be represented.
+ * "submitting and invalid at the same time" cannot be represented, and
+ * "invalid" (bad input, never left the browser) is kept distinct from
+ * "error" (a real request reached the server and failed) — they need
+ * different copy and different `aria-invalid` handling on the field.
  */
 type SubmissionState =
     | { kind: "idle" }
     | { kind: "invalid"; message: string }
     | { kind: "submitting" }
-    | { kind: "subscribed"; message: string };
+    | { kind: "subscribed"; message: string }
+    | { kind: "error"; message: string };
+
+/**
+ * The exact mutation the stock `email-form` block (metadata name
+ * "newsletter-signup") sends to createSubscription — same resolver, same
+ * persistence (upsert-by-email onto the `users` collection with
+ * `lead: "newsletter"`, never a duplicate). Sent with real GraphQL
+ * variables rather than the stock block's string-interpolated query, so a
+ * `"` or newline in the address can't break the request — `/api/graph`
+ * supports both shapes (see route.ts's `typeof body.query === "string"`
+ * branch).
+ */
+const SUBSCRIBE_MUTATION = `
+    mutation Subscribe($name: String!, $email: String!) {
+        response: createSubscription(name: $name, email: $email)
+    }
+`;
 
 /** Deliberately permissive — the browser's own `type=email` grammar. */
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
-/** Cosmetic latency so the button's disabled/pressed states are perceivable. */
-const FAKE_ROUNDTRIP_MS = 450;
 
 /**
  * The saffron/rust button recipe (visual spec §0.6, tokens.css `.an-button`).
@@ -59,6 +78,14 @@ const FAKE_ROUNDTRIP_MS = 450;
  * `hover:`/`active:` restore white explicitly rather than relying on any
  * implicit carry-over, since a keyboard Enter/Space press fires `:active`
  * without `:hover`.
+ *
+ * Disabled state (while a real submission is in flight) is a solid fill,
+ * not `opacity-*`: this button sits directly on the band's photo
+ * background with no card behind it, so any translucency lets the photo
+ * bleed through and makes the resulting contrast a function of whatever
+ * pixels happen to be there — exactly the un-guaranteed case flagged in
+ * the AA pass. `#545454` (tokens --ink) with white text is 8.21:1, opaque,
+ * photo-independent regardless of what the disabled button sits on top of.
  */
 const BUTTON_CLASSES = [
     "inline-block max-w-full min-w-[200px] cursor-pointer select-none",
@@ -67,7 +94,10 @@ const BUTTON_CLASSES = [
     "bg-[#ff9900] hover:bg-[#993300] hover:text-white active:bg-[#7a2900] active:text-white active:translate-y-[1px]",
     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#993300]",
     "transition-[background-color,color,transform] duration-100 ease-in",
-    "disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-[#ff9900] disabled:hover:text-[#312110]",
+    "disabled:cursor-not-allowed disabled:pointer-events-none",
+    "disabled:bg-[#545454] disabled:text-white",
+    "disabled:hover:bg-[#545454] disabled:hover:text-white",
+    "disabled:active:bg-[#545454] disabled:active:text-white disabled:active:translate-y-0",
 ].join(" ");
 
 function paragraphsOf(body: string): string[] {
@@ -90,13 +120,15 @@ export default function Widget({
         successMessage,
         missingEmailMessage,
         invalidEmailMessage,
+        submissionErrorMessage,
         disclaimer,
         cssId,
         maxWidth,
         verticalPadding,
         background,
     },
-    state: { theme },
+    state: { theme, address },
+    editing,
     nextTheme,
     id,
 }: WidgetProps<Settings>): JSX.Element {
@@ -123,14 +155,14 @@ export default function Widget({
     const [submission, setSubmission] = useState<SubmissionState>({
         kind: "idle",
     });
-    const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const inputRef = useRef<HTMLInputElement | null>(null);
-
+    const feedbackRef = useRef<HTMLParagraphElement | null>(null);
+    // Guards against a slow in-flight request resolving after the
+    // component has unmounted (e.g. the admin navigates away mid-request).
+    const mounted = useRef(true);
     useEffect(
         () => () => {
-            if (timer.current) {
-                clearTimeout(timer.current);
-            }
+            mounted.current = false;
         },
         [],
     );
@@ -138,7 +170,17 @@ export default function Widget({
     const fieldId = `${id || "anahata-newsletter"}-email`;
     const feedbackId = `${fieldId}-feedback`;
 
-    const onSubmit = (e: FormEvent) => {
+    // Completion (success or a real server-side error) moves focus to the
+    // status message, same as a native form's error summary would. Client
+    // validation ("invalid") intentionally does NOT go through here — that
+    // path already returns focus straight to the offending field, below.
+    useEffect(() => {
+        if (submission.kind === "subscribed" || submission.kind === "error") {
+            feedbackRef.current?.focus();
+        }
+    }, [submission.kind]);
+
+    const onSubmit = async (e: FormEvent) => {
         e.preventDefault();
         if (submission.kind === "submitting") {
             return;
@@ -160,38 +202,88 @@ export default function Widget({
             return;
         }
 
-        // No backend is wired up on purpose: this block is a faithful
-        // front-end of the "Stay in Touch" band, not a subscription service.
-        // It still gives real feedback rather than silently doing nothing.
         setSubmission({ kind: "submitting" });
-        timer.current = setTimeout(() => {
+
+        // The page-builder overlay (EditableWidget) already sits on top of
+        // this whole widget and swallows the click while `editing` is true,
+        // so a real submit can't reach here in practice. Guarded anyway —
+        // belt-and-braces so editing a page can never create a subscriber.
+        if (editing) {
             setSubmission({
                 kind: "subscribed",
                 message: successMessage || DEFAULT_SUCCESS_MESSAGE,
             });
+            return;
+        }
+
+        const request = new FetchBuilder()
+            .setUrl(`${address.backend}/api/graph`)
+            .setPayload({
+                query: SUBSCRIBE_MUTATION,
+                variables: { name: "", email: candidate },
+            })
+            .setIsGraphQLEndpoint(true)
+            .build();
+
+        let succeeded = false;
+        try {
+            const response = await request.exec();
+            // createSubscription is a boolean resolver: true covers both a
+            // brand-new subscriber and an address that was already on the
+            // list (server upserts by email — see graphql/mails/logic.ts).
+            // Either way the user sees the same success message; we never
+            // reveal which case it was, and no duplicate is ever created.
+            succeeded = response?.response === true;
+        } catch {
+            succeeded = false;
+        }
+
+        if (!mounted.current) {
+            return;
+        }
+
+        if (succeeded) {
             setEmail("");
-        }, FAKE_ROUNDTRIP_MS);
+            setSubmission({
+                kind: "subscribed",
+                message: successMessage || DEFAULT_SUCCESS_MESSAGE,
+            });
+        } else {
+            setSubmission({
+                kind: "error",
+                message:
+                    submissionErrorMessage || DEFAULT_SUBMISSION_ERROR_MESSAGE,
+            });
+        }
     };
 
     const onEmailChange = (value: string) => {
         setEmail(value);
-        if (submission.kind === "invalid" || submission.kind === "subscribed") {
+        if (submission.kind !== "idle" && submission.kind !== "submitting") {
             setSubmission({ kind: "idle" });
         }
     };
 
+    // Only client-side validation marks the field itself invalid. A
+    // server-side "error" means the address was fine and the request
+    // failed for other reasons — the field shouldn't be flagged.
     const isInvalid = submission.kind === "invalid";
     const isSubmitting = submission.kind === "submitting";
+    const isSubmissionError = submission.kind === "error";
     const feedback =
-        submission.kind === "invalid" || submission.kind === "subscribed"
+        submission.kind === "invalid" ||
+        submission.kind === "subscribed" ||
+        submission.kind === "error"
             ? {
                   message: submission.message,
                   color:
-                      submission.kind === "invalid"
-                          ? FEEDBACK_ERROR
-                          : FEEDBACK_SUCCESS,
+                      submission.kind === "subscribed"
+                          ? FEEDBACK_SUCCESS
+                          : FEEDBACK_ERROR,
               }
-            : null;
+            : submission.kind === "submitting"
+              ? { message: "Submitting…", color: INK }
+              : null;
 
     return (
         <Section
@@ -246,6 +338,7 @@ export default function Widget({
                     <form
                         onSubmit={onSubmit}
                         noValidate
+                        aria-busy={isSubmitting}
                         className="mx-auto mt-[20px] flex w-full max-w-[520px] flex-col items-stretch gap-[10px] min-[480px]:flex-row"
                     >
                         <label htmlFor={fieldId} className="sr-only">
@@ -262,13 +355,14 @@ export default function Widget({
                             placeholder={
                                 emailPlaceholder || DEFAULT_EMAIL_PLACEHOLDER
                             }
+                            disabled={isSubmitting}
                             aria-invalid={isInvalid}
                             aria-describedby={feedback ? feedbackId : undefined}
                             onChange={(e) => onEmailChange(e.target.value)}
                             /* Focus ring was saffron — 2.14:1 against the white
                                field, under the 3:1 UI-component floor. Rust is
                                7.43:1 against the same white field. */
-                            className="w-full min-w-0 flex-1 rounded-[4px] border px-[12px] py-[6px] text-left text-[1em] leading-[1.65] outline-none placeholder:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#993300]"
+                            className="w-full min-w-0 flex-1 rounded-[4px] border px-[12px] py-[6px] text-left text-[1em] leading-[1.65] outline-none placeholder:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#993300] disabled:cursor-not-allowed"
                             style={{
                                 fontFamily: FONT_BODY,
                                 backgroundColor: CARD,
@@ -282,9 +376,10 @@ export default function Widget({
                             type="submit"
                             className={BUTTON_CLASSES}
                             disabled={isSubmitting}
+                            aria-disabled={isSubmitting}
                             style={{ fontFamily: FONT_BODY }}
                         >
-                            {caption}
+                            {isSubmitting ? "Submitting…" : caption}
                         </button>
                     </form>
                 )}
@@ -292,11 +387,15 @@ export default function Widget({
                 <div role="status" aria-live="polite">
                     {feedback && (
                         <p
+                            ref={feedbackRef}
                             id={feedbackId}
-                            className="mx-auto mb-0 mt-[20px] max-w-[520px] rounded-[4px] border p-[20px] text-center text-[18px]"
+                            tabIndex={-1}
+                            className="mx-auto mb-0 mt-[20px] max-w-[520px] rounded-[4px] border p-[20px] text-center text-[18px] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#993300]"
                             style={{
                                 backgroundColor: CARD,
-                                borderColor: BORDER_WARM,
+                                borderColor: isSubmissionError
+                                    ? FEEDBACK_ERROR
+                                    : BORDER_WARM,
                                 color: feedback.color,
                             }}
                         >

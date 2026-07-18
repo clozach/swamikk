@@ -28,6 +28,7 @@ import {
     DEFAULT_HEADING,
     DEFAULT_INVALID_EMAIL_MESSAGE,
     DEFAULT_MISSING_EMAIL_MESSAGE,
+    DEFAULT_SUBMISSION_ERROR_MESSAGE,
     DEFAULT_SUBSCRIBE_LINK,
     DEFAULT_SUBSCRIBE_MODE,
     DEFAULT_SUCCESS_MESSAGE,
@@ -72,6 +73,9 @@ export default function AdminWidget({
     const [invalidEmailMessage, setInvalidEmailMessage] = useState(
         settings.invalidEmailMessage,
     );
+    const [submissionErrorMessage, setSubmissionErrorMessage] = useState(
+        settings.submissionErrorMessage,
+    );
     const [disclaimer, setDisclaimer] = useState(settings.disclaimer);
     const [background, setBackground] = useState<SectionBackground>(
         settings.background || DEFAULT_BACKGROUND,
@@ -97,6 +101,7 @@ export default function AdminWidget({
             successMessage,
             missingEmailMessage,
             invalidEmailMessage,
+            submissionErrorMessage,
             disclaimer,
             background,
             maxWidth,
@@ -115,6 +120,7 @@ export default function AdminWidget({
         successMessage,
         missingEmailMessage,
         invalidEmailMessage,
+        submissionErrorMessage,
         disclaimer,
         background,
         maxWidth,
@@ -234,7 +240,7 @@ export default function AdminWidget({
                             rows={2}
                             value={successMessage || ""}
                             placeholder={DEFAULT_SUCCESS_MESSAGE}
-                            tooltip="Shown inline after a valid address is submitted."
+                            tooltip="Shown inline once the server confirms the subscription. Also shown for an address that was already subscribed — visitors never learn whether they were new or returning."
                             onChange={(e) => setSuccessMessage(e.target.value)}
                         />
                         <FormField
@@ -251,6 +257,17 @@ export default function AdminWidget({
                             placeholder={DEFAULT_INVALID_EMAIL_MESSAGE}
                             onChange={(e) =>
                                 setInvalidEmailMessage(e.target.value)
+                            }
+                        />
+                        <FormField
+                            label="Submission failed message"
+                            component="textarea"
+                            rows={2}
+                            value={submissionErrorMessage || ""}
+                            placeholder={DEFAULT_SUBMISSION_ERROR_MESSAGE}
+                            tooltip="Shown when the request reaches the server but fails (network error, etc.) — distinct from the two validation messages above, which never touch the network."
+                            onChange={(e) =>
+                                setSubmissionErrorMessage(e.target.value)
                             }
                         />
                     </Form>

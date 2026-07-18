@@ -21,6 +21,11 @@ export interface TopBarItem {
 }
 
 export default interface Settings extends WidgetDefaultSettings {
+    /** Pins the header to the top of the viewport while the page scrolls,
+     *  matching the live anahata-retreat.org.nz. On by default; Karuna can
+     *  turn it off from the Advanced panel. */
+    sticky?: boolean;
+
     /** Logo picked from the media library. Wins over `logoSrc` when set. */
     logoMedia?: Media;
     /** Static logo path, e.g. the staged `/anahata/logo-2021.png`. */

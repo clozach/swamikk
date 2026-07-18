@@ -10,6 +10,8 @@ import { MenuItem, TopBarItem } from "./settings";
  * hoverable, waiting for Karuna to point it somewhere.
  */
 
+export const sticky = true;
+
 export const logoSrc = "/anahata/logo-2021.png";
 export const logoAlt = "Anahata Yoga Retreat";
 export const logoWidth = 250;

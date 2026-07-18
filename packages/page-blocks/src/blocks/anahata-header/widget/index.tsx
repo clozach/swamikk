@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { WidgetProps } from "@courselit/common-models";
 import clsx from "clsx";
 import Settings from "../settings";
@@ -14,13 +14,108 @@ import {
     mobileCtaLabel as defaultMobileCtaLabel,
     mobileMenuLabel as defaultMobileMenuLabel,
     showTopBar as defaultShowTopBar,
+    sticky as defaultSticky,
     topBarLeftItems as defaultTopBarLeftItems,
     topBarRightItems as defaultTopBarRightItems,
 } from "../defaults";
-import { CREAM, RUST, AMBER, HEADER_CONTAINER, FONT_BODY } from "./tokens";
+import {
+    CREAM,
+    RUST,
+    AMBER,
+    HEADER_CONTAINER,
+    FONT_BODY,
+    STICKY_HEADER_BAND_BASE,
+    STICKY_HEADER_BAND_FIXED,
+    STICKY_HEADER_BAND_STUCK,
+} from "./tokens";
 import DesktopNavItem from "./desktop-nav";
 import TopBar from "./top-bar";
 import MobileOverlay, { MobileMenuState } from "./mobile-overlay";
+
+/* ------------------------------------------------------------------ *
+ * Detects whether the header band should be pinned ("stuck") to the top
+ * of the viewport. This drives BOTH the drop-shadow the live site adds
+ * once scrolled (#site-header-sticky-wrapper.is-sticky .has-sticky-
+ * dropshadow) AND the band's actual positioning mode — see the long
+ * comment on STICKY_HEADER_BAND_FIXED in ./tokens for why plain CSS
+ * `position: sticky` cannot pin this band on its own (its containing
+ * block, <header>, is too short to hold a stuck state for any real
+ * scroll distance) and `fixed` + a flow spacer is used instead.
+ *
+ * A 1px sentinel sits in normal flow immediately above the band, right
+ * where the band's own un-pinned top would be. At rest both are near the
+ * top of the page and the sentinel intersects the viewport. Once the
+ * page scrolls far enough that the band's native position would cross
+ * the viewport's top edge, the sentinel scrolls out from under that
+ * edge first (it precedes the band in flow) — the observer's
+ * `isIntersecting` flips to false at exactly the instant the band
+ * should switch to fixed.
+ * ------------------------------------------------------------------ */
+function useStuck(enabled: boolean) {
+    const sentinelRef = useRef<HTMLDivElement | null>(null);
+    const [stuck, setStuck] = useState(false);
+
+    useEffect(() => {
+        if (
+            !enabled ||
+            typeof window === "undefined" ||
+            typeof IntersectionObserver === "undefined"
+        ) {
+            setStuck(false);
+            return;
+        }
+        const sentinel = sentinelRef.current;
+        if (!sentinel) {
+            return;
+        }
+        const observer = new IntersectionObserver(
+            ([entry]) => setStuck(!entry.isIntersecting),
+            { threshold: 0 },
+        );
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+    }, [enabled]);
+
+    return { sentinelRef, stuck: enabled && stuck };
+}
+
+/* ------------------------------------------------------------------ *
+ * Measures the band's own natural (in-flow) height, so that once it
+ * switches to `position: fixed` — removing it from flow — a spacer of
+ * the same height can hold its old place and the page content below it
+ * doesn't jump. A ResizeObserver (not a one-shot measurement) keeps this
+ * correct across breakpoint changes, nav wrapping, and web-font reflow,
+ * matching the pattern already used for the flyout clamp in
+ * ./desktop-nav.tsx.
+ * ------------------------------------------------------------------ */
+function useMeasuredHeight(enabled: boolean) {
+    const ref = useRef<HTMLDivElement | null>(null);
+    const [height, setHeight] = useState(0);
+
+    useEffect(() => {
+        if (!enabled || typeof window === "undefined") {
+            return;
+        }
+        const el = ref.current;
+        if (!el) {
+            return;
+        }
+        const measure = () => setHeight(el.offsetHeight);
+        measure();
+        const observer =
+            typeof ResizeObserver === "undefined"
+                ? undefined
+                : new ResizeObserver(measure);
+        observer?.observe(el);
+        window.addEventListener("resize", measure);
+        return () => {
+            observer?.disconnect();
+            window.removeEventListener("resize", measure);
+        };
+    }, [enabled]);
+
+    return { ref, height };
+}
 
 /* ------------------------------------------------------------------ *
  * The block
@@ -41,6 +136,24 @@ export default function Widget({
     const topBarRightItems =
         settings.topBarRightItems ?? defaultTopBarRightItems;
     const showTopBar = settings.showTopBar ?? defaultShowTopBar;
+    const sticky = settings.sticky ?? defaultSticky;
+    // Never lets the band actually go `fixed` inside the page builder: the
+    // editing overlay in editable-widget.tsx is an `absolute inset-0` sized
+    // to this widget's own (non-sticky) wrapper box, so it only ever covers
+    // the band's in-flow position. A `fixed` band visually escapes that box
+    // once the page scrolls, which would leave a click meant for "open the
+    // edit panel" falling through to the band's own live links/flyouts
+    // instead. Keeping the band in normal flow while editing keeps the
+    // click-catch overlay valid; the true `sticky` setting still governs
+    // the published page.
+    const stickyEnabled = sticky && !editing;
+    const { sentinelRef, stuck } = useStuck(stickyEnabled);
+    // Measured whenever sticky is enabled (not just once stuck): the height
+    // has to be known *before* the first stuck transition, or the very
+    // first spacer render would use the stale initial 0 and the page would
+    // jump.
+    const { ref: bandRef, height: bandHeight } =
+        useMeasuredHeight(stickyEnabled);
     const logoFile =
         settings.logoMedia?.file || settings.logoSrc || defaultLogoSrc;
     const logoAlt = settings.logoAlt || defaultLogoAlt;
@@ -67,8 +180,32 @@ export default function Widget({
             {showTopBar && (
                 <TopBar left={topBarLeftItems} right={topBarRightItems} />
             )}
+            {/* Marks where the band's own natural flow position sits, so
+                `useStuck` can tell when the band should pin — see the hook
+                above. Not rendered when sticky is off (or while editing —
+                see `stickyEnabled`), since nothing then transitions to a
+                pinned state. */}
+            {stickyEnabled && (
+                <div ref={sentinelRef} aria-hidden="true" className="h-px" />
+            )}
+            {/* Holds the band's old flow slot the instant it switches to
+                `fixed` (see STICKY_HEADER_BAND_FIXED in ./tokens for why
+                `position: sticky` alone can't pin it) — without this the
+                page content directly below would jump up by the band's
+                full height the moment it's removed from flow. */}
+            {stickyEnabled && stuck && (
+                <div aria-hidden="true" style={{ height: bandHeight }} />
+            )}
             <div
-                className="border-b border-t-[6px] border-solid"
+                ref={bandRef}
+                className={clsx(
+                    "border-b border-t-[6px] border-solid",
+                    stickyEnabled &&
+                        (stuck
+                            ? STICKY_HEADER_BAND_FIXED
+                            : STICKY_HEADER_BAND_BASE),
+                    stickyEnabled && stuck && STICKY_HEADER_BAND_STUCK,
+                )}
                 style={{
                     backgroundColor: CREAM,
                     borderTopColor: RUST,

@@ -31,6 +31,9 @@ export const DEFAULT_SUCCESS_MESSAGE =
 export const DEFAULT_MISSING_EMAIL_MESSAGE = "Please enter your email address.";
 export const DEFAULT_INVALID_EMAIL_MESSAGE =
     "Please enter a valid email address.";
+/** Shown when the request reaches the server but the subscription fails. */
+export const DEFAULT_SUBMISSION_ERROR_MESSAGE =
+    "We couldn't add you just now. Please try again in a moment.";
 
 export const DEFAULT_DISCLAIMER = "";
 

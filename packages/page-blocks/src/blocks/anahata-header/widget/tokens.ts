@@ -29,6 +29,47 @@ export const TOP_BAR_CONTAINER = "mx-auto w-[1212px] max-w-[95%]";
 export const HEADER_CONTAINER =
     "mx-auto w-[1212px] max-w-[95%] min-[961px]:w-full min-[961px]:max-w-none min-[961px]:px-6";
 
+/* Sticky header band. On the live site #site-header-sticky-wrapper wraps
+   ONLY #site-header (logo + nav + mobile bar) — #top-bar-wrap sits outside
+   it and simply scrolls away, so only the band below the cocoa strip pins.
+   z-20 matches this codebase's other sticky header (packages/page-blocks
+   header block) — comfortably above ordinary in-flow page content, and
+   nowhere near the mobile drawer's z-[9999]/z-[10000] or the nav flyout's
+   z-[10001]. Deliberately applied to this inner band, not the outer
+   <header>: position: sticky/fixed always opens a new stacking context, and
+   the drawer/flyout are read as *descendants* of <header> — keeping the
+   drawer OUTSIDE this band (see widget/index.tsx) means its own very high
+   z-index still compares directly against the rest of the page instead of
+   being capped at this band's z-20. The flyout stays nested inside the band
+   (it has to, for its hover anchor), so it's still capped at z-20 relative
+   to later page content — comfortably enough to clear ordinary sections,
+   which is the same trade the live site's own stacking makes.
+
+   Plain `position: sticky` on the band does NOT work here: a sticky
+   element's stuck range is bounded by its own containing block (its
+   nearest block-level ancestor — here <header>), and <header>'s only
+   content is TopBar + a 1px sentinel + the band itself, so <header> is
+   barely taller than the band. Verified empirically (matching repro):
+   the band reaches `top: 0` for a single scroll pixel (right as the
+   sentinel leaves the viewport) and then immediately un-sticks and
+   scrolls away with the rest of the page — fully gone within one band's
+   height of further scrolling. `sticky` never gives a real "pinned"
+   window because there's no taller containing block to hold it (the
+   widget only owns its own two rows, not the rest of the page below).
+   The fix mirrors what the live site's own JS does (toggle #site-header
+   to `position: fixed` on scroll): once `useStuck`'s IntersectionObserver
+   reports the sentinel has scrolled out — the same instant CSS sticky
+   would have started failing — widget/index.tsx swaps the band to
+   `position: fixed` and renders a same-height spacer in its old flow slot
+   so the page never jumps. STICKY_HEADER_BAND_BASE is the at-rest (in
+   normal flow) state; STICKY_HEADER_BAND_FIXED is the pinned state. */
+export const STICKY_HEADER_BAND_BASE =
+    "relative z-20 transition-shadow duration-200 ease-out motion-reduce:transition-none";
+export const STICKY_HEADER_BAND_FIXED =
+    "fixed inset-x-0 top-0 z-20 transition-shadow duration-200 ease-out motion-reduce:transition-none";
+/* live site: #site-header-sticky-wrapper.is-sticky .has-sticky-dropshadow */
+export const STICKY_HEADER_BAND_STUCK = "shadow-[0_2px_5px_rgba(0,0,0,0.1)]";
+
 /* White text at 80% opacity over cocoa blends to ~#d6d3cf, 10.4:1 — the
    opacity fade reads as a hover without ever dropping under AA. Focus
    ring is saffron, which reaches 7.24:1 against the cocoa strip. */
