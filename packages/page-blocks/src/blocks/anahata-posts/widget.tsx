@@ -38,14 +38,21 @@ const CARD_TITLE_CLASSES =
     "transition-colors duration-100 ease-in hover:text-[#993300] " +
     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#993300]";
 
+/**
+ * White-on-saffron (rest) was 2.14:1 — under AA. Cocoa-on-saffron is 7.24:1,
+ * so that carries rest; hover/active move the ground to rust/rust-pressed,
+ * where white text is 7.43:1 / 9.79:1. `active:text-white` is explicit
+ * (not inherited from `:hover`) because a keyboard Enter/Space press
+ * triggers `:active` without `:hover`, and cocoa-on-rust-pressed is 1.58:1.
+ */
 const BUTTON_CLASSES =
     "inline-block cursor-pointer no-underline border-none text-center capitalize " +
-    "bg-[#ff9900] text-white font-open-sans text-[14px] font-bold leading-[1.65] " +
+    "bg-[#ff9900] text-[#312110] font-open-sans text-[14px] font-bold leading-[1.65] " +
     "min-w-[200px] px-[23px] py-[8px] rounded-[10px] " +
     // The source rule is `transition: 0.1s ease-in` — all properties, so the
     // active-state nudge eases alongside the colour change.
-    "transition-all duration-100 ease-in hover:bg-[#993300] " +
-    "active:bg-[#7a2900] active:translate-y-[1px] " +
+    "transition-all duration-100 ease-in hover:bg-[#993300] hover:text-white " +
+    "active:bg-[#7a2900] active:text-white active:translate-y-[1px] " +
     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#993300]";
 
 function PostCard({ post }: { post: Post }) {
@@ -133,7 +140,10 @@ export default function Widget({
                         <h2 className={headingClasses}>
                             <Link
                                 href={headingLink}
-                                className="text-inherit no-underline transition-colors duration-100 ease-in hover:text-[#ff9900] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#993300]"
+                                /* Rest is rust (inherited, 6.37:1 on the apricot
+                                   ground); saffron hover was 1.84:1 — under AA —
+                                   so hover deepens to rust-pressed (8.40:1) instead. */
+                                className="text-inherit no-underline transition-colors duration-100 ease-in hover:text-[#7a2900] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#993300]"
                             >
                                 {heading}
                             </Link>

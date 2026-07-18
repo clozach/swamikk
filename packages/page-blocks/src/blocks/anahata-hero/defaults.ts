@@ -1,5 +1,6 @@
 import type {
     BannerFit,
+    BannerHeightMode,
     BannerPosition,
     CtaStyle,
     HeroAnimation,
@@ -15,13 +16,19 @@ import type {
  * ------------------------------------------------------------------ */
 export const CREAM = "#f7f4eb"; // page ground
 export const INK = "#545454"; // body copy
-export const RUST = "#993300"; // display headings, hover
-export const SAFFRON = "#ff9900"; // links, buttons
-export const RUST_PRESSED = "#7a2900"; // derived: rust darkened ~12% for :active
+export const RUST = "#993300"; // display headings, links (6.75:1 on cream)
+export const SAFFRON = "#ff9900"; // button/table fills — never text on cream/white
+export const RUST_PRESSED = "#7a2900"; // derived: rust darkened ~12% for :active (8.90:1 on cream)
 
 /* ---- banner band ---- */
-export const bannerAspectRatio = "1920 / 947"; // revslider natural size
-export const bannerMinHeight = 220; // px floor on narrow screens
+/**
+ * Default band height: full viewport height below the site header, matching
+ * the real site. "fixed" falls back to `bannerAspectRatio` + `bannerMinHeight`
+ * for an admin who wants a shorter, proportionally-sized band instead.
+ */
+export const bannerHeightMode: BannerHeightMode = "full-screen";
+export const bannerAspectRatio = "1920 / 947"; // revslider natural size; used in "fixed" mode
+export const bannerMinHeight = 220; // px floor on narrow screens, both modes
 export const bannerFit: BannerFit = "cover";
 export const bannerPosition: BannerPosition = "center";
 export const wordmarkMaxWidth = 835; // natural width of the wordmark PNG
@@ -29,8 +36,13 @@ export const animation: HeroAnimation = "fade";
 
 const url = (value: string): ImageSource => ({ kind: "url", url: value });
 
+/**
+ * `hp-hero-bg.jpg` (1920x947, same aspect ratio as the old placeholder) —
+ * distinct from `photo` below so the banner and the "Welcome to Anahata"
+ * section never show the same picture.
+ */
 export const bannerImage: HeroImage = {
-    source: url("/anahata/hero-silentmed.jpg"),
+    source: url("/anahata/hp-hero-bg.jpg"),
     alt: "",
 };
 
@@ -75,10 +87,12 @@ export const headingColor = RUST;
 export const bodyColor = INK;
 
 /**
- * Saffron matches the live site (`[25_all.css:3] a { color: #ff9900 }`) but
- * only reaches 1.95:1 against the cream ground, so 14px link text fails
- * WCAG AA. Rust hover is 6.75:1 and passes. Both are settings — flip
- * `linkColor` to RUST if accessibility should win over fidelity.
+ * The live site's `a { color: #ff9900 }` measures 1.95:1 against the cream
+ * ground — even at 60px display size it would need 3:1 and still misses,
+ * so there is no size at which saffron qualifies here. The default is rust
+ * (6.75:1); hover deepens to rust-pressed (8.90:1) rather than repeating
+ * rust, so the two states stay visually distinct. Both remain settings —
+ * an admin who wants the literal site colour back can still pick it.
  */
-export const linkColor = SAFFRON;
-export const linkHoverColor = RUST;
+export const linkColor = RUST;
+export const linkHoverColor = RUST_PRESSED;

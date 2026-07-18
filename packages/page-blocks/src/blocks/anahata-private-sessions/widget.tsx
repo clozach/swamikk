@@ -37,6 +37,7 @@ export default function Widget({
         buttonColor = defaults.buttonColor,
         buttonHoverColor = defaults.buttonHoverColor,
         buttonTextColor = defaults.buttonTextColor,
+        buttonHoverTextColor = defaults.buttonHoverTextColor,
         photoPosition = defaults.photoPosition,
         cssId,
         verticalPadding,
@@ -84,6 +85,7 @@ export default function Widget({
         "--ayr-btn-bg": buttonColor,
         "--ayr-btn-bg-hover": buttonHoverColor,
         "--ayr-btn-fg": buttonTextColor,
+        "--ayr-btn-fg-hover": buttonHoverTextColor,
         "--ayr-photo-ar": photoAspect,
         fontFamily: defaults.fontBody,
     } as React.CSSProperties;
@@ -179,9 +181,13 @@ export default function Widget({
                                     "inline-block max-w-full min-w-[200px] cursor-pointer rounded-[10px] border-0 px-[23px] py-[8px] text-center text-[14px] font-bold capitalize no-underline",
                                     "bg-[var(--ayr-btn-bg)] text-[var(--ayr-btn-fg)]",
                                     "transition-colors duration-100 ease-in motion-reduce:transition-none",
-                                    "hover:bg-[var(--ayr-btn-bg-hover)] hover:text-[var(--ayr-btn-fg)]",
+                                    "hover:bg-[var(--ayr-btn-bg-hover)] hover:text-[var(--ayr-btn-fg-hover)]",
                                     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ayr-btn-bg-hover)]",
-                                    "active:translate-y-[1px] active:brightness-90",
+                                    /* Pinned to the hover ground + text, not just dimmed from
+                                       rest: a keyboard Enter/Space press fires :active without
+                                       :hover, and cocoa-on-saffron-dimmed only reaches ~2.6:1
+                                       with white text — rust-dimmed with white text is 8.5:1. */
+                                    "active:bg-[var(--ayr-btn-bg-hover)] active:text-[var(--ayr-btn-fg-hover)] active:translate-y-[1px] active:brightness-90",
                                 )}
                             >
                                 {buttonCaption}

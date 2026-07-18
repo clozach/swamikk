@@ -14,6 +14,7 @@ import Settings from "./settings";
 import {
     ASPECT_RATIO_OPTIONS,
     CARD,
+    COCOA,
     CREAM,
     FONT_BODY,
     FONT_DISPLAY,
@@ -241,7 +242,7 @@ export default function Widget({
 [data-anahata-tour="${scope}"] .anahata-tour__button {
     display: inline-block;
     background-color: ${SAFFRON};
-    color: ${CARD};
+    color: ${COCOA};
     font-family: ${FONT_BODY};
     font-size: 14px;
     font-weight: 700;
@@ -270,6 +271,9 @@ export default function Widget({
 }
 [data-anahata-tour="${scope}"] .anahata-tour__button:active {
     background-color: ${RUST_PRESSED};
+    /* Explicit, not inherited: a keyboard Enter/Space activation triggers
+       :active without :hover, and cocoa-on-rust-pressed is only 1.58:1. */
+    color: ${CARD};
     transform: translateY(1px);
 }
 [data-anahata-tour="${scope}"] .anahata-tour__iframe:focus-visible {

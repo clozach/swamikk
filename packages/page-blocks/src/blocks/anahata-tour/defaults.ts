@@ -13,10 +13,11 @@ import type {
  * ------------------------------------------------------------------ */
 export const CREAM = "#f7f4eb"; // --cream : page ground
 export const INK = "#545454"; // --ink   : body copy
-export const RUST = "#993300"; // --rust  : h2, divider, hover
-export const SAFFRON = "#ff9900"; // --saffron : buttons, accents
+export const RUST = "#993300"; // --rust  : h2, divider, hover (6.75:1 on cream)
+export const SAFFRON = "#ff9900"; // --saffron : button fill only — 2.14:1 with white text, fails AA
 export const CARD = "#ffffff"; // --card
-export const RUST_PRESSED = "#7a2900"; // rust darkened ~12% for :active
+export const COCOA = "#312110"; // --cocoa : button text on saffron (7.24:1)
+export const RUST_PRESSED = "#7a2900"; // rust darkened ~12% for :active (9.79:1 with white text)
 
 export const FONT_DISPLAY = `var(--font-playfair-display), "Playfair Display", Georgia, serif`;
 export const FONT_BODY = `var(--font-open-sans), "Open Sans", -apple-system, "Segoe UI", sans-serif`;

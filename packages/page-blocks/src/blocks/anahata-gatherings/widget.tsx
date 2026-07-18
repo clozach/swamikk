@@ -15,9 +15,15 @@ import {
  * Anahata palette (anahata-design-system/tokens.css). These are brand colours,
  * deliberately not theme tokens: the section reproduces the retreat's own
  * cream/saffron/rust identity rather than the CourseLit theme.
+ *
+ * Saffron text measures 1.95:1 on the cream ground this section sits on —
+ * under AA even at these display sizes — so it is not used as a text
+ * colour here; rust (6.75:1) and rust-pressed (8.90:1) carry the rest/hover
+ * pair instead, with cocoa (14.09:1) as the deepest active/pressed step —
+ * nothing in this block uses saffron as a fill, so it is not declared here.
  */
-const SAFFRON = "#ff9900";
 const RUST = "#993300";
+const RUST_PRESSED = "#7a2900";
 const INK = "#545454";
 const COCOA = "#312110";
 const CREAM = "#f7f4eb";
@@ -59,8 +65,8 @@ const css = `
     border-radius: 2px;
     transition: color ${DUR_HOVER} ease-in;
 }
-.${ROOT}__heading-link:hover { color: ${SAFFRON}; }
-.${ROOT}__heading-link:active { color: ${RUST}; }
+.${ROOT}__heading-link:hover { color: ${RUST_PRESSED}; }
+.${ROOT}__heading-link:active { color: ${COCOA}; }
 .${ROOT}__heading-link:focus-visible {
     outline: 2px solid ${RUST};
     outline-offset: 4px;
@@ -95,22 +101,21 @@ const css = `
     color: inherit;
     text-decoration: none;
     border-radius: 4px;
-    transition:
-        transform ${DUR_HOVER} ease-in,
-        box-shadow ${DUR_HOVER} ease-in;
 }
 /* Interactive affordances apply only to cards that actually navigate, so a
-   card with no link never falsely signals clickability. */
-.${ROOT}__card--linked:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(49, 33, 16, 0.14);
+   card with no link never falsely signals clickability. The affordance is a
+   pointer cursor plus a gentle image magnification (below) — no lift/shadow,
+   which revealed how tight the card's own click boundary is. */
+.${ROOT}__card--linked {
+    cursor: pointer;
 }
-.${ROOT}__card--linked:active { transform: translateY(-1px); }
 .${ROOT}__card--linked:focus-visible {
     outline: 2px solid ${RUST};
     outline-offset: 4px;
 }
 .${ROOT}__media {
+    /* Clips the image's hover scale so magnification cannot bleed past the
+       card edge. */
     position: relative;
     overflow: hidden;
     width: 100%;
@@ -132,7 +137,7 @@ const css = `
     font-family: ${FONT_DISPLAY};
     font-size: 15px;
     font-weight: 700;
-    color: ${SAFFRON};
+    color: ${RUST};
     line-height: 1.35;
     margin: 0;
     padding-bottom: 8px;
@@ -140,7 +145,7 @@ const css = `
     transition: color ${DUR_HOVER} ease-in;
 }
 .${ROOT}__card--linked:hover .${ROOT}__title,
-.${ROOT}__card--linked:focus-visible .${ROOT}__title { color: ${RUST}; }
+.${ROOT}__card--linked:focus-visible .${ROOT}__title { color: ${RUST_PRESSED}; }
 .${ROOT}__date {
     font-size: 14px;
     color: ${INK};
@@ -162,12 +167,9 @@ const css = `
     }
 }
 @media (prefers-reduced-motion: reduce) {
-    .${ROOT}__card,
     .${ROOT}__img,
     .${ROOT}__title,
     .${ROOT}__heading-link { transition: none; }
-    .${ROOT}__card--linked:hover,
-    .${ROOT}__card--linked:active { transform: none; }
     .${ROOT}__card--linked:hover .${ROOT}__img { transform: none; }
 }
 `;

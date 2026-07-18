@@ -61,21 +61,28 @@ export const DEFAULT_BACKGROUND: SectionBackground = {
  * individually.
  * ------------------------------------------------------------------ */
 
-export const SAFFRON = "#ff9900"; // tokens --saffron
-export const RUST = "#993300"; // tokens --rust
-export const RUST_PRESSED = "#7a2900"; // --rust darkened ~12% for :active (visual spec §0.6)
+export const SAFFRON = "#ff9900"; // tokens --saffron — button fill only, never text (2.14:1 on white)
+export const RUST = "#993300"; // tokens --rust (7.43:1 on white)
+export const RUST_PRESSED = "#7a2900"; // --rust darkened ~12% for :active (visual spec §0.6, 9.79:1 on white with white text)
 export const INK = "#545454"; // tokens --ink
 export const CREAM = "#f7f4eb"; // tokens --cream
 export const CARD = "#ffffff"; // tokens --card
-export const BORDER_WARM = "#e7dfcc"; // tokens --border-warm (cards + inputs)
+export const COCOA = "#312110"; // tokens --cocoa — rest-state button text on saffron (7.24:1)
+/**
+ * tokens --border-warm. Raised from the original `#e7dfcc` (1.33:1 on white
+ * — well under the 3:1 non-text/UI-component floor) to `#9c7f52` (3.77:1 on
+ * white, 3.43:1 on cream) so the input/card boundary is actually perceivable,
+ * still in the warm-tan family.
+ */
+export const BORDER_WARM = "#9c7f52";
 export const INK_STRONG = "#373737"; // tokens .an-callout .an-quote colour
 export const CALLOUT_INK = "#252525"; // visual spec §8 [25_all.css:483]
 
-/** Not in tokens.css. From [25_all.css:175] (the theme's real invalid-field red). */
+/** Not in tokens.css. From [25_all.css:175] (the theme's real invalid-field red). 4.57:1 on white. */
 export const FEEDBACK_ERROR = "#dd3333";
 /**
  * Not in tokens.css. The source value (#33dd33, [25_all.css:195]) fails contrast
- * on white; the visual spec prescribes this substitute.
+ * on white; the visual spec prescribes this substitute (5.13:1 on white).
  */
 export const FEEDBACK_SUCCESS = "#2e7d32";
 

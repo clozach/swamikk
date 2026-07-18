@@ -23,6 +23,7 @@ import {
 } from "@courselit/components-library";
 import Settings, {
     BannerFit,
+    BannerHeightMode,
     BannerPosition,
     CtaStyle,
     HeroAnimation,
@@ -243,6 +244,9 @@ export default function AdminWidget({
     const [bannerPosition, setBannerPosition] = useState<BannerPosition>(
         settings.bannerPosition || defaults.bannerPosition,
     );
+    const [bannerHeightMode, setBannerHeightMode] = useState<BannerHeightMode>(
+        settings.bannerHeightMode || defaults.bannerHeightMode,
+    );
     const [bannerAspectRatio, setBannerAspectRatio] = useState<string>(
         settings.bannerAspectRatio || defaults.bannerAspectRatio,
     );
@@ -314,6 +318,7 @@ export default function AdminWidget({
             bannerImage,
             bannerFit,
             bannerPosition,
+            bannerHeightMode,
             bannerAspectRatio,
             bannerMinHeight,
             wordmark,
@@ -340,6 +345,7 @@ export default function AdminWidget({
         bannerImage,
         bannerFit,
         bannerPosition,
+        bannerHeightMode,
         bannerAspectRatio,
         bannerMinHeight,
         wordmark,
@@ -421,10 +427,28 @@ export default function AdminWidget({
                     max={1200}
                     unit="px"
                 />
+                <Select
+                    title="Banner height"
+                    tooltip="Full screen fills the viewport below the site header, like the real site. Fixed sizes the band off the aspect ratio below."
+                    value={bannerHeightMode}
+                    options={[
+                        {
+                            label: "Full screen (fills the viewport)",
+                            value: "full-screen",
+                        },
+                        {
+                            label: "Fixed (aspect ratio + minimum height)",
+                            value: "fixed",
+                        },
+                    ]}
+                    onChange={(value: BannerHeightMode) =>
+                        setBannerHeightMode(value)
+                    }
+                />
                 <Form>
                     <FormField
                         label="Banner aspect ratio"
-                        tooltip='A CSS aspect-ratio value, e.g. "1920 / 947"'
+                        tooltip='Only used when Banner height is Fixed. A CSS aspect-ratio value, e.g. "1920 / 947"'
                         value={bannerAspectRatio}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                             setBannerAspectRatio(e.target.value)
@@ -433,7 +457,7 @@ export default function AdminWidget({
                 </Form>
                 <PageBuilderSlider
                     title="Banner minimum height"
-                    tooltip="Keeps the banner readable on narrow screens"
+                    tooltip="Floor so the banner never collapses on narrow screens, in either Banner height mode"
                     value={bannerMinHeight}
                     onChange={(value?: number) =>
                         setBannerMinHeight(value ?? defaults.bannerMinHeight)
@@ -588,7 +612,7 @@ export default function AdminWidget({
                 />
                 <ColorSelector
                     title="Link colour"
-                    tooltip="Anahata's saffron only scores 1.95:1 against the cream ground, under the 4.5:1 accessibility floor for body text. Choose the rust (#993300) for a readable link."
+                    tooltip="Anahata's saffron scores only 1.95:1 against the cream ground, under the 4.5:1 accessibility floor for body text (and still under 3:1 at any size). Default is now the rust (#993300, 6.75:1)."
                     value={linkColor}
                     onChange={(value?: string) =>
                         setLinkColor(value || defaults.linkColor)

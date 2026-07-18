@@ -52,15 +52,22 @@ const FAKE_ROUNDTRIP_MS = 450;
  * palette constants because Tailwind's scanner is static — a computed class
  * name would never make it into `dist/index.css`. They mirror SAFFRON, RUST
  * and RUST_PRESSED in ./defaults; keep the two in step.
+ *
+ * White text was unconditional here, which paired fine with the rust/
+ * rust-pressed hover/active grounds (7.43:1 / 9.79:1) but failed at rest,
+ * where the ground is still saffron (2.14:1). Rest now uses cocoa (7.24:1);
+ * `hover:`/`active:` restore white explicitly rather than relying on any
+ * implicit carry-over, since a keyboard Enter/Space press fires `:active`
+ * without `:hover`.
  */
 const BUTTON_CLASSES = [
     "inline-block max-w-full min-w-[200px] cursor-pointer select-none",
     "rounded-[10px] border-none px-[20px] py-[15px]",
-    "text-center text-[16px] font-bold capitalize leading-[1.2] text-white no-underline",
-    "bg-[#ff9900] hover:bg-[#993300] active:bg-[#7a2900] active:translate-y-[1px]",
+    "text-center text-[16px] font-bold capitalize leading-[1.2] text-[#312110] no-underline",
+    "bg-[#ff9900] hover:bg-[#993300] hover:text-white active:bg-[#7a2900] active:text-white active:translate-y-[1px]",
     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#993300]",
-    "transition-[background-color,transform] duration-100 ease-in",
-    "disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-[#ff9900]",
+    "transition-[background-color,color,transform] duration-100 ease-in",
+    "disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-[#ff9900] disabled:hover:text-[#312110]",
 ].join(" ");
 
 function paragraphsOf(body: string): string[] {
@@ -258,7 +265,10 @@ export default function Widget({
                             aria-invalid={isInvalid}
                             aria-describedby={feedback ? feedbackId : undefined}
                             onChange={(e) => onEmailChange(e.target.value)}
-                            className="w-full min-w-0 flex-1 rounded-[4px] border px-[12px] py-[6px] text-left text-[1em] leading-[1.65] outline-none placeholder:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#ff9900]"
+                            /* Focus ring was saffron — 2.14:1 against the white
+                               field, under the 3:1 UI-component floor. Rust is
+                               7.43:1 against the same white field. */
+                            className="w-full min-w-0 flex-1 rounded-[4px] border px-[12px] py-[6px] text-left text-[1em] leading-[1.65] outline-none placeholder:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#993300]"
                             style={{
                                 fontFamily: FONT_BODY,
                                 backgroundColor: CARD,

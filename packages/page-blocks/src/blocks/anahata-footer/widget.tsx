@@ -169,7 +169,12 @@ function LinksColumnView({
                                 "transition-opacity duration-100 ease-in",
                                 "hover:opacity-80",
                                 "focus-visible:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current",
-                                "active:opacity-60",
+                                /* Not opacity: white text on ocean fades below
+                                   AA (4.5:1) once opacity drops under ~76% —
+                                   the old active:opacity-60 measured 3.46:1.
+                                   A position nudge gives "pressed" feedback
+                                   without touching contrast. */
+                                "active:translate-y-[1px]",
                             )}
                         >
                             {link.label}
@@ -353,8 +358,10 @@ function BackToTopControl({
                 "fixed bottom-0 right-0 z-[998] box-content flex items-center justify-center rounded-full border-0",
                 "bg-white text-[#545454] shadow-md",
                 "transition-all duration-200 ease-in-out",
-                "hover:bg-[#ff9900] hover:text-white",
-                "focus-visible:bg-[#ff9900] focus-visible:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#993300]",
+                /* White-on-saffron was 2.14:1 (fails AA); cocoa-on-saffron is
+                   7.24:1. Active moves to rust, where white is 7.43:1. */
+                "hover:bg-[#ff9900] hover:text-[#312110]",
+                "focus-visible:bg-[#ff9900] focus-visible:text-[#312110] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#993300]",
                 "active:bg-[#993300] active:text-white",
                 visible
                     ? "visible opacity-100"

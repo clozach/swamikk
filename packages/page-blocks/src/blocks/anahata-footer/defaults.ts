@@ -17,8 +17,13 @@ export const FONT_BODY =
 export const OCEAN = "#216097";
 /** --navy: copyright strip. */
 export const NAVY = "#012772";
-/** Lightened ocean, used only for the footer menu hairlines. */
-export const OCEAN_HAIRLINE = "#5988b1";
+/**
+ * Lightened ocean, used only for the footer menu hairlines. The original
+ * `#5988b1` measured 1.75:1 against the ocean ground — under the 3:1
+ * non-text/UI-component floor these rules act as list-item boundaries for.
+ * `#9ac1dc` reaches 3.47:1 while staying in the same lightened-ocean family.
+ */
+export const OCEAN_HAIRLINE = "#9ac1dc";
 export const WHITE = "#ffffff";
 /** --ink, resting colour of the back-to-top glyph. */
 export const INK = "#545454";

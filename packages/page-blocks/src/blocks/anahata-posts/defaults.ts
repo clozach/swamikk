@@ -13,11 +13,16 @@ export const palette = {
     apricot: "#f8ecdb",
     /** Body text. */
     ink: "#545454",
-    /** Headings, hovers, the divider rule. */
+    /** Headings, hovers, the divider rule (6.37:1 on the apricot ground). */
     rust: "#993300",
-    /** Links and buttons. */
+    /**
+     * Button fill only — never text on this apricot/cream family: it measures
+     * 1.84:1 on apricot, 1.95:1 on cream, under AA at any size. Button text is
+     * cocoa at rest (7.24:1) and white on the rust/rust-pressed hover/active
+     * grounds (7.43:1 / 9.79:1).
+     */
     saffron: "#ff9900",
-    /** Pressed-button rust, darkened ~12%. Not in the source stylesheet. */
+    /** Pressed-button rust / hover-link rust, darkened ~12%. Not in the source stylesheet. */
     rustPressed: "#7a2900",
     /** The dashed rule under each card. */
     warmDashed: "#d7cdbf",

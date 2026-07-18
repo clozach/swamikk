@@ -43,15 +43,25 @@ export const buttonOpensInNewTab = false;
 
 /** --marigold: the testimonial / callout ground. */
 export const panelColor = "#f6d36a";
-/** --rust: authority; the h4 lead line. */
+/** --rust: authority; the h4 lead line (5.11:1 on marigold). */
 export const leadColor = "#993300";
-/** --ink: body copy. */
+/** --ink: body copy (5.21:1 on marigold). */
 export const textColor = "#545454";
 /** --saffron: button ground. */
 export const buttonColor = "#ff9900";
-/** --rust again: the 100ms hover. */
+/** --rust again: the 100ms hover ground. */
 export const buttonHoverColor = "#993300";
-export const buttonTextColor = "#ffffff";
+/**
+ * White-on-saffron was the original pairing (2.14:1 — fails AA). Cocoa on
+ * saffron measures 7.24:1, so that is now the rest-state button text.
+ */
+export const buttonTextColor = "#312110";
+/**
+ * Once the background moves to `buttonHoverColor` (rust) — on hover AND on
+ * :active, which the widget pins to the same ground — white text reaches
+ * 7.43:1 (9.79:1 once the pressed-state brightness dip is applied).
+ */
+export const buttonHoverTextColor = "#ffffff";
 
 /** --font-body: Open Sans. (The source CSS names Lato/PT Sans but never loads them.) */
 export const fontBody =

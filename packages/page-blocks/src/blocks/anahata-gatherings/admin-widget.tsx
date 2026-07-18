@@ -287,7 +287,7 @@ export default function AdminWidget({
                                                     imageUrl: e.target.value,
                                                 })
                                             }
-                                            placeholder="/anahata/event-resilience.png"
+                                            placeholder="/anahata/course-building-resilience-2026.png"
                                             tooltip="A site path like /anahata/my-event.png, or any full image URL."
                                         />
                                         <FormField

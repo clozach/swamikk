@@ -280,6 +280,9 @@ export default function AdminWidget({
     const [buttonTextColor, setButtonTextColor] = useState(
         settings.buttonTextColor ?? defaults.buttonTextColor,
     );
+    const [buttonHoverTextColor, setButtonHoverTextColor] = useState(
+        settings.buttonHoverTextColor ?? defaults.buttonHoverTextColor,
+    );
     const [maxWidth, setMaxWidth] = useState<
         ThemeStyle["structure"]["page"]["width"]
     >(settings.maxWidth || defaults.maxWidth);
@@ -311,6 +314,7 @@ export default function AdminWidget({
             buttonColor,
             buttonHoverColor,
             buttonTextColor,
+            buttonHoverTextColor,
             maxWidth,
             verticalPadding,
             background,
@@ -335,6 +339,7 @@ export default function AdminWidget({
         buttonColor,
         buttonHoverColor,
         buttonTextColor,
+        buttonHoverTextColor,
         maxWidth,
         verticalPadding,
         background,
@@ -502,9 +507,20 @@ export default function AdminWidget({
                 />
                 <ColorSelector
                     title="Button text"
+                    tooltip="Rest-state text, against the button background above. White-on-saffron was 2.14:1 (fails AA); cocoa reaches 7.24:1."
                     value={buttonTextColor}
                     onChange={(value?: string) =>
                         setButtonTextColor(value || defaults.buttonTextColor)
+                    }
+                />
+                <ColorSelector
+                    title="Button hover/active text"
+                    tooltip="Text once the background moves to the hover colour above (hover AND active/pressed)."
+                    value={buttonHoverTextColor}
+                    onChange={(value?: string) =>
+                        setButtonHoverTextColor(
+                            value || defaults.buttonHoverTextColor,
+                        )
                     }
                 />
                 <MaxWidthSelector

@@ -67,6 +67,13 @@ export default interface Settings extends WidgetDefaultSettings {
     buttonColor?: string;
     buttonHoverColor?: string;
     buttonTextColor?: string;
+    /**
+     * Text colour once the background has moved to `buttonHoverColor`
+     * (hover AND active/pressed). Separate from `buttonTextColor` because
+     * one text colour cannot pass AA against both a saffron rest ground and
+     * a rust hover ground at once — see defaults.ts for the measured ratios.
+     */
+    buttonHoverTextColor?: string;
 
     photoPosition?: PhotoPosition;
     cssId?: string;

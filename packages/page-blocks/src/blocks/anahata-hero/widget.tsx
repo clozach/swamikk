@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useMemo, useRef } from "react";
 import { WidgetProps } from "@courselit/common-models";
 import { Link } from "@courselit/components-library";
 import { Section } from "@courselit/page-primitives";
@@ -11,6 +13,93 @@ import Settings, {
     ImageSource,
 } from "./settings";
 import * as defaults from "./defaults";
+
+/** CSS-safe scope token derived from the widget instance id (stable across SSR). */
+function toScope(id: string | undefined): string {
+    const cleaned = (id || "").replace(/[^A-Za-z0-9_-]/g, "");
+    return cleaned.length ? cleaned : "default";
+}
+
+/**
+ * Fallback header heights (px) per breakpoint, read off the Anahata header
+ * block's own source (topbar row + logo row + nav rows + its 7px of
+ * borders). These only paint for a moment — before hydration, or if no
+ * `<header>` exists on the page — because `useHeaderHeightVar` below
+ * overwrites the custom property with the header's true, live-measured
+ * height the instant it can. The 768–1139px bucket is the least certain of
+ * the four: the header's nav wraps onto extra 50px rows there depending on
+ * exact width, which is exactly the "not fixed-height" problem this whole
+ * mechanism exists to solve — the fallback is deliberately generous (fewer
+ * chances of the banner rendering taller than the header, momentarily) and
+ * gets corrected within a frame.
+ */
+const HEADER_HEIGHT_FALLBACK_PX = {
+    base: 150, // <560px: no topbar, logo row + mobile bar
+    topBar: 190, // 560–767px: topbar appears, still no desktop nav
+    stacked: 230, // 768–1139px: topbar + logo row + wrapped nav row(s)
+    inline: 145, // >=1140px: topbar + single logo/nav row
+} as const;
+
+/**
+ * Measures the page's `<header>` and republishes its live height as a CSS
+ * custom property on `el`, so `calc(100svh - var(--anahata-hero-header-h))`
+ * always subtracts the header's REAL rendered height rather than a guess.
+ *
+ * This lives in the hero block (not the header block) because the task is
+ * scoped to editing only this directory — the header can't be changed to
+ * publish its own height. A `ResizeObserver` on the header element is the
+ * next best thing: it catches every reason the header's height can change
+ * (viewport resize, its nav wrapping onto another row, a late-settling web
+ * font reflowing text, the admin toggling `showTopBar`) without polling.
+ */
+function useHeaderHeightVar(
+    ref: React.RefObject<HTMLElement | null>,
+    enabled: boolean,
+): void {
+    useEffect(() => {
+        // Read `.current` inside the effect, not as a render-time argument:
+        // on first mount the ref attaches during commit, after this render's
+        // hook call has already read it — reading it here instead means the
+        // effect always sees the real, attached element.
+        const el = ref.current;
+        if (!enabled || !el || typeof window === "undefined") {
+            return;
+        }
+
+        const header = document.querySelector<HTMLElement>("header");
+
+        const apply = () => {
+            // No header on this page at all → don't subtract a guess, use
+            // the full viewport.
+            const height = header
+                ? Math.ceil(header.getBoundingClientRect().height)
+                : 0;
+            el.style.setProperty("--anahata-hero-header-h", `${height}px`);
+        };
+
+        apply();
+        // Web fonts can settle a frame late and reflow the header's nav
+        // onto a different number of rows.
+        const frame = requestAnimationFrame(apply);
+
+        let observer: ResizeObserver | undefined;
+        if (header && typeof ResizeObserver !== "undefined") {
+            observer = new ResizeObserver(apply);
+            observer.observe(header);
+        } else {
+            window.addEventListener("resize", apply);
+        }
+
+        return () => {
+            cancelAnimationFrame(frame);
+            observer?.disconnect();
+            window.removeEventListener("resize", apply);
+        };
+        // `ref` (the object, not `.current`) is stable across renders, so
+        // this effect only re-runs when `enabled` actually changes — it does
+        // not need to and must not depend on `ref.current`.
+    }, [ref, enabled]);
+}
 
 /**
  * Resolve a picture to a `src`. The tagged union means there is exactly one
@@ -72,28 +161,42 @@ function ParagraphBody({
     );
 }
 
-/** The §0.6 button recipe, one class list per real stylesheet variant. */
+/**
+ * The §0.6 button recipe, one class list per real stylesheet variant.
+ *
+ * White text on the saffron ground was 2.14:1 — under the 4.5:1 floor —
+ * so the rest state now pairs saffron with cocoa (7.24:1). Hover/active
+ * darken the ground to rust/rust-pressed, which both carry white text
+ * comfortably (7.43:1 / 9.79:1); `active:text-white` is set explicitly
+ * (not inherited from `:hover`) because a keyboard Enter/Space press
+ * triggers `:active` without `:hover`, and cocoa-on-rust-pressed is only
+ * 1.58:1 — the missed-state case the spec warns about.
+ */
 const ctaBaseClasses = clsx(
     "inline-block text-center capitalize font-bold font-open-sans",
     "min-w-[200px] rounded-[10px] border-0 cursor-pointer no-underline",
     "transition-colors duration-100 ease-in",
     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#993300]",
-    "active:bg-[#7a2900] active:translate-y-[1px]",
+    "active:bg-[#7a2900] active:text-white active:translate-y-[1px]",
 );
 
 const ctaVariantClasses: Record<CtaStyle, string> = {
     saffron:
-        "bg-[#ff9900] text-white hover:bg-[#993300] hover:text-white text-[14px] px-[23px] py-[8px]",
+        "bg-[#ff9900] text-[#312110] hover:bg-[#993300] hover:text-white text-[14px] px-[23px] py-[8px]",
     "saffron-big":
-        "bg-[#ff9900] text-white hover:bg-[#993300] hover:text-white text-[16px] px-[45px] py-[16px]",
-    white: "bg-white text-[#ff9900] hover:bg-[#993300] hover:text-white text-[14px] px-[23px] py-[8px]",
+        "bg-[#ff9900] text-[#312110] hover:bg-[#993300] hover:text-white text-[16px] px-[45px] py-[16px]",
+    /* White ground: rust text at rest (7.43:1) — saffron text there was
+       2.14:1 and never qualified even at this size. */
+    white: "bg-white text-[#993300] hover:bg-[#993300] hover:text-white text-[14px] px-[23px] py-[8px]",
 };
 
 export default function Widget({
+    id,
     settings: {
         bannerImage = defaults.bannerImage,
         bannerFit = defaults.bannerFit,
         bannerPosition = defaults.bannerPosition,
+        bannerHeightMode = defaults.bannerHeightMode,
         bannerAspectRatio = defaults.bannerAspectRatio,
         bannerMinHeight = defaults.bannerMinHeight,
         wordmark = defaults.wordmark,
@@ -129,10 +232,50 @@ export default function Widget({
     const wordmarkSrc = resolveImageSrc(wordmark);
     const photoSrc = resolveImageSrc(photo);
     const showCta = Boolean(ctaCaption && ctaAction);
+    const isFullScreenBanner = bannerHeightMode === "full-screen";
+
+    const scope = useMemo(() => toScope(id), [id]);
+    const bannerRef = useRef<HTMLDivElement | null>(null);
+    useHeaderHeightVar(bannerRef, isFullScreenBanner && Boolean(bannerSrc));
+
+    /* Two `height` declarations, not one: a browser that doesn't understand
+       `100svh` treats the whole second declaration as invalid and ignores
+       it, leaving the `100vh` line from just above in effect — no
+       `@supports` block needed. Breakpoints match the header's own
+       (560px topbar, 768px = md nav, 1140px = single-row nav) so the
+       fallback bucket boundaries line up with where the header's real
+       height actually steps. */
+    const fullScreenBannerCss = isFullScreenBanner
+        ? `
+[data-anahata-hero="${scope}"] .anahata-hero__banner--full-screen {
+    height: calc(100vh - var(--anahata-hero-header-h, ${HEADER_HEIGHT_FALLBACK_PX.base}px));
+    height: calc(100svh - var(--anahata-hero-header-h, ${HEADER_HEIGHT_FALLBACK_PX.base}px));
+}
+@media (min-width: 560px) {
+    [data-anahata-hero="${scope}"] .anahata-hero__banner--full-screen {
+        height: calc(100vh - var(--anahata-hero-header-h, ${HEADER_HEIGHT_FALLBACK_PX.topBar}px));
+        height: calc(100svh - var(--anahata-hero-header-h, ${HEADER_HEIGHT_FALLBACK_PX.topBar}px));
+    }
+}
+@media (min-width: 768px) {
+    [data-anahata-hero="${scope}"] .anahata-hero__banner--full-screen {
+        height: calc(100vh - var(--anahata-hero-header-h, ${HEADER_HEIGHT_FALLBACK_PX.stacked}px));
+        height: calc(100svh - var(--anahata-hero-header-h, ${HEADER_HEIGHT_FALLBACK_PX.stacked}px));
+    }
+}
+@media (min-width: 1140px) {
+    [data-anahata-hero="${scope}"] .anahata-hero__banner--full-screen {
+        height: calc(100vh - var(--anahata-hero-header-h, ${HEADER_HEIGHT_FALLBACK_PX.inline}px));
+        height: calc(100svh - var(--anahata-hero-header-h, ${HEADER_HEIGHT_FALLBACK_PX.inline}px));
+    }
+}
+`
+        : "";
 
     return (
         <div
             id={cssId}
+            data-anahata-hero={scope}
             className="anahata-hero w-full"
             style={
                 {
@@ -144,8 +287,11 @@ export default function Widget({
         >
             {bannerSrc && (
                 <div
+                    ref={bannerRef}
                     className={clsx(
                         "relative w-full overflow-hidden",
+                        isFullScreenBanner &&
+                            "anahata-hero__banner--full-screen",
                         /* An arbitrary duration utility is ambiguous under
                            tailwindcss-animate (it matches both the
                            transition and animation scales) and silently
@@ -160,7 +306,14 @@ export default function Widget({
                     role={bannerImage.alt ? "img" : undefined}
                     aria-label={bannerImage.alt || undefined}
                     style={{
-                        aspectRatio: bannerAspectRatio,
+                        /* "fixed" mode sizes the band off its own width via
+                           aspect-ratio; "full-screen" mode sets an explicit
+                           height (the CSS above), which makes aspect-ratio a
+                           no-op anyway, but omitting it here keeps the
+                           applied style honest about which mode is live. */
+                        ...(isFullScreenBanner
+                            ? {}
+                            : { aspectRatio: bannerAspectRatio }),
                         minHeight: `${bannerMinHeight}px`,
                         backgroundImage: `url("${bannerSrc}")`,
                         backgroundSize: bannerFit,
@@ -169,6 +322,7 @@ export default function Widget({
                         backgroundColor: groundColor,
                     }}
                 >
+                    {isFullScreenBanner && <style>{fullScreenBannerCss}</style>}
                     {wordmarkSrc && (
                         /* Flex-centred rather than offset-positioned, and
                            capped on BOTH axes, so the wordmark can never

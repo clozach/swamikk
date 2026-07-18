@@ -34,6 +34,16 @@ export interface HeroParagraph {
 /** How the banner photo fills its band. */
 export type BannerFit = "cover" | "contain";
 
+/**
+ * How tall the banner band is.
+ *
+ * "full-screen" fills the viewport below the site header — `100svh`
+ * (`100vh` fallback) minus the header's own live height, matching the real
+ * site. "fixed" uses `bannerAspectRatio` sized off the band's width, floored
+ * by `bannerMinHeight`, for an admin who wants a shorter, proportional band.
+ */
+export type BannerHeightMode = "full-screen" | "fixed";
+
 /** Focal point of the banner photo. */
 export type BannerPosition =
     | "center"
@@ -57,9 +67,11 @@ export default interface Settings extends WidgetDefaultSettings {
     bannerImage?: HeroImage;
     bannerFit?: BannerFit;
     bannerPosition?: BannerPosition;
-    /** Aspect ratio of the band, as a CSS `aspect-ratio` value. */
+    /** Full-screen (default) vs a fixed, proportionally-sized band. */
+    bannerHeightMode?: BannerHeightMode;
+    /** Aspect ratio of the band in "fixed" mode, as a CSS `aspect-ratio` value. */
     bannerAspectRatio?: string;
-    /** Floor (px) so the band never collapses on narrow screens. */
+    /** Floor (px) so the band never collapses on narrow screens, either mode. */
     bannerMinHeight?: number;
     /** Wordmark laid over the banner. Omit to show the banner bare. */
     wordmark?: HeroImage;
@@ -86,9 +98,10 @@ export default interface Settings extends WidgetDefaultSettings {
      * Inline links in the body copy.
      *
      * The site's own saffron (#ff9900) scores only 1.95:1 against the cream
-     * ground — far under the WCAG AA 4.5:1 floor for 14px text — so this is a
-     * setting rather than a constant. The default keeps brand fidelity; switch
-     * it to the rust (#993300, 6.75:1) to make the copy accessible.
+     * ground — under the WCAG AA 4.5:1 floor for body text, and still under
+     * the 3:1 large-text floor, so no size makes it compliant here. The
+     * default is now rust (#993300, 6.75:1); this stays a setting so an
+     * admin can still dial in the literal site colour if they choose.
      */
     linkColor?: string;
     linkHoverColor?: string;

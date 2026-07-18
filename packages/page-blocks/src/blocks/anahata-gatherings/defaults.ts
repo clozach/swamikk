@@ -3,7 +3,12 @@ import type { GatheringEvent, HeadingLink } from "./settings";
 /**
  * Anahata content defaults. Every string here is editable from the page
  * builder — these are only the values a freshly-added block starts with.
- * Copy is verbatim from anahata-retreat.org.nz's home page.
+ * Copy is verbatim from anahata-retreat.org.nz's home page, EXCEPT the first
+ * gathering (below), whose title/excerpt come from the merged
+ * Anahata+Thinkific product spec instead — the site's own "Building
+ * Resilience"/"Developing Resilience" naming disagrees with itself (stale
+ * SEO tag vs. actual H1), so the spec's reconciled title is ground truth
+ * here rather than either page's literal text.
  */
 
 export const title = "Upcoming Gatherings";
@@ -17,14 +22,17 @@ export const hostLine = "Hosted by: Anahata Yoga Retreat";
 export const events: GatheringEvent[] = [
     {
         id: "anahata-gathering-resilience",
-        title: "2026 Developing Resilience ONLINE COURSE",
-        href: "#",
-        imageUrl: "/anahata/event-resilience.png",
-        imageAlt: "2026 Developing Resilience online course",
+        title: "2026 Developing Resilience Online Course",
+        // Product isn't seeded yet; repoint at the real product page once it
+        // exists.
+        href: "/products",
+        imageUrl: "/anahata/course-building-resilience-2026.png",
+        imageAlt:
+            "Building Resilience — 4-week online course guided by Swami Karma Karuna, July 2026",
         hostLine,
         dateRange: "Thursday 02 July, 2026 - Thursday 23 July, 2026",
         excerpt:
-            "Are you wanting to improve your ability to withstand life's challenges? Do you wish you had a greater capacity to…",
+            "Are you wanting to improve your ability to withstand life's challenges? Do you wish you had a greater capacity to cope and adapt to adversity?…",
     },
     {
         id: "anahata-gathering-inner-elements",
