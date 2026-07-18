@@ -32,6 +32,15 @@ export function VideoWithPreview({
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const [vimeoThumbnail, setVimeoThumbnail] = useState<string | null>(null);
+    // Hover state for the modal close button, tracked in JS rather than a
+    // group-hover utility: the app ships several compiled Tailwind bundles
+    // whose cascade layers can outrank a cross-bundle .group:hover rule, which
+    // silently left the button invisible. Inline opacity is pipeline-proof.
+    const [showModalClose, setShowModalClose] = useState(false);
+
+    useEffect(() => {
+        setShowModalClose(false);
+    }, [isModalOpen]);
 
     // Hold the active self-hosted <video> so we can stop it when it's torn
     // down. Safari does NOT pause a media element that has been removed from
@@ -320,13 +329,18 @@ export function VideoWithPreview({
                     aria-label={title}
                 >
                     <div
-                        className="relative group w-full max-w-xl sm:max-w-2xl md:max-w-3xl cursor-auto"
+                        className="relative w-full max-w-xl sm:max-w-2xl md:max-w-3xl cursor-auto"
                         style={aspectRatioStyle()}
                         onClick={(e) => e.stopPropagation()}
+                        onMouseEnter={() => setShowModalClose(true)}
+                        onMouseLeave={() => setShowModalClose(false)}
                     >
                         <button
                             onClick={() => setIsModalOpen(false)}
-                            className="absolute top-2 right-2 z-10 rounded-full bg-black/60 p-1.5 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-black/80 focus:outline-none"
+                            onFocus={() => setShowModalClose(true)}
+                            onBlur={() => setShowModalClose(false)}
+                            className="absolute top-2 right-2 z-10 rounded-full bg-black/60 p-1.5 text-white transition-opacity duration-200 hover:bg-black/80 focus:outline-none"
+                            style={{ opacity: showModalClose ? 1 : 0 }}
                             aria-label="Close video"
                         >
                             <X className="h-5 w-5" />
