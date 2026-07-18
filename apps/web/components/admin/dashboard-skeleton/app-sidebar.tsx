@@ -120,7 +120,7 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
                                         borderRadius={1}
                                         src={siteInfo.logo?.file || ""}
                                         alt="logo"
-                                        className="w-full h-full object-contain"
+                                        className="w-full h-full object-cover"
                                     />
                                 </div>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
