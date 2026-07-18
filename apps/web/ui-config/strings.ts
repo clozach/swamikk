@@ -495,6 +495,15 @@ export const ERROR_GROUP_NEW_LESSON_WITHOUT_SAVE =
 export const LABEL_GROUP_COLLAPSE = "Show as expanded";
 export const SEARCH_TEXTBOX_PLACEHOLDER = "Search";
 export const PAGE_TITLE_404 = "Not found";
+export const NOT_FOUND_TITLE = "We can't find that page";
+export const NOT_FOUND_DESCRIPTION =
+    "The link may be out of date, or the page may have moved. Everything else is right where you left it.";
+export const NOT_FOUND_ACTION_HOME = "Return home";
+export const NOT_FOUND_ACTION_PRODUCTS = "Browse the shop";
+export const ERROR_PAGE_TITLE = "Something went wrong on our end";
+export const ERROR_PAGE_DESCRIPTION =
+    "This one is on us, not on you. Try again in a moment — and if it keeps happening, let us know.";
+export const ERROR_PAGE_ACTION_RETRY = "Try again";
 export const MEDIA_PUBLIC = "Publicly available";
 export const MEDIA_DIRECT_URL = "Direct URL";
 export const MEDIA_URL_COPIED = "Copied to clipboard";
