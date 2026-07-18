@@ -550,11 +550,21 @@ export default function Checkout({
                     />
                 </div>
             </div>
-            <Script src="https://checkout.razorpay.com/v1/checkout.js" />
-            <Script
-                src="https://app.lemonsqueezy.com/js/lemon.js"
-                id="lemonsqueezy"
-            />
+            {/* Load a vendor's client script only when it is the active
+                payment method — next/script never removes an injected script,
+                so an unconditional tag follows the visitor for the whole
+                session. Stripe needs no client script at all (hosted
+                Checkout via top-level redirect). */}
+            {siteinfo.paymentMethod === UIConstants.PAYMENT_METHOD_RAZORPAY && (
+                <Script src="https://checkout.razorpay.com/v1/checkout.js" />
+            )}
+            {siteinfo.paymentMethod ===
+                UIConstants.PAYMENT_METHOD_LEMONSQUEEZY && (
+                <Script
+                    src="https://app.lemonsqueezy.com/js/lemon.js"
+                    id="lemonsqueezy"
+                />
+            )}
         </div>
     );
 }
