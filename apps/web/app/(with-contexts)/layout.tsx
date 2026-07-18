@@ -1,4 +1,5 @@
 import LayoutWithContext from "./layout-with-context";
+import MediaDebugOverlay from "@components/public/media-debug-overlay";
 import React from "react";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
@@ -37,6 +38,7 @@ export default async function Layout({
             features={siteSetup?.features || defaultState.features}
         >
             {children}
+            <MediaDebugOverlay />
         </LayoutWithContext>
     );
 }
