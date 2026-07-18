@@ -1,5 +1,8 @@
 "use client";
 
+import { usePrivatePalette } from "@/lib/use-private-palette";
+import { cn } from "@/lib/shadcn-utils";
+
 import { ReactNode, useContext, useEffect, useRef } from "react";
 import constants from "@/config/constants";
 import {
@@ -115,6 +118,7 @@ export default function ProductPage({
     children: React.ReactNode;
 }) {
     const { profile } = useContext(ProfileContext);
+    const privatePalette = usePrivatePalette();
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const viewerSessionParams = getCourseViewerSessionParams(searchParams);
@@ -149,7 +153,7 @@ export default function ProductPage({
                     "--sidebar-width-mobile": "20rem",
                 } as React.CSSProperties
             }
-            className="courselit-theme"
+            className={cn("courselit-theme", privatePalette)}
         >
             <AppSidebar
                 course={product}

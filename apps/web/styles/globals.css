@@ -122,3 +122,38 @@
         outline: none;
     }
 }
+
+/* ------------------------------------------------------------------
+ * Private-page palette — feature-flagged with ?blue-logged-in=1
+ *
+ * The site has three environments, not two: the public storefront, the
+ * admin console, and the student's own pages. The public side is the warm
+ * half of the Anahata palette (cream ground, saffron and rust). This flips
+ * the two signed-in environments to the cool half — the ocean blue that the
+ * source site keeps for its footer and logo — so that "am I logged in?" is
+ * answerable from across the room, before reading a word.
+ *
+ * Ocean itself (#216097) is far too dark to sit under a page of body copy,
+ * so these are ocean mixed toward white: 92% for the page, 82% for the
+ * sidebar, which keeps the hue and drops the weight. Cards stay white, as
+ * they do on the warm side — the rule is "ground is tinted, card is white",
+ * and it holds in both palettes.
+ *
+ * Every pairing below was computed with the WCAG relative-luminance
+ * formula, not eyeballed:
+ *   cocoa #312110 on #edf2f7 ... 13.75:1   ink #545454 ... 6.72:1
+ *   rust  #993300 on #edf2f7 ...  6.59:1
+ *   cocoa on sidebar #d7e2ec ... 11.79:1   ink ... 5.76:1   rust ... 5.65:1
+ * The lowest of those is 5.65:1, comfortably past the 4.5:1 body-text floor,
+ * so no text role has to change colour when the flag is on.
+ * ------------------------------------------------------------------ */
+.anahata-private-blue {
+    --background: 210 38% 95%;
+    --sidebar-background: 209 36% 88%;
+    --muted: 210 39% 91%;
+    --accent: 209 36% 88%;
+    --sidebar-accent: 210 39% 91%;
+    --border: 209 27% 70%;
+    --sidebar-border: 209 27% 70%;
+    --input: 209 27% 70%;
+}

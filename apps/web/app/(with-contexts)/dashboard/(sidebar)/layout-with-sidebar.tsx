@@ -2,6 +2,8 @@
 
 import { AppSidebar } from "@components/admin/dashboard-skeleton/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { usePrivatePalette } from "@/lib/use-private-palette";
+import { cn } from "@/lib/shadcn-utils";
 
 /**
  * The dashboard shell.
@@ -24,8 +26,10 @@ export default function LayoutWithSidebar({
 }: {
     children: React.ReactNode;
 }) {
+    const privatePalette = usePrivatePalette();
+
     return (
-        <SidebarProvider className="courselit-theme">
+        <SidebarProvider className={cn("courselit-theme", privatePalette)}>
             <AppSidebar />
             <SidebarInset>{children}</SidebarInset>
         </SidebarProvider>
