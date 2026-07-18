@@ -33,7 +33,7 @@ export const INK = "#545454";
    ------------------------------------------------------------------ */
 export const INNER_MAX_WIDTH = 1024;
 export const PADDING_TOP = 45;
-export const PADDING_BOTTOM = 10;
+export const PADDING_BOTTOM = 45;
 /** Gutter between footer columns (the theme's `gap-30` row). */
 export const COLUMN_GAP = 30;
 /** Bottom padding on each widget inside a column. */
