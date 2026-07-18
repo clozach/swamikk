@@ -146,7 +146,14 @@
  *   cocoa on sidebar #d7e2ec ... 11.79:1   ink ... 5.76:1   rust ... 5.65:1
  * The lowest of those is 5.65:1, comfortably past the 4.5:1 body-text floor,
  * so no text role has to change colour when the flag is on.
+ *
+ * The selector doubles up deliberately. The flag class lands on the very
+ * element that already carries .courselit-theme, whose generated rule set
+ * declares the same custom properties at equal specificity and is emitted
+ * into <head> after this stylesheet — so a single .anahata-private-blue
+ * would always lose on source order. Two classes outrank one.
  * ------------------------------------------------------------------ */
+.courselit-theme.anahata-private-blue,
 .anahata-private-blue {
     --background: 210 38% 95%;
     --sidebar-background: 209 36% 88%;
