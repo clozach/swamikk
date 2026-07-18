@@ -23,7 +23,12 @@ import {
 import {
     CREAM,
     RUST,
+    RUST_PRESSED,
     AMBER,
+    INK,
+    SAFFRON,
+    DARK_BG,
+    DARK_PANEL,
     HEADER_CONTAINER,
     FONT_BODY,
     STICKY_HEADER_BAND_BASE,
@@ -179,6 +184,7 @@ export default function Widget({
     nextTheme,
     toggleTheme,
 }: WidgetProps<Settings>): JSX.Element {
+    const isDarkTheme = nextTheme === "dark";
     const [mobileMenu, setMobileMenu] = useState<MobileMenuState>({
         kind: "closed",
     });
@@ -264,40 +270,54 @@ export default function Widget({
                             : STICKY_HEADER_BAND_BASE),
                     stickyEnabled && stuck && STICKY_HEADER_BAND_STUCK,
                 )}
-                style={{
-                    backgroundColor: CREAM,
-                    borderTopColor: RUST,
-                    borderBottomColor: AMBER,
-                }}
+                style={
+                    {
+                        backgroundColor: isDarkTheme ? DARK_BG : CREAM,
+                        // Rust measures 2.49:1 on DARK_BG — under the 3:1
+                        // non-text floor — so the 6px top border promotes to
+                        // saffron in dark mode instead of staying rust.
+                        borderTopColor: isDarkTheme ? SAFFRON : RUST,
+                        borderBottomColor: AMBER,
+                        // Set once here and inherited by every descendant —
+                        // nav links, the flyouts, the theme toggle — so none
+                        // of them need nextTheme threaded through their own
+                        // props. See the contrast table in ./tokens.
+                        "--nav-fg": isDarkTheme ? CREAM : INK,
+                        "--nav-fg-hover": isDarkTheme ? SAFFRON : RUST,
+                        "--nav-fg-active": isDarkTheme ? AMBER : RUST_PRESSED,
+                        "--nav-panel-bg": isDarkTheme ? DARK_PANEL : "#ffffff",
+                        "--nav-panel-border": isDarkTheme ? SAFFRON : RUST,
+                    } as React.CSSProperties
+                }
             >
                 <div
                     className={clsx(
                         HEADER_CONTAINER,
-                        // Always stacked and centred: wordmark on its own line,
-                        // nav centred beneath it. There used to be a 1140px
-                        // breakpoint that switched to a row and shoved the nav
-                        // to the right edge, which left a widening gap between
-                        // the centred logo and the nav as the viewport grew —
-                        // the two read as unrelated objects rather than one
-                        // masthead. The live site centres both at every width.
-                        "flex flex-col items-center",
+                        // One row, one masthead: the mark sits immediately left
+                        // of the first nav item rather than as a free-standing
+                        // wordmark centred on its own line above the menu. The
+                        // whole row is centred as a unit — logo and nav read as
+                        // one object rather than a chip stacked over a menu.
+                        "flex items-center justify-center gap-x-[18px] py-[14px]",
                     )}
                 >
-                    <div className="pb-[16px] pt-[14px]">
-                        <a href={homeHref} className="block no-underline">
-                            {/* Plain <img>: the shared Image primitive forces a
-                                16:9 fill box, which would crop a 250x64
-                                wordmark. Same-origin /public path. */}
-                            <img
-                                src={logoFile}
-                                alt={logoAlt}
-                                width={logoWidth}
-                                height={logoHeight}
-                                className="block h-auto w-auto max-w-full"
-                                style={{ maxHeight: `${logoHeight}px` }}
-                            />
-                        </a>
-                    </div>
+                    <a
+                        href={homeHref}
+                        aria-label={logoAlt}
+                        className="block shrink-0 rounded-[6px] no-underline"
+                    >
+                        <img
+                            src={logoFile}
+                            alt=""
+                            width={logoWidth}
+                            height={logoHeight}
+                            className="block rounded-[6px]"
+                            style={{
+                                width: `${logoWidth}px`,
+                                height: `${logoHeight}px`,
+                            }}
+                        />
+                    </a>
 
                     <nav aria-label="Main" className="max-[767px]:hidden">
                         <ul className="m-0 flex list-none flex-wrap items-center justify-center p-0">
@@ -318,7 +338,7 @@ export default function Widget({
                     </nav>
                 </div>
 
-                {/* Mobile bar: inside the header band, below the logo. */}
+                {/* Mobile bar: inside the header band, below the masthead row. */}
                 <div
                     className={clsx(
                         HEADER_CONTAINER,

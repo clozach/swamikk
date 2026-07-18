@@ -20,6 +20,34 @@ export const RUST = "#993300";
 export const RUST_PRESSED = "#7a2900";
 export const AMBER = "#ffbf00";
 export const DRAWER = "#262626";
+export const INK = "#545454";
+export const SAFFRON = "#ff9900";
+
+/* Dark-mode band + surface colours, matching the values already verified for
+   the CourseLit theme's own dark palette (courselit-test/apply-anahata-theme.sh)
+   rather than inventing a second dark palette to keep in step. Contrast,
+   computed against these exact hexes (WCAG relative luminance, not eyeballed):
+     CREAM on DARK_BG    16.83:1   (rest text)
+     SAFFRON on DARK_BG   8.64:1   (hover/focus — brand colour, legible here
+                                    unlike on cream, so it gets promoted from
+                                    "hover accent" to doing double duty as the
+                                    rest-state accent too; see NAV_LINK below)
+     AMBER on DARK_BG    11.19:1   (active/pressed)
+     RUST on DARK_BG      2.49:1   ✗ — unusable as dark-mode text OR as the
+                                    header's 6px top border (fails the 3:1
+                                    non-text floor), so the top border swaps
+                                    to SAFFRON in dark rather than staying RUST
+     CREAM on DARK_PANEL 14.43:1   (flyout rest text)
+     SAFFRON on DARK_PANEL 7.41:1  (flyout hover)
+     AMBER on DARK_PANEL  9.60:1   (flyout active)
+   DARK_PANEL is lighter than DARK_BG so a dropdown reads as a raised surface,
+   the same role "popover" plays in the CourseLit dark theme; the two are close
+   in luminance (1.17:1) by design — cocoa "depth" cards throughout this system
+   lean on their border/shadow for separation rather than surface contrast,
+   the same choice already made for the CourseLit theme's card/popover/muted
+   trio. */
+export const DARK_BG = "#1a120a";
+export const DARK_PANEL = "#2c2013";
 export const FONT_BODY =
     'var(--font-open-sans), "Open Sans", -apple-system, "Segoe UI", sans-serif';
 
@@ -77,27 +105,37 @@ export const TOP_BAR_LINK =
     "text-[14px] leading-[1.65] text-white no-underline transition-opacity duration-100 ease-in hover:opacity-80 focus-visible:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff9900]";
 
 /* Rest ink 6.89:1, hover/focus rust 6.75:1, active rust-pressed 8.90:1 —
-   all measured against the cream header band. */
+   all measured against the cream header band.
+
+   Deliberately NO leading-[50px]: forcing the line box to exactly match the
+   container height replaces flexbox centering with the font's own ascent/
+   descent split, which is rarely 50/50 — Open Sans in particular sits visibly
+   high inside a line box that tall. `flex items-center` alone centers the
+   text's natural (short) line box on the container's true midline instead,
+   matching how the icon-only theme toggle already centers beside it. */
 export const NAV_LINK =
-    "flex h-[50px] items-center whitespace-nowrap font-bold uppercase leading-[50px] text-[#545454] no-underline transition-colors duration-100 ease-in hover:text-[#993300] focus-visible:text-[#993300] active:text-[#7a2900] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#993300]";
+    "flex h-[50px] items-center whitespace-nowrap font-bold uppercase text-[var(--nav-fg)] no-underline transition-colors duration-100 ease-in hover:text-[var(--nav-fg-hover)] focus-visible:text-[var(--nav-fg-hover)] active:text-[var(--nav-fg-active)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--nav-fg-hover)]";
 export const NAV_LINK_METRICS =
     "px-[25px] text-[16px] max-[1419px]:px-[20px] max-[1419px]:text-[15px] max-[1309px]:px-[13px] max-[1309px]:text-[14px] max-[829px]:px-[10px]";
 
 /* The flyout's top accent bar was saffron (2.14:1 on its white panel,
-   under the 3:1 UI-boundary floor) — rust reaches 7.43:1. */
+   under the 3:1 UI-boundary floor) — rust reaches 7.43:1 in light mode.
+   Same --nav-panel-* / --nav-fg-* variables as NAV_LINK, inherited from the
+   band, so the flyout automatically matches whichever mode set them. */
 export const FLYOUT_PANEL =
-    "absolute z-[10001] min-w-[140px] max-w-[280px] border-t-[5px] border-solid border-t-[#993300] bg-white p-[10px] text-left shadow-[0_3px_10px_rgba(0,0,0,0.1)] transition-[opacity,transform] duration-200 ease-out";
+    "absolute z-[10001] min-w-[140px] max-w-[280px] border-t-[5px] border-solid border-t-[var(--nav-panel-border)] bg-[var(--nav-panel-bg)] p-[10px] text-left shadow-[0_3px_10px_rgba(0,0,0,0.1)] transition-[opacity,transform] duration-200 ease-out";
 export const FLYOUT_LINK =
-    "block px-[10px] py-[6px] text-[14px] uppercase leading-[1.4] text-[#545454] no-underline transition-colors duration-100 ease-in hover:text-[#993300] focus-visible:text-[#993300] active:text-[#7a2900] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#993300]";
+    "block px-[10px] py-[6px] text-[14px] uppercase leading-[1.4] text-[var(--nav-fg)] no-underline transition-colors duration-100 ease-in hover:text-[var(--nav-fg-hover)] focus-visible:text-[var(--nav-fg-hover)] active:text-[var(--nav-fg-active)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--nav-fg-hover)]";
 
 /* Lives inside the DRAWER (#262626) panel only — saffron text there is
    7.07:1, so it stays as the hover/focus accent unchanged. */
 export const MOBILE_LINK =
     "block py-[0.9em] pr-5 text-[14px] uppercase text-white no-underline transition-colors duration-100 ease-in hover:text-[#ff9900] focus-visible:text-[#ff9900] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#ff9900]";
 
-/* The theme switch at the end of the nav. Inherits NAV_LINK's exact rest /
-   hover / focus / active colours (ink 6.89:1, rust 6.75:1, rust-pressed
-   8.90:1 on the cream band) so it stays AA without a second palette to keep
-   in step. Square rather than text-padded, since it holds a 16px glyph. */
+/* The theme switch at the end of the nav. Inherits the same --nav-fg-*
+   variables as NAV_LINK, so it stays in step with light/dark automatically —
+   including its own icon, which would otherwise render an ink-on-ink glyph
+   invisible against the dark band (ink measures 2.44:1 on DARK_BG). Square
+   rather than text-padded, since it holds a 16px glyph. */
 export const NAV_THEME_TOGGLE =
-    "flex h-[50px] w-[44px] cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-[#545454] transition-colors duration-100 ease-in hover:text-[#993300] focus-visible:text-[#993300] active:text-[#7a2900] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#993300] max-[1309px]:w-[38px] max-[829px]:w-[34px]";
+    "flex h-[50px] w-[44px] cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-[var(--nav-fg)] transition-colors duration-100 ease-in hover:text-[var(--nav-fg-hover)] focus-visible:text-[var(--nav-fg-hover)] active:text-[var(--nav-fg-active)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--nav-fg-hover)] max-[1309px]:w-[38px] max-[829px]:w-[34px]";

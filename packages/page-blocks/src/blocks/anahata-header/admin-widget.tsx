@@ -469,7 +469,7 @@ export default function AdminWidget({
                     <FormField
                         label="Logo path"
                         value={logoSrc}
-                        tooltip="A path served from /public, e.g. /anahata/logo-2021.png. A logo picked below overrides this."
+                        tooltip="A path served from /public, e.g. /swami-kk-logo.png. A logo picked below overrides this."
                         onChange={(e: any) => setLogoSrc(e.target.value)}
                     />
                     <FormField

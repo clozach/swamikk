@@ -17,10 +17,14 @@ export const sticky = true;
 export const showThemeToggle = true;
 export const themeToggleLabel = "Toggle light and dark theme";
 
-export const logoSrc = "/anahata/logo-2021.png";
-export const logoAlt = "Anahata Yoga Retreat";
-export const logoWidth = 250;
-export const logoHeight = 64;
+/* A small square mark sitting immediately left of the first nav item, not a
+   free-standing wordmark row — the two read as one masthead line rather than
+   a logo chip stacked above a menu. Served from the app image, not /anahata/
+   (that dir holds the home-page-replica media specifically). */
+export const logoSrc = "/swami-kk-logo.png";
+export const logoAlt = "Swami Karma Karuna — home";
+export const logoWidth = 40;
+export const logoHeight = 40;
 export const homeHref = "/";
 
 /* The cocoa utility strip is off by default and ships with no items.
