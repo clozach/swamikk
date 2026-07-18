@@ -50,6 +50,11 @@ export default function MediaDebugOverlay() {
         const flag = params.get("mediadebug");
         if (flag === "1") sessionStorage.setItem(STORAGE_KEY, "1");
         if (flag === "0") sessionStorage.removeItem(STORAGE_KEY);
+        // The query string and sessionStorage only exist on the client, so the
+        // overlay can't know whether it is armed until after hydration. Reading
+        // them during render would desync server and client markup. Same
+        // once-on-mount pattern as widget-by-name.tsx's theme read.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setEnabled(sessionStorage.getItem(STORAGE_KEY) === "1");
     }, []);
 
