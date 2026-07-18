@@ -14,7 +14,7 @@ import { mediaTeardownRef } from "@components/public/media-teardown";
 import PostCardSkeleton from "@components/community/post-card-skeleton";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import AdminEmptyState from "@components/admin/empty-state";
+import { MyContentEmptyState } from "../empty-state";
 import { PaginatedTable } from "@courselit/components-library";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -352,7 +352,7 @@ export default function Page() {
     if (!posts.length) {
         if (!showCommunitiesPanel) {
             return (
-                <AdminEmptyState
+                <MyContentEmptyState
                     title={MY_CONTENT_FEED_EMPTY_TITLE}
                     description={MY_CONTENT_FEED_EMPTY_DESCRIPTION}
                     actionLabel={MY_CONTENT_BROWSE_COMMUNITIES}
@@ -364,7 +364,7 @@ export default function Page() {
         return (
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
                 <div className="min-w-0">
-                    <AdminEmptyState
+                    <MyContentEmptyState
                         title={MY_CONTENT_FEED_EMPTY_TITLE}
                         description={MY_CONTENT_FEED_EMPTY_DESCRIPTION}
                         actionLabel={MY_CONTENT_BROWSE_COMMUNITIES}

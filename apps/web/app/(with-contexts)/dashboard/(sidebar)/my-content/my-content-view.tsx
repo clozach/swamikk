@@ -7,7 +7,7 @@ import { FetchBuilder } from "@courselit/utils";
 import { MembershipEntityType } from "@courselit/common-models";
 import { MyContentCard } from "@components/admin/my-content/content-card";
 import { SkeletonCard } from "@components/skeleton-card";
-import AdminEmptyState from "@components/admin/empty-state";
+import { MyContentEmptyState } from "./empty-state";
 import {
     MY_CONTENT_BROWSE_PRODUCTS,
     MY_CONTENT_EMPTY_PRODUCTS,
@@ -102,7 +102,7 @@ export default function MyContentView({
 
     if (items.length === 0) {
         return (
-            <AdminEmptyState
+            <MyContentEmptyState
                 title={MY_CONTENT_EMPTY_PRODUCTS}
                 actionLabel={MY_CONTENT_BROWSE_PRODUCTS}
                 actionHref="/products"
