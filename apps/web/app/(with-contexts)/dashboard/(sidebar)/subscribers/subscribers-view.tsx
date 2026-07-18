@@ -78,6 +78,13 @@ export default function SubscribersView() {
 
     const [loading, setLoading] = useState(true);
     const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+    // Whether a further page likely exists, captured from the fetched page's
+    // size at load time. Kept separate from `subscribers.length` on purpose:
+    // an optimistic Unsubscribe shrinks the live array, and deriving
+    // Next-availability from that shrinking count would hide the Next button
+    // (stranding the admin from later pages) the moment they unsubscribe a row
+    // on a full page. This flag only changes when a new page is fetched.
+    const [hasMore, setHasMore] = useState(false);
     const [page, setPage] = useState(1);
     const [target, setTarget] = useState<Subscriber | null>(null);
     const [isUnsubscribing, setIsUnsubscribing] = useState(false);
@@ -106,6 +113,10 @@ export default function SubscribersView() {
             const response = await fetch.exec();
             if (response.subscribers) {
                 setSubscribers(response.subscribers);
+                // A full page implies there may be another; a short page is
+                // definitively the last. Snapshot this before any optimistic
+                // mutation touches the array.
+                setHasMore(response.subscribers.length === PAGE_SIZE);
             }
         } catch (err: any) {
             toast({
@@ -204,7 +215,7 @@ export default function SubscribersView() {
     const countLabel =
         count === 1 ? SUBSCRIBERS_COUNT_SINGULAR : SUBSCRIBERS_COUNT_PLURAL;
     const hasPrev = page > 1;
-    const hasNext = count === PAGE_SIZE;
+    const hasNext = hasMore;
 
     return (
         <DashboardContent
