@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Play, X } from "lucide-react";
 import { extractVideoId } from "@courselit/utils";
 
@@ -32,6 +32,26 @@ export function VideoWithPreview({
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const [vimeoThumbnail, setVimeoThumbnail] = useState<string | null>(null);
+
+    // Hold the active self-hosted <video> so we can stop it when it's torn
+    // down. Safari does NOT pause a media element that has been removed from
+    // the DOM, so without this the hero/preview audio keeps playing after a
+    // client-side route change (e.g. into checkout) or after the modal is
+    // closed — audio with no visible source. The callback ref fires with null
+    // the instant React detaches the element (including on component unmount),
+    // which is where we pause it. Chrome pauses detached media on its own, so
+    // this is effectively a Safari fix.
+    const activeVideoRef = useRef<HTMLVideoElement | null>(null);
+    const setVideoRef = useCallback((node: HTMLVideoElement | null) => {
+        if (node === null && activeVideoRef.current) {
+            try {
+                activeVideoRef.current.pause();
+            } catch {
+                // element already gone — nothing to stop
+            }
+        }
+        activeVideoRef.current = node;
+    }, []);
 
     const detectVideoType = (): VideoType => {
         if (extractVideoId(videoUrl, "youtube")) {
@@ -192,6 +212,7 @@ export function VideoWithPreview({
                             ></iframe>
                         ) : (
                             <video
+                                ref={setVideoRef}
                                 src={videoUrl}
                                 controls
                                 controlsList="nodownload" // eslint-disable-line react/no-unknown-property
@@ -258,6 +279,7 @@ export function VideoWithPreview({
                         ) : (
                             // Self-hosted video
                             <video
+                                ref={setVideoRef}
                                 src={videoUrl}
                                 controls
                                 controlsList="nodownload" // eslint-disable-line react/no-unknown-property
