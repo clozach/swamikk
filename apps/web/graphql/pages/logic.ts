@@ -40,12 +40,16 @@ export async function getPage({
 }) {
     await initSharedWidgets(ctx);
     if (!id) {
+        // This is where every route that isn't a page in its own right gets its
+        // chrome, so it has to honour the configured blocks rather than the
+        // stock pair — otherwise a site with replacement chrome renders the
+        // stock header and footer around all of its real content.
         return {
             type: site,
             layout: [
-                ctx.subdomain.sharedWidgets.header,
-                ctx.subdomain.sharedWidgets.footer,
-            ],
+                ctx.subdomain.sharedWidgets[SITE_HEADER_WIDGET],
+                ctx.subdomain.sharedWidgets[SITE_FOOTER_WIDGET],
+            ].filter(Boolean),
         };
     }
 
