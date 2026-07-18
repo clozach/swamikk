@@ -204,7 +204,16 @@ function getSidebarItems({
             items: [],
         });
     }
-    if (profile.permissions!.includes(permissions.manageMedia)) {
+    // The school-wide media library is an ADMIN surface, so it needs an admin
+    // permission on top of manageMedia. manageMedia alone is not a proxy for
+    // "runs this school": auth.ts grants it to every signup, because a member
+    // needs it to attach an image to a community post. Gating this entry on it
+    // alone put a "Create > Media" link into the sidebar of every paying
+    // customer — and pointed it at a page listing every file in the school.
+    if (
+        profile.permissions!.includes(permissions.manageMedia) &&
+        checkPermission(profile.permissions!, ADMIN_PERMISSIONS)
+    ) {
         navMainItems.push({
             title: SIDEBAR_MENU_MEDIA,
             url: "/dashboard/media",

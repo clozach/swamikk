@@ -29,6 +29,20 @@ function makeMedia(mediaId: string, extra: Record<string, unknown> = {}) {
 }
 
 describe("getMedias", () => {
+    it("throws when the user has manageMedia but is not an admin", async () => {
+        // Every signup is granted manageMedia so members can attach images to
+        // community posts (auth.ts). That must not be enough to enumerate the
+        // whole school's media library.
+        const deps = {
+            listMedia: jest.fn(),
+            collectUsage: jest.fn(),
+        };
+        await expect(
+            getMedias(makeCtx([permissions.manageMedia]), {}, deps as any),
+        ).rejects.toThrow(responses.action_not_allowed);
+        expect(deps.listMedia).not.toHaveBeenCalled();
+    });
+
     it("throws when the user lacks manageMedia", async () => {
         const deps = {
             listMedia: jest.fn(),
@@ -45,7 +59,11 @@ describe("getMedias", () => {
             listMedia: jest.fn().mockResolvedValue([]),
             collectUsage: jest.fn().mockResolvedValue(new Map()),
         };
-        await getMedias(makeCtx([permissions.manageMedia]), {}, deps as any);
+        await getMedias(
+            makeCtx([permissions.manageMedia, permissions.manageSite]),
+            {},
+            deps as any,
+        );
         expect(deps.listMedia).toHaveBeenCalledWith("acme", 1, 50, {});
         expect(deps.collectUsage).toHaveBeenCalledWith("domain-oid");
     });
@@ -56,7 +74,7 @@ describe("getMedias", () => {
             collectUsage: jest.fn().mockResolvedValue(new Map()),
         };
         await getMedias(
-            makeCtx([permissions.manageMedia]),
+            makeCtx([permissions.manageMedia, permissions.manageSite]),
             { page: 2, limit: 10, access: "private" },
             deps as any,
         );
@@ -92,7 +110,7 @@ describe("getMedias", () => {
         };
 
         const result = await getMedias(
-            makeCtx([permissions.manageMedia]),
+            makeCtx([permissions.manageMedia, permissions.manageSite]),
             {},
             deps as any,
         );

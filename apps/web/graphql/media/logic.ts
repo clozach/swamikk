@@ -3,6 +3,7 @@ import { collectMediaUsage, MediaUsageEntry } from "@courselit/common-logic";
 import { checkPermission } from "@courselit/utils";
 import constants from "../../config/constants";
 import { responses } from "../../config/strings";
+import { ADMIN_PERMISSIONS } from "../../ui-config/constants";
 import { checkIfAuthenticated } from "../../lib/graphql";
 import type GQLContext from "../../models/GQLContext";
 import * as medialitService from "../../services/medialit";
@@ -42,7 +43,15 @@ export const getMedias = async (
     deps: GetMediasDeps = defaultDeps,
 ): Promise<MediaWithUsage[]> => {
     checkIfAuthenticated(ctx);
-    if (!checkPermission(ctx.user.permissions, [permissions.manageMedia])) {
+    // This returns every upload in the school with usage attribution, so it
+    // needs an admin permission and not just manageMedia. auth.ts grants
+    // manageMedia to every signup — a member needs it to attach an image to a
+    // community post — which meant any customer could enumerate the whole
+    // school's media library, private objects included.
+    if (
+        !checkPermission(ctx.user.permissions, [permissions.manageMedia]) ||
+        !checkPermission(ctx.user.permissions, ADMIN_PERMISSIONS)
+    ) {
         throw new Error(responses.action_not_allowed);
     }
 
