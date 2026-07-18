@@ -1,3 +1,7 @@
+import {
+    SITE_FOOTER_WIDGET,
+    SITE_HEADER_WIDGET,
+} from "../../config/site-chrome";
 import { responses } from "../../config/strings";
 import DomainModel from "@models/Domain";
 import { checkIfAuthenticated } from "../../lib/graphql";
@@ -369,9 +373,17 @@ export const initMandatoryPages = async (domain: Domain, user: User) => {
                         name: pageNames.home,
                         entityId: domain.name,
                         layout: [
-                            { name: "header", deleteable: false, shared: true },
+                            {
+                                name: SITE_HEADER_WIDGET,
+                                deleteable: false,
+                                shared: true,
+                            },
                             ...homePageTemplate,
-                            { name: "footer", deleteable: false, shared: true },
+                            {
+                                name: SITE_FOOTER_WIDGET,
+                                deleteable: false,
+                                shared: true,
+                            },
                         ],
                         draftLayout: [],
                     },
@@ -391,8 +403,16 @@ export const initMandatoryPages = async (domain: Domain, user: User) => {
                         name: pageNames.privacy,
                         entityId: domain.name,
                         layout: [
-                            { name: "header", deleteable: false, shared: true },
-                            { name: "footer", deleteable: false, shared: true },
+                            {
+                                name: SITE_HEADER_WIDGET,
+                                deleteable: false,
+                                shared: true,
+                            },
+                            {
+                                name: SITE_FOOTER_WIDGET,
+                                deleteable: false,
+                                shared: true,
+                            },
                         ],
                         draftLayout: [],
                     },
@@ -412,8 +432,16 @@ export const initMandatoryPages = async (domain: Domain, user: User) => {
                         name: pageNames.terms,
                         entityId: domain.name,
                         layout: [
-                            { name: "header", deleteable: false, shared: true },
-                            { name: "footer", deleteable: false, shared: true },
+                            {
+                                name: SITE_HEADER_WIDGET,
+                                deleteable: false,
+                                shared: true,
+                            },
+                            {
+                                name: SITE_FOOTER_WIDGET,
+                                deleteable: false,
+                                shared: true,
+                            },
                         ],
                         draftLayout: [],
                     },
@@ -433,8 +461,16 @@ export const initMandatoryPages = async (domain: Domain, user: User) => {
                         name: pageNames.blog,
                         entityId: domain.name,
                         layout: [
-                            { name: "header", deleteable: false, shared: true },
-                            { name: "footer", deleteable: false, shared: true },
+                            {
+                                name: SITE_HEADER_WIDGET,
+                                deleteable: false,
+                                shared: true,
+                            },
+                            {
+                                name: SITE_FOOTER_WIDGET,
+                                deleteable: false,
+                                shared: true,
+                            },
                         ],
                         draftLayout: [],
                     },
@@ -476,12 +512,12 @@ export const createPage = async ({
             deleteable: true,
             layout: [
                 {
-                    name: "header",
+                    name: SITE_HEADER_WIDGET,
                     deleteable: false,
                     shared: true,
                 },
                 {
-                    name: "footer",
+                    name: SITE_FOOTER_WIDGET,
                     deleteable: false,
                     shared: true,
                 },

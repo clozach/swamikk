@@ -8,6 +8,10 @@ import { generateUniqueId, slugify } from "@courselit/utils";
 import { getPlans } from "../paymentplans/logic";
 import mongoose from "mongoose";
 import { responses } from "../../config/strings";
+import {
+    SITE_FOOTER_WIDGET,
+    SITE_HEADER_WIDGET,
+} from "../../config/site-chrome";
 
 const MAX_SLUG_ATTEMPTS = 100;
 const MAX_SLUG_LENGTH = 200;
@@ -228,6 +232,36 @@ export async function getPageResponse(
 // of the subdomain is not getting replaces in ctx
 export async function initSharedWidgets(ctx: GQLContext) {
     let subdomainChanged = false;
+
+    // The stock defaults below describe the stock blocks' settings shapes. A
+    // site running replacement chrome gets an empty settings object instead and
+    // falls back to that block's own defaults.
+    const usingStockChrome =
+        SITE_HEADER_WIDGET === "header" && SITE_FOOTER_WIDGET === "footer";
+
+    if (!usingStockChrome) {
+        if (!ctx.subdomain.sharedWidgets[SITE_HEADER_WIDGET]) {
+            ctx.subdomain.sharedWidgets[SITE_HEADER_WIDGET] = {
+                name: SITE_HEADER_WIDGET,
+                shared: true,
+                deleteable: false,
+                widgetId: generateUniqueId(),
+                settings: {},
+            };
+            subdomainChanged = true;
+        }
+        if (!ctx.subdomain.sharedWidgets[SITE_FOOTER_WIDGET]) {
+            ctx.subdomain.sharedWidgets[SITE_FOOTER_WIDGET] = {
+                name: SITE_FOOTER_WIDGET,
+                shared: true,
+                deleteable: false,
+                widgetId: generateUniqueId(),
+                settings: {},
+            };
+            subdomainChanged = true;
+        }
+    }
+
     if (!ctx.subdomain.sharedWidgets.header) {
         ctx.subdomain.sharedWidgets.header = {
             name: "header",
