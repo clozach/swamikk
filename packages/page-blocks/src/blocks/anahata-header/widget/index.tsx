@@ -128,17 +128,38 @@ function useMeasuredHeight(enabled: boolean) {
         if (!el) {
             return;
         }
-        const measure = () => setHeight(el.offsetHeight);
+        const measure = () => {
+            // Only ever record the band's IN-FLOW height. Once it is pinned it
+            // is out of flow, and whatever it measures then says nothing about
+            // the gap the spacer has to fill.
+            if (getComputedStyle(el).position === "fixed") {
+                return;
+            }
+            setHeight(el.offsetHeight);
+        };
         measure();
+
+        // The mount-time reading is taken before the logo image and the web
+        // fonts have settled, and it is wrong by their contribution — measured
+        // at 87px against a settled 151px, so the spacer would have been 64px
+        // short and the page would have jumped by that much on first pin.
+        // ResizeObserver would ordinarily correct it, but a backgrounded
+        // document suspends those callbacks, so this cannot rely on it alone:
+        // `load` fires once images and fonts are in, and scroll/resize cover
+        // any later reflow. The observer stays as the fast path where it runs.
         const observer =
             typeof ResizeObserver === "undefined"
                 ? undefined
                 : new ResizeObserver(measure);
         observer?.observe(el);
+        window.addEventListener("load", measure);
         window.addEventListener("resize", measure);
+        window.addEventListener("scroll", measure, { passive: true });
         return () => {
             observer?.disconnect();
+            window.removeEventListener("load", measure);
             window.removeEventListener("resize", measure);
+            window.removeEventListener("scroll", measure);
         };
     }, [enabled]);
 
