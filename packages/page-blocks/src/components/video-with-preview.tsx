@@ -167,6 +167,24 @@ export function VideoWithPreview({
         return "/placeholder.svg?height=480&width=854";
     };
 
+    // Dismiss the modal with Escape while it is open. Registered in capture
+    // phase and consumed so nothing beneath the overlay sees the key.
+    useEffect(() => {
+        if (!isModalOpen) return;
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsModalOpen(false);
+            }
+        };
+        window.addEventListener("keydown", onKeyDown, { capture: true });
+        return () =>
+            window.removeEventListener("keydown", onKeyDown, {
+                capture: true,
+            });
+    }, [isModalOpen]);
+
     // Lock body scroll when modal is open
     useEffect(() => {
         if (isModalOpen) {
@@ -294,19 +312,25 @@ export function VideoWithPreview({
 
             {/* Custom Video Modal (only used when modal is true) */}
             {modal && isModalOpen && (
-                <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4 sm:p-6 md:p-10">
-                    <button
-                        onClick={() => setIsModalOpen(false)}
-                        className="absolute top-2 right-2 sm:top-4 sm:right-4 text-white hover:text-gray-300 focus:outline-none z-10"
-                        aria-label="Close"
-                    >
-                        <X className="h-6 w-6 sm:h-8 sm:w-8" />
-                    </button>
-
+                <div
+                    className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4 sm:p-6 md:p-10 cursor-pointer"
+                    onClick={() => setIsModalOpen(false)}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={title}
+                >
                     <div
-                        className="w-full max-w-xl sm:max-w-2xl md:max-w-3xl"
+                        className="relative group w-full max-w-xl sm:max-w-2xl md:max-w-3xl cursor-auto"
                         style={aspectRatioStyle()}
+                        onClick={(e) => e.stopPropagation()}
                     >
+                        <button
+                            onClick={() => setIsModalOpen(false)}
+                            className="absolute top-2 right-2 z-10 rounded-full bg-black/60 p-1.5 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-black/80 focus:outline-none"
+                            aria-label="Close video"
+                        >
+                            <X className="h-5 w-5" />
+                        </button>
                         {videoType !== "self-hosted" ? (
                             // YouTube or Vimeo video
                             <iframe
