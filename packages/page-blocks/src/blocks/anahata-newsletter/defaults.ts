@@ -52,6 +52,19 @@ export const DEFAULT_BACKGROUND: SectionBackground = {
     backgroundSize: "cover",
     backgroundPosition: "center bottom",
     backgroundRepeat: "no-repeat",
+    // A photograph cannot promise a contrast ratio, and this one does not: the
+    // callout image darkens markedly toward its right, and cocoa body text over
+    // it was measured (per-pixel, across the middle 70% where the text sits) at
+    // 8.84:1 on average but only 3.09:1 at worst, with 11.5% of that region
+    // under the 4.5:1 floor. Sampling opacities against the real image, 0.25 is
+    // the first that clears it everywhere — worst case 4.82:1 — while staying
+    // light enough to read as the same photo. Raise it if the image is ever
+    // swapped for a darker one; the floor is what matters, not the number.
+    overlay: {
+        color: "#f7f4eb",
+        blendMode: "normal",
+        opacity: 0.25,
+    },
 };
 
 /* ------------------------------------------------------------------ *
