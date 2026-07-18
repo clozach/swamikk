@@ -90,7 +90,18 @@ export default function Checkout({
     >();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const stripePromise = loadStripe(siteinfo.stripeKey as string);
+    // Construct the Stripe object once per mount, not on every render.
+    // Calling loadStripe() directly in the render body runs it on every
+    // re-render (plan selection, email entry, membership fetch, isSubmitting
+    // toggles…), and each call builds a fresh Stripe instance that injects its
+    // own controller + `m-outer`/`inner.html` ("StripeM") metrics iframes.
+    // Those duplicate cross-origin metrics frames are what Safari was saving
+    // into ~/Downloads. Stripe's docs: "Call loadStripe outside of a
+    // component's render to avoid recreating the Stripe object on every
+    // render." A lazy useState keeps it to a single instance for this mount.
+    const [stripePromise] = useState(() =>
+        siteinfo.stripeKey ? loadStripe(siteinfo.stripeKey as string) : null,
+    );
     const router = useRouter();
     const { toast } = useToast();
     const { theme } = useContext(ThemeContext);
@@ -296,10 +307,25 @@ export default function Checkout({
         stripe: any;
         sessionId: string;
     }) => {
+        if (!stripe) {
+            toast({
+                title: "Error",
+                description:
+                    "Payment could not be started. Stripe is not configured for this site.",
+                variant: "destructive",
+            });
+            return;
+        }
         const result = await stripe.redirectToCheckout({
             sessionId,
         });
         if (result.error) {
+            toast({
+                title: "Error",
+                description:
+                    result.error.message || "Unable to redirect to checkout.",
+                variant: "destructive",
+            });
         }
     };
 
