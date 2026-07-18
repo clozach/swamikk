@@ -34,8 +34,17 @@ export default function TopBar({
                         </li>
                     ))}
                 </ul>
-                {/* The right group drops out at the mobile breakpoint. */}
-                <ul className="m-0 hidden list-none items-center gap-x-5 p-0 pt-[5px] md:flex">
+                {/* The right group drops out at the mobile breakpoint.
+                    Two mutually-exclusive media-scoped rules rather than a base
+                    "hidden" overridden by "md:flex". The override wins today,
+                    but only because apps/web's own Tailwind output — the last
+                    of four stylesheets — happens to emit `.md\:flex` as well;
+                    components-library emits an unconditional `.hidden` that
+                    would otherwise take it. The utility bar's own
+                    `min-[560px]:block` had no such rescuer and never rendered
+                    at all. Scoping both rules to their own range removes the
+                    dependency. */}
+                <ul className="m-0 max-[767px]:hidden list-none items-center gap-x-5 p-0 pt-[5px] md:flex">
                     {right.map((item) => (
                         <li key={item.id} className="m-0 list-none p-0">
                             <a href={item.href || "#"} className={TOP_BAR_LINK}>

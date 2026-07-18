@@ -322,7 +322,19 @@ export default function Widget({
                 <div
                     className={clsx(
                         HEADER_CONTAINER,
-                        "flex min-h-[50px] items-center justify-between gap-4 text-[15px] md:hidden",
+                        // Two mutually-exclusive media-scoped rules rather than
+                        // a base "flex" overridden by "md:hidden". The override
+                        // does currently win, but only by luck: four stylesheets
+                        // load in sequence (page-blocks, components-library,
+                        // page-primitives, then apps/web's own Tailwind output),
+                        // every one of them emits an unconditional `.flex`, and
+                        // the only reason `.md\:hidden` lands last is that
+                        // apps/web happens to use that utility too. Drop that
+                        // coincidence and the bar stops hiding — which is exactly
+                        // what befell the utility bar's `min-[560px]:block`, a
+                        // class no later sheet emitted. Scoping both rules to
+                        // their own range removes the dependency entirely.
+                        "max-[767px]:flex min-h-[50px] items-center justify-between gap-4 text-[15px] md:hidden",
                     )}
                 >
                     <button
