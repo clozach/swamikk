@@ -103,9 +103,32 @@ function useFlyoutClamp(open: boolean, placement: Placement) {
         // Web fonts settle a frame late and change the panel's width.
         const frame = requestAnimationFrame(measure);
         window.addEventListener("resize", measure);
+
+        // A single rAF is not enough on its own. The nav can be measured
+        // before the header has its final layout — an anchor still reporting
+        // left: 0 yields the `pad` fallback (8px) rather than a real clamp,
+        // and nothing would ever correct it, because a closed flyout gets no
+        // further renders. Observing both boxes re-measures whenever the row
+        // reflows for any reason: fonts loading, the logo image arriving, a
+        // sibling menu wrapping.
+        const observer =
+            typeof ResizeObserver === "undefined"
+                ? undefined
+                : new ResizeObserver(measure);
+        if (observer) {
+            const el = ref.current;
+            if (el) {
+                observer.observe(el);
+            }
+            if (el?.parentElement) {
+                observer.observe(el.parentElement);
+            }
+        }
+
         return () => {
             cancelAnimationFrame(frame);
             window.removeEventListener("resize", measure);
+            observer?.disconnect();
         };
     }, [open, placement]);
 
@@ -192,12 +215,23 @@ function Flyout({ items, open, placement }: FlyoutProps) {
                     : "pointer-events-none invisible opacity-0",
             )}
             style={{
+                // The clamp rides on margin, NOT transform. transform is
+                // transitioned (FLYOUT_PANEL), and a closed panel is
+                // `invisible` — it never paints, so its transition never
+                // advances past whatever value it first rendered with. A
+                // clamp carried on transform therefore computed the right
+                // number, wrote it to the inline style, and was silently
+                // swallowed: the rightmost flyout kept the pre-layout
+                // offset it was born with and widened the document by 59px.
+                // Margin is not transitioned, so the shift lands immediately
+                // whether or not the panel has ever been drawn.
+                marginLeft: `${shiftX}px`,
                 // Closed panels sit 10px off and fade/slide into place.
                 transform: open
-                    ? `translate(${shiftX}px, 0)`
+                    ? "translate(0, 0)"
                     : placement === "below"
-                      ? `translate(${shiftX}px, 10px)`
-                      : `translate(${shiftX + (flipped ? -10 : 10)}px, 0)`,
+                      ? "translate(0, 10px)"
+                      : `translate(${flipped ? -10 : 10}px, 0)`,
             }}
         >
             <ul className="m-0 flex list-none flex-col p-0">
