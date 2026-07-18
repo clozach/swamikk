@@ -8,6 +8,7 @@ import {
 } from "@components/contexts";
 import { ProfileContext } from "@components/contexts";
 import BaseLayout from "@components/public/base-layout";
+import { isStructuralWidget } from "@components/public/base-layout/template/widget-roles";
 import { Profile } from "@courselit/common-models";
 
 export default function ClientSidePage({
@@ -29,7 +30,7 @@ export default function ClientSidePage({
     }
 
     const layoutWithoutHeaderFooter = page?.layout
-        ?.filter((layout: any) => !["header", "footer"].includes(layout.name))
+        ?.filter((layout: any) => !isStructuralWidget(layout.name))
         ?.map((layout: any) => ({
             ...layout,
             settings: layout.settings || {},

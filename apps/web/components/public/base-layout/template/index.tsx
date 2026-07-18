@@ -1,7 +1,11 @@
 import React, { ReactNode } from "react";
 import { State, WidgetInstance } from "@courselit/common-models";
-import { Footer, Header } from "@courselit/page-blocks";
 import { Toaster } from "@courselit/components-library";
+import {
+    isFooterWidget,
+    isHeaderWidget,
+    isStructuralWidget,
+} from "./widget-roles";
 import EditableWidget from "./editable-widget";
 import { generateThemeStyles } from "@/lib/theme-styles";
 import { Theme } from "@courselit/page-models";
@@ -45,15 +49,10 @@ const Template = (props: TemplateProps) => {
     } as PageData & { pageType: "product" | "site" | "blog" | "community" };
 
     if (!layout) return <></>;
-    const footer = layout.filter(
-        (widget) => widget.name === Footer.metadata.name,
-    )[0];
-    const header = layout.filter(
-        (widget) => widget.name === Header.metadata.name,
-    )[0];
-    const headerFooterNames = [Header.metadata.name, Footer.metadata.name];
+    const footer = layout.filter((widget) => isFooterWidget(widget.name))[0];
+    const header = layout.filter((widget) => isHeaderWidget(widget.name))[0];
     const widgetsWithoutHeaderAndFooter = layout.filter(
-        (widget) => !headerFooterNames.includes(widget.name ?? ""),
+        (widget) => !isStructuralWidget(widget.name),
     );
     const pageWidgets = widgetsWithoutHeaderAndFooter.map(
         (item: any, index: number) => (
