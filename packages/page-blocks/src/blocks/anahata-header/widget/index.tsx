@@ -15,6 +15,8 @@ import {
     mobileMenuLabel as defaultMobileMenuLabel,
     showTopBar as defaultShowTopBar,
     sticky as defaultSticky,
+    themeToggleLabel as defaultThemeToggleLabel,
+    showThemeToggle as defaultShowThemeToggle,
     topBarLeftItems as defaultTopBarLeftItems,
     topBarRightItems as defaultTopBarRightItems,
 } from "../defaults";
@@ -27,10 +29,12 @@ import {
     STICKY_HEADER_BAND_BASE,
     STICKY_HEADER_BAND_FIXED,
     STICKY_HEADER_BAND_STUCK,
+    NAV_THEME_TOGGLE,
 } from "./tokens";
 import DesktopNavItem from "./desktop-nav";
 import TopBar from "./top-bar";
 import MobileOverlay, { MobileMenuState } from "./mobile-overlay";
+import ThemeToggle from "./theme-toggle";
 
 /* ------------------------------------------------------------------ *
  * Detects whether the header band should be pinned ("stuck") to the top
@@ -172,6 +176,8 @@ function useMeasuredHeight(enabled: boolean) {
 export default function Widget({
     settings,
     editing,
+    nextTheme,
+    toggleTheme,
 }: WidgetProps<Settings>): JSX.Element {
     const [mobileMenu, setMobileMenu] = useState<MobileMenuState>({
         kind: "closed",
@@ -186,6 +192,9 @@ export default function Widget({
         settings.topBarRightItems ?? defaultTopBarRightItems;
     const showTopBar = settings.showTopBar ?? defaultShowTopBar;
     const sticky = settings.sticky ?? defaultSticky;
+    const showThemeToggle = settings.showThemeToggle ?? defaultShowThemeToggle;
+    const themeToggleLabel =
+        settings.themeToggleLabel || defaultThemeToggleLabel;
     // Never lets the band actually go `fixed` inside the page builder: the
     // editing overlay in editable-widget.tsx is an `absolute inset-0` sized
     // to this widget's own (non-sticky) wrapper box, so it only ever covers
@@ -295,6 +304,16 @@ export default function Widget({
                             {menu.map((item) => (
                                 <DesktopNavItem key={item.id} item={item} />
                             ))}
+                            {showThemeToggle && (
+                                <li className="m-0 list-none p-0">
+                                    <ThemeToggle
+                                        nextTheme={nextTheme}
+                                        toggleTheme={toggleTheme}
+                                        label={themeToggleLabel}
+                                        className={NAV_THEME_TOGGLE}
+                                    />
+                                </li>
+                            )}
                         </ul>
                     </nav>
                 </div>

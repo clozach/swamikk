@@ -94,3 +94,10 @@ export const FLYOUT_LINK =
    7.07:1, so it stays as the hover/focus accent unchanged. */
 export const MOBILE_LINK =
     "block py-[0.9em] pr-5 text-[14px] uppercase text-white no-underline transition-colors duration-100 ease-in hover:text-[#ff9900] focus-visible:text-[#ff9900] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#ff9900]";
+
+/* The theme switch at the end of the nav. Inherits NAV_LINK's exact rest /
+   hover / focus / active colours (ink 6.89:1, rust 6.75:1, rust-pressed
+   8.90:1 on the cream band) so it stays AA without a second palette to keep
+   in step. Square rather than text-padded, since it holds a 16px glyph. */
+export const NAV_THEME_TOGGLE =
+    "flex h-[50px] w-[44px] cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-[#545454] transition-colors duration-100 ease-in hover:text-[#993300] focus-visible:text-[#993300] active:text-[#7a2900] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#993300] max-[1309px]:w-[38px] max-[829px]:w-[34px]";

@@ -12,6 +12,11 @@ import { MenuItem, TopBarItem } from "./settings";
 
 export const sticky = true;
 
+/* The site has no dark mode of its own, but CourseLit's theme does, and with
+   the utility bar going away there is nowhere else in the chrome to reach it. */
+export const showThemeToggle = true;
+export const themeToggleLabel = "Toggle light and dark theme";
+
 export const logoSrc = "/anahata/logo-2021.png";
 export const logoAlt = "Anahata Yoga Retreat";
 export const logoWidth = 250;

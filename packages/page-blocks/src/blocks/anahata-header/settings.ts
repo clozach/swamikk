@@ -25,6 +25,10 @@ export default interface Settings extends WidgetDefaultSettings {
      *  matching the live anahata-retreat.org.nz. On by default; Karuna can
      *  turn it off from the Advanced panel. */
     sticky?: boolean;
+    /** Show the light/dark switch at the end of the nav. */
+    showThemeToggle?: boolean;
+    /** Accessible name for that switch. */
+    themeToggleLabel?: string;
 
     /** Logo picked from the media library. Wins over `logoSrc` when set. */
     logoMedia?: Media;

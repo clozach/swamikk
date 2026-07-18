@@ -33,6 +33,7 @@ import {
     mobileMenuLabel as defaultMobileMenuLabel,
     showTopBar as defaultShowTopBar,
     sticky as defaultSticky,
+    showThemeToggle as defaultShowThemeToggle,
     topBarLeftItems as defaultTopBarLeftItems,
     topBarRightItems as defaultTopBarRightItems,
 } from "./defaults";
@@ -394,6 +395,9 @@ export default function AdminWidget({
         settings.showTopBar ?? defaultShowTopBar,
     );
     const [sticky, setSticky] = useState(settings.sticky ?? defaultSticky);
+    const [showThemeToggle, setShowThemeToggle] = useState<boolean>(
+        settings.showThemeToggle ?? defaultShowThemeToggle,
+    );
     const [topBarLeftItems, setTopBarLeftItems] = useState<TopBarItem[]>(
         settings.topBarLeftItems ?? defaultTopBarLeftItems,
     );
@@ -425,6 +429,7 @@ export default function AdminWidget({
             homeHref,
             showTopBar,
             sticky,
+            showThemeToggle,
             topBarLeftItems,
             topBarRightItems,
             menu,
@@ -443,6 +448,7 @@ export default function AdminWidget({
         homeHref,
         showTopBar,
         sticky,
+        showThemeToggle,
         topBarLeftItems,
         topBarRightItems,
         menu,
@@ -597,6 +603,20 @@ export default function AdminWidget({
                     Matches anahata-retreat.org.nz: the top bar scrolls away
                     normally, and the logo/nav band stays pinned to the top of
                     the screen.
+                </p>
+                <div className="flex items-center gap-2">
+                    <Checkbox
+                        checked={showThemeToggle}
+                        onChange={(value: boolean) => setShowThemeToggle(value)}
+                    />
+                    <span className="text-sm font-medium">
+                        Show the light/dark switch in the nav
+                    </span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                    Sits at the end of the nav, after the last menu item. It
+                    switches the CourseLit theme, which is what colours
+                    checkout, forms and product pages.
                 </p>
                 <CssIdField
                     value={cssId || ""}
