@@ -43,7 +43,7 @@ export function generateThemeStyles(theme: Theme): string {
             --chart-3: ${lightColors.chart3 ? formatHSL(convert.hex.hsl(lightColors.chart3.replace("#", ""))) : ""};
             --chart-4: ${lightColors.chart4 ? formatHSL(convert.hex.hsl(lightColors.chart4.replace("#", ""))) : ""};
             --chart-5: ${lightColors.chart5 ? formatHSL(convert.hex.hsl(lightColors.chart5.replace("#", ""))) : ""};
-            --sidebar: ${lightColors.sidebar ? formatHSL(convert.hex.hsl(lightColors.sidebar.replace("#", ""))) : ""};
+            --sidebar-background: ${lightColors.sidebar ? formatHSL(convert.hex.hsl(lightColors.sidebar.replace("#", ""))) : ""};
             --sidebar-foreground: ${lightColors.sidebarForeground ? formatHSL(convert.hex.hsl(lightColors.sidebarForeground.replace("#", ""))) : ""};
             --sidebar-primary: ${lightColors.sidebarPrimary ? formatHSL(convert.hex.hsl(lightColors.sidebarPrimary.replace("#", ""))) : ""};
             --sidebar-primary-foreground: ${lightColors.sidebarPrimaryForeground ? formatHSL(convert.hex.hsl(lightColors.sidebarPrimaryForeground.replace("#", ""))) : ""};
@@ -85,7 +85,7 @@ export function generateThemeStyles(theme: Theme): string {
             --chart-3: ${darkColors.chart3 ? formatHSL(convert.hex.hsl(darkColors.chart3.replace("#", ""))) : ""};
             --chart-4: ${darkColors.chart4 ? formatHSL(convert.hex.hsl(darkColors.chart4.replace("#", ""))) : ""};
             --chart-5: ${darkColors.chart5 ? formatHSL(convert.hex.hsl(darkColors.chart5.replace("#", ""))) : ""};
-            --sidebar: ${darkColors.sidebar ? formatHSL(convert.hex.hsl(darkColors.sidebar.replace("#", ""))) : ""};
+            --sidebar-background: ${darkColors.sidebar ? formatHSL(convert.hex.hsl(darkColors.sidebar.replace("#", ""))) : ""};
             --sidebar-foreground: ${darkColors.sidebarForeground ? formatHSL(convert.hex.hsl(darkColors.sidebarForeground.replace("#", ""))) : ""};
             --sidebar-primary: ${darkColors.sidebarPrimary ? formatHSL(convert.hex.hsl(darkColors.sidebarPrimary.replace("#", ""))) : ""};
             --sidebar-primary-foreground: ${darkColors.sidebarPrimaryForeground ? formatHSL(convert.hex.hsl(darkColors.sidebarPrimaryForeground.replace("#", ""))) : ""};
