@@ -20,7 +20,10 @@ export default class CodeInjector extends React.Component<CodeInjectorProps> {
     injectCodeIn(targetHTMLTag: InjectionSection) {
         const tempContainer = document.createElement("div");
         tempContainer.innerHTML = this.props[targetHTMLTag] || "";
-        const children = tempContainer.children;
+        // Snapshot the collection: appendChild below moves elements out of
+        // tempContainer, and iterating the live HTMLCollection while it
+        // shrinks would skip every other element.
+        const children = Array.from(tempContainer.children);
         for (let i = 0; i < children.length; i++) {
             let elem = children[i];
             if (elem.nodeName === "SCRIPT") {
