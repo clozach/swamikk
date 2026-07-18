@@ -53,6 +53,26 @@ export function VideoWithPreview({
         activeVideoRef.current = node;
     }, []);
 
+    // Also stop playback when the page is hidden for Safari's back-forward
+    // cache. bfcache FREEZES the page without unmounting React, so the callback
+    // ref above never fires; without this, Safari resumes the still-playing
+    // <video> (and its audio) on Back — sometimes over a live instance, which
+    // is the "echo" heard when bouncing between checkout and Stripe.
+    useEffect(() => {
+        const stopForBfcache = () => {
+            const v = activeVideoRef.current;
+            if (v && !v.paused) {
+                try {
+                    v.pause();
+                } catch {
+                    // ignore — nothing to stop
+                }
+            }
+        };
+        window.addEventListener("pagehide", stopForBfcache);
+        return () => window.removeEventListener("pagehide", stopForBfcache);
+    }, []);
+
     const detectVideoType = (): VideoType => {
         if (extractVideoId(videoUrl, "youtube")) {
             return "youtube";

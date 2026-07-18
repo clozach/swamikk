@@ -1,4 +1,10 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, {
+    useCallback,
+    useContext,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 import { FetchBuilder } from "@courselit/utils";
 import {
     LESSON_TYPE_VIDEO,
@@ -98,6 +104,38 @@ export const LessonViewer = ({
     const isViewerEnrolled = Boolean(
         lesson && viewerProfile && isEnrolled(lesson.courseId, viewerProfile),
     );
+
+    // Stop lesson video/audio when it's torn down — switching lessons (the
+    // element is keyed on lessonId), navigating away, or Safari's back-forward
+    // cache. Safari keeps a detached/frozen media element playing, so without
+    // this a guided-practice audio track would keep going after you leave the
+    // lesson or bounce Back. The callback ref fires with null the instant the
+    // element detaches; the pagehide handler covers the bfcache freeze.
+    const activeMediaRef = useRef<HTMLMediaElement | null>(null);
+    const setMediaRef = useCallback((node: HTMLMediaElement | null) => {
+        if (node === null && activeMediaRef.current) {
+            try {
+                activeMediaRef.current.pause();
+            } catch {
+                // element already gone — nothing to stop
+            }
+        }
+        activeMediaRef.current = node;
+    }, []);
+    useEffect(() => {
+        const stopForBfcache = () => {
+            const m = activeMediaRef.current;
+            if (m && !m.paused) {
+                try {
+                    m.pause();
+                } catch {
+                    // ignore — nothing to stop
+                }
+            }
+        };
+        window.addEventListener("pagehide", stopForBfcache);
+        return () => window.removeEventListener("pagehide", stopForBfcache);
+    }, []);
 
     const isCompleted =
         lesson && viewerProfile?.purchases
@@ -280,6 +318,7 @@ export const LessonViewer = ({
                         ) === lesson.type && (
                             <div>
                                 <video
+                                    ref={setMediaRef}
                                     controls
                                     controlsList="nodownload"
                                     onContextMenu={(e) => e.preventDefault()}
@@ -309,6 +348,7 @@ export const LessonViewer = ({
                         ) === lesson.type && (
                             <div>
                                 <audio
+                                    ref={setMediaRef}
                                     controls
                                     controlsList="nodownload"
                                     onContextMenu={(e) => e.preventDefault()}
