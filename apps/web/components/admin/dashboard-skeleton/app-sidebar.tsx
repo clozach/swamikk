@@ -7,6 +7,7 @@ import {
     LibraryBig,
     LifeBuoy,
     Mail,
+    MailCheck,
     MessageCircleHeart,
     Settings,
     Target,
@@ -43,6 +44,7 @@ import {
     SIDEBAR_MENU_MEDIA,
     SIDEBAR_MENU_PAGES,
     SIDEBAR_MENU_SETTINGS,
+    SIDEBAR_MENU_SUBSCRIBERS,
     SIDEBAR_MENU_USERS,
     SITE_CUSTOMISATIONS_SETTING_HEADER,
     SITE_MISCELLANEOUS_SETTING_HEADER,
@@ -258,6 +260,13 @@ function getSidebarItems({
                     isActive: path?.startsWith("/dashboard/cohorts"),
                 },
             ],
+        });
+        navMainItems.push({
+            title: SIDEBAR_MENU_SUBSCRIBERS,
+            url: "/dashboard/subscribers",
+            icon: MailCheck,
+            isActive: path === "/dashboard/subscribers",
+            items: [],
         });
         navMainItems.push({
             title: SIDEBAR_MENU_MAILS,

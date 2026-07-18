@@ -1003,3 +1003,26 @@ export const APP_MESSAGE_COHORT_DELETED = "Cohort deleted";
 export const APP_MESSAGE_COHORT_MEMBER_ADDED = "Member added";
 export const APP_MESSAGE_COHORT_MEMBER_REMOVED = "Member removed";
 export const APP_MESSAGE_COHORT_SYNCED = "Synced from course. Total members:";
+
+// Subscribers admin page
+export const SIDEBAR_MENU_SUBSCRIBERS = "Subscribers";
+export const SUBSCRIBERS_HEADER = "Subscribers";
+export const SUBSCRIBERS_SUBTITLE =
+    "People who opted in to updates from your school.";
+export const SUBSCRIBERS_COUNT_SINGULAR = "subscriber";
+export const SUBSCRIBERS_COUNT_PLURAL = "subscribers";
+export const SUBSCRIBERS_EMPTY = "No subscribers yet.";
+export const SUBSCRIBERS_TABLE_HEADER_EMAIL = "Email";
+export const SUBSCRIBERS_TABLE_HEADER_NAME = "Name";
+export const SUBSCRIBERS_TABLE_HEADER_SUBSCRIBED = "Subscribed";
+export const SUBSCRIBERS_TABLE_HEADER_ACTIONS = "Actions";
+export const BTN_EXPORT_CSV = "Export CSV";
+export const BTN_MESSAGE_SUBSCRIBERS = "Message subscribers";
+export const BTN_UNSUBSCRIBE = "Unsubscribe";
+export const SUBSCRIBERS_CSV_FILENAME = "subscribers.csv";
+export const SUBSCRIBERS_UNSUBSCRIBE_DIALOG_TITLE = "Remove this subscriber?";
+export const SUBSCRIBERS_UNSUBSCRIBE_DIALOG_DESCRIPTION =
+    "They will stop receiving broadcasts and newsletter updates. This does not delete their account or revoke any course access.";
+export const SUBSCRIBERS_UNSUBSCRIBE_ACTION_LOADING = "Removing…";
+export const SUBSCRIBERS_UNSUBSCRIBE_CONFIRM = "Unsubscribe";
+export const APP_MESSAGE_SUBSCRIBER_UNSUBSCRIBED = "Subscriber removed";

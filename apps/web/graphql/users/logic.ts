@@ -361,6 +361,81 @@ export const getUsersCount = async (ctx: GQLContext, filters?: string) => {
     return await UserModel.countDocuments(query);
 };
 
+export interface Subscriber {
+    // userId is the action handle the admin table needs to unsubscribe a row
+    // through the existing updateUser mutation; it is not a displayed column.
+    userId: string;
+    email: string;
+    name?: string;
+    subscribedAt?: string;
+}
+
+// The Mongo read is injected so the resolver — its permission gate and its
+// row shaping — can be unit-tested without a database. Production passes the
+// real UserModel query below.
+interface GetSubscribersDeps {
+    listSubscribers: (
+        domain: mongoose.Types.ObjectId,
+        page: number,
+        limit: number,
+    ) => Promise<
+        Array<{
+            userId: string;
+            email: string;
+            name?: string;
+            createdAt?: Date | string;
+        }>
+    >;
+}
+
+const defaultGetSubscribersDeps: GetSubscribersDeps = {
+    listSubscribers: async (domain, page, limit) => {
+        const rows = await UserModel.find(
+            { domain, subscribedToUpdates: true },
+            { userId: 1, email: 1, name: 1, createdAt: 1, _id: 0 },
+        )
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(limit)
+            .lean();
+        return rows as unknown as Array<{
+            userId: string;
+            email: string;
+            name?: string;
+            createdAt?: Date | string;
+        }>;
+    },
+};
+
+export const getSubscribers = async (
+    ctx: GQLContext,
+    { page = 1, limit = 50 }: { page?: number; limit?: number },
+    deps: GetSubscribersDeps = defaultGetSubscribersDeps,
+): Promise<Subscriber[]> => {
+    checkIfAuthenticated(ctx);
+    // Subscriber emails are PII, so this is an admin surface. manageUsers gates
+    // it on its own: auth.ts never grants that permission to an ordinary
+    // signup (unlike manageMedia, which every member gets — which is why the
+    // media library needs an extra ADMIN check and this does not).
+    if (!checkPermission(ctx.user.permissions, [permissions.manageUsers])) {
+        throw new Error(responses.action_not_allowed);
+    }
+
+    // Scope to this tenant and to opted-in users only; newest signups first.
+    const rows = await deps.listSubscribers(ctx.subdomain._id, page, limit);
+
+    return rows.map((row) => ({
+        userId: row.userId,
+        email: row.email,
+        name: row.name,
+        // createdAt is the signup timestamp (UserSchema has timestamps: true);
+        // for a newsletter signup that is when they subscribed.
+        subscribedAt: row.createdAt
+            ? new Date(row.createdAt).toISOString()
+            : undefined,
+    }));
+};
+
 const buildQueryFromSearchData = async (
     domain: mongoose.Types.ObjectId,
     inputFilters?: string,

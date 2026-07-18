@@ -201,6 +201,18 @@ const tagWithDetails = new GraphQLObjectType({
     },
 });
 
+const subscriberType = new GraphQLObjectType({
+    name: "Subscriber",
+    fields: {
+        // userId is the row's action handle (for the Unsubscribe control), not
+        // a displayed column — the table shows email, name, and subscribed date.
+        userId: { type: new GraphQLNonNull(GraphQLString) },
+        email: { type: new GraphQLNonNull(GraphQLString) },
+        name: { type: GraphQLString },
+        subscribedAt: { type: GraphQLString },
+    },
+});
+
 const certificateType = new GraphQLObjectType({
     name: "Certificate",
     fields: {
@@ -231,6 +243,7 @@ const userTypes = {
     userFilterInput,
     createSegmentInput,
     tagWithDetails,
+    subscriberType,
     userContent,
     membershipStatusType,
     membershipEntityType,
