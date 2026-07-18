@@ -2,6 +2,7 @@ import HomepageLayout from "./home-page-layout";
 import { headers } from "next/headers";
 import { getFullSiteSetup } from "@ui-lib/utils";
 import { getAddressFromHeaders } from "@/app/actions";
+import { SiteUnavailable } from "./site-unavailable";
 
 export default async function Layout({
     children,
@@ -12,7 +13,7 @@ export default async function Layout({
     const siteInfo = await getFullSiteSetup(address);
 
     if (!siteInfo) {
-        return null;
+        return <SiteUnavailable />;
     }
 
     return <HomepageLayout siteInfo={siteInfo}>{children}</HomepageLayout>;

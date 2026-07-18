@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import type { Metadata, ResolvingMetadata } from "next";
 import { Media } from "@courselit/common-models";
 import { notFound } from "next/navigation";
+import { SiteUnavailable } from "../../site-unavailable";
 
 type Props = {
     params: Promise<{
@@ -82,7 +83,7 @@ export default async function Page(props: Props) {
         getPage(address, params.id),
     ]);
     if (!siteInfo) {
-        return null;
+        return <SiteUnavailable minHeightClass="min-h-[60vh]" />;
     }
 
     if (!page) {

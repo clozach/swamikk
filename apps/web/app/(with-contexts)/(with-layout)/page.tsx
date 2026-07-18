@@ -4,6 +4,7 @@ import ClientSidePage from "./p/[id]/client-side-page";
 import { headers } from "next/headers";
 import type { Metadata, ResolvingMetadata } from "next";
 import FirstRunPopup from "./first-run-popup";
+import { SiteUnavailable } from "./site-unavailable";
 
 type Props = {
     params: {
@@ -70,7 +71,7 @@ export default async function Page({
     const address = await getAddressFromHeaders(headers);
     const siteInfo = await getFullSiteSetup(address, "homepage");
     if (!siteInfo) {
-        return null;
+        return <SiteUnavailable minHeightClass="min-h-[60vh]" />;
     }
     const firstRun = (await searchParams).firstrun === "1";
 
