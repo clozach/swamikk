@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useCallback } from "react";
 import type { ContentItem } from "@/components/admin/my-content/content";
 import { AddressContext, ProfileContext } from "@components/contexts";
 import { FetchBuilder } from "@courselit/utils";
@@ -8,6 +8,7 @@ import { MembershipEntityType } from "@courselit/common-models";
 import { MyContentCard } from "@components/admin/my-content/content-card";
 import { SkeletonCard } from "@components/skeleton-card";
 import { MyContentEmptyState } from "./empty-state";
+import { MyContentErrorState } from "./error-state";
 import {
     MY_CONTENT_BROWSE_PRODUCTS,
     MY_CONTENT_EMPTY_PRODUCTS,
@@ -40,17 +41,12 @@ export default function MyContentView({
 }) {
     const [data, setData] = useState<ContentItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
     const { profile } = useContext(ProfileContext);
     const address = useContext(AddressContext);
-    const userId = profile?.userId;
 
-    useEffect(() => {
-        if (!profile) {
-            return;
-        }
-
-        const getUserContent = async () => {
-            const query = `
+    const getUserContent = useCallback(async () => {
+        const query = `
             query {
                 content: getUserContent {
                     entityType
@@ -72,25 +68,32 @@ export default function MyContentView({
             }
             `;
 
-            try {
-                const fetch = new FetchBuilder()
-                    .setUrl(`${address.backend}/api/graph`)
-                    .setPayload(query)
-                    .setIsGraphQLEndpoint(true)
-                    .build();
-                setLoading(true);
-                const response = await fetch.exec();
-                if (response.content) {
-                    setData(response.content);
-                }
-            } catch (e: any) {
-            } finally {
-                setLoading(false);
+        try {
+            const fetch = new FetchBuilder()
+                .setUrl(`${address.backend}/api/graph`)
+                .setPayload(query)
+                .setIsGraphQLEndpoint(true)
+                .build();
+            setLoading(true);
+            setError(false);
+            const response = await fetch.exec();
+            if (response.content) {
+                setData(response.content);
             }
-        };
+        } catch (e: any) {
+            setError(true);
+        } finally {
+            setLoading(false);
+        }
+    }, [address.backend]);
+
+    useEffect(() => {
+        if (!profile) {
+            return;
+        }
 
         getUserContent();
-    }, [address.backend, profile, userId]);
+    }, [profile, getUserContent]);
 
     const items = data.filter(
         (item) => item.entityType.toLowerCase() === type.toLowerCase(),
@@ -98,6 +101,15 @@ export default function MyContentView({
 
     if (loading) {
         return <SkeletonGrid />;
+    }
+
+    if (error) {
+        return (
+            <MyContentErrorState
+                title="We couldn't load your content just now"
+                onRetry={getUserContent}
+            />
+        );
     }
 
     if (items.length === 0) {

@@ -15,6 +15,7 @@ import PostCardSkeleton from "@components/community/post-card-skeleton";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { MyContentEmptyState } from "../empty-state";
+import { MyContentErrorState } from "../error-state";
 import { PaginatedTable } from "@courselit/components-library";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -88,6 +89,8 @@ export default function Page() {
     const [totalPosts, setTotalPosts] = useState(0);
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
+    const [reloadKey, setReloadKey] = useState(0);
     const { profile } = useContext(ProfileContext);
     const address = useContext(AddressContext);
     const router = useRouter();
@@ -166,6 +169,7 @@ export default function Page() {
 
             try {
                 setLoading(true);
+                setError(false);
                 const fetch = new FetchBuilder()
                     .setUrl(`${address.backend}/api/graph`)
                     .setPayload({
@@ -199,6 +203,7 @@ export default function Page() {
                     return;
                 }
 
+                setError(true);
                 setPosts([]);
                 setTotalPosts(0);
                 setCommunities([]);
@@ -221,6 +226,7 @@ export default function Page() {
         page,
         profile,
         router,
+        reloadKey,
     ]);
 
     const formatTimestamp = (value?: string) => formattedLocaleDate(value);
@@ -347,6 +353,15 @@ export default function Page() {
 
     if (!hasEnabledCommunities) {
         return null;
+    }
+
+    if (error) {
+        return (
+            <MyContentErrorState
+                title="We couldn't load your feed just now"
+                onRetry={() => setReloadKey((key) => key + 1)}
+            />
+        );
     }
 
     if (!posts.length) {
