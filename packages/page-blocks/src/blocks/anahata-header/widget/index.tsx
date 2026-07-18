@@ -264,9 +264,14 @@ export default function Widget({
                 <div
                     className={clsx(
                         HEADER_CONTAINER,
-                        // Stacked and centred below 1140px, side by side above
-                        // — the live site reflows well before the mobile menu.
-                        "flex flex-col items-center min-[1140px]:flex-row min-[1140px]:justify-between",
+                        // Always stacked and centred: wordmark on its own line,
+                        // nav centred beneath it. There used to be a 1140px
+                        // breakpoint that switched to a row and shoved the nav
+                        // to the right edge, which left a widening gap between
+                        // the centred logo and the nav as the viewport grew —
+                        // the two read as unrelated objects rather than one
+                        // masthead. The live site centres both at every width.
+                        "flex flex-col items-center",
                     )}
                 >
                     <div className="pb-[16px] pt-[14px]">
@@ -285,11 +290,8 @@ export default function Widget({
                         </a>
                     </div>
 
-                    <nav
-                        aria-label="Main"
-                        className="max-[767px]:hidden min-[1140px]:ml-auto"
-                    >
-                        <ul className="m-0 flex list-none flex-wrap items-center justify-center p-0 min-[1140px]:justify-end">
+                    <nav aria-label="Main" className="max-[767px]:hidden">
+                        <ul className="m-0 flex list-none flex-wrap items-center justify-center p-0">
                             {menu.map((item) => (
                                 <DesktopNavItem key={item.id} item={item} />
                             ))}

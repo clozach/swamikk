@@ -18,17 +18,21 @@ export const logoWidth = 250;
 export const logoHeight = 64;
 export const homeHref = "/";
 
-export const showTopBar = true;
+/* The cocoa utility strip is off by default and ships with no items.
+   It used to carry Cart / Search / Menu / Contact, copied from the live
+   WordPress site where those are real WooCommerce and theme features. Here
+   they were four `href: "#"` placeholders: Cart and Search have nothing to
+   point at (this platform has no basket and no site search), and Menu and
+   Contact duplicated the nav directly beneath them. A second row of chrome
+   that looks like navigation and does nothing costs more than it earns.
 
-export const topBarLeftItems: TopBarItem[] = [
-    { id: "topbar-cart", label: "Cart / 0 Items", href: "#" },
-    { id: "topbar-search", label: "Search", href: "#" },
-];
+   The strip itself stays configurable — if a real destination ever exists,
+   add it in the block's settings. Defaults just don't invent one. */
+export const showTopBar = false;
 
-export const topBarRightItems: TopBarItem[] = [
-    { id: "topbar-menu", label: "Menu", href: "#" },
-    { id: "topbar-contact", label: "Contact", href: "#" },
-];
+export const topBarLeftItems: TopBarItem[] = [];
+
+export const topBarRightItems: TopBarItem[] = [];
 
 export const mobileMenuLabel = "Menu";
 export const mobileCtaLabel = "Contact";
