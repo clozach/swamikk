@@ -114,8 +114,16 @@ export const LessonViewer = ({
     const activeMediaRef = useRef<HTMLMediaElement | null>(null);
     const setMediaRef = useCallback((node: HTMLMediaElement | null) => {
         if (node === null && activeMediaRef.current) {
+            const m = activeMediaRef.current;
             try {
-                activeMediaRef.current.pause();
+                // Pausing is not enough in Safari: a bfcache restore can
+                // revive a detached element's audio (see video-with-preview).
+                // Fully release the media resource — this element renders its
+                // source via <source> children, so clear those too.
+                m.pause();
+                m.removeAttribute("src");
+                while (m.firstChild) m.removeChild(m.firstChild);
+                m.load();
             } catch {
                 // element already gone — nothing to stop
             }
@@ -123,7 +131,7 @@ export const LessonViewer = ({
         activeMediaRef.current = node;
     }, []);
     useEffect(() => {
-        const stopForBfcache = () => {
+        const stopPlayback = () => {
             const m = activeMediaRef.current;
             if (m && !m.paused) {
                 try {
@@ -133,8 +141,15 @@ export const LessonViewer = ({
                 }
             }
         };
-        window.addEventListener("pagehide", stopForBfcache);
-        return () => window.removeEventListener("pagehide", stopForBfcache);
+        const onPageShow = (e: PageTransitionEvent) => {
+            if (e.persisted) stopPlayback();
+        };
+        window.addEventListener("pagehide", stopPlayback);
+        window.addEventListener("pageshow", onPageShow);
+        return () => {
+            window.removeEventListener("pagehide", stopPlayback);
+            window.removeEventListener("pageshow", onPageShow);
+        };
     }, []);
 
     const isCompleted =

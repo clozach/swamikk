@@ -10,6 +10,7 @@ import { AddressContext, ProfileContext } from "@components/contexts";
 import { extractVideoId, FetchBuilder } from "@courselit/utils";
 import { formattedLocaleDate } from "@ui-lib/utils";
 import CommunityPostCard from "@components/community/post-card";
+import { mediaTeardownRef } from "@components/public/media-teardown";
 import PostCardSkeleton from "@components/community/post-card-skeleton";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -290,6 +291,7 @@ export default function Page() {
             case "video":
                 return media.media ? (
                     <video
+                        ref={mediaTeardownRef}
                         src={media.media.file}
                         poster={media.media.thumbnail}
                         className="h-48 aspect-video rounded-md object-cover"

@@ -44,8 +44,17 @@ export function VideoWithPreview({
     const activeVideoRef = useRef<HTMLVideoElement | null>(null);
     const setVideoRef = useCallback((node: HTMLVideoElement | null) => {
         if (node === null && activeVideoRef.current) {
+            const v = activeVideoRef.current;
             try {
-                activeVideoRef.current.pause();
+                // Pausing is not enough in Safari: restoring the page from
+                // the back-forward cache (e.g. Back from Stripe checkout) can
+                // revive a detached element's audio even though it was paused
+                // at teardown — audio on a page with no video. Fully release
+                // the media resource so there is nothing left to resume.
+                v.pause();
+                v.removeAttribute("src");
+                while (v.firstChild) v.removeChild(v.firstChild);
+                v.load();
             } catch {
                 // element already gone — nothing to stop
             }
@@ -59,7 +68,7 @@ export function VideoWithPreview({
     // <video> (and its audio) on Back — sometimes over a live instance, which
     // is the "echo" heard when bouncing between checkout and Stripe.
     useEffect(() => {
-        const stopForBfcache = () => {
+        const stopPlayback = () => {
             const v = activeVideoRef.current;
             if (v && !v.paused) {
                 try {
@@ -69,8 +78,18 @@ export function VideoWithPreview({
                 }
             }
         };
-        window.addEventListener("pagehide", stopForBfcache);
-        return () => window.removeEventListener("pagehide", stopForBfcache);
+        // pagehide: pause before the bfcache freeze snapshots "playing".
+        // pageshow(persisted): Safari has been observed resuming media on
+        // bfcache restore regardless — pause again defensively.
+        const onPageShow = (e: PageTransitionEvent) => {
+            if (e.persisted) stopPlayback();
+        };
+        window.addEventListener("pagehide", stopPlayback);
+        window.addEventListener("pageshow", onPageShow);
+        return () => {
+            window.removeEventListener("pagehide", stopPlayback);
+            window.removeEventListener("pageshow", onPageShow);
+        };
     }, []);
 
     const detectVideoType = (): VideoType => {

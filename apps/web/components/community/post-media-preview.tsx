@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Download, Maximize2, Play } from "lucide-react";
 import { CommunityMedia } from "@courselit/common-models";
 import { extractVideoId } from "@courselit/utils";
+import { mediaTeardownRef } from "@components/public/media-teardown";
 
 interface CommunityPostMediaPreviewProps {
     media: CommunityMedia;
@@ -84,6 +85,7 @@ export default function CommunityPostMediaPreview({
         case "video":
             return media.media ? (
                 <video
+                    ref={mediaTeardownRef}
                     src={media.media.file}
                     poster={media.media.thumbnail}
                     className="h-48 aspect-video rounded-md object-cover"
