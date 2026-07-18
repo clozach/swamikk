@@ -317,7 +317,7 @@ export function AppSidebar({
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link href="/dashboard/my-content">
-                                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground overflow-hidden">
+                                <div className="flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden">
                                     <Image
                                         borderRadius={1}
                                         src={siteinfo.logo?.file || ""}

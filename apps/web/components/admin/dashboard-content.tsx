@@ -1,6 +1,7 @@
 "use client";
 
-import { ProfileContext } from "@components/contexts";
+import { ProfileContext, SiteInfoContext } from "@components/contexts";
+import { Image } from "@courselit/components-library";
 import { NotificationsViewer } from "@components/notifications-viewer";
 import {
     Breadcrumb,
@@ -35,6 +36,7 @@ export default function DashboardContent({
     permissions?: string[];
 }) {
     const { profile } = useContext(ProfileContext);
+    const siteInfo = useContext(SiteInfoContext);
 
     if (!profile || !profile.userId) {
         return <LoadingScreen />;
@@ -61,7 +63,25 @@ export default function DashboardContent({
                             />
                         </>
                     ) : null}
-                    {breadcrumbs.length > 0 && (
+                    {!isAdmin ? (
+                        <Link
+                            href="/"
+                            className="flex items-center gap-2 font-semibold"
+                        >
+                            <div className="flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg">
+                                <Image
+                                    borderRadius={1}
+                                    src={siteInfo.logo?.file || ""}
+                                    alt="logo"
+                                    className="h-full w-full object-cover"
+                                />
+                            </div>
+                            <span className="truncate text-sm">
+                                {siteInfo.title}
+                            </span>
+                        </Link>
+                    ) : null}
+                    {isAdmin && breadcrumbs.length > 0 && (
                         <Breadcrumb>
                             <BreadcrumbList>
                                 {breadcrumbs.map((breadcrumb, index) => (
