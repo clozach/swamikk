@@ -3,17 +3,22 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
+// A Badge renders a non-interactive <div> label — never a link or button —
+// so it must not react to hover (functional-vs-decorative rule: only real
+// interactive controls get hover feedback). The variant hover:bg-*/80 shifts
+// and the base `transition-colors` that animated them are removed; the focus
+// ring stays for the rare case a consumer makes a badge focusable.
 const badgeVariants = cva(
-    "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+    "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
     {
         variants: {
             variant: {
                 default:
-                    "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
+                    "border-transparent bg-primary text-primary-foreground",
                 secondary:
-                    "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+                    "border-transparent bg-secondary text-secondary-foreground",
                 destructive:
-                    "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
+                    "border-transparent bg-destructive text-destructive-foreground",
                 outline: "text-foreground",
             },
         },
