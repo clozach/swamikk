@@ -23,9 +23,10 @@ export const events: GatheringEvent[] = [
     {
         id: "anahata-gathering-resilience",
         title: "2026 Developing Resilience Online Course",
-        // Product isn't seeded yet; repoint at the real product page once it
-        // exists.
-        href: "/products",
+        // Deep-links to the resilience course's own sales page (was "/products"
+        // while no product existed). Al, 2026-07-20: the home card should land
+        // straight on the course, not the store listing.
+        href: "/p/2026-developing-resilience-online-course",
         imageUrl: "/anahata/course-building-resilience-2026.png",
         imageAlt:
             "Building Resilience — 4-week online course guided by Swami Karma Karuna, July 2026",

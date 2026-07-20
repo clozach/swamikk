@@ -22,6 +22,7 @@ import {
     AnahataPosts,
     AnahataNewsletter,
     AnahataFooter,
+    EditorialResilience,
 } from "@courselit/page-blocks";
 
 function loadWidgets(): Record<string, any> {
@@ -58,6 +59,8 @@ function loadWidgets(): Record<string, any> {
     widgets[AnahataFooter.metadata.name] = Object.assign({}, AnahataFooter, {
         shared: true,
     });
+
+    widgets[EditorialResilience.metadata.name] = EditorialResilience;
 
     return widgets;
 }
