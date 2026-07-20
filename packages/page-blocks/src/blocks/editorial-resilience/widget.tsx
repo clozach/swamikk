@@ -45,7 +45,7 @@ const accessInnerStyle: React.CSSProperties = {
 
 /**
  * Editorial — Resilience: a single self-contained magazine feature for the
- * 2026 Developing Resilience course. A faithful port of the standalone
+ * 2026 Building Resilience course. A faithful port of the standalone
  * `03-editorial-magazine.html` mockup: masthead rules → cover → three
  * questions → feature body + "At a Glance" sidebar → mountains band →
  * highlights → pull-quote → dot-leadered contents → live-sessions dispatch →
@@ -320,10 +320,11 @@ ${S} .er-link:focus-visible{ outline:2px solid var(--rust); outline-offset:2px; 
                 <div className="er-wrap">
                     <div className="er-cover-lead">
                         <p className="er-kicker er-cover-kicker er-rise">
-                            2026 · Online Course · Breath &amp; Nervous System
+                            2026 · 4-Week Online Course · Breath &amp; Nervous
+                            System
                         </p>
                         <h1 className="er-rise">
-                            Developing
+                            Building
                             <br />
                             Resilience
                             <span className="er-thin">
@@ -406,7 +407,7 @@ ${S} .er-link:focus-visible{ outline:2px solid var(--rust); outline-offset:2px; 
                                 center, rise from challenges, and creatively
                                 tackle obstacles. Resilience is not just an
                                 option; it&rsquo;s essential for navigating the
-                                complexities of modern life. &lsquo;Developing
+                                complexities of modern life. &lsquo;Building
                                 Resilience&rsquo; with Swami Karma Karuna offers
                                 you a comprehensive toolkit to support your
                                 body, mind, and nervous system amid global
@@ -997,7 +998,7 @@ ${S} .er-link:focus-visible{ outline:2px solid var(--rust); outline-offset:2px; 
                             <p className="er-kicker">
                                 Your place in the course
                             </p>
-                            <h2>Develop Your Resilience</h2>
+                            <h2>Build Your Resilience</h2>
                             <p>
                                 Access live guidance and support from Swami
                                 Karma Karuna.

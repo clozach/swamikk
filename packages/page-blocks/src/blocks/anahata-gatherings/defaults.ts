@@ -22,7 +22,7 @@ export const hostLine = "Hosted by: Anahata Yoga Retreat";
 export const events: GatheringEvent[] = [
     {
         id: "anahata-gathering-resilience",
-        title: "2026 Developing Resilience Online Course",
+        title: "2026 Building Resilience Online Course",
         // Deep-links to the resilience course's own sales page (was "/products"
         // while no product existed). Al, 2026-07-20: the home card should land
         // straight on the course, not the store listing.

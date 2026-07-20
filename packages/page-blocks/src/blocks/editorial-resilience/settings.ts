@@ -20,7 +20,7 @@ export interface BlockImage {
 
 /**
  * The Editorial — Resilience block is a single fixed magazine feature for the
- * 2026 Developing Resilience course. Its long-form copy is baked into the
+ * 2026 Building Resilience course. Its long-form copy is baked into the
  * render verbatim from the course spec, so the only editable settings are the
  * handful of photographs and the enrolment call-to-action target.
  */
