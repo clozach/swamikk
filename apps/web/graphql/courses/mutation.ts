@@ -18,6 +18,7 @@ import {
     reorderGroups,
     updateCourseCertificateTemplate,
 } from "./logic";
+import { deleteTestPurchase } from "./purchases";
 import Filter from "./models/filter";
 import GQLContext from "../../models/GQLContext";
 import mediaTypes from "../media/types";
@@ -56,6 +57,22 @@ export default {
         },
         resolve: async (_: unknown, { id }, context) =>
             deleteCourse(id, context),
+    },
+    deleteTestPurchase: {
+        type: new GraphQLNonNull(GraphQLBoolean),
+        args: {
+            courseId: {
+                type: new GraphQLNonNull(GraphQLString),
+            },
+            purchaseId: {
+                type: new GraphQLNonNull(GraphQLString),
+            },
+        },
+        resolve: async (
+            _: unknown,
+            { courseId, purchaseId }: { courseId: string; purchaseId: string },
+            context: GQLContext,
+        ) => deleteTestPurchase({ courseId, purchaseId, ctx: context }),
     },
     addGroup: {
         type: types.courseType,

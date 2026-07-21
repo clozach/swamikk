@@ -340,15 +340,17 @@ export default function DashboardPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
                 {" "}
                 {/* Updated grid columns */}
-                <MetricCard
-                    title="Sales"
-                    icon={
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    }
-                    type={ActivityType.PURCHASED}
-                    duration={timeRange}
-                    entityId={productId}
-                />
+                <Link href={`/dashboard/product/${productId}/transactions`}>
+                    <MetricCard
+                        title="Sales"
+                        icon={
+                            <DollarSign className="h-4 w-4 text-muted-foreground" />
+                        }
+                        type={ActivityType.PURCHASED}
+                        duration={timeRange}
+                        entityId={productId}
+                    />
+                </Link>
                 <Link href={`/dashboard/product/${productId}/customers`}>
                     <MetricCard
                         title="Customers"

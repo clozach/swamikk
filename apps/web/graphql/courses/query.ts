@@ -1,10 +1,12 @@
 import {
     GraphQLString,
     GraphQLInt,
+    GraphQLFloat,
     GraphQLNonNull,
     GraphQLList,
     GraphQLEnumType,
     GraphQLBoolean,
+    GraphQLObjectType,
 } from "graphql";
 import types from "./types";
 import {
@@ -16,6 +18,7 @@ import {
     getProductsCount,
     getCourseCertificateTemplate,
 } from "./logic";
+import { getProductPurchases } from "./purchases";
 import GQLContext from "../../models/GQLContext";
 import Filter from "./models/filter";
 import constants from "../../config/constants";
@@ -31,6 +34,22 @@ const courseFilters = new GraphQLEnumType({
         [course.toUpperCase()]: { value: course },
         [download.toUpperCase()]: { value: download },
         [blog.toUpperCase()]: { value: blog },
+    },
+});
+
+const productPurchaseType = new GraphQLObjectType({
+    name: "ProductPurchase",
+    fields: {
+        purchaseId: { type: new GraphQLNonNull(GraphQLString) },
+        invoiceId: { type: GraphQLString },
+        userId: { type: GraphQLString },
+        userEmail: { type: GraphQLString },
+        userName: { type: GraphQLString },
+        amount: { type: GraphQLFloat },
+        currencyISOCode: { type: GraphQLString },
+        status: { type: GraphQLString },
+        isTest: { type: GraphQLBoolean },
+        createdAt: { type: GraphQLString },
     },
 });
 
@@ -218,6 +237,19 @@ export default {
                 status,
                 searchText,
             }),
+    },
+    getProductPurchases: {
+        type: new GraphQLList(productPurchaseType),
+        args: {
+            courseId: {
+                type: new GraphQLNonNull(GraphQLString),
+            },
+        },
+        resolve: (
+            _: any,
+            { courseId }: { courseId: string },
+            ctx: GQLContext,
+        ) => getProductPurchases({ courseId, ctx }),
     },
     getCourseCertificateTemplate: {
         type: types.certificateTemplateType,
