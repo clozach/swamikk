@@ -4,13 +4,13 @@ import { Check } from "lucide-react";
 import Link from "next/link";
 import { PaymentVerificationStatus } from "./payment-verification-status";
 import { useSearchParams } from "next/navigation";
-import { useContext, useEffect, useState } from "react";
+import { Suspense, useContext, useEffect, useState } from "react";
 import { AddressContext, ThemeContext } from "@components/contexts";
 import { FetchBuilder } from "@courselit/utils";
 import { InvoicesStatus } from "@courselit/common-models";
 import { Button, Header2, Section, Text1 } from "@courselit/page-primitives";
 
-export default function Page() {
+function VerifyContent() {
     const params = useSearchParams();
     const id = params?.get("id");
     const [paymentStatus, setPaymentStatus] =
@@ -106,5 +106,17 @@ export default function Page() {
                 )}
             </div>
         </Section>
+    );
+}
+
+// useSearchParams() must sit under a Suspense boundary, otherwise Next.js
+// deopts the whole /checkout/verify route into client-side rendering — which
+// showed up as a blank page (dev) / a hard bounce to the home page (prod build)
+// the moment a real Stripe return landed here.
+export default function Page() {
+    return (
+        <Suspense fallback={null}>
+            <VerifyContent />
+        </Suspense>
     );
 }
