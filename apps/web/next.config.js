@@ -95,13 +95,28 @@ const nextConfig = {
                 value: "public, max-age=3600, stale-while-revalidate=86400",
             },
         ];
+        // Covers EVERY static image served from /public (2026-07-21 sweep):
+        // <img> src AND CSS background-image alike — all get max-age=0 from
+        // Next's static handler, so all are exposed to the same drop.
         return [
+            // Brand + replica media: storefront hero (wordmark + hp-hero-bg),
+            // section backgrounds, gatherings, posts, bio, footer.
             { source: "/anahata/:path*", headers: brandCache },
+            // Editorial-resilience block backgrounds; design-exploration
+            // comparators — both served straight from /public.
+            { source: "/editorial/:path*", headers: brandCache },
+            { source: "/easter-eggs/:path*", headers: brandCache },
+            // Root-level brand images.
             { source: "/swami-kk-logo.png", headers: brandCache },
             { source: "/swami-signature.png", headers: brandCache },
             { source: "/anahata-logo-2021.png", headers: brandCache },
             { source: "/anahata-emblem-64.png", headers: brandCache },
             { source: "/placeholder-image.svg", headers: brandCache },
+            // Upstream CourseLit fallback art (shown when a record has no
+            // image) + the fallback favicon.
+            { source: "/courselit_backdrop.webp", headers: brandCache },
+            { source: "/courselit_backdrop_square.webp", headers: brandCache },
+            { source: "/default-favicon.ico", headers: brandCache },
         ];
     },
     transpilePackages: [
