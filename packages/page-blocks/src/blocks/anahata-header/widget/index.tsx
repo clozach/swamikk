@@ -3,6 +3,7 @@ import { WidgetProps } from "@courselit/common-models";
 import clsx from "clsx";
 import Settings from "../settings";
 import {
+    accountLoginLabel as defaultAccountLoginLabel,
     homeHref as defaultHomeHref,
     logoAlt as defaultLogoAlt,
     logoHeight as defaultLogoHeight,
@@ -40,6 +41,7 @@ import DesktopNavItem from "./desktop-nav";
 import TopBar from "./top-bar";
 import MobileOverlay, { MobileMenuState } from "./mobile-overlay";
 import ThemeToggle from "./theme-toggle";
+import AccountControl from "./account-control";
 
 /* ------------------------------------------------------------------ *
  * Detects whether the header band should be pinned ("stuck") to the top
@@ -183,8 +185,15 @@ export default function Widget({
     editing,
     nextTheme,
     toggleTheme,
+    state,
 }: WidgetProps<Settings>): JSX.Element {
     const isDarkTheme = nextTheme === "dark";
+    // The page already resolves the signed-in member into `state.profile`
+    // (and gates the paint on it, so there is no logged-out flash). The
+    // account control reads it directly — no auth client inside the block.
+    const profile = state?.profile;
+    const accountLoginLabel =
+        settings.accountLoginLabel || defaultAccountLoginLabel;
     const [mobileMenu, setMobileMenu] = useState<MobileMenuState>({
         kind: "closed",
     });
@@ -319,7 +328,19 @@ export default function Widget({
                         />
                     </a>
 
-                    <nav aria-label="Main" className="max-[767px]:hidden">
+                    {/* Grows to fill the space between the left-anchored logo
+                        and the right-anchored account zone, so its own
+                        justify-center leaves the menu optically centred while
+                        the account control sits at the true top-right corner.
+                        `flex-1` is desktop-only; on mobile the nav is hidden and
+                        the lone logo re-centres under the masthead's own
+                        justify-center — and if `flex-1` ever lost the cascade,
+                        the row degrades to a centred logo+nav+account cluster
+                        rather than breaking. */}
+                    <nav
+                        aria-label="Main"
+                        className="max-[767px]:hidden min-[768px]:flex-1"
+                    >
                         <ul className="m-0 flex list-none flex-wrap items-center justify-center p-0">
                             {menu.map((item) => (
                                 <DesktopNavItem key={item.id} item={item} />
@@ -336,6 +357,21 @@ export default function Widget({
                             )}
                         </ul>
                     </nav>
+
+                    {/* Account presence, top-right. Desktop only — the phone
+                        gets its account control inside the drawer (see
+                        MobileOverlay). Two mutually-exclusive media-scoped
+                        rules (`max-[767px]:hidden` / `min-[768px]:flex`) with
+                        no base display class to lose to, the same idiom the
+                        mobile bar below uses, since a base `flex` overridden by
+                        a responsive `hidden` is a cascade coin-flip here. */}
+                    <div className="max-[767px]:hidden min-[768px]:flex shrink-0 items-center">
+                        <AccountControl
+                            profile={profile}
+                            editing={editing}
+                            loginLabel={accountLoginLabel}
+                        />
+                    </div>
                 </div>
 
                 {/* Mobile bar: inside the header band, below the masthead row. */}
@@ -395,6 +431,9 @@ export default function Widget({
                 state={mobileMenu}
                 onClose={closeMobileMenu}
                 menu={menu}
+                // Same profile the desktop control reads, so the drawer opens
+                // to the member's account (or a prominent sign-in) at the top.
+                profile={profile}
                 // The drawer is where the utility strip's items live on a
                 // phone. Turning the strip off must remove them everywhere,
                 // not just from the band the user can already see.

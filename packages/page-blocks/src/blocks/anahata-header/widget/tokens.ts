@@ -139,3 +139,55 @@ export const MOBILE_LINK =
    rather than text-padded, since it holds a 16px glyph. */
 export const NAV_THEME_TOGGLE =
     "flex h-[50px] w-[44px] cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-[var(--nav-fg)] transition-colors duration-100 ease-in hover:text-[var(--nav-fg-hover)] focus-visible:text-[var(--nav-fg-hover)] active:text-[var(--nav-fg-active)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--nav-fg-hover)] max-[1309px]:w-[38px] max-[829px]:w-[34px]";
+
+/* ------------------------------------------------------------------ *
+ * Account control (top-right of the masthead).
+ *
+ * Every colour here rides the same --nav-* variables the band sets, so the
+ * whole control tracks light/dark without nextTheme threaded through it —
+ * rust accents on cream, saffron on the dark band, exactly like the nav.
+ * ------------------------------------------------------------------ */
+
+/* Signed-out sign-in affordance. An outlined pill (not a saffron fill):
+   quieter than a primary CTA and harmonious with the header rather than
+   shouting from the corner. Rust border/text on cream is 6.75:1; on the dark
+   band the same variable resolves to saffron at 8.64:1 — both clear AA. The
+   colour-mix hover tint is a faint wash of whichever accent is live. */
+export const ACCOUNT_LOGIN_PILL =
+    "inline-flex items-center gap-[8px] whitespace-nowrap rounded-[6px] border-[1.5px] border-solid border-[var(--nav-fg-hover)] bg-transparent px-[18px] py-[8px] text-[13.5px] font-bold uppercase leading-none text-[var(--nav-fg-hover)] no-underline transition-colors duration-100 ease-in hover:bg-[color-mix(in_srgb,var(--nav-fg-hover)_12%,transparent)] active:text-[var(--nav-fg-active)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--nav-fg-hover)]";
+
+/* Signed-in trigger: avatar + first name + chevron. Name colour is the nav's
+   rest ink/cream; the whole thing gets a faint hover ground so it reads as a
+   button, matching the flyout triggers. */
+export const ACCOUNT_TRIGGER =
+    "flex items-center gap-[9px] cursor-pointer rounded-[8px] border-0 bg-transparent py-[5px] pl-[5px] pr-[8px] text-[var(--nav-fg)] transition-colors duration-100 ease-in hover:bg-[color-mix(in_srgb,var(--nav-fg)_8%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--nav-fg-hover)]";
+export const ACCOUNT_TRIGGER_NAME =
+    "whitespace-nowrap text-[14px] font-bold text-[var(--nav-fg)] max-[959px]:hidden";
+
+/* The avatar chip. Rust ground with cream initials reads on both bands
+   (cream on rust is 6.7:1) and is replaced by the member's photo when set. */
+export const ACCOUNT_AVATAR =
+    "flex h-[34px] w-[34px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#993300] text-[13px] font-bold uppercase leading-none text-[#f7f4eb]";
+
+/* Dropdown panel. Same white/dark-panel ground and rust/saffron top accent as
+   the nav flyout (FLYOUT_PANEL), right-anchored so it can never leave the
+   viewport — the trigger already sits against the band's right padding, so the
+   panel only ever grows leftward and downward. */
+export const ACCOUNT_MENU =
+    "absolute right-0 top-[calc(100%+8px)] z-[10001] w-[250px] border-t-[5px] border-solid border-t-[var(--nav-panel-border)] bg-[var(--nav-panel-bg)] p-[8px] text-left shadow-[0_8px_26px_rgba(0,0,0,0.16)]";
+/* Menu rows are sentence-case actions (not uppercase nav labels), matching the
+   dashboard's own account menu so a member meets the same vocabulary in both
+   places. Rust/saffron icon + hover, inherited from --nav-fg-hover. */
+export const ACCOUNT_MENU_ITEM =
+    "flex items-center gap-[11px] rounded-[6px] px-[10px] py-[9px] text-[13.5px] font-semibold text-[var(--nav-fg)] no-underline transition-colors duration-100 ease-in hover:bg-[color-mix(in_srgb,var(--nav-fg-hover)_10%,transparent)] hover:text-[var(--nav-fg-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--nav-fg-hover)]";
+export const ACCOUNT_MENU_SEP =
+    "my-[4px] mx-[4px] h-px bg-[color-mix(in_srgb,var(--nav-fg)_14%,transparent)]";
+
+/* Mobile account block, inside the DRAWER (#262626). Saffron is legible here
+   (7.07:1), so the drawer keeps the brand accent — matching MOBILE_LINK. The
+   signed-out CTA is a saffron fill with cocoa text (7.24:1), the one place the
+   account control leans loud, because on a phone it is the primary next step. */
+export const ACCOUNT_MOBILE_CTA =
+    "flex items-center justify-center gap-[8px] rounded-[7px] bg-[#ff9900] px-[16px] py-[12px] text-[13px] font-bold uppercase leading-none tracking-[0.02em] text-[#312110] no-underline transition-colors duration-100 ease-in hover:bg-[#ffbf00] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ffbf00]";
+export const ACCOUNT_MOBILE_LINK =
+    "flex items-center gap-[12px] py-[11px] pr-5 text-[14px] uppercase text-white no-underline transition-colors duration-100 ease-in hover:text-[#ff9900] focus-visible:text-[#ff9900] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#ff9900]";

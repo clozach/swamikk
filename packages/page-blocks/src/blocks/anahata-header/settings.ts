@@ -55,5 +55,10 @@ export default interface Settings extends WidgetDefaultSettings {
     mobileCtaHref?: string;
     mobileCloseLabel?: string;
 
+    /** Label on the signed-out sign-in control (top-right). The destinations
+     *  and signed-in labels are fixed CourseLit routes, so only this one is
+     *  exposed. Defaults to "Log in". */
+    accountLoginLabel?: string;
+
     cssId?: string;
 }

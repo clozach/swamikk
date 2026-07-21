@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
+import { Profile } from "@courselit/common-models";
 import { MenuItem, TopBarItem } from "../settings";
 import { DRAWER, FONT_BODY, MOBILE_LINK } from "./tokens";
 import Chevron from "./chevron";
+import { MobileAccountSection } from "./account-control";
 
 export type MobileMenuState = { kind: "closed" } | { kind: "open" };
 
@@ -69,6 +71,7 @@ interface MobileOverlayProps {
     state: MobileMenuState;
     onClose: () => void;
     menu: MenuItem[];
+    profile: Profile | undefined;
     utilityItems: TopBarItem[];
     closeLabel: string;
 }
@@ -77,6 +80,7 @@ export default function MobileOverlay({
     state,
     onClose,
     menu,
+    profile,
     utilityItems,
     closeLabel,
 }: MobileOverlayProps) {
@@ -222,6 +226,9 @@ export default function MobileOverlay({
                         <span className="sr-only">{closeLabel}</span>
                     </button>
                 </div>
+                {/* Account first: the drawer opens to who you are (or a clear
+                    way in), above the site nav. */}
+                <MobileAccountSection profile={profile} onNavigate={onClose} />
                 <nav aria-label="Site">
                     <ul className="m-0 list-none p-0">
                         {menu.map((item) => (

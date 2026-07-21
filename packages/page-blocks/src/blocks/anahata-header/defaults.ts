@@ -48,6 +48,28 @@ export const mobileCtaLabel = "Contact";
 export const mobileCtaHref = "#";
 export const mobileCloseLabel = "Close mobile menu";
 
+/* ------------------------------------------------------------------ *
+ * Account presence — the always-available sign-in / account control.
+ *
+ * Sign-in is a single OTP flow, so "Log in" and "Create account" are the
+ * same action → /login (the fuller mobile label spells that out where the
+ * drawer has room). The signed-in destinations are fixed CourseLit routes:
+ * /dashboard/profile edits the account; /dashboard self-routes by role
+ * (admin → overview, student → my-content); /logout runs the sign-out. All
+ * are plain hrefs — the block needs no auth client, only the profile the
+ * page already hands it in `state`.
+ * ------------------------------------------------------------------ */
+export const accountLoginLabel = "Log in";
+export const accountLoginHref = "/login";
+export const accountLoginMobileLabel = "Log in / Create account";
+export const accountLoginMobileHint = "One tap — we email you a sign-in code.";
+export const accountManageLabel = "Manage account";
+export const accountManageHref = "/dashboard/profile";
+export const accountContentLabel = "My content";
+export const accountContentHref = "/dashboard";
+export const accountLogoutLabel = "Log out";
+export const accountLogoutHref = "/logout";
+
 export const menu: MenuItem[] = [
     {
         id: "events",
