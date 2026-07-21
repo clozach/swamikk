@@ -387,7 +387,11 @@ export default function DashboardPage() {
                 )}
             </div>
 
-            <SalesCard data={salesData} loading={salesLoading} />
+            <SalesCard
+                data={salesData}
+                loading={salesLoading}
+                transactionsHref={`/dashboard/product/${productId}/transactions`}
+            />
 
             {/* <div className="mt-4">
                 <Card>

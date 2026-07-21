@@ -3,6 +3,7 @@ import { Card, CardContent, CardTitle, CardHeader } from "@components/ui/card";
 import { Skeleton } from "@components/ui/skeleton";
 import { getSymbolFromCurrency } from "@courselit/components-library";
 import { useContext } from "react";
+import Link from "next/link";
 import {
     CartesianGrid,
     Line,
@@ -16,9 +17,11 @@ import {
 export default function SalesCard({
     data,
     loading,
+    transactionsHref,
 }: {
     data: any;
     loading: boolean;
+    transactionsHref?: string;
 }) {
     const siteinfo = useContext(SiteInfoContext);
 
@@ -80,6 +83,16 @@ export default function SalesCard({
                                     />
                                 </LineChart>
                             </ResponsiveContainer>
+                        </div>
+                    )}
+                    {transactionsHref && (
+                        <div className="mt-3 flex justify-end">
+                            <Link
+                                href={transactionsHref}
+                                className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                            >
+                                View transactions →
+                            </Link>
                         </div>
                     )}
                 </CardContent>
