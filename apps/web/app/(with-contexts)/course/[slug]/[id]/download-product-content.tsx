@@ -54,6 +54,13 @@ export default function DownloadProductContent({
 
     return (
         <div className="flex w-full flex-col gap-8 pb-[100px] lg:max-w-[40rem] xl:max-w-[48rem] mx-auto">
+            <style>{`
+                .er-lean-media::-webkit-media-controls-enclosure,
+                .er-lean-media::-webkit-media-controls-panel {
+                    background: transparent;
+                    box-shadow: none;
+                }
+            `}</style>
             {single ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <BookOpen className="h-4 w-4 shrink-0" />
@@ -202,8 +209,12 @@ function DownloadLessonRow({
     // Native players render UA-chrome; keep it matched to the active theme
     // without touching global color-scheme (which would restyle scrollbars
     // and inputs everywhere).
+    // The native player's gray lozenge is the Chromium/WebKit shadow-DOM
+    // enclosure, which the host element's background-color cannot reach — so
+    // the controls read as embedded directly in the page (see the global
+    // .er-lean-media rule injected once by DownloadProductContent).
     const mediaClassName =
-        "w-full [color-scheme:light] dark:[color-scheme:dark]";
+        "er-lean-media w-full [color-scheme:light] dark:[color-scheme:dark]";
 
     return (
         <div className="flex flex-col gap-4">
