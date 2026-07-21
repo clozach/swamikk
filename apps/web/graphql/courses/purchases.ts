@@ -147,7 +147,7 @@ export const deleteTestPurchase = async ({
         domain: ctx.subdomain._id,
         membershipId: invoice.membershipId,
     });
-    const activity = await ActivityModel.findOne({
+    const purchasedActivity = await ActivityModel.findOne({
         domain: ctx.subdomain._id,
         type: "purchased",
         "metadata.purchaseId": purchaseId,
@@ -157,15 +157,33 @@ export const deleteTestPurchase = async ({
     // so a crafted purchaseId can't reach across products.
     const belongsToCourse =
         (membership && membership.entityId === courseId) ||
-        (activity && activity.entityId === courseId);
+        (purchasedActivity && purchasedActivity.entityId === courseId);
     if (!belongsToCourse) {
         throw new Error(responses.item_not_found);
     }
 
+    const buyerId =
+        (membership && membership.userId) ||
+        (purchasedActivity && purchasedActivity.userId) ||
+        null;
+
+    // Remove the buyer's whole footprint on this product so every tile clears
+    // together — not just Sales (purchased) but Customers (enrolled), Downloads
+    // and completion. Access (membership) and the money record (invoice) go too.
+    // Scoped to (buyer, product): a purchase whose buyer we can't resolve falls
+    // back to just its own purchased activity.
     await Promise.all([
-        activity ? ActivityModel.deleteOne({ _id: activity._id }) : null,
         InvoiceModel.deleteOne({ _id: invoice._id }),
         membership ? MembershipModel.deleteOne({ _id: membership._id }) : null,
+        buyerId
+            ? ActivityModel.deleteMany({
+                  domain: ctx.subdomain._id,
+                  userId: buyerId,
+                  entityId: courseId,
+              })
+            : purchasedActivity
+              ? ActivityModel.deleteOne({ _id: purchasedActivity._id })
+              : null,
     ]);
 
     return true;

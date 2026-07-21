@@ -271,14 +271,15 @@ export default function TransactionsPage() {
                         <DialogDescription>
                             {confirmTarget && (
                                 <>
-                                    This permanently removes the purchase record
-                                    (activity, invoice and membership) for{" "}
+                                    This permanently clears{" "}
                                     <strong>
                                         {confirmTarget.userEmail ||
                                             confirmTarget.userName ||
                                             "a deleted user"}
                                     </strong>{" "}
-                                    — {formatAmount(confirmTarget)}. Only
+                                    from this product — the sale, the customer,
+                                    the invoice and their access (
+                                    {formatAmount(confirmTarget)}). Only
                                     test-mode purchases can be removed, and this
                                     can&apos;t be undone from here.
                                 </>
