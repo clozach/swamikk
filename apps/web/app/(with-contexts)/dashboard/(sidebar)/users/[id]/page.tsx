@@ -3,7 +3,6 @@
 import DashboardContent from "@components/admin/dashboard-content";
 import PermissionsEditor from "@components/admin/users/permissions-editor";
 import { AddressContext, ProfileContext } from "@components/contexts";
-import DocumentationLink from "@components/public/documentation-link";
 import { UserWithAdminFields } from "@courselit/common-models";
 import { permissions } from "@courselit/common-models/dist/ui-constants";
 import { ComboBox, useToast } from "@courselit/components-library";
@@ -521,11 +520,7 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
                         <CardHeader>
                             <CardTitle>{PERM_SECTION_HEADER}</CardTitle>
                             <CardDescription>
-                                <span>
-                                    {USER_PERMISSION_AREA_SUBTEXT}{" "}
-                                    <DocumentationLink path="/en/users/permissions/" />
-                                    .
-                                </span>
+                                <span>{USER_PERMISSION_AREA_SUBTEXT}</span>
                             </CardDescription>
                         </CardHeader>
                         <CardContent>

@@ -39,13 +39,11 @@ import {
     MEDIA_SELECTOR_REMOVE_BTN_CAPTION,
     TOAST_TITLE_ERROR,
     TOAST_TITLE_SUCCESS,
-    DOCUMENTATION_LINK_LABEL,
     SITE_SETTINGS_LEMONSQUEEZY_KEY_TEXT,
     SITE_SETTINGS_LEMONSQUEEZY_STOREID_TEXT,
     SITE_SETTINGS_LEMONSQUEEZY_ONETIME_TEXT,
     SITE_SETTINGS_LEMONSQUEEZY_SUB_MONTHLY_TEXT,
     SITE_SETTINGS_LEMONSQUEEZY_SUB_YEARLY_TEXT,
-    SETTINGS_RESOURCE_PAYMENT,
     SITE_MISCELLANEOUS_SETTING_HEADER,
     BUTTON_CANCEL_TEXT,
 } from "@/ui-config/strings";
@@ -75,7 +73,6 @@ import {
 } from "@components/ui/card";
 import { Copy, Info, RotateCcw } from "lucide-react";
 import { Input } from "@components/ui/input";
-import Resources from "@components/resources";
 import { AddressContext } from "@components/contexts";
 import { Button } from "@components/ui/button";
 import {
@@ -1167,16 +1164,7 @@ const Settings = (props: SettingsProps) => {
                                 <span>
                                     {
                                         SUBHEADER_SECTION_PAYMENT_CONFIRMATION_WEBHOOK
-                                    }{" "}
-                                    <a
-                                        className="underline"
-                                        href="https://docs.courselit.app/en/schools/set-up-payments"
-                                        target="_blank"
-                                        rel="noreferrer"
-                                    >
-                                        {DOCUMENTATION_LINK_LABEL}
-                                    </a>
-                                    .
+                                    }
                                 </span>
                             </CardDescription>
                         </CardHeader>
@@ -1202,14 +1190,6 @@ const Settings = (props: SettingsProps) => {
                             </div>
                         </CardContent>
                     </Card>
-                    <Resources
-                        links={[
-                            {
-                                href: "https://docs.courselit.app/en/schools/set-up-payments/",
-                                text: SETTINGS_RESOURCE_PAYMENT,
-                            },
-                        ]}
-                    />
                     {settings.paymentMethod === PAYMENT_METHOD_STRIPE && (
                         <CouponsManager
                             address={address}

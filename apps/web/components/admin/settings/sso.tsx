@@ -33,7 +33,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@components/ui/button";
-import Resources from "@components/resources";
 import { useEffect, useState } from "react";
 import {
     AlertDialog,
@@ -302,15 +301,6 @@ export default function SSOProvider({ address }: NewSSOProviderProps) {
                                 </div>
                             </form>
                         </FormProvider>
-                        <div></div>
-                        <Resources
-                            links={[
-                                {
-                                    href: "https://docs.courselit.app/en/schools/sso",
-                                    text: "Setup SSO",
-                                },
-                            ]}
-                        />
                     </CardContent>
                     <CardFooter>
                         {isSSOProviderSet && (

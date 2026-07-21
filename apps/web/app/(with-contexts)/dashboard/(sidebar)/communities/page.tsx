@@ -11,7 +11,6 @@ import Link from "next/link";
 import { Button } from "@components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
-import Resources from "@components/resources";
 const { permissions } = UIConstants;
 
 const breadcrumbs = [{ label: MANAGE_COMMUNITIES_PAGE_HEADING, href: "#" }];
@@ -48,14 +47,6 @@ export default function Page() {
                 itemsPerPage={9}
                 publicView={false}
                 onPageChange={handlePageChange}
-            />
-            <Resources
-                links={[
-                    {
-                        href: "https://docs.courselit.app/en/communities/introduction/",
-                        text: "Create a community",
-                    },
-                ]}
             />
         </DashboardContent>
     );

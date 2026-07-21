@@ -9,7 +9,6 @@ import {
     USER_SEGMENT_DROPDOWN_LABEL,
 } from "@ui-config/strings";
 import Segment from "@ui-models/segment";
-import DocumentationLink from "@components/public/documentation-link";
 import {
     DropdownMenuContent,
     DropdownMenuItem,
@@ -107,8 +106,7 @@ export default function SegmentEditor2({
                             {USER_SEGMENT_DROPDOWN_LABEL}
                         </DropdownMenuLabel>
                         <div className="text-xs text-muted-foreground px-2 pb-2">
-                            {USER_SEGMENT_DESCRIPTION}{" "}
-                            <DocumentationLink path="/en/users/segments" />
+                            {USER_SEGMENT_DESCRIPTION}
                         </div>
                         {segments.map((segment) => (
                             <DropdownMenuItem

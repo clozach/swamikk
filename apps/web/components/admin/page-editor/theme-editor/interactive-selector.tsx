@@ -31,7 +31,6 @@ import {
     AccordionTrigger,
     AccordionContent,
 } from "@courselit/components-library";
-import DocumentationLink from "@/components/public/documentation-link";
 
 interface InteractiveSelectorProps {
     type: "button" | "link" | "card" | "input";
@@ -419,10 +418,7 @@ function InteractiveSelector({
                         />
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Info className="h-4 w-4" />
-                            <span>
-                                Use any supported Tailwind class here.{" "}
-                                <DocumentationLink path="/en/website/themes#supported-tailwind-classes" />
-                            </span>
+                            <span>Use any supported Tailwind class here.</span>
                         </div>
                     </div>
                 </AccordionContent>

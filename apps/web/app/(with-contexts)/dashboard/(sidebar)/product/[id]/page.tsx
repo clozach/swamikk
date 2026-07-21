@@ -60,7 +60,6 @@ import MetricCard from "./metric-card";
 import { useToast, Tooltip as TooltipCL } from "@courselit/components-library";
 import { useActivities } from "@/hooks/use-activities";
 import { Constants, UIConstants } from "@courselit/common-models";
-import Resources from "@components/resources";
 import { TIME_RANGES } from "@ui-config/constants";
 import SalesCard from "../../overview/sales-card";
 import { appendCourseViewerSessionParamsToHref } from "@/lib/course-viewer-session-params";
@@ -455,19 +454,6 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
             </div> */}
-
-            <Resources
-                links={[
-                    {
-                        href: `https://docs.courselit.app/en/courses/add-content/`,
-                        text: "Add content to a product",
-                    },
-                    {
-                        href: `https://docs.courselit.app/en/courses/add-content/`,
-                        text: "Understanding product dashboard",
-                    },
-                ]}
-            />
         </DashboardContent>
     );
 }

@@ -39,7 +39,6 @@ import DashboardContent from "@components/admin/dashboard-content";
 import { Constants, DripType, UIConstants } from "@courselit/common-models";
 import { Form, useToast } from "@courselit/components-library";
 import { FetchBuilder } from "@courselit/utils";
-import Resources from "@components/resources";
 import EmailViewer from "@components/admin/mails/email-viewer";
 import { defaultEmail } from "@courselit/email-editor";
 import type { Email as EmailContent } from "@courselit/email-editor";
@@ -583,14 +582,6 @@ export default function SectionPage(props: {
                     </div>
                 </Form>
             </div>
-            <Resources
-                links={[
-                    {
-                        href: "https://docs.courselit.app/en/courses/section#drip-a-section",
-                        text: "Drip content",
-                    },
-                ]}
-            />
         </DashboardContent>
     );
 }

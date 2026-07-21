@@ -38,7 +38,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@components/ui/button";
-import Resources from "@components/resources";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -346,16 +345,6 @@ export default function GoogleProvider({ address }: GoogleProviderProps) {
                                 </div>
                             </form>
                         </FormProvider>
-                    </CardContent>
-                    <CardContent className="pt-0">
-                        <Resources
-                            links={[
-                                {
-                                    href: "https://docs.courselit.app/en/schools/google-sign-in",
-                                    text: "Set up Google sign in",
-                                },
-                            ]}
-                        />
                     </CardContent>
                     <CardFooter>
                         {isGoogleProviderSet && (

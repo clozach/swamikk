@@ -51,7 +51,6 @@ import {
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { EmptyState } from "@/app/(with-contexts)/(with-layout)/products/empty-state";
-import Resources from "@components/resources";
 import { SkeletonCard } from "@components/skeleton-card";
 
 const ITEMS_PER_PAGE = 9;
@@ -262,19 +261,6 @@ export default function Page() {
                     onPageChange={handlePageChange}
                 />
             )}
-
-            <Resources
-                links={[
-                    {
-                        href: "https://docs.courselit.app/en/courses/introduction/",
-                        text: "Create a course",
-                    },
-                    {
-                        href: "https://docs.courselit.app/en/downloads/introduction/",
-                        text: "Create a digital download",
-                    },
-                ]}
-            />
         </DashboardContent>
     );
 }

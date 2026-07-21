@@ -2,7 +2,6 @@
 
 import DashboardContent from "@components/admin/dashboard-content";
 import { AddressContext, ProfileContext } from "@components/contexts";
-import Resources from "@components/resources";
 import { Card, CardContent, CardHeader, CardTitle } from "@components/ui/card";
 import { Checkbox, useToast } from "@courselit/components-library";
 import {
@@ -21,7 +20,6 @@ import {
     NOTIFICATION_SETTINGS_GROUP_USER_MANAGEMENT,
     NOTIFICATION_SETTINGS_PAGE_DESCRIPTION,
     NOTIFICATION_SETTINGS_PAGE_HEADER,
-    NOTIFICATION_SETTINGS_RESOURCE_TEXT,
     TOAST_TITLE_ERROR,
 } from "@ui-config/strings";
 import {
@@ -594,14 +592,6 @@ export default function Page() {
                 groups={groupedPreferences}
                 updatingActivityTypes={updatingActivityTypes}
                 onChannelToggle={onChannelToggle}
-            />
-            <Resources
-                links={[
-                    {
-                        href: "https://docs.courselit.app/en/users/notifications/",
-                        text: NOTIFICATION_SETTINGS_RESOURCE_TEXT,
-                    },
-                ]}
             />
         </DashboardContent>
     );

@@ -242,16 +242,7 @@ export default function MiscellaneousTab() {
                 <CardHeader>
                     <CardTitle>{APIKEY_EXISTING_HEADER}</CardTitle>
                     <CardDescription>
-                        {APIKEY_CARD_DESCRIPTION}.{" "}
-                        <a
-                            href="https://docs.courselit.app/en/developers/introduction"
-                            className="underline"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            Learn more
-                        </a>
-                        .
+                        {APIKEY_CARD_DESCRIPTION}.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
