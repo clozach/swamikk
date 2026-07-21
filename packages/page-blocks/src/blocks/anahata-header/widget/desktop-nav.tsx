@@ -14,6 +14,7 @@ import {
     FLYOUT_LINK,
 } from "./tokens";
 import Chevron from "./chevron";
+import { TRACKER_TRIGGER_ATTR } from "./tutorial-tracker";
 
 /* ------------------------------------------------------------------ *
  * State modes — discriminated unions, not flag bags
@@ -289,7 +290,45 @@ function FlyoutItem({
     );
 }
 
-export default function DesktopNavItem({ item }: { item: MenuItem }) {
+export default function DesktopNavItem({
+    item,
+    trackerOpen,
+    onTrackerToggle,
+}: {
+    item: MenuItem;
+    /* Only meaningful for the `action: "tutorial-tracker"` item (id "faq"):
+       the tray's open-state and its toggle, threaded from the block so the
+       FAQ item can render as an in-nav button. Undefined for every other
+       item, which ignores them. */
+    trackerOpen?: boolean;
+    onTrackerToggle?: () => void;
+}) {
+    /* The repurposed FAQ item toggles the demo-walkthrough tray instead of
+       navigating — a <button> styled identically to the other top-level nav
+       links (NAV_LINK + NAV_LINK_METRICS), carrying the trigger marker the
+       tray's click-away handler ignores. Early-returned before the flyout
+       hooks below; this item never has children, so none apply. */
+    if (item.action === "tutorial-tracker") {
+        return (
+            <li className="relative m-0 list-none p-0">
+                <button
+                    type="button"
+                    className={clsx(
+                        NAV_LINK,
+                        NAV_LINK_METRICS,
+                        "cursor-pointer border-0 bg-transparent",
+                    )}
+                    aria-haspopup="dialog"
+                    aria-expanded={Boolean(trackerOpen)}
+                    {...{ [TRACKER_TRIGGER_ATTR]: "" }}
+                    onClick={onTrackerToggle}
+                >
+                    {item.label}
+                </button>
+            </li>
+        );
+    }
+
     const hasChildren = Boolean(item.children && item.children.length);
     const { open, close, pin, handlers } = useDropdown(hasChildren);
     const triggerRef = useRef<HTMLAnchorElement | null>(null);

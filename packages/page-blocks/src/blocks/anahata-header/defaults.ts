@@ -92,77 +92,14 @@ export const menu: MenuItem[] = [
             { id: "events-venue", label: "Venue Hire", href: "#" },
         ],
     },
-    {
-        id: "stay",
-        label: "Stay",
-        href: "#",
-        children: [
-            {
-                id: "stay-rentals",
-                label: "Accommodation Rentals",
-                href: "#",
-            },
-            { id: "stay-caretaker", label: "Caretaker", href: "#" },
-            {
-                id: "stay-getting-here",
-                label: "Getting to Anahata",
-                href: "#",
-            },
-            { id: "stay-what-to-bring", label: "What To Bring", href: "#" },
-            { id: "stay-faqs", label: "FAQs", href: "#" },
-            {
-                id: "stay-private-sessions",
-                label: "Private Sessions",
-                href: "#",
-            },
-        ],
-    },
+    /* Menu pivot (2026-07-21): STAY removed entirely, and ABOUT (with its
+       Yoga subtree) replaced by a top-level FAQ item. FAQ no longer navigates
+       — it toggles the demo-walkthrough tracker tray (an internal tool used to
+       drive the four-journey demo; expected to be removed later). Events /
+       Give / Contact / Our Newsletter stay as styled placeholders. */
     { id: "give", label: "Give", href: "#" },
     { id: "blog", label: "Blog", href: "/blog" },
-    {
-        id: "about",
-        label: "About",
-        href: "#",
-        children: [
-            { id: "about-who-we-are", label: "Who We Are", href: "#" },
-            {
-                id: "about-trust-vision",
-                label: "Anahata Trust & Vision",
-                href: "#",
-            },
-            {
-                id: "about-meaning",
-                label: "The Meaning of the Word 'Anahata'",
-                href: "#",
-            },
-            {
-                id: "about-yoga",
-                label: "Yoga",
-                href: "#",
-                children: [
-                    { id: "yoga-hatha", label: "Hatha Yoga", href: "#" },
-                    { id: "yoga-karma", label: "Karma Yoga", href: "#" },
-                    { id: "yoga-bhakti", label: "Bhakti Yoga", href: "#" },
-                    { id: "yoga-mantra", label: "Mantra Yoga", href: "#" },
-                    { id: "yoga-jnana", label: "Jnana Yoga", href: "#" },
-                    { id: "yoga-raja", label: "Raja Yoga", href: "#" },
-                ],
-            },
-            { id: "about-eco-living", label: "Eco Living", href: "#" },
-            {
-                id: "about-ashram-principles",
-                label: "Ashram Principles",
-                href: "#",
-            },
-            { id: "about-tour", label: "Tour of Anahata", href: "#" },
-            { id: "about-gallery", label: "Gallery", href: "#" },
-            {
-                id: "about-guests",
-                label: "What Our Guests Are Saying",
-                href: "#",
-            },
-        ],
-    },
+    { id: "faq", label: "FAQ", href: "#", action: "tutorial-tracker" },
     { id: "contact", label: "Contact", href: "#" },
     { id: "newsletter", label: "Our Newsletter", href: "#" },
     {

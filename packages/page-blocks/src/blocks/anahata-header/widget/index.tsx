@@ -42,6 +42,7 @@ import TopBar from "./top-bar";
 import MobileOverlay, { MobileMenuState } from "./mobile-overlay";
 import ThemeToggle from "./theme-toggle";
 import AccountControl from "./account-control";
+import TutorialTracker from "./tutorial-tracker";
 
 /* ------------------------------------------------------------------ *
  * Detects whether the header band should be pinned ("stuck") to the top
@@ -197,6 +198,14 @@ export default function Widget({
     const [mobileMenu, setMobileMenu] = useState<MobileMenuState>({
         kind: "closed",
     });
+    // Demo-walkthrough tray (the repurposed FAQ item — an internal tool).
+    // Toggled by the FAQ nav button; rendered below the band, anchored to it.
+    const [trackerOpen, setTrackerOpen] = useState(false);
+    const toggleTracker = useCallback(
+        () => setTrackerOpen((current) => !current),
+        [],
+    );
+    const closeTracker = useCallback(() => setTrackerOpen(false), []);
 
     // `??`, not a truthiness check on `.length`: an admin who deletes every
     // nav item must get an empty nav, not the Anahata tree resurrected.
@@ -273,10 +282,18 @@ export default function Widget({
                 ref={bandRef}
                 className={clsx(
                     "border-b border-t-[6px] border-solid",
-                    stickyEnabled &&
-                        (stuck
+                    // Sticky path is byte-identical to before (BASE already
+                    // carries `relative`, FIXED is `fixed` — both position the
+                    // band so the absolute tracker tray anchors to it). The
+                    // ONLY addition is a `relative` fallback for the non-sticky
+                    // branch (editing / sticky off), which previously set no
+                    // positioning class, so the tray has a positioned anchor
+                    // there too. No sticky/spacer/sentinel behaviour changes.
+                    stickyEnabled
+                        ? stuck
                             ? STICKY_HEADER_BAND_FIXED
-                            : STICKY_HEADER_BAND_BASE),
+                            : STICKY_HEADER_BAND_BASE
+                        : "relative",
                     stickyEnabled && stuck && STICKY_HEADER_BAND_STUCK,
                 )}
                 style={
@@ -343,7 +360,12 @@ export default function Widget({
                     >
                         <ul className="m-0 flex list-none flex-wrap items-center justify-center p-0">
                             {menu.map((item) => (
-                                <DesktopNavItem key={item.id} item={item} />
+                                <DesktopNavItem
+                                    key={item.id}
+                                    item={item}
+                                    trackerOpen={trackerOpen}
+                                    onTrackerToggle={toggleTracker}
+                                />
                             ))}
                             {showThemeToggle && (
                                 <li className="m-0 list-none p-0">
@@ -428,6 +450,14 @@ export default function Widget({
                         {mobileCtaLabel}
                     </a>
                 </div>
+
+                {/* Demo-walkthrough tray (repurposed FAQ item — internal tool).
+                    Absolutely positioned at the band's bottom edge, so it
+                    overlays the page BELOW the nav without changing the band's
+                    height — the sticky spacer/sentinel measurements stay
+                    correct. Anchors to this band container (positioned in every
+                    branch: relative at rest, fixed when stuck). */}
+                <TutorialTracker open={trackerOpen} onClose={closeTracker} />
             </div>
 
             <MobileOverlay

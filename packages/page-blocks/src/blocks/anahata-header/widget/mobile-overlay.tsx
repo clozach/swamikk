@@ -231,14 +231,21 @@ export default function MobileOverlay({
                 <MobileAccountSection profile={profile} onNavigate={onClose} />
                 <nav aria-label="Site">
                     <ul className="m-0 list-none p-0">
-                        {menu.map((item) => (
-                            <MobileBranch
-                                key={item.id}
-                                item={item}
-                                depth={0}
-                                onNavigate={onClose}
-                            />
-                        ))}
+                        {menu
+                            // The demo-walkthrough tray (the FAQ action item) is
+                            // desktop-only — omit it from the drawer rather than
+                            // render a link that goes nowhere.
+                            .filter(
+                                (item) => item.action !== "tutorial-tracker",
+                            )
+                            .map((item) => (
+                                <MobileBranch
+                                    key={item.id}
+                                    item={item}
+                                    depth={0}
+                                    onNavigate={onClose}
+                                />
+                            ))}
                     </ul>
                 </nav>
                 {utilityItems.length > 0 && (
