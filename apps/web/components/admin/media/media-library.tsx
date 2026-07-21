@@ -4,6 +4,7 @@ import { AddressContext } from "@components/contexts";
 import { FetchBuilder } from "@courselit/utils";
 import { Chip, Image } from "@courselit/components-library";
 import Link from "next/link";
+import { mediaPreviewUrl } from "./media-preview-url";
 import {
     MEDIA_MANAGER_EMPTY,
     MEDIA_MANAGER_LOAD_MORE,
@@ -112,82 +113,92 @@ export default function MediaLibrary() {
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {media.map((m) => (
-                    <div
-                        key={m.mediaId}
-                        className="flex flex-col rounded-lg border border-slate-200 overflow-hidden"
-                    >
-                        <div className="relative aspect-video bg-slate-100">
-                            {m.thumbnail ? (
-                                <Image
-                                    src={m.thumbnail}
-                                    alt={m.originalFileName}
-                                    objectFit="cover"
-                                    className="w-full h-full"
-                                />
-                            ) : (
-                                <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
-                                    {m.mimeType}
+                {media.map((m) => {
+                    // Prefer the undistorted original over MediaLit's stretched
+                    // thumbnail for images; video keeps its poster, pdf/audio
+                    // the placeholder. objectFit="cover" then scales to fill the
+                    // card proportionally (crops overflow, never stretches).
+                    const previewSrc =
+                        mediaPreviewUrl(m.mimeType, m.thumbnail) ?? m.thumbnail;
+                    return (
+                        <div
+                            key={m.mediaId}
+                            className="flex flex-col rounded-lg border border-slate-200 overflow-hidden"
+                        >
+                            <div className="relative aspect-video bg-slate-100">
+                                {previewSrc ? (
+                                    <Image
+                                        src={previewSrc}
+                                        alt={m.originalFileName}
+                                        objectFit="cover"
+                                        className="w-full h-full"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
+                                        {m.mimeType}
+                                    </div>
+                                )}
+                                <div className="absolute top-2 right-2">
+                                    <Chip>{m.access}</Chip>
                                 </div>
-                            )}
-                            <div className="absolute top-2 right-2">
-                                <Chip>{m.access}</Chip>
                             </div>
-                        </div>
-                        <div className="flex flex-col gap-2 p-4">
-                            {/* Deferred (Al, 2026-07-21): click the filename to
+                            <div className="flex flex-col gap-2 p-4">
+                                {/* Deferred (Al, 2026-07-21): click the filename to
                                 reveal the file. A literal Finder reveal is
                                 blocked — this runs in a Linux container +
                                 sandboxed browser, and the file is a MinIO object
                                 blob, not a disk file. Counter-offer is
                                 open/preview-in-tab; see kk-open-loops.md §F. */}
-                            <p
-                                className="font-medium truncate"
-                                title={m.originalFileName}
-                            >
-                                {m.originalFileName}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                                {m.mimeType} · {formatSize(m.size)}
-                            </p>
-                            <div className="mt-1">
-                                {m.usage.length === 0 ? (
-                                    <p className="text-xs text-muted-foreground italic">
-                                        {MEDIA_MANAGER_UNUSED}
-                                    </p>
-                                ) : (
-                                    <ul className="flex flex-col gap-1">
-                                        {m.usage.map((u, i) => (
-                                            <li
-                                                key={`${u.entityType}-${u.entityId}-${i}`}
-                                                className="text-xs"
-                                            >
-                                                <span className="text-muted-foreground">
-                                                    {humanizeEntityType(
-                                                        u.entityType,
-                                                    )}
-                                                    :{" "}
-                                                </span>
-                                                {u.href ? (
-                                                    <Link
-                                                        href={u.href}
-                                                        className="underline underline-offset-2 hover:text-primary"
-                                                    >
-                                                        {u.title || u.entityId}
-                                                    </Link>
-                                                ) : (
-                                                    <span>
-                                                        {u.title || u.entityId}
+                                <p
+                                    className="font-medium truncate"
+                                    title={m.originalFileName}
+                                >
+                                    {m.originalFileName}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    {m.mimeType} · {formatSize(m.size)}
+                                </p>
+                                <div className="mt-1">
+                                    {m.usage.length === 0 ? (
+                                        <p className="text-xs text-muted-foreground italic">
+                                            {MEDIA_MANAGER_UNUSED}
+                                        </p>
+                                    ) : (
+                                        <ul className="flex flex-col gap-1">
+                                            {m.usage.map((u, i) => (
+                                                <li
+                                                    key={`${u.entityType}-${u.entityId}-${i}`}
+                                                    className="text-xs"
+                                                >
+                                                    <span className="text-muted-foreground">
+                                                        {humanizeEntityType(
+                                                            u.entityType,
+                                                        )}
+                                                        :{" "}
                                                     </span>
-                                                )}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
+                                                    {u.href ? (
+                                                        <Link
+                                                            href={u.href}
+                                                            className="underline underline-offset-2 hover:text-primary"
+                                                        >
+                                                            {u.title ||
+                                                                u.entityId}
+                                                        </Link>
+                                                    ) : (
+                                                        <span>
+                                                            {u.title ||
+                                                                u.entityId}
+                                                        </span>
+                                                    )}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
 
             {hasMore && (
