@@ -1,6 +1,7 @@
 "use client";
 
 import { useContext, useEffect, useState } from "react";
+import Image from "next/image";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -32,9 +33,17 @@ import { FetchBuilder } from "@courselit/utils";
 import { useRouter } from "next/navigation";
 import { getSymbolFromCurrency, useToast } from "@courselit/components-library";
 import Script from "next/script";
-import { Button, Header3, Text1 } from "@courselit/page-primitives";
+import {
+    Button,
+    Header3,
+    Text1,
+    Text2,
+    PageCard,
+    PageCardContent,
+} from "@courselit/page-primitives";
 import { PaymentPlanCard } from "./payment-plan-card";
-import { MobileOrderSummary, DesktopOrderSummary } from "./order-summary";
+import { PayPanel, MobilePayBar, getPlanDescription } from "./order-summary";
+import { getPlanPrice } from "@ui-lib/utils";
 import type { RuntimeLoginProvider } from "@/lib/login-providers";
 import { LOGIN_FORM_PERSONAL_INFORMATION_LABEL } from "@ui-config/strings";
 const { PaymentPlanType: paymentPlanType } = Constants;
@@ -80,7 +89,6 @@ export default function Checkout({
         getSymbolFromCurrency(siteinfo.currencyISOCode || "USD") || "$";
 
     const [selectedPlan, setSelectedPlan] = useState<PaymentPlan | null>(null);
-    const [isOrderSummaryOpen, setIsOrderSummaryOpen] = useState(true);
     const [isLoggedIn, setIsLoggedIn] = useState(!!profile?.email);
     const [userEmail, setUserEmail] = useState(profile?.email || "");
     const [userName, setUserName] = useState(profile?.name || "");
@@ -315,109 +323,207 @@ export default function Checkout({
         }
     }, [siteinfo, (window as any).createLemonSqueezy]);
 
+    // watch (not getValues) so the button re-enables the moment a free-
+    // community joiningReason is typed — getValues is not reactive.
+    const joiningReasonValue = form.watch("joiningReason");
+    const submitDisabled =
+        isSubmitting ||
+        !isLoggedIn ||
+        !form.formState.isValid ||
+        (selectedPlan?.type === paymentPlanType.FREE &&
+            product.type === Constants.MembershipEntityType.COMMUNITY &&
+            !joiningReasonValue);
+
+    const isBlocked =
+        membershipStatus === Constants.MembershipStatus.ACTIVE ||
+        membershipStatus === Constants.MembershipStatus.REJECTED;
+
     return (
         <div className="min-h-screen w-full">
-            <div className="w-full">
-                <MobileOrderSummary
-                    product={product}
-                    selectedPlan={selectedPlan}
-                    paymentPlans={paymentPlans}
-                    currencySymbol={currencySymbol}
-                    theme={theme}
-                    isOrderSummaryOpen={isOrderSummaryOpen}
-                    setIsOrderSummaryOpen={setIsOrderSummaryOpen}
-                />
-                <div className="w-full grid md:grid-cols-[1fr,400px] gap-8">
-                    <div className="space-y-8">
+            <div className="w-full pb-32 md:pb-0">
+                {isBlocked ? (
+                    <div className="space-y-4">
+                        <Header3 theme={theme.theme}>
+                            {membershipStatus ===
+                            Constants.MembershipStatus.ACTIVE ? (
+                                <Check />
+                            ) : (
+                                <X />
+                            )}
+                            {membershipStatus ===
+                            Constants.MembershipStatus.ACTIVE
+                                ? "Already owned"
+                                : "Access Denied"}
+                        </Header3>
+                        <Text1 theme={theme.theme}>
+                            {membershipStatus ===
+                            Constants.MembershipStatus.ACTIVE
+                                ? "You already have access to this resource."
+                                : "You have been rejected and cannot proceed with the checkout."}
+                        </Text1>
                         {membershipStatus ===
-                            Constants.MembershipStatus.ACTIVE ||
-                        membershipStatus ===
-                            Constants.MembershipStatus.REJECTED ? (
-                            <div className="space-y-4">
-                                <Header3 theme={theme.theme}>
-                                    {membershipStatus ===
-                                    Constants.MembershipStatus.ACTIVE ? (
-                                        <Check />
-                                    ) : (
-                                        <X />
-                                    )}
-                                    {membershipStatus ===
-                                    Constants.MembershipStatus.ACTIVE
-                                        ? "Already owned"
-                                        : "Access Denied"}
-                                </Header3>
-                                <Text1 theme={theme.theme}>
-                                    {membershipStatus ===
-                                    Constants.MembershipStatus.ACTIVE
-                                        ? "You already have access to this resource."
-                                        : "You have been rejected and cannot proceed with the checkout."}
-                                </Text1>
-                                {membershipStatus ===
-                                    Constants.MembershipStatus.ACTIVE && (
-                                    <Button
-                                        onClick={() => {
-                                            if (
-                                                product.type ===
-                                                Constants.MembershipEntityType
-                                                    .COMMUNITY
-                                            ) {
-                                                router.replace(
-                                                    `/dashboard/community/${product.id}`,
-                                                );
-                                            } else if (
-                                                product.type ===
-                                                Constants.MembershipEntityType
-                                                    .COURSE
-                                            ) {
-                                                router.replace(
-                                                    `/course/${product.slug}/${product.id}`,
-                                                );
+                            Constants.MembershipStatus.ACTIVE && (
+                            <Button
+                                onClick={() => {
+                                    if (
+                                        product.type ===
+                                        Constants.MembershipEntityType.COMMUNITY
+                                    ) {
+                                        router.replace(
+                                            `/dashboard/community/${product.id}`,
+                                        );
+                                    } else if (
+                                        product.type ===
+                                        Constants.MembershipEntityType.COURSE
+                                    ) {
+                                        router.replace(
+                                            `/course/${product.slug}/${product.id}`,
+                                        );
+                                    }
+                                }}
+                                theme={theme.theme}
+                            >
+                                Go to the resource
+                            </Button>
+                        )}
+                    </div>
+                ) : (
+                    <FormProvider {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)}>
+                            <div className="grid gap-8 md:gap-10 items-start md:grid-cols-[minmax(0,1fr)_360px]">
+                                {/* ===== LEFT: product + who's buying + plan ===== */}
+                                <div className="space-y-8 min-w-0">
+                                    {/* Product presentation — a compact media
+                                        object (thumbnail + name/description),
+                                        text-forward like The Counter rather
+                                        than a dominating hero image. */}
+                                    <PageCard theme={theme.theme}>
+                                        <PageCardContent
+                                            theme={theme.theme}
+                                            className="flex items-start gap-4 sm:gap-5"
+                                        >
+                                            <div className="relative h-24 w-24 sm:h-28 sm:w-28 shrink-0 rounded-lg overflow-hidden bg-muted">
+                                                <Image
+                                                    src={
+                                                        product.featuredImage ||
+                                                        "/courselit_backdrop_square.webp"
+                                                    }
+                                                    alt={product.name}
+                                                    fill
+                                                    sizes="112px"
+                                                    className="object-cover"
+                                                />
+                                            </div>
+                                            <div className="min-w-0 space-y-2">
+                                                <Header3 theme={theme.theme}>
+                                                    {product.name}
+                                                </Header3>
+                                                {product.description && (
+                                                    <Text1
+                                                        theme={theme.theme}
+                                                        className="text-muted-foreground"
+                                                    >
+                                                        {product.description}
+                                                    </Text1>
+                                                )}
+                                            </div>
+                                        </PageCardContent>
+                                    </PageCard>
+
+                                    {/* Personal information */}
+                                    <div className="space-y-4">
+                                        <Header3 theme={theme.theme}>
+                                            {
+                                                LOGIN_FORM_PERSONAL_INFORMATION_LABEL
                                             }
-                                        }}
-                                        theme={theme.theme}
-                                    >
-                                        Go to the resource
-                                    </Button>
-                                )}
-                            </div>
-                        ) : (
-                            <>
-                                <div className="space-y-4">
-                                    <Header3 theme={theme.theme}>
-                                        {LOGIN_FORM_PERSONAL_INFORMATION_LABEL}
-                                    </Header3>
-                                    {!isLoggedIn ? (
-                                        <LoginForm
-                                            onLoginComplete={
-                                                handleLoginComplete
-                                            }
-                                            loginProviders={loginProviders}
-                                            type={type}
-                                            id={id}
-                                        />
-                                    ) : (
-                                        <div className="text-sm space-y-2">
-                                            <Text1 theme={theme.theme}>
-                                                <span className="font-semibold">
-                                                    Email:
-                                                </span>{" "}
-                                                {userEmail}
-                                            </Text1>
-                                            <Text1 theme={theme.theme}>
-                                                <span className="font-semibold">
-                                                    Name:
-                                                </span>{" "}
-                                                {userName}
-                                            </Text1>
+                                        </Header3>
+                                        {!isLoggedIn ? (
+                                            <LoginForm
+                                                onLoginComplete={
+                                                    handleLoginComplete
+                                                }
+                                                loginProviders={loginProviders}
+                                                type={type}
+                                                id={id}
+                                            />
+                                        ) : (
+                                            <div className="text-sm space-y-2">
+                                                <Text1 theme={theme.theme}>
+                                                    <span className="font-semibold">
+                                                        Email:
+                                                    </span>{" "}
+                                                    {userEmail}
+                                                </Text1>
+                                                <Text1 theme={theme.theme}>
+                                                    <span className="font-semibold">
+                                                        Name:
+                                                    </span>{" "}
+                                                    {userName}
+                                                </Text1>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Plan: single settled price line OR multi radio selector */}
+                                    {paymentPlans.length === 1 ? (
+                                        <div className="space-y-4">
+                                            <Header3 theme={theme.theme}>
+                                                Your plan
+                                            </Header3>
+                                            <PageCard theme={theme.theme}>
+                                                <PageCardContent
+                                                    theme={theme.theme}
+                                                    className="flex items-baseline justify-between gap-4 flex-wrap"
+                                                >
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <Text1
+                                                            theme={theme.theme}
+                                                        >
+                                                            {
+                                                                (
+                                                                    selectedPlan ||
+                                                                    paymentPlans[0]
+                                                                )?.name
+                                                            }
+                                                        </Text1>
+                                                        <Text2
+                                                            theme={theme.theme}
+                                                            className="text-muted-foreground"
+                                                        >
+                                                            {getPlanDescription(
+                                                                selectedPlan ||
+                                                                    paymentPlans[0],
+                                                                currencySymbol,
+                                                            )}
+                                                        </Text2>
+                                                    </div>
+                                                    <Header3
+                                                        theme={theme.theme}
+                                                    >
+                                                        {currencySymbol}
+                                                        {getPlanPrice(
+                                                            selectedPlan ||
+                                                                paymentPlans[0],
+                                                        ).amount.toFixed(2)}
+                                                        {getPlanPrice(
+                                                            selectedPlan ||
+                                                                paymentPlans[0],
+                                                        ).period && (
+                                                            <span className="text-sm text-muted-foreground ml-1">
+                                                                {
+                                                                    getPlanPrice(
+                                                                        selectedPlan ||
+                                                                            paymentPlans[0],
+                                                                    ).period
+                                                                }
+                                                            </span>
+                                                        )}
+                                                    </Header3>
+                                                </PageCardContent>
+                                            </PageCard>
                                         </div>
-                                    )}
-                                </div>
-                                <FormProvider {...form}>
-                                    <form
-                                        onSubmit={form.handleSubmit(onSubmit)}
-                                        className="space-y-6"
-                                    >
-                                        <div className="mb-6 space-y-4">
+                                    ) : (
+                                        <div className="space-y-4">
                                             <Header3 theme={theme.theme}>
                                                 Select Your Plan
                                             </Header3>
@@ -489,66 +595,61 @@ export default function Checkout({
                                                 )}
                                             />
                                         </div>
-                                        {selectedPlan?.type ===
-                                            paymentPlanType.FREE &&
-                                            product.type ===
-                                                Constants.MembershipEntityType
-                                                    .COMMUNITY && (
-                                                <FormField
-                                                    control={form.control}
-                                                    name="joiningReason"
-                                                    render={({ field }) => (
-                                                        <FormItem className="mb-6">
-                                                            <FormLabel className="text-sm font-semibold mb-4">
-                                                                {product.joiningReasonText ||
-                                                                    "Reason for joining"}
-                                                            </FormLabel>
-                                                            <FormControl>
-                                                                <textarea
-                                                                    className="w-full border rounded p-2"
-                                                                    {...field}
-                                                                    placeholder="Please provide your reason for joining"
-                                                                />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                            )}
-                                        <Button
-                                            type="submit"
-                                            disabled={
-                                                isSubmitting ||
-                                                !isLoggedIn ||
-                                                !form.formState.isValid ||
-                                                (selectedPlan?.type ===
-                                                    paymentPlanType.FREE &&
-                                                    product.type ===
-                                                        Constants
-                                                            .MembershipEntityType
-                                                            .COMMUNITY &&
-                                                    !form.getValues(
-                                                        "joiningReason",
-                                                    ))
-                                            }
-                                            theme={theme.theme}
-                                        >
-                                            {isSubmitting
-                                                ? "Working..."
-                                                : "Complete Purchase"}
-                                        </Button>
-                                    </form>
-                                </FormProvider>
-                            </>
-                        )}
-                    </div>
-                    <DesktopOrderSummary
-                        product={product}
-                        selectedPlan={selectedPlan}
-                        currencySymbol={currencySymbol}
-                        theme={theme}
-                    />
-                </div>
+                                    )}
+
+                                    {/* FREE community — reason for joining */}
+                                    {selectedPlan?.type ===
+                                        paymentPlanType.FREE &&
+                                        product.type ===
+                                            Constants.MembershipEntityType
+                                                .COMMUNITY && (
+                                            <FormField
+                                                control={form.control}
+                                                name="joiningReason"
+                                                render={({ field }) => (
+                                                    <FormItem className="mb-6">
+                                                        <FormLabel className="text-sm font-semibold mb-4">
+                                                            {product.joiningReasonText ||
+                                                                "Reason for joining"}
+                                                        </FormLabel>
+                                                        <FormControl>
+                                                            <textarea
+                                                                className="w-full border rounded p-2"
+                                                                {...field}
+                                                                placeholder="Please provide your reason for joining"
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        )}
+                                </div>
+
+                                {/* ===== RIGHT: sticky pay panel (desktop) ===== */}
+                                <PayPanel
+                                    product={product}
+                                    selectedPlan={selectedPlan}
+                                    paymentPlans={paymentPlans}
+                                    currencySymbol={currencySymbol}
+                                    theme={theme}
+                                    submitDisabled={submitDisabled}
+                                    isSubmitting={isSubmitting}
+                                />
+                            </div>
+
+                            {/* Mobile-only fixed bottom pay bar */}
+                            <MobilePayBar
+                                selectedPlan={selectedPlan}
+                                paymentPlans={paymentPlans}
+                                currencySymbol={currencySymbol}
+                                theme={theme}
+                                submitDisabled={submitDisabled}
+                                isSubmitting={isSubmitting}
+                            />
+                        </form>
+                    </FormProvider>
+                )}
             </div>
             {/* Load a vendor's client script only when it is the active
                 payment method — next/script never removes an injected script,

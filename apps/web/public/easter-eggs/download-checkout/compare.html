@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Download checkout mockups — side-by-side comparator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#f7f4eb; --ink:#545454; --cocoa:#312110; --rust:#993300;
+    --border-warm:#9c7f52;
+    --font-display:"Playfair Display", Georgia, serif;
+    --font-body:"Open Sans", -apple-system, "Segoe UI", sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; height:100%; overflow:hidden; background:var(--cream); }
+  body{ font-family:var(--font-body); color:var(--cocoa); }
+
+  /* ---- top bar (desktop) — static, never shifts or animates ---- */
+  #topbar{
+    height:28px; background:var(--cream); color:var(--cocoa);
+    font-size:12px; line-height:28px;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 12px; border-bottom:1px solid var(--border-warm);
+    white-space:nowrap; overflow:hidden;
+  }
+  #topbar .pane-name{ font-family:var(--font-display); font-size:12px; color:var(--rust); }
+  #topbar .hint{ color:var(--ink); flex:0 1 auto; margin:0 12px; overflow:hidden; text-overflow:ellipsis; }
+  /* Live feedback while ⌘ links the panes: the hint turns rust. A color
+     shift on a keyboard MODE is state feedback, not decorative hover — the
+     buttons-only hover rule is untouched. */
+  body.linked #topbar .hint{ color:var(--rust); font-weight:600; }
+
+  /* ---- panes ---- */
+  #panes{ display:flex; height:calc(100% - 28px); }
+  .pane{ position:relative; flex:1 1 0; min-width:0; height:100%; overflow:hidden; }
+  .pane + .pane{ border-left:1px solid var(--cocoa); }  /* 1px cocoa seam */
+  .pane iframe{
+    position:absolute; inset:0; width:100%; height:100%; border:0; display:none; background:#fff;
+  }
+  .pane iframe.active{ display:block; }
+  .strip{ position:absolute; left:0; right:0; z-index:5; background:transparent; }
+  .strip.trigger{ top:0; height:33.3%; }
+  .strip.lower{ top:33.3%; height:66.7%; display:none; }
+
+  /* ---- Picker speech bubble ---- */
+  #picker{
+    position:fixed; z-index:20; background:#fff;
+    border:1px solid var(--border-warm); border-radius:8px;
+    box-shadow:0 8px 28px rgba(49,33,16,.22);
+    max-width:calc(100vw - 16px); max-height:calc(100vh - 16px);
+    padding:12px;
+  }
+  @media (prefers-reduced-motion: no-preference){
+    #picker{ animation:picker-in .12s ease-out; }
+    @keyframes picker-in{ from{ opacity:0; transform:scale(.97); } to{ opacity:1; transform:none; } }
+  }
+  #picker .tail{
+    position:absolute; width:12px; height:12px; background:#fff;
+    border-left:1px solid var(--border-warm); border-bottom:1px solid var(--border-warm);
+    transform:rotate(45deg);
+  }
+  #picker .grid{ display:grid; grid-template-columns:repeat(5, auto); gap:10px; }
+  /* the ONLY hover styles in this file live on these buttons */
+  .thumb{
+    display:block; background:#fff; border:1px solid var(--border-warm); border-radius:6px;
+    padding:5px; cursor:pointer; font-family:var(--font-body); text-align:center;
+    transition:box-shadow .12s ease, transform .12s ease;
+    position:relative;
+  }
+  /* Committed-selection indicators: which thumb each pane is ACTUALLY showing
+     (as opposed to the transient hover-"considering" state). Rust ring on the
+     thumb + an L/R chip per pane; a design shown in both panes wears both. */
+  .thumb.sel{ border-color:var(--rust); box-shadow:inset 0 0 0 1px var(--rust); }
+  /* Narrowing-down affordances: ♡ / × sit inside the preview's top-left.
+     Uncolored (grayscale) and hover-only by default; a committed ♥ keeps its
+     color and stays visible; a disabled thumb goes gray, stops responding,
+     and wears a permanent gray ✕ that re-enables it. */
+  .thumb .vote{
+    position:absolute; top:10px; left:10px;
+    display:flex; gap:6px; z-index:3;
+  }
+  .thumb .vote .v{
+    width:28px; height:28px; border-radius:50%; background:#fff;
+    border:1px solid var(--border-warm); box-shadow:0 1px 4px rgba(49,33,16,.2);
+    color:var(--ink); font:700 18px/1 var(--font-body); cursor:pointer;
+    display:grid; place-items:center; padding:0;
+    opacity:0; transition:opacity .12s ease;
+  }
+  @media (prefers-reduced-motion: reduce){ .thumb .vote .v{ transition:none; } }
+  .thumb:hover .vote .v, .thumb:focus-within .vote .v{ opacity:1; }
+  .thumb.fav .vote .v.heart{ opacity:1; color:var(--rust); } /* stays, in red */
+  .thumb.off .vote .v.x{ opacity:1; }                    /* permanent gray ✕ */
+  .thumb.off .vote .v.heart{ display:none; }
+  .thumb.off .box, .thumb.off .lbl{ filter:grayscale(1); opacity:.5; }
+  .thumb.off{ cursor:default; }
+  .thumb.off:hover{ box-shadow:none; transform:none; }
+  .thumb .who{
+    position:absolute; top:10px; right:10px; display:flex; gap:6px; z-index:3;
+  }
+  .thumb .who span{
+    width:28px; height:28px; border-radius:50%;
+    background:var(--rust); color:#fff;             /* 7.43:1 on rust */
+    font-size:13px; font-weight:700; line-height:28px; text-align:center;
+    box-shadow:0 1px 4px rgba(49,33,16,.2);
+  }
+  @media (prefers-reduced-motion: reduce){ .thumb{ transition:none; } }
+  .thumb:hover{ box-shadow:0 6px 16px rgba(49,33,16,.28); transform:translateY(-2px); }
+  .thumb:focus-visible{ outline:2px solid var(--rust); outline-offset:2px; }
+  .thumb .box{
+    width:150px; height:100px; overflow:hidden; position:relative; background:var(--cream);
+    pointer-events:none;
+  }
+  .thumb .box iframe{
+    position:absolute; top:0; left:0; width:1200px; height:800px; border:0;
+    transform:scale(0.125); transform-origin:top left; pointer-events:none;
+  }
+  .badge{
+    font-size:9px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--rust); border:1px solid var(--rust); border-radius:999px;
+    padding:0 6px; line-height:1.5; display:inline-block;
+  }
+  .thumb .lbl{
+    font-size:14px; color:var(--cocoa); margin-top:7px; line-height:1.3;
+    display:flex; align-items:center; justify-content:center; gap:5px;
+  }
+
+  /* ---- mobile carousel ---- */
+  #carousel{ position:fixed; inset:0; background:var(--cream); display:none; }
+  #carousel iframe{
+    position:absolute; top:0; left:0; width:100%; height:calc(100dvh - 24px);
+    border:0; display:none; background:#fff;
+  }
+  #carousel iframe.active{ display:block; }
+  #caption{
+    position:absolute; left:0; right:0; bottom:0; height:24px;
+    background:var(--cream); border-top:1px solid var(--border-warm);
+    font-size:11px; line-height:23px; color:var(--cocoa);
+    display:flex; align-items:center; justify-content:space-between; padding:0 10px;
+    white-space:nowrap; overflow:hidden;
+  }
+  #caption .hint{ color:var(--ink); }
+  .edge{ position:absolute; top:0; bottom:24px; width:24px; z-index:5; background:transparent; }
+  .edge.left{ left:0; } .edge.right{ right:0; }
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <span class="pane-name" id="name-left"></span>
+  <span class="hint" id="hint">hover a pane&rsquo;s top third to swap designs &middot; hold &#8984; to scroll both panes together</span>
+  <span class="pane-name" id="name-right"></span>
+</div>
+
+<div id="panes">
+  <div class="pane" id="pane-left">
+    <div class="strip trigger"></div>
+    <div class="strip lower"></div>
+  </div>
+  <div class="pane" id="pane-right">
+    <div class="strip trigger"></div>
+    <div class="strip lower"></div>
+  </div>
+</div>
+
+<div id="carousel">
+  <div class="edge left"></div>
+  <div class="edge right"></div>
+  <div id="caption"><span id="caption-name"></span><span class="hint">swipe &#10231; to browse</span></div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ================= CONFIG — edit ONLY this block =================
+     One row per design: [relative html path, "Short label"]. Optional third
+     element renders as a small outlined badge (e.g. "v2", "wip").
+     Also set the <title> tag above. Everything below the config is the
+     harness — leave it alone unless the harness itself is wrong. */
+  var FILES = [
+    ["01-the-object.html", "01 · The Object"],
+    ["02-keepsake-ticket.html", "02 · The Keepsake"],
+    ["03-breath-paced.html", "03 · The Breath"],
+    ["04-warm-counter.html", "04 · The Counter"]
+  ];
+  /* =============== END CONFIG =============== */
+  var OPTIONS = FILES.map(function(f){ return { src:f[0], name:f[1], badge:f[2] || null }; });
+
+  var isTouch = window.matchMedia("(max-width:768px), (pointer:coarse)").matches;
+
+  function labelHTML(opt){
+    return opt.badge
+      ? opt.name + ' <span class="badge">' + opt.badge + "</span>"
+      : opt.name;
+  }
+
+  /* ================= MOBILE: infinite-loop carousel ================= */
+  if (isTouch){
+    document.getElementById("topbar").style.display = "none";
+    document.getElementById("panes").style.display = "none";
+    var car = document.getElementById("carousel");
+    car.style.display = "block";
+    var capName = document.getElementById("caption-name");
+    var frames = {};   // index -> iframe (cached, kept mounted)
+    var cur = 0;
+
+    function show(i){
+      i = ((i % OPTIONS.length) + OPTIONS.length) % OPTIONS.length;  // infinite wrap
+      if (frames[cur]) frames[cur].classList.remove("active");
+      if (!frames[i]){
+        var f = document.createElement("iframe");
+        f.src = OPTIONS[i].src;
+        car.insertBefore(f, car.firstChild);
+        frames[i] = f;
+      }
+      frames[i].classList.add("active");
+      cur = i;
+      capName.innerHTML = labelHTML(OPTIONS[i]);
+    }
+
+    // TRADEOFF: horizontal swipes are only detected on the caption bar and on
+    // 24px-wide invisible edge strips at the left/right screen edges. The central
+    // area is left entirely to the iframe so vertical pans scroll the DESIGN
+    // natively — an overlay there would steal vertical touches, and touch events
+    // inside a cross-document iframe never reach this page. Cost: a horizontal
+    // swipe started mid-screen does nothing; swipe from an edge or the caption.
+    function attachSwipe(el){
+      var sx = 0, sy = 0, tracking = false;
+      el.addEventListener("touchstart", function(e){
+        if (e.touches.length !== 1) { tracking = false; return; }
+        sx = e.touches[0].clientX; sy = e.touches[0].clientY; tracking = true;
+      }, { passive:true });
+      el.addEventListener("touchend", function(e){
+        if (!tracking || e.changedTouches.length !== 1) return;
+        tracking = false;
+        var dx = e.changedTouches[0].clientX - sx;
+        var dy = e.changedTouches[0].clientY - sy;
+        if (Math.abs(dy) >= Math.abs(dx)) return;   // vertical intent — ignore
+        if (Math.abs(dx) < 50) return;              // below threshold
+        show(cur + (dx < 0 ? 1 : -1));
+      }, { passive:true });
+    }
+    attachSwipe(car.querySelector(".edge.left"));
+    attachSwipe(car.querySelector(".edge.right"));
+    attachSwipe(document.getElementById("caption"));
+
+    show(0);
+    return;
+  }
+
+  /* ================= DESKTOP: two panes + Picker ================= */
+
+  /* ---- Linked scrolling (⌘ held) ----
+     By default the panes scroll independently. Holding ⌘ LINKS them: while
+     it's down, scrolling either side drags the other to the same absolute
+     scrollTop — the first linked scroll snaps the idle pane to the active
+     pane's top, however far they had drifted. (This is the flip of the
+     original design, per Al: opting IN to linkage is the intuitive mode —
+     browse freely, clamp together to compare a specific stretch.) No stored
+     divergence state exists; release ⌘ and positions simply stay put.
+     Everything lives inside the iframes (cross-document), so scroll and ⌘
+     listeners attach per-iframe on load; over file:// where contentWindow
+     access throws, linking silently degrades to independent. */
+  var linked = false;
+  var expectedY = {};   // paneId -> Y we just set programmatically (echo tag)
+
+  /* Some designs set overflow on <body> (breath-paced's overflow-x:hidden),
+     and not every engine propagates that to the viewport per spec — where it
+     doesn't, BODY becomes the scroller: window.scrollY pins at 0 and scroll
+     events fire on body (which never bubble to window). So position is read
+     from and written to whichever scroller is real, and the listener sits on
+     the DOCUMENT in capture phase, which sees both document and body
+     scrolls. */
+  function readY(f){
+    try {
+      var w = f.contentWindow, d = f.contentDocument;
+      return Math.max(
+        w.scrollY || 0,
+        d.documentElement.scrollTop || 0,
+        d.body ? d.body.scrollTop : 0
+      );
+    } catch (err){ return 0; }
+  }
+  function writeY(f, y){
+    try {
+      var w = f.contentWindow, d = f.contentDocument;
+      w.scrollTo(0, y);
+      if (readY(f) < y - 1){
+        d.documentElement.scrollTop = y;
+        if (d.body) d.body.scrollTop = y;
+      }
+      return readY(f);   // where it actually landed (natively clamped)
+    } catch (err){ return y; }
+  }
+
+  function setLinked(on){
+    linked = on;
+    document.body.classList.toggle("linked", on);
+  }
+  function trackMeta(win){
+    try {
+      win.addEventListener("keydown", function(e){ if (e.key === "Meta") setLinked(true); });
+      win.addEventListener("keyup",   function(e){ if (e.key === "Meta") setLinked(false); });
+      // ⌘-Tab away mid-hold would otherwise strand the mode on.
+      win.addEventListener("blur", function(){ setLinked(false); });
+    } catch (err) {}
+  }
+  trackMeta(window);
+
+  function attachSync(pane, f){
+    f.addEventListener("load", function(){
+      try {
+        trackMeta(f.contentWindow);
+        f.contentDocument.addEventListener("scroll", function(){
+          var y = readY(f);
+          // Echo of our own programmatic scroll? Consume the tag and stop —
+          // without this, A->B sync fires B's handler which would re-sync A.
+          if (expectedY[pane.id] != null && Math.abs(y - expectedY[pane.id]) < 1){
+            expectedY[pane.id] = null;
+            return;
+          }
+          expectedY[pane.id] = null;
+          if (!linked) return;
+          if (f !== pane.frames[pane.shown]) return;  // only the visible design drives
+          var other = pane.other;
+          var of = other && other.frames[other.shown];
+          if (!of) return;
+          try {
+            if (Math.abs(readY(of) - y) < 1) return;
+            expectedY[other.id] = writeY(of, y);
+          } catch (err) {}
+        }, { capture: true, passive: true });
+      } catch (err) {}
+    });
+  }
+
+  function makePane(rootId, nameId, startIndex){
+    var root = document.getElementById(rootId);
+    var pane = {
+      root: root,
+      trigger: root.querySelector(".strip.trigger"),
+      lower: root.querySelector(".strip.lower"),
+      nameEl: document.getElementById(nameId),
+      id: rootId,
+      frames: {},        // option index -> iframe, kept mounted for instant swaps
+      committed: startIndex,
+      shown: -1
+    };
+    pane.show = function(i){
+      if (i === pane.shown) return;
+      if (pane.frames[pane.shown]) pane.frames[pane.shown].classList.remove("active");
+      if (!pane.frames[i]){
+        var f = document.createElement("iframe");
+        f.src = OPTIONS[i].src;
+        root.insertBefore(f, pane.trigger);   // iframes sit below the strips
+        pane.frames[i] = f;
+        attachSync(pane, f);
+      }
+      pane.frames[i].classList.add("active");
+      pane.shown = i;
+    };
+    pane.commit = function(i){
+      pane.committed = i;
+      pane.show(i);
+      pane.nameEl.innerHTML = labelHTML(OPTIONS[i]);
+      if (typeof markSelected === "function") markSelected();
+    };
+    // Forward wheel over the trigger strip into the design (same-origin only;
+    // silently a no-op over file:// where the browser blocks contentWindow access).
+    pane.trigger.addEventListener("wheel", function(e){
+      var f = pane.frames[pane.shown];
+      if (!f) return;
+      try { writeY(f, readY(f) + e.deltaY); e.preventDefault(); } catch (err) {}
+    }, { passive:false });
+    pane.commit(startIndex);
+    return pane;
+  }
+
+  var left  = makePane("pane-left",  "name-left",  0);  // shipped 01
+  var right = makePane("pane-right", "name-right", 3);  // shipped 04
+  left.other = right; right.other = left;
+
+  /* ---- Picker state machine: idle / picker-open / considering ---- */
+  var picker = null;          // element while open, else null
+  var pickerPane = null;      // the pane that triggered it
+  var prevIndex = -1;         // what that pane showed before opening
+  var thumbGrid = null;       // cached grid of thumb buttons (lazy iframes kept)
+
+  function buildGrid(){
+    var grid = document.createElement("div");
+    grid.className = "grid";
+    OPTIONS.forEach(function(opt, i){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "thumb";
+      b.dataset.index = i;
+      var box = document.createElement("div");
+      box.className = "box";
+      b.appendChild(box);
+      var lbl = document.createElement("div");
+      lbl.className = "lbl";
+      lbl.innerHTML = labelHTML(opt);
+      b.appendChild(lbl);
+      /* ♡ / × — spans with button semantics, not <button>: the thumb itself
+         is a button and nesting real buttons inside it is invalid HTML. */
+      var vote = document.createElement("div");
+      vote.className = "vote";
+      var heart = document.createElement("span");
+      heart.className = "v heart"; heart.textContent = "♡";
+      heart.setAttribute("role", "button"); heart.tabIndex = 0;
+      heart.setAttribute("aria-label", "Favourite this design");
+      var x = document.createElement("span");
+      x.className = "v x"; x.textContent = "×";
+      x.setAttribute("role", "button"); x.tabIndex = 0;
+      x.setAttribute("aria-label", "Rule this design out");
+      vote.appendChild(heart); vote.appendChild(x);
+      b.appendChild(vote);
+
+      function onHeart(e){
+        e.stopPropagation(); e.preventDefault();
+        if (b.classList.contains("off")) return;
+        b.classList.toggle("fav");
+        heart.textContent = b.classList.contains("fav") ? "♥" : "♡";
+      }
+      function onX(e){
+        e.stopPropagation(); e.preventDefault();
+        if (b.classList.contains("off")){
+          b.classList.remove("off");            // re-enable; ✕ goes hover-only
+        } else {
+          b.classList.remove("fav");            // ✕ clears a red heart
+          b.classList.add("off");
+        }
+      }
+      function keyable(fn){
+        return function(e){
+          if (e.key === "Enter" || e.key === " ") fn(e);
+        };
+      }
+      heart.addEventListener("click", onHeart);
+      heart.addEventListener("keydown", keyable(onHeart));
+      x.addEventListener("click", onX);
+      x.addEventListener("keydown", keyable(onX));
+
+      b.addEventListener("mouseenter", function(){          // considering
+        if (b.classList.contains("off")) return;
+        if (pickerPane) pickerPane.show(i);
+      });
+      b.addEventListener("mouseleave", function(){          // un-consider
+        if (b.classList.contains("off")) return;
+        if (pickerPane) pickerPane.show(prevIndex);
+      });
+      b.addEventListener("click", function(){               // commit
+        if (b.classList.contains("off")) return;            // ruled out
+        if (pickerPane) pickerPane.commit(i);
+        closePicker(true);
+      });
+      grid.appendChild(b);
+    });
+    return grid;
+  }
+
+  // Stamp each thumb with the panes' COMMITTED selections. Reads
+  // left/right.committed — never pane.shown, which flutters during the
+  // hover-"considering" state and would make the chips chase the cursor.
+  function markSelected(){
+    if (!thumbGrid) return;
+    thumbGrid.querySelectorAll(".thumb").forEach(function(b){
+      var i = +b.dataset.index;
+      var who = b.querySelector(".who");
+      if (!who){
+        who = document.createElement("div");
+        who.className = "who";
+        b.appendChild(who);
+      }
+      who.innerHTML = "";
+      var isL = (i === left.committed), isR = (i === right.committed);
+      b.classList.toggle("sel", isL || isR);
+      if (isL){
+        var l = document.createElement("span");
+        l.textContent = "L"; l.title = "Currently in the left pane";
+        who.appendChild(l);
+      }
+      if (isR){
+        var r = document.createElement("span");
+        r.textContent = "R"; r.title = "Currently in the right pane";
+        who.appendChild(r);
+      }
+    });
+  }
+
+  function ensureThumbFrames(){
+    thumbGrid.querySelectorAll(".thumb").forEach(function(b){
+      var box = b.querySelector(".box");
+      if (!box.querySelector("iframe")){
+        var f = document.createElement("iframe");
+        f.setAttribute("tabindex", "-1");
+        f.src = OPTIONS[+b.dataset.index].src;
+        box.appendChild(f);
+      }
+    });
+  }
+
+  function onKeydown(e){
+    if (e.key === "Escape"){
+      e.preventDefault();
+      e.stopPropagation();
+      closePicker(false);
+    }
+  }
+  function onMousedown(e){
+    if (picker && !picker.contains(e.target)) closePicker(false);
+  }
+  function onLowerEnter(){ closePicker(false); }
+
+  function setDismissZones(on){
+    [left, right].forEach(function(pane){
+      pane.lower.style.display = on ? "block" : "none";
+      if (on) pane.lower.addEventListener("mouseenter", onLowerEnter);
+      else pane.lower.removeEventListener("mouseenter", onLowerEnter);
+    });
+  }
+
+  function openPicker(pane, cursorX, cursorY){
+    if (picker) return;                       // one Picker at a time
+    pickerPane = pane;
+    prevIndex = pane.shown;
+
+    picker = document.createElement("div");
+    picker.id = "picker";
+    if (!thumbGrid) thumbGrid = buildGrid();
+    picker.appendChild(thumbGrid);
+    var tail = document.createElement("div");
+    tail.className = "tail";
+    picker.appendChild(tail);
+
+    // All five survivors share one generous row. Compute the largest 3:2
+    // thumbnail that leaves the entire speech bubble inside the viewport.
+    var vw = document.documentElement.clientWidth;
+    var vh = document.documentElement.clientHeight;
+    var cols = vw >= 900 ? OPTIONS.length : 3;
+    var rows = Math.ceil(OPTIONS.length / cols);
+    var widthLimit = Math.floor((vw - 40 - (cols - 1) * 10 - cols * 12) / cols);
+    var heightLimit = Math.floor(((vh - 40 - (rows - 1) * 10) / rows - 37) * 1.5);
+    var thumbW = Math.max(120, Math.min(300,
+      widthLimit,
+      heightLimit
+    ));
+    thumbGrid.style.gridTemplateColumns = "repeat(" + cols + ", auto)";
+    thumbGrid.querySelectorAll(".thumb .box").forEach(function(box){
+      box.style.width = thumbW + "px";
+      box.style.height = Math.round(thumbW * 2 / 3) + "px";
+      var frame = box.querySelector("iframe");
+      if (frame) frame.style.transform = "scale(" + (thumbW / 1200) + ")";
+    });
+
+    document.body.appendChild(picker);
+    ensureThumbFrames();
+    thumbGrid.querySelectorAll(".thumb .box iframe").forEach(function(frame){
+      frame.style.transform = "scale(" + (thumbW / 1200) + ")";
+    });
+    markSelected();
+
+    // Position on the OTHER pane's side, then CLAMP. Anchor to the SEAM, not
+    // the cursor: "beside the cursor" fails the brief whenever the cursor sits
+    // mid-pane, because the bubble then lands on the triggering pane and
+    // blocks exactly the view being compared. Instead the bubble sits almost
+    // entirely across the seam — a 40px lip stays on the triggering side so
+    // the tail visibly bridges back toward the cursor.
+    var w = picker.offsetWidth, h = picker.offsetHeight;
+    var leftTriggered = (pane === left);
+    var seam = vw / 2;
+    var x = leftTriggered ? seam - 40 : seam - w + 40;
+    var y = cursorY - h / 2;
+    var maxX = vw - w - 8, maxY = vh - h - 8;
+    x = Math.min(Math.max(x, 8), Math.max(maxX, 8));
+    y = Math.min(Math.max(y, 8), Math.max(maxY, 8));
+    picker.style.left = x + "px";
+    picker.style.top = y + "px";
+
+    // Tail on the edge facing the triggering cursor, vertically clamped.
+    var ty = Math.min(Math.max(cursorY - y - 6, 10), Math.max(h - 22, 10));
+    tail.style.top = ty + "px";
+    if (leftTriggered){ tail.style.left = "-7px"; tail.style.transform = "rotate(45deg)"; }
+    else { tail.style.right = "-7px"; tail.style.transform = "rotate(225deg)"; }
+
+    // Dismissal listeners — added on open, removed on close (no leaks).
+    window.addEventListener("keydown", onKeydown, true);   // capture: swallow Escape
+    window.addEventListener("mousedown", onMousedown);
+    setDismissZones(true);
+  }
+
+  function closePicker(committed){
+    if (!picker) return;
+    if (!committed && pickerPane) pickerPane.show(prevIndex);  // revert considering
+    window.removeEventListener("keydown", onKeydown, true);
+    window.removeEventListener("mousedown", onMousedown);
+    setDismissZones(false);
+    picker.removeChild(thumbGrid);            // keep the grid (and its iframes) cached
+    picker.remove();
+    picker = null;
+    pickerPane = null;
+    prevIndex = -1;
+  }
+
+  [left, right].forEach(function(pane){
+    pane.trigger.addEventListener("mouseenter", function(e){
+      if (!picker) openPicker(pane, e.clientX, e.clientY);
+    });
+    pane.trigger.addEventListener("click", function(e){
+      if (!picker) openPicker(pane, e.clientX, e.clientY);
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,472 @@
+<!--
+  DIRECTION 04 — "THE COUNTER"
+  The pragmatic, shippable bespoke fix of CourseLit's two-column checkout.
+  Kept the shape (content left, sticky pay panel right); fixed every mis-fit
+  the contract names so it belongs to Anahata's storefront family.
+
+  AA (WCAG relative-luminance formula, computed not eyeballed):
+    ink   #545454 on white  7.57:1 · on cream 6.89:1   (body)
+    rust  #993300 on white  7.43:1 · on cream 6.75:1   (headings/links/emphasis)
+    cocoa #312110 on cream 14.09:1 · on saffron 7.24:1  (button rest text)
+    white #ffffff on rust   7.43:1 · on rust-pressed 9.79:1 (button hover/active)
+    white #ffffff on ocean  6.59:1 · on navy 13.69:1   (footer)
+    border-warm #9c7f52 on cream 3.43:1 · on white 3.77:1 (UI boundary >=3:1)
+  No text is set over the product photo — the art is a clean image block on a
+  white card, so no scrim floor is required. Saffron is a FILL only, never text.
+  Blue lives only in the footer + logo.
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkout — Natural Breath Awareness (MP3) · Anahata</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Open+Sans:wght@300;400;600;700&display=swap');
+
+:root{
+  --cream:#f7f4eb; --card:#fff; --ink:#545454; --cocoa:#312110;
+  --saffron:#ff9900; --rust:#993300; --rust-pressed:#7a2900;
+  --amber:#ffbf00; --marigold:#f6d36a; --border-warm:#9c7f52;
+  --ocean:#216097; --ocean-hairline:#9ac1dc; --navy:#012772;
+  --font-display:"Playfair Display", Georgia, serif;
+  --font-body:"Open Sans", -apple-system, "Segoe UI", sans-serif;
+  --radius-button:10px; --radius-input:4px; --dur:100ms;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0; padding:0;}
+body{
+  background:var(--cream); color:var(--ink);
+  font-family:var(--font-body); font-size:15px; line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+img{max-width:100%; display:block;}
+
+/* ---------- Header / nav ---------- */
+.an-header{
+  background:var(--cream);
+  border-top:6px solid var(--rust);
+  border-bottom:1px solid var(--amber);
+  padding:14px 24px 12px;
+}
+.header-inner{
+  max-width:1120px; margin:0 auto;
+  display:flex; align-items:center; gap:20px; justify-content:space-between;
+}
+.logo{display:flex; align-items:center; gap:12px; text-decoration:none; flex-shrink:0;}
+.logo img{height:46px; width:auto;}
+.logo-word{
+  font-family:var(--font-display); font-size:19px; color:var(--rust);
+  letter-spacing:.02em; line-height:1.1;
+}
+.nav-wrap{display:flex; align-items:center; gap:18px; min-width:0;}
+.an-nav{
+  display:flex; align-items:center; gap:18px;
+  overflow-x:auto; -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.an-nav::-webkit-scrollbar{display:none;}
+.an-nav a{
+  font-family:var(--font-body); font-size:13px; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--ink); text-decoration:none;
+  white-space:nowrap; padding:4px 0;
+}
+.an-nav a:hover, .an-nav a.active{color:var(--rust);}
+.an-nav a.active{font-weight:600;}
+/* Decorative moon (dark-mode glyph) — rendered, not wired */
+.moon{
+  flex-shrink:0; background:none; border:1px solid var(--border-warm);
+  border-radius:50%; width:34px; height:34px; display:grid; place-items:center;
+  cursor:default; color:var(--rust);
+}
+.moon svg{width:16px; height:16px;}
+
+/* ---------- Layout ---------- */
+main{max-width:1120px; margin:0 auto; padding:36px 24px 72px;}
+.crumb{
+  font-size:12px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--ink); margin:0 0 6px;
+}
+.page-anchor{
+  font-family:var(--font-display); font-weight:700; color:var(--rust);
+  font-size:44px; line-height:1.08; margin:0 0 8px;
+}
+.page-lede{
+  max-width:44ch; margin:0 0 32px; color:var(--ink); font-size:16px;
+}
+
+.grid{
+  display:grid; grid-template-columns:minmax(0,1fr) 372px; gap:40px;
+  align-items:start;
+}
+
+/* ---------- Left column ---------- */
+.section{margin:0 0 30px;}
+.section:last-child{margin-bottom:0;}
+
+/* gentle lotus section mark */
+.mark{
+  display:flex; align-items:center; gap:12px; margin:0 0 14px;
+}
+.mark h2{
+  font-family:var(--font-body); font-weight:700; font-size:13px;
+  letter-spacing:.08em; text-transform:uppercase; color:var(--rust); margin:0;
+}
+.mark .rule{height:1px; background:var(--border-warm); flex:1; opacity:.7;}
+.lotus{width:15px; height:15px; flex-shrink:0; color:var(--rust);}
+
+/* Product presentation card */
+.practice{
+  background:var(--card); border:1px solid var(--border-warm);
+  border-radius:10px; padding:26px 28px;
+}
+.practice-name{
+  font-family:var(--font-display); font-weight:700; color:var(--rust);
+  font-size:29px; line-height:1.2; margin:0 0 10px;
+}
+.meta-row{
+  display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center;
+  margin:0 0 16px;
+}
+.meta{
+  display:inline-flex; align-items:center; gap:7px;
+  font-size:13px; letter-spacing:.02em; color:var(--cocoa);
+}
+.meta svg{width:15px; height:15px; color:var(--rust); flex-shrink:0;}
+.practice-lede{margin:0 0 18px; color:var(--ink); font-size:15.5px;}
+.credit{
+  font-family:var(--font-display); font-style:italic; font-size:15px;
+  color:var(--cocoa); margin:0;
+}
+
+/* Personal information — read-back, not a form-heavy block */
+.pi{
+  background:var(--card); border:1px solid var(--border-warm);
+  border-radius:10px; padding:22px 26px;
+}
+.pi-row{display:flex; flex-direction:column; gap:2px; padding:12px 0;}
+.pi-row + .pi-row{border-top:1px solid rgba(156,127,82,.28);}
+.pi-label{
+  font-size:12px; letter-spacing:.05em; text-transform:uppercase; color:var(--ink);
+}
+.pi-value{font-size:16px; color:var(--cocoa);}
+.pi-value .badge{
+  display:inline-flex; align-items:center; gap:6px;
+}
+.pi-value .badge svg{width:14px; height:14px; color:var(--rust);}
+.pi-empty{font-size:15px; color:var(--ink); font-style:italic;}
+.pi-hint{font-size:12.5px; color:var(--ink); margin-top:1px;}
+
+/* Settled price line — replaces the radio-group-of-one */
+.priceline{
+  background:var(--card); border:1px solid var(--border-warm);
+  border-radius:10px; padding:20px 26px;
+  display:flex; align-items:baseline; justify-content:space-between; gap:16px;
+  flex-wrap:wrap;
+}
+.priceline .pl-left{display:flex; flex-direction:column; gap:2px;}
+.pl-plan{font-size:15px; color:var(--cocoa);}
+.pl-note{font-size:12.5px; color:var(--ink);}
+.pl-amount{
+  font-family:var(--font-display); font-weight:700; color:var(--rust);
+  font-size:26px; white-space:nowrap;
+}
+.pl-amount .once{
+  font-family:var(--font-body); font-weight:400; font-size:14px;
+  color:var(--ink); margin-left:6px;
+}
+
+/* delivery reassurance */
+.delivery{
+  display:flex; gap:10px; align-items:flex-start;
+  margin:16px 2px 0; font-size:13.5px; color:var(--ink);
+}
+.delivery svg{width:16px; height:16px; color:var(--rust); flex-shrink:0; margin-top:2px;}
+
+/* ---------- Right: pay panel ---------- */
+.paypanel{position:sticky; top:20px;}
+.pay-card{
+  background:var(--card); border:1px solid var(--border-warm);
+  border-radius:12px; overflow:hidden;
+  box-shadow:0 1px 2px rgba(49,33,16,.05), 0 10px 26px rgba(49,33,16,.07);
+}
+.pay-head{
+  font-family:var(--font-body); font-weight:700; font-size:13px;
+  letter-spacing:.08em; text-transform:uppercase; color:var(--rust);
+  padding:16px 22px; border-bottom:1px solid rgba(156,127,82,.35);
+  display:flex; align-items:center; gap:9px;
+}
+.pay-head .lotus{color:var(--rust);}
+.pay-item{display:flex; gap:14px; padding:20px 22px 18px;}
+.pay-thumb{
+  width:74px; height:74px; border-radius:8px; object-fit:cover;
+  border:1px solid var(--border-warm); flex-shrink:0;
+}
+.pay-item-body{min-width:0;}
+.pay-name{
+  font-family:var(--font-display); font-weight:500; color:var(--cocoa);
+  font-size:17px; line-height:1.25; margin:0 0 6px;
+}
+.pay-sub{font-size:12.5px; color:var(--ink); display:flex; align-items:center; gap:7px;}
+.pay-sub svg{width:13px; height:13px; color:var(--rust); flex-shrink:0;}
+.pay-divider{height:1px; background:rgba(156,127,82,.35); margin:0 22px;}
+.pay-total{
+  display:flex; align-items:baseline; justify-content:space-between;
+  padding:18px 22px 4px;
+}
+.pay-total .t-label{
+  font-family:var(--font-body); font-weight:700; font-size:15px;
+  letter-spacing:.03em; text-transform:uppercase; color:var(--cocoa);
+}
+.pay-total .t-amount{
+  font-family:var(--font-display); font-weight:700; color:var(--rust); font-size:28px;
+}
+.pay-oncenote{padding:0 22px 18px; font-size:13px; color:var(--ink);}
+.pay-action{padding:0 22px 20px;}
+
+.an-button{
+  display:block; width:100%; background:var(--saffron); color:var(--cocoa);
+  font-family:var(--font-body); font-weight:700; font-size:16px;
+  text-align:center; padding:15px 20px; border:none;
+  border-radius:var(--radius-button); cursor:pointer;
+  transition:background var(--dur) ease-in, color var(--dur) ease-in;
+}
+.an-button:hover{background:var(--rust); color:#fff;}
+.an-button:active{background:var(--rust-pressed); color:#fff;}
+.an-button:focus-visible{outline:2px solid var(--rust); outline-offset:2px;}
+.an-button[disabled]{cursor:default; opacity:.9;}
+
+.pay-fine{
+  padding:0 22px 20px; margin:0; font-size:12px; color:var(--ink);
+  display:flex; gap:8px; align-items:flex-start; line-height:1.5;
+}
+.pay-fine svg{width:14px; height:14px; color:var(--rust); flex-shrink:0; margin-top:2px;}
+
+/* ---------- Mobile sticky pay bar (intentional, not a cart collapsible) ---------- */
+.paybar{
+  display:none;
+  position:fixed; left:0; right:0; bottom:0; z-index:40;
+  background:var(--card); border-top:1px solid var(--border-warm);
+  box-shadow:0 -6px 20px rgba(49,33,16,.10);
+  padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+  align-items:center; gap:14px;
+}
+.paybar .pb-price{display:flex; flex-direction:column; line-height:1.2; flex-shrink:0;}
+.paybar .pb-amount{
+  font-family:var(--font-display); font-weight:700; color:var(--rust); font-size:20px;
+}
+.paybar .pb-note{font-size:11px; color:var(--ink);}
+.paybar .an-button{width:auto; flex:1; padding:13px 18px; font-size:15px;}
+
+/* ---------- Footer (slim ocean) ---------- */
+.an-footer{background:var(--ocean); color:#fff; padding:26px 24px;}
+.footer-inner{
+  max-width:1120px; margin:0 auto; display:flex; flex-wrap:wrap;
+  gap:12px 24px; align-items:center; justify-content:space-between;
+}
+.an-footer .f-title{
+  font-family:var(--font-display); text-transform:uppercase; letter-spacing:.04em;
+  font-size:18px; margin:0;
+}
+.an-footer a{color:#fff; text-decoration:none; font-size:13px; margin-left:18px;}
+.an-footer a:hover{text-decoration:underline;}
+.footer-strip{background:var(--navy); color:#fff; font-size:12px; padding:8px 24px; text-align:center;}
+
+/* ---------- Responsive ---------- */
+@media (max-width:860px){
+  .grid{grid-template-columns:1fr; gap:26px;}
+  .paypanel{position:static;}
+  .page-anchor{font-size:38px;}
+}
+@media (max-width:600px){
+  main{padding:26px 18px 96px;}   /* room for sticky paybar */
+  .an-header{padding:12px 16px 10px;}
+  .header-inner{gap:12px;}
+  .logo-word{display:none;}
+  .paybar{display:flex;}
+  .practice, .pi, .priceline{padding-left:20px; padding-right:20px;}
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{transition:none !important; animation:none !important;}
+}
+</style>
+
+<!-- ============ HEADER ============ -->
+<header class="an-header">
+  <div class="header-inner">
+    <a class="logo" href="#" aria-label="Anahata home">
+      <img src="assets/swami-kk-logo.png" alt="Anahata">
+      <span class="logo-word">Anahata</span>
+    </a>
+    <div class="nav-wrap">
+      <nav class="an-nav" aria-label="Primary">
+        <a href="#">Events and Trainings</a>
+        <a href="#">Stay</a>
+        <a href="#">Give</a>
+        <a href="#">Blog</a>
+        <a href="#">About</a>
+        <a href="#">Contact</a>
+        <a href="#">Our Newsletter</a>
+        <a href="#" class="active">Shop</a>
+      </nav>
+      <span class="moon" role="img" aria-label="Dark mode (decorative)" title="Dark mode">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </span>
+    </div>
+  </div>
+</header>
+
+<!-- ============ CHECKOUT ============ -->
+<main>
+  <p class="crumb">Shop · Guided Practice</p>
+  <h1 class="page-anchor">Checkout</h1>
+  <p class="page-lede">One practice, handed to you at the counter. Confirm the details below and it’s yours to download and keep.</p>
+
+  <div class="grid">
+
+    <!-- ===== LEFT: product presentation + who's buying + settled price ===== -->
+    <div class="content">
+
+      <!-- The practice -->
+      <section class="section">
+        <div class="mark">
+          <svg class="lotus" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2c1.2 1.8 1.2 4.2 0 6-1.2-1.8-1.2-4.2 0-6zM5 6c2 .5 3.5 2.3 4 4.3-2.1-.2-3.9-1.6-4-4.3zm14 0c-.1 2.7-1.9 4.1-4 4.3.5-2 2-3.8 4-4.3zM3 12c2 0 3.9 1.1 5 2.9-2 .5-4-.3-5-2.9zm18 0c-1 2.6-3 3.4-5 2.9 1.1-1.8 3-2.9 5-2.9zM12 13c1.5 1.6 2 4 1.3 6.2C11.8 18 10.8 15.8 12 13z"/></svg>
+          <h2>The practice</h2>
+          <span class="rule"></span>
+        </div>
+        <div class="practice">
+          <h3 class="practice-name">Natural Breath Awareness<br>— Guided Practice (MP3)</h3>
+          <div class="meta-row">
+            <span class="meta">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+              19:40
+            </span>
+            <span class="meta">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V6l10-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="19" cy="16" r="3"/></svg>
+              MP3
+            </span>
+          </div>
+          <p class="practice-lede">Nineteen minutes and forty seconds of guided natural breath awareness — a settling return to the breath, at your own pace, as many times as you like.</p>
+          <p class="credit">Guided by Swami Karma Karuna</p>
+        </div>
+      </section>
+
+      <!-- Personal information (read-back — the member is signed in) -->
+      <section class="section">
+        <div class="mark">
+          <svg class="lotus" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2c1.2 1.8 1.2 4.2 0 6-1.2-1.8-1.2-4.2 0-6zM5 6c2 .5 3.5 2.3 4 4.3-2.1-.2-3.9-1.6-4-4.3zm14 0c-.1 2.7-1.9 4.1-4 4.3.5-2 2-3.8 4-4.3zM3 12c2 0 3.9 1.1 5 2.9-2 .5-4-.3-5-2.9zm18 0c-1 2.6-3 3.4-5 2.9 1.1-1.8 3-2.9 5-2.9zM12 13c1.5 1.6 2 4 1.3 6.2C11.8 18 10.8 15.8 12 13z"/></svg>
+          <h2>Personal information</h2>
+          <span class="rule"></span>
+        </div>
+        <div class="pi">
+          <div class="pi-row">
+            <span class="pi-label">Email</span>
+            <span class="pi-value">
+              <span class="badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                Signed in as clozach@ilovelife.com
+              </span>
+            </span>
+          </div>
+          <div class="pi-row">
+            <span class="pi-label">Name</span>
+            <span class="pi-empty">Not set</span>
+            <span class="pi-hint">Optional — not needed for your download.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settled price line (NOT a radio group of one) -->
+      <section class="section">
+        <div class="mark">
+          <svg class="lotus" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2c1.2 1.8 1.2 4.2 0 6-1.2-1.8-1.2-4.2 0-6zM5 6c2 .5 3.5 2.3 4 4.3-2.1-.2-3.9-1.6-4-4.3zm14 0c-.1 2.7-1.9 4.1-4 4.3.5-2 2-3.8 4-4.3zM3 12c2 0 3.9 1.1 5 2.9-2 .5-4-.3-5-2.9zm18 0c-1 2.6-3 3.4-5 2.9 1.1-1.8 3-2.9 5-2.9zM12 13c1.5 1.6 2 4 1.3 6.2C11.8 18 10.8 15.8 12 13z"/></svg>
+          <h2>Your price</h2>
+          <span class="rule"></span>
+        </div>
+        <div class="priceline">
+          <div class="pl-left">
+            <span class="pl-plan">MP3 (one-time)</span>
+            <span class="pl-note">No subscription — a single purchase.</span>
+          </div>
+          <span class="pl-amount">$9.00<span class="once">· one-time</span></span>
+        </div>
+        <p class="delivery">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+          Instant MP3 download the moment you pay — yours to keep.
+        </p>
+      </section>
+
+    </div>
+
+    <!-- ===== RIGHT: sticky pay panel ===== -->
+    <aside class="paypanel" aria-label="Order summary and payment">
+      <div class="pay-card">
+        <div class="pay-head">
+          <svg class="lotus" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2c1.2 1.8 1.2 4.2 0 6-1.2-1.8-1.2-4.2 0-6zM5 6c2 .5 3.5 2.3 4 4.3-2.1-.2-3.9-1.6-4-4.3zm14 0c-.1 2.7-1.9 4.1-4 4.3.5-2 2-3.8 4-4.3zM3 12c2 0 3.9 1.1 5 2.9-2 .5-4-.3-5-2.9zm18 0c-1 2.6-3 3.4-5 2.9 1.1-1.8 3-2.9 5-2.9zM12 13c1.5 1.6 2 4 1.3 6.2C11.8 18 10.8 15.8 12 13z"/></svg>
+          Order summary
+        </div>
+        <div class="pay-item">
+          <img class="pay-thumb" src="assets/forest-meditation-sq.jpg" alt="Natural Breath Awareness — forest meditation cover art">
+          <div class="pay-item-body">
+            <p class="pay-name">Natural Breath Awareness — Guided Practice (MP3)</p>
+            <span class="pay-sub">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+              19:40 · MP3
+            </span>
+          </div>
+        </div>
+        <div class="pay-divider"></div>
+        <div class="pay-total">
+          <span class="t-label">Total</span>
+          <span class="t-amount">$9.00</span>
+        </div>
+        <p class="pay-oncenote">One-time payment of $9.00</p>
+        <div class="pay-action">
+          <button class="an-button" id="complete-panel" type="button">Complete Purchase</button>
+        </div>
+        <p class="pay-fine">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+          Instant download the moment you pay — the MP3 is yours to keep.
+        </p>
+      </div>
+    </aside>
+
+  </div>
+</main>
+
+<!-- Mobile-only sticky pay bar (intentional; replaces the janky cart collapsible) -->
+<div class="paybar" aria-hidden="false">
+  <span class="pb-price">
+    <span class="pb-amount">$9.00</span>
+    <span class="pb-note">one-time</span>
+  </span>
+  <button class="an-button" id="complete-bar" type="button">Complete Purchase</button>
+</div>
+
+<!-- ============ FOOTER (the one cool place) ============ -->
+<footer class="an-footer">
+  <div class="footer-inner">
+    <p class="f-title">Anahata</p>
+    <nav aria-label="Footer">
+      <a href="#">Shop</a>
+      <a href="#">Contact</a>
+      <a href="#">Our Newsletter</a>
+    </nav>
+  </div>
+</footer>
+<div class="footer-strip">© Anahata Yoga Retreat</div>
+
+<script>
+  // Plausible Complete Purchase → "Working…" (both the panel button and the
+  // mobile sticky-bar button drive the same single action). Nothing else wired.
+  var buttons = [document.getElementById('complete-panel'), document.getElementById('complete-bar')];
+  function working(){
+    buttons.forEach(function(b){
+      if(!b) return;
+      b.textContent = 'Working…';
+      b.setAttribute('disabled','disabled');
+    });
+  }
+  buttons.forEach(function(b){ if(b) b.addEventListener('click', working); });
+</script>

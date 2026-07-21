@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A letter from Swami Karma Karuna · Developing Resilience</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#f7f4eb; --card:#fff; --ink:#545454; --cocoa:#312110;
+    --saffron:#ff9900; --rust:#993300; --rust-pressed:#7a2900;
+    --marigold:#f6d36a; --border-warm:#9c7f52;
+    --serif:"Playfair Display", Georgia, "Times New Roman", serif;
+    --sans:"Open Sans", -apple-system, "Segoe UI", sans-serif;
+    --hand:"Caveat", "Segoe Script", cursive;
+  }
+
+  *{ box-sizing:border-box; }
+  html{ overflow-x:hidden; }
+  body{
+    margin:0;
+    background:var(--cream);
+    color:var(--cocoa);
+    font-family:var(--serif);
+    line-height:1.75;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* ---- the single narrow measure ---- */
+  .letter{
+    max-width:660px;             /* ~62ch of Playfair at 21px */
+    margin:0 auto;
+    padding:clamp(2.4rem,6vw,4.6rem) clamp(1.2rem,5vw,1.9rem) 4rem;
+    font-size:21px;
+  }
+
+  /* letterhead — no chrome, just a wordmark and a dateline */
+  .head{
+    display:flex; flex-wrap:wrap; align-items:flex-end;
+    justify-content:space-between; gap:.6rem 1rem;
+    margin-bottom:2.6rem;
+  }
+  .head img{ width:76px; max-width:20vw; height:76px; object-fit:contain; display:block; }
+  .dateline{
+    font-family:var(--hand); color:var(--rust);
+    font-size:1.5rem; line-height:1.2; text-align:right;
+    max-width:16rem;
+  }
+
+  p{ margin:0 0 1.35em; }
+  .lead{ margin-top:0; }
+
+  /* opening question with drop cap */
+  .opening{ font-size:1.16em; line-height:1.6; }
+  .dropcap::first-letter{
+    font-weight:700; color:var(--rust);
+    font-size:3.5em; line-height:.72;
+    float:left; margin:.02em .12em -.06em 0;
+  }
+  .q-em{ color:var(--rust); }
+  .uline{
+    color:var(--rust);
+    border-bottom:2px solid var(--rust);
+    padding-bottom:1px;
+  }
+
+  /* the reassurance — set apart, intimate, no callout band */
+  .refrain{
+    font-style:italic; color:var(--rust);
+    font-size:1.28em; line-height:1.5;
+    border-left:3px solid var(--rust);
+    padding:.15em 0 .15em 1.05em;
+    margin:2.2rem 0 2.4rem;
+  }
+
+  /* tipped-in snapshots — static, never react to hover */
+  figure.snap{
+    margin:2.6rem auto;
+    width:min(360px,84%);
+    background:#fff;
+    padding:11px 11px 6px;
+    box-shadow:0 8px 22px rgba(49,33,16,.20);
+    border:1px solid #efe6d2;
+  }
+  figure.snap img{ width:100%; height:auto; display:block; }
+  figure.snap figcaption{
+    font-family:var(--hand); color:var(--rust);
+    font-size:1.55rem; line-height:1.15;
+    text-align:center; padding:.5rem .2rem .35rem;
+  }
+  .snap.tilt-l{ transform:rotate(-2.4deg); }
+  .snap.tilt-r{ transform:rotate(2.1deg); }
+  .snap.tilt-s{ transform:rotate(-1.3deg); }
+
+  /* starred margin aside */
+  .aside{
+    font-family:var(--hand); color:var(--rust);
+    font-size:1.5rem; line-height:1.2;
+    text-align:center; margin:1.8rem 0;
+  }
+  .aside .star{ font-size:1.1em; }
+  .aside u{ text-decoration-color:var(--rust); text-underline-offset:3px; }
+
+  /* highlights — saffron dot markers (fill, not text) */
+  .practise{ list-style:none; margin:1.6rem 0 2.2rem; padding:0; }
+  .practise li{
+    position:relative; padding-left:1.6rem;
+    margin-bottom:1.05em; font-size:.99em; line-height:1.62;
+  }
+  .practise li::before{
+    content:""; position:absolute; left:0; top:.62em;
+    width:.62rem; height:.62rem; border-radius:50%;
+    background:var(--saffron);
+  }
+  .practise b{ color:var(--rust); font-weight:700; }
+
+  /* the enclosure — "what I am sending you" */
+  .enclosure{
+    background:var(--card);
+    border:1px solid var(--border-warm);
+    border-radius:5px;
+    padding:clamp(1.6rem,5vw,2.4rem);
+    margin:2.8rem 0;
+    box-shadow:0 10px 26px rgba(49,33,16,.10);
+  }
+  .enclosure .enc-label{
+    font-family:var(--hand); color:var(--rust);
+    font-size:2rem; line-height:1; margin:0 0 .2rem;
+  }
+  .enclosure .enc-rule{
+    height:1px; background:var(--border-warm); opacity:.5;
+    margin:.9rem 0 1.4rem;
+  }
+  .live{
+    font-family:var(--sans); color:var(--cocoa);
+    font-size:.86rem; line-height:1.6; margin:0 0 1.5rem;
+  }
+  .live .live-1{ font-weight:700; color:var(--rust); font-size:.95rem; display:block; margin-bottom:.35rem; }
+  .live .when{ display:block; margin-top:.55rem; letter-spacing:.01em; }
+  .enc-group{ margin:0 0 1.25rem; font-family:var(--sans); }
+  .enc-group:last-child{ margin-bottom:0; }
+  .enc-group h3{
+    font-family:var(--sans); color:var(--rust);
+    font-size:.95rem; font-weight:700; margin:0 0 .3rem;
+  }
+  .enc-group .items{
+    font-size:.82rem; color:var(--ink); line-height:1.65; margin:0;
+  }
+
+  /* access reassurance */
+  .access{
+    font-style:italic; color:var(--cocoa);
+    font-size:1.02em; line-height:1.6;
+    text-align:center; margin:2.4rem auto; max-width:36ch;
+  }
+
+  /* an earlier, quiet door — a mid-letter path to enrol so the price and the
+     call to act don't wait until the very bottom of the page */
+  .midcta{ text-align:center; margin:2.8rem 0 2.4rem; }
+  .midcta .m-price{
+    font-family:var(--serif); font-weight:700; color:var(--rust);
+    font-size:1.9rem; line-height:1; margin:0;
+  }
+  .midcta .m-price small{
+    display:block; font-family:var(--sans); font-weight:600;
+    font-size:.74rem; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--ink); margin-top:.4rem;
+  }
+
+  /* teacher bio card */
+  .bio{
+    background:var(--card);
+    border:1px solid var(--border-warm);
+    border-radius:5px;
+    padding:clamp(1.6rem,5vw,2.2rem);
+    margin:2.6rem 0;
+  }
+  .bio .bio-label{
+    font-family:var(--hand); color:var(--rust);
+    font-size:1.9rem; line-height:1; margin:0 0 .9rem;
+  }
+  .bio p{
+    font-family:var(--sans); color:var(--ink);
+    font-size:.86rem; line-height:1.72; margin:0 0 .95em;
+  }
+  .bio p:last-child{ margin-bottom:0; }
+  .bio strong{ color:var(--rust); font-weight:700; }
+
+  /* sign-off */
+  .signoff{ text-align:center; margin:3.4rem 0 1.2rem; }
+  .signoff img{
+    width:280px; max-width:78%; height:auto; display:block; margin:0 auto .2rem;
+  }
+  .signoff .hariom{
+    font-family:var(--serif); font-style:italic; font-weight:700;
+    color:var(--rust); font-size:2rem; margin:.2rem 0 0;
+  }
+
+  /* RSVP reply card */
+  .rsvp{
+    background:var(--card);
+    border:2px solid var(--rust);
+    border-radius:6px;
+    padding:clamp(1.8rem,6vw,2.8rem);
+    margin:3rem 0 2rem;
+    text-align:center;
+    box-shadow:0 12px 30px rgba(49,33,16,.14);
+  }
+  .rsvp .checkline{
+    font-family:var(--hand); color:var(--rust);
+    font-size:2.05rem; line-height:1.1; margin:0 0 .6rem;
+  }
+  .rsvp .checkline .box{
+    display:inline-block; width:.9em; height:.9em;
+    border:2px solid var(--rust); border-radius:3px;
+    vertical-align:-.06em; margin-right:.35em;
+  }
+  .rsvp h2{
+    font-family:var(--serif); font-weight:700; color:var(--rust);
+    font-size:2rem; line-height:1.1; margin:.2rem 0 .5rem;
+  }
+  .rsvp .support{
+    font-size:.98em; color:var(--cocoa); margin:0 auto 1.1rem; max-width:34ch;
+  }
+  .rsvp .when-line{
+    font-family:var(--sans); font-size:.88rem; color:var(--ink);
+    line-height:1.6; margin:0 auto 1.3rem; max-width:40ch; letter-spacing:.01em;
+  }
+  .rsvp .price{
+    font-family:var(--serif); font-weight:700; color:var(--rust);
+    font-size:2.1rem; line-height:1; margin:0 0 .2rem;
+  }
+  .rsvp .price small{
+    display:block; font-family:var(--sans); font-weight:600;
+    font-size:.74rem; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--ink); margin-top:.35rem;
+  }
+
+  /* buttons + links — the ONLY things that react to hover */
+  .an-button{
+    display:inline-block; margin-top:1.3rem;
+    background:var(--saffron); color:var(--cocoa);
+    font-family:var(--sans); font-weight:700; font-size:16px;
+    text-decoration:none; text-align:center;
+    padding:16px 45px; min-width:200px;
+    border:none; border-radius:10px; cursor:pointer;
+    transition:background 100ms ease-in, color 100ms ease-in;
+  }
+  .an-button:hover{ background:var(--rust); color:#fff; }
+  .an-button:active{ background:var(--rust-pressed); color:#fff; }
+  .an-button:focus-visible{ outline:2px solid var(--rust); outline-offset:2px; }
+
+  .begin{
+    display:inline-block; margin-top:1rem;
+    font-family:var(--sans); font-size:.82rem; letter-spacing:.02em;
+    color:var(--rust); text-decoration:none;
+    border-bottom:1px solid var(--rust); padding-bottom:1px;
+    transition:color 100ms ease-in, border-color 100ms ease-in;
+  }
+  .begin:hover{ color:var(--rust-pressed); border-color:var(--rust-pressed); }
+  .begin:focus-visible{ outline:2px solid var(--rust); outline-offset:3px; }
+
+  /* postscript */
+  .ps{
+    font-family:var(--hand); color:var(--rust);
+    font-size:1.55rem; line-height:1.3; text-align:center;
+    margin:2.6rem 0 0;
+  }
+  .ps a{ color:var(--rust); text-decoration:none; border-bottom:1px solid var(--rust); }
+  .ps a:hover{ color:var(--rust-pressed); border-color:var(--rust-pressed); }
+  .ps a:focus-visible{ outline:2px solid var(--rust); outline-offset:2px; }
+
+  /* load-time settling — one unhurried breath of arrival */
+  @media (prefers-reduced-motion: no-preference){
+    .letter > *{ animation:settle .9s cubic-bezier(.22,.61,.36,1) both; }
+    .letter > *:nth-child(1){ animation-delay:.00s; }
+    .letter > *:nth-child(2){ animation-delay:.10s; }
+    .letter > *:nth-child(3){ animation-delay:.20s; }
+    .letter > *:nth-child(4){ animation-delay:.28s; }
+    .letter > *:nth-child(5){ animation-delay:.34s; }
+    .letter > *:nth-child(n+6){ animation-delay:.40s; }
+    @keyframes settle{
+      from{ opacity:0; transform:translateY(12px); }
+      to{ opacity:1; transform:none; }
+    }
+  }
+
+  @media (max-width:460px){
+    .letter{ font-size:19px; }
+    .snap.tilt-l,.snap.tilt-r,.snap.tilt-s{ transform:rotate(-1deg); }
+    figure.snap{ width:min(340px,90%); }
+  }
+</style>
+</head>
+<body>
+
+  <article class="letter">
+
+    <!-- letterhead -->
+    <header class="head">
+      <img src="assets/swami-kk-logo.png" alt="Swami Karma Karuna">
+      <p class="dateline">Thursday 02 July, 2026 — Thursday 23 July, 2026</p>
+    </header>
+
+    <!-- the opening, asked of you -->
+    <p class="opening dropcap lead">
+      <span class="q-em">Are you wanting to improve your ability to withstand life's challenges?</span>
+      Do you wish you had a greater capacity to cope and adapt to adversity?
+      Are you wanting to intentionally
+      <span class="uline">respond to life rather than react</span>?
+    </p>
+
+    <p>
+      Join Swami Karma Karuna for an enriching course where you'll learn to
+      gracefully respond to life's challenges with resilience and strength.
+      Train both your body and mind to function harmoniously and maintain
+      more balance in daily life.
+    </p>
+
+    <p class="refrain">
+      Luckily, our inner resilience is a natural part of who we are and is a
+      trait that we can strengthen, cultivate and build upon.
+    </p>
+
+    <figure class="snap tilt-l">
+      <img src="assets/swami-band.jpg" alt="Swami Karma Karuna smiling in the garden at Anahata">
+      <figcaption>Swami Karma Karuna</figcaption>
+    </figure>
+
+    <p>
+      Embrace your innate ability to
+      <span class="uline">return to your center</span>, rise from challenges,
+      and creatively tackle obstacles. Resilience is not just an option; it's
+      essential for navigating the complexities of modern life. 'Developing
+      Resilience' with Swami Karma Karuna offers you a comprehensive toolkit
+      to support your body, mind, and nervous system amid global changes.
+    </p>
+
+    <p>
+      Dive into 4 interactive live sessions with Swami Karma Karuna, alongside
+      in-depth theory, yoga, breathing, relaxation exercises, and introspective
+      practices. Experience how Hatha Yoga subtly introduces manageable stress
+      levels, promoting resilience that transcends the yoga mat and enters
+      daily life.
+    </p>
+
+    <figure class="snap tilt-r">
+      <img src="assets/forest-meditation-sq.jpg" alt="A woman meditating in the New Zealand bush">
+      <figcaption>return to your center</figcaption>
+    </figure>
+
+    <p>
+      Learn the profound impact of simple yet potent yogic tools on your journey
+      to cultivating a resilient body and mind. This course welcomes everyone,
+      from total beginners to seasoned practitioners.
+    </p>
+
+    <ul class="practise">
+      <li><b>Mindful Responses:</b> Cultivate the art of responding, not reacting, to life's ups and downs.</li>
+      <li><b>Nervous System Mastery:</b> Engage in practices like conscious breathing, yoga nidra, and restorative yoga to soothe and stabilize your nervous system.</li>
+      <li><b>Everyday Resilience Techniques:</b> Equip yourself with practical strategies for resilience you can apply in daily life.</li>
+      <li><b>Neural Pathway Reformation:</b> Develop new brain pathways that support resilience and equanimity.</li>
+      <li><b>Supportive Live Sessions:</b> Access live guidance and support from Swami Karma Karuna.</li>
+    </ul>
+
+    <figure class="snap tilt-s">
+      <img src="assets/mountains-band.jpg" alt="Snow-capped mountains above the Anahata valley, New Zealand">
+      <figcaption>rise from challenges</figcaption>
+    </figure>
+
+    <p class="aside"><span class="star">★</span> <u>recordings available</u></p>
+
+    <!-- the enclosure -->
+    <section class="enclosure" aria-label="What is included">
+      <p class="enc-label">what I am sending you</p>
+      <div class="enc-rule"></div>
+
+      <p class="live">
+        <span class="live-1">4x Live ZOOM Sessions (1.5 Hours) with Swami Karma Karuna (recordings available)</span>
+        &amp; Extra Resources Including additional theory, Q and A, and a resilience practice each week
+        <span class="when">THURSDAYS · 2nd, 9th, 16th &amp; 23rd of JULY · 7:00 pm NZT, 5:00 pm AEST, 9:00 am CEST, 3:00 pm SGT</span>
+      </p>
+
+      <div class="enc-group">
+        <h3>7x Inspirational Short Videos</h3>
+        <p class="items">What is Resilience? (5 mins) · The Breath (11mins) · Yoga Nidra (11 mins) · Stress &amp; the Nervous System (12 mins) · Mantra (8 mins) · Hatha Yoga (8 mins) · Yoga Lifestyle Attitudes (11 mins)</p>
+      </div>
+      <div class="enc-group">
+        <h3>6 x Practice MP3s or Videos</h3>
+        <p class="items">Natural Breath Meditation MP3 (19:39) · Yogic Breath MP3 · 4 stage Yoga Nidra MP3 (20:10) · 8 stage Yoga Nidra MP3 (28:58) · Inner Silence Meditation (Antar Mouna) MP3 (18:34) · Restorative Yoga Video (30 mins)</p>
+      </div>
+      <div class="enc-group">
+        <h3>6 x Morning Mantras MP3s</h3>
+        <p class="items">Peace Mantra (4:18) · Maha Mritunjaya Healing Mantra (3:07) · Gayatri Mantra for Energy and Intuition (3:17) · Durga Mantra for Strength (4:16) · Hanuman Chalisa for Courage and Faith (10:22) · Closing Mantras (3:03)</p>
+      </div>
+      <div class="enc-group">
+        <h3>Other Resources</h3>
+        <p class="items">Yoga and Resilience Article · SWAN Sadhana (Exploring Strength, Weaknesses, Aims and Needs) · Managing Mind and Emotions Article</p>
+      </div>
+    </section>
+
+    <div class="midcta">
+      <p class="m-price">NZD&nbsp;$247.00<small>One-time enrolment</small></p>
+      <a class="an-button" href="#enrol">Enrol Now</a>
+    </div>
+
+    <p class="access">
+      Course content is accessible for 3 months from time of enrollment. All
+      course materials are fully downloadable so you can continue your practice
+      indefinitely.
+    </p>
+
+    <!-- a note about your teacher -->
+    <section class="bio" aria-label="About Swami Karma Karuna">
+      <p class="bio-label">a little about your teacher</p>
+      <p>Swami Karma Karuna Saraswati is an engaging, intuitive yoga and meditation teacher, inspirational speaker, writer and IAYT Certified Yoga Therapist with 30 years of experience in the yoga field, including significant training in <strong>Nepal and India</strong> and ongoing visits and guidance with her teachers from the Bihar School of Yoga. She is certified by <strong>Yoga Alliance and Yoga New Zealand</strong>, and is a senior teacher of Yoga Australia/New Zealand.</p>
+      <p>A Bachelor of Arts in Interpersonal Communications with a minor in Psychology determined an early interest in working with groups and individuals. Swami Karma Karuna specialises in a range of areas such as stress and emotion management, Yoga Nidra, Restorative Yoga, Prana, Chakras, Yoga Psychology and Women's Health.</p>
+      <p>She is also a co-founder and director of Anahata Yoga Retreat, New Zealand and travels throughout the world, leading workshops, training yoga teachers, presenting at international events, guiding spiritual sadhana retreats and offering therapeutic one to one yoga sessions.</p>
+      <p>Swami Karma Karuna is passionate about sharing an authentic and down to earth approach, weaving together the ancient practices with a touch of psychology and brain science aimed at motivating people to live their yoga here and now.</p>
+    </section>
+
+    <!-- sign-off -->
+    <div class="signoff">
+      <img src="assets/swami-sig.png" alt="Signature of Swami Karma Karuna">
+      <p class="hariom">Hari Om!</p>
+    </div>
+
+    <!-- RSVP reply card -->
+    <section class="rsvp" id="enrol" aria-label="Enrol">
+      <p class="checkline"><span class="box"></span>I will join you</p>
+      <h2>Develop Your Resilience</h2>
+      <p class="support">Access live guidance and support from Swami Karma Karuna.</p>
+      <p class="when-line">THURSDAYS · 2nd, 9th, 16th &amp; 23rd of JULY · 7:00 pm NZT, 5:00 pm AEST, 9:00 am CEST, 3:00 pm SGT</p>
+      <p class="price">NZD&nbsp;$247.00<small>One-time enrolment</small></p>
+      <a class="an-button" href="#enrol">Enrol Now</a>
+      <br>
+      <a class="begin" href="#enrol">or begin here</a>
+    </section>
+
+    <p class="ps">
+      P.S. Questions? Get in touch!<br>
+      <a href="mailto:yoga@anahata-retreat.org.nz">yoga@anahata-retreat.org.nz</a>
+    </p>
+
+  </article>
+
+</body>
+</html>

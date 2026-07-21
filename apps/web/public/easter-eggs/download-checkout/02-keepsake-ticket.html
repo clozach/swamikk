@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkout — Natural Breath Awareness (MP3) · Anahata</title>
+</head>
+<body>
+<!--
+  DIRECTION 02 — "THE KEEPSAKE"
+  A download checkout reframed as receiving a printed artifact: a letterpress
+  admit-one ticket / liner card for a single guided-breath practice. One paper
+  object replaces the plan-radio + cart-recap chrome. Order details are TYPESET
+  as a program (label · value), the price + one-time note live on a torn stub,
+  and Complete Purchase "issues/stamps" the ticket.
+
+  CONTRACT: content is verbatim from download-checkout-spec.md §1; only §3
+  permitted facts added (Length 19:40, MP3 / instant download / yours to keep,
+  Swami Karma Karuna, Anahata). No ratings/scarcity/discount/testimonial/
+  guarantee/trust-badge/member-name — §4 obeyed.
+
+  ── WCAG AA (relative-luminance formula, every pairing, every state) ──
+  Body ink #545454  on white #fff  = 7.57:1  ✓ (body <24px needs 4.5:1)
+  Body ink #545454  on cream #f7f4eb = 6.89:1 ✓
+  Ink on paper-tint #fbf9f2 (near-white card) ≈ 7.3:1 ✓
+  Rust #993300 text on white = 7.43:1 ✓ ; on cream = 6.75:1 ✓ (headings/labels/links)
+  Cocoa #312110 on white = 14.09:1 ✓ (price figure, big statements)
+  Cocoa #312110 on saffron #ff9900 button REST = 7.24:1 ✓
+  Button HOVER  white on rust #993300      = 7.43:1 ✓
+  Button ACTIVE white on rust-pressed #7a2900 = 9.79:1 ✓ (set explicitly — keyboard :active fires without :hover)
+  Focus ring rust: 3.47:1 on saffron ground, 6.75:1+ on paper — ≥3:1 UI floor ✓
+  Photo overlay: white on SOLID cocoa #312110 panel = 15.49:1 ✓ (a solid panel, not text on the bare photo — scrim requirement met by opaque chip)
+  Footer white on ocean #216097 = 6.59:1 ✓ ; on navy #012772 = 13.69:1 ✓
+  Blue lives ONLY in footer + logo. No blue in the body.
+-->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Open+Sans:wght@300;400;600;700&display=swap');
+
+:root{
+  --cream:#f7f4eb; --card:#ffffff; --paper:#fbf9f2; /* faint warm paper tint */
+  --ink:#545454; --cocoa:#312110;
+  --saffron:#ff9900; --rust:#993300; --rust-pressed:#7a2900; --amber:#ffbf00;
+  --marigold:#f6d36a; --border-warm:#9c7f52;
+  --ocean:#216097; --navy:#012772;
+  --font-display:"Playfair Display", Georgia, serif;
+  --font-body:"Open Sans", -apple-system, "Segoe UI", sans-serif;
+  --font-mono:"SFMono-Regular","SF Mono","JetBrains Mono","Roboto Mono",Menlo,Consolas,monospace;
+  --radius-input:4px; --radius-button:10px;
+}
+
+*,*::before,*::after{ box-sizing:border-box; }
+html,body{ margin:0; }
+body{
+  background:var(--cream);
+  color:var(--ink);
+  font-family:var(--font-body);
+  font-size:15px;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+img{ max-width:100%; display:block; }
+
+/* ───────────────────────── header / nav ───────────────────────── */
+.an-header{
+  background:var(--cream);
+  border-top:6px solid var(--rust);
+  border-bottom:1px solid var(--amber);
+  padding:14px 24px 16px;
+}
+.an-header__row{
+  max-width:1100px; margin:0 auto;
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:12px 20px;
+}
+.an-logo{ height:52px; width:auto; }
+.an-nav{ display:flex; align-items:center; flex-wrap:wrap; gap:6px 18px; }
+.an-nav a{
+  font-family:var(--font-body); font-size:13px; letter-spacing:.03em;
+  text-transform:uppercase; color:var(--ink); text-decoration:none;
+  padding:2px 0; border-bottom:2px solid transparent;
+  transition:color var(--dur-hover,100ms) ease-in, border-color 100ms ease-in;
+}
+.an-nav a:hover, .an-nav a:focus-visible{ color:var(--rust); border-bottom-color:var(--rust); outline:none; }
+.an-nav a:focus-visible{ outline:2px solid var(--rust); outline-offset:3px; border-radius:2px; }
+.moon{
+  margin-left:4px; width:34px; height:34px; border-radius:50%;
+  border:1px solid var(--border-warm); background:transparent;
+  display:inline-flex; align-items:center; justify-content:center;
+  color:var(--rust); cursor:pointer; padding:0;
+}
+.moon:focus-visible{ outline:2px solid var(--rust); outline-offset:2px; }
+.moon svg{ width:17px; height:17px; }
+
+/* ───────────────────────── stage ───────────────────────── */
+.stage{ max-width:800px; margin:0 auto; padding:40px 20px 20px; }
+
+.wayfind{ text-align:center; margin-bottom:26px; }
+.wayfind__eyebrow{
+  font-size:12px; letter-spacing:.34em; text-transform:uppercase;
+  color:var(--rust); font-weight:700; margin:0 0 8px;
+}
+.wayfind__line{
+  font-family:var(--font-display); font-style:italic; font-weight:400;
+  font-size:23px; color:var(--rust); margin:0; line-height:1.3;
+}
+.wayfind__rule{
+  width:44px; height:1px; background:var(--border-warm);
+  margin:16px auto 0; opacity:.8;
+}
+
+/* ───────────────────────── the ticket ───────────────────────── */
+.ticket{
+  position:relative;
+  display:flex; align-items:stretch;
+  background:
+    linear-gradient(180deg,#ffffff 0%, var(--paper) 100%);
+  border:1px solid var(--border-warm);
+  border-radius:6px;
+  box-shadow:0 1px 0 rgba(49,33,16,.04), 0 18px 40px -26px rgba(49,33,16,.35);
+  overflow:hidden;
+}
+/* faint letterpress "watermark" seal, structural not ornamental */
+.ticket__wm{
+  position:absolute; right:-40px; bottom:-40px; width:260px; height:260px;
+  color:var(--rust); opacity:.05; pointer-events:none;
+}
+
+/* ---- main (the program) ---- */
+.ticket__main{
+  flex:1 1 auto; min-width:0;
+  padding:32px 34px 34px;
+}
+.stamp-row{
+  display:flex; align-items:flex-start; justify-content:space-between; gap:18px;
+  margin-bottom:20px;
+}
+.brandmark{
+  font-size:11px; letter-spacing:.24em; text-transform:uppercase;
+  color:var(--rust); font-weight:700; margin:0; padding-top:4px;
+}
+/* runtime tag — a solid opaque chip so white text never sits on the bare photo */
+.artwrap{ position:relative; flex:0 0 auto; }
+.art{
+  width:96px; height:96px; object-fit:cover;
+  border-radius:4px; border:1px solid var(--border-warm);
+}
+.runtime-tag{
+  position:absolute; left:6px; bottom:6px;
+  background:var(--cocoa); color:#fff; /* 15.49:1 on the solid panel */
+  font-size:10px; letter-spacing:.09em; font-weight:600;
+  padding:3px 7px; border-radius:3px;
+  font-variant-numeric:tabular-nums;
+}
+
+.title{
+  font-family:var(--font-display); font-weight:700;
+  font-size:clamp(28px,5.2vw,40px); line-height:1.08;
+  color:var(--rust); margin:0 0 8px; letter-spacing:-.005em;
+}
+.byline{
+  font-family:var(--font-display); font-style:italic; font-weight:400;
+  font-size:16px; color:var(--ink); margin:0 0 24px;
+}
+
+/* typeset program: label · value rows, refined vertical rhythm */
+.program{ margin:0 0 24px; }
+.prow{
+  display:flex; align-items:baseline; gap:14px;
+  padding:9px 0; border-bottom:1px dotted #d9cdb2;
+}
+.prow:first-child{ border-top:1px dotted #d9cdb2; }
+.plabel{
+  flex:0 0 96px;
+  font-size:11px; letter-spacing:.15em; text-transform:uppercase;
+  color:var(--rust); font-weight:700;
+}
+.pval{
+  flex:1 1 auto; min-width:0;
+  color:var(--cocoa); font-size:15px;
+}
+.pval--num{ font-family:var(--font-mono); font-variant-numeric:tabular-nums; letter-spacing:.01em; }
+
+/* issued-to block (Personal Information) */
+.issued{
+  border-left:3px solid var(--marigold);
+  padding:4px 0 4px 15px;
+}
+.issued__cap{
+  font-size:10.5px; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--rust); font-weight:700; margin:0 0 5px;
+}
+.issued__line{ margin:0; color:var(--cocoa); font-size:15px; }
+.issued__line b{ font-weight:600; }
+.issued__name{ color:var(--ink); font-size:13.5px; margin:3px 0 0; }
+.issued__name .dash{ color:var(--border-warm); }
+
+/* ---- perforation divider ---- */
+.perf{
+  position:relative; flex:0 0 1px; width:1px;
+  background-image:linear-gradient(var(--border-warm) 55%, transparent 0);
+  background-size:1px 9px; background-repeat:repeat-y;
+}
+/* punched notch holes bite into the ticket at each end of the perforation */
+.perf::before, .perf::after{
+  content:""; position:absolute; left:50%; width:20px; height:20px;
+  transform:translate(-50%,-50%);
+  background:var(--cream);
+  border:1px solid var(--border-warm);
+  border-radius:50%;
+}
+.perf::before{ top:0; }
+.perf::after{ top:100%; }
+
+/* ---- stub (price + issue action) ---- */
+.stub{
+  flex:0 0 264px;
+  background:var(--paper);
+  padding:30px 28px 30px;
+  display:flex; flex-direction:column; justify-content:center;
+}
+.stub__cap{
+  font-size:11px; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--rust); font-weight:700; margin:0 0 18px; text-align:center;
+}
+
+/* the seal (Anahata shatkona) — a blind letterpress stamp on the stub */
+.seal{
+  width:78px; height:78px; margin:0 auto 20px;
+  color:var(--rust); opacity:.55;
+  transition:transform 420ms cubic-bezier(.2,.8,.2,1), opacity 420ms ease;
+}
+.seal svg{ width:100%; height:100%; }
+
+.price{
+  text-align:center; margin:0 0 2px;
+  font-family:var(--font-mono); font-variant-numeric:tabular-nums;
+  font-size:40px; font-weight:500; color:var(--cocoa); /* 14.09:1 */
+  letter-spacing:.01em; line-height:1;
+}
+.price__note{
+  text-align:center; font-size:12px; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--rust); font-weight:700; margin:0 0 20px;
+}
+.totrule{ height:1px; background:var(--border-warm); opacity:.55; margin:0 0 12px; }
+.totrow{
+  display:flex; align-items:baseline; justify-content:space-between;
+  margin:0 0 4px;
+}
+.totrow .k{ font-size:12px; letter-spacing:.15em; text-transform:uppercase; color:var(--rust); font-weight:700; }
+.totrow .v{ font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:16px; color:var(--cocoa); font-weight:600; }
+.totsub{ font-size:12.5px; color:var(--ink); margin:0 0 20px; text-align:left; }
+
+.stub__spacer{ flex:1 1 auto; min-height:6px; }
+
+.issue-btn{
+  display:block; width:100%;
+  background:var(--saffron); color:var(--cocoa); /* 7.24:1 */
+  font-family:var(--font-body); font-weight:700; font-size:15px;
+  letter-spacing:.02em;
+  border:none; border-radius:var(--radius-button);
+  padding:14px 18px; cursor:pointer;
+  transition:background 100ms ease-in, color 100ms ease-in;
+}
+.issue-btn:hover{ background:var(--rust); color:#fff; }            /* 7.43:1 */
+.issue-btn:active{ background:var(--rust-pressed); color:#fff; }   /* 9.79:1 — explicit */
+.issue-btn:focus-visible{ outline:2px solid var(--rust); outline-offset:2px; }
+.issue-btn[disabled]{ cursor:default; opacity:1; }
+
+.delivery{
+  margin:14px 0 0; text-align:center;
+  font-size:12.5px; line-height:1.5; color:var(--ink);
+}
+.delivery b{ color:var(--rust); font-weight:700; }
+
+/* issued confirmation state */
+.issued-state .seal{ opacity:1; }
+.issued-badge{
+  display:none;
+  margin:14px 0 0; text-align:center;
+  font-family:var(--font-display); font-style:italic; font-size:15px;
+  color:var(--rust);
+}
+.issued-state .issued-badge{ display:block; }
+
+/* ───────────────────────── responsive ───────────────────────── */
+@media (max-width:680px){
+  .ticket{ flex-direction:column; }
+  .ticket__main{ padding:28px 22px 26px; }
+  .stub{ flex:1 1 auto; }
+  .perf{
+    width:auto; height:1px; flex:0 0 1px;
+    background-image:linear-gradient(90deg,var(--border-warm) 55%, transparent 0);
+    background-size:9px 1px; background-repeat:repeat-x;
+  }
+  .perf::before{ top:50%; left:0; }
+  .perf::after{ top:50%; left:100%; }
+  .plabel{ flex-basis:84px; }
+}
+@media (max-width:400px){
+  .ticket__main{ padding:24px 18px 22px; }
+  .stub{ padding:26px 20px; }
+  .stamp-row{ flex-direction:row; }
+  .art{ width:76px; height:76px; }
+  .plabel{ flex-basis:74px; letter-spacing:.1em; }
+}
+
+/* motion honors reduced-motion */
+@media (prefers-reduced-motion:reduce){
+  .seal{ transition:none; }
+  .issue-btn{ transition:none; }
+}
+
+/* ───────────────────────── footer (the one cool place) ───────────────────────── */
+.an-footer{ background:var(--ocean); color:#fff; padding:26px 24px; margin-top:44px; }
+.an-footer__in{ max-width:1100px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+.an-footer__title{ font-family:var(--font-display); text-transform:uppercase; font-weight:400; font-size:20px; margin:0; letter-spacing:.04em; }
+.an-footer__note{ font-size:12.5px; opacity:.95; }
+.an-footer-strip{ background:var(--navy); color:#fff; font-size:12px; padding:8px 24px; text-align:center; }
+</style>
+
+<header class="an-header">
+  <div class="an-header__row">
+    <img class="an-logo" src="assets/swami-kk-logo.png" alt="Anahata">
+    <nav class="an-nav" aria-label="Primary">
+      <a href="#">Events and Trainings</a>
+      <a href="#">Stay</a>
+      <a href="#">Give</a>
+      <a href="#">Blog</a>
+      <a href="#">About</a>
+      <a href="#">Contact</a>
+      <a href="#">Our Newsletter</a>
+      <a href="#">Shop</a>
+      <button class="moon" type="button" aria-label="Toggle dark mode" title="Dark mode">
+        <!-- decorative moon glyph (not wired) -->
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.5 14.2A8.2 8.2 0 0 1 9.8 3.5a.7.7 0 0 0-.9-.9 9.5 9.5 0 1 0 12.5 12.5.7.7 0 0 0-.9-.9z"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main class="stage">
+
+  <div class="wayfind">
+    <p class="wayfind__eyebrow">Checkout</p>
+    <p class="wayfind__line">One practice, issued to you &mdash; yours to keep.</p>
+    <div class="wayfind__rule" aria-hidden="true"></div>
+  </div>
+
+  <!-- THE KEEPSAKE TICKET -->
+  <article class="ticket" id="ticket">
+
+    <!-- faint structural watermark seal -->
+    <div class="ticket__wm" aria-hidden="true">
+      <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="1.4">
+        <polygon points="50,10 84,70 16,70"/><polygon points="50,90 16,30 84,30"/>
+        <circle cx="50" cy="50" r="30"/>
+      </svg>
+    </div>
+
+    <!-- ── program side ── -->
+    <div class="ticket__main">
+      <div class="stamp-row">
+        <p class="brandmark">Anahata<br>Guided Practice</p>
+        <div class="artwrap">
+          <img class="art" src="assets/forest-meditation-sq.jpg"
+               alt="Natural Breath Awareness — forest meditation">
+          <span class="runtime-tag">MP3 · 19:40</span>
+        </div>
+      </div>
+
+      <h1 class="title">Natural Breath Awareness</h1>
+      <p class="byline">Guided Practice &nbsp;·&nbsp; Guided by Swami Karma Karuna</p>
+
+      <!-- order details typeset as a program (not a table row) -->
+      <div class="program" role="list" aria-label="Order details">
+        <div class="prow" role="listitem">
+          <span class="plabel">Item</span>
+          <span class="pval">Natural Breath Awareness — Guided Practice</span>
+        </div>
+        <div class="prow" role="listitem">
+          <span class="plabel">Format</span>
+          <span class="pval">MP3 &middot; instant download</span>
+        </div>
+        <div class="prow" role="listitem">
+          <span class="plabel">Length</span>
+          <span class="pval pval--num">19:40</span>
+        </div>
+        <div class="prow" role="listitem">
+          <span class="plabel">Price</span>
+          <span class="pval pval--num">$9.00 &nbsp;<span style="font-family:var(--font-body);color:var(--rust);font-weight:700;font-size:11px;letter-spacing:.14em;text-transform:uppercase;">one-time</span></span>
+        </div>
+      </div>
+
+      <!-- Personal Information — email read-back, empty name handled gracefully -->
+      <div class="issued">
+        <p class="issued__cap">Personal Information</p>
+        <p class="issued__line">Issued to&nbsp; <b>clozach@ilovelife.com</b></p>
+        <p class="issued__name">Name&nbsp; <span class="dash">&mdash;</span></p>
+      </div>
+    </div>
+
+    <!-- ── perforation ── -->
+    <div class="perf" aria-hidden="true"></div>
+
+    <!-- ── stub side ── -->
+    <div class="stub" id="stub">
+      <p class="stub__cap">Order summary</p>
+
+      <div class="seal" aria-hidden="true">
+        <!-- Anahata shatkona seal -->
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="1.6">
+          <polygon points="50,8 88,72 12,72"/>
+          <polygon points="50,92 12,28 88,28"/>
+          <circle cx="50" cy="50" r="34"/>
+        </svg>
+      </div>
+
+      <div class="price">$9.00</div>
+      <p class="price__note">one-time</p>
+
+      <div class="totrule" aria-hidden="true"></div>
+      <div class="totrow">
+        <span class="k">Total</span>
+        <span class="v">$9.00</span>
+      </div>
+      <p class="totsub">One-time payment of $9.00</p>
+
+      <button class="issue-btn" id="issueBtn" type="button">Complete Purchase</button>
+      <p class="delivery">Instant <b>MP3</b> download &mdash; yours to keep.</p>
+      <p class="issued-badge" id="issuedBadge">Issued.</p>
+    </div>
+
+  </article>
+</main>
+
+<footer class="an-footer">
+  <div class="an-footer__in">
+    <p class="an-footer__title">Anahata</p>
+    <p class="an-footer__note">Anahata Yoga Retreat &middot; Aotearoa New Zealand</p>
+  </div>
+</footer>
+<div class="an-footer-strip">© Anahata Yoga Retreat</div>
+
+<script>
+(function(){
+  var btn = document.getElementById('issueBtn');
+  var stub = document.getElementById('stub');
+  var seal = stub ? stub.querySelector('.seal') : null;
+  if(!btn) return;
+
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var done = false;
+
+  btn.addEventListener('click', function(){
+    if(done) return;
+    done = true;
+    btn.textContent = 'Working…';
+    btn.setAttribute('disabled','');
+
+    // "Issue/stamp" the ticket. The seal presses into place — motion embodies
+    // the act of issuing; skipped entirely under prefers-reduced-motion.
+    var stamp = function(){
+      stub.classList.add('issued-state');
+      btn.textContent = 'Complete Purchase';
+      if(seal && !reduce){
+        seal.style.transform = 'scale(1.14) rotate(-4deg)';
+        requestAnimationFrame(function(){
+          requestAnimationFrame(function(){
+            seal.style.transform = 'scale(1) rotate(0deg)';
+          });
+        });
+      }
+    };
+
+    if(reduce){ stamp(); }
+    else { setTimeout(stamp, 620); }
+  });
+})();
+</script>
+</body>
+</html>

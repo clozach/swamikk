@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design explorations — download checkout</title>
+<style>
+  /* Neutral warm chrome; restyle from the project's own tokens when the
+     design system differs. Only real links/buttons may carry hover styles. */
+  :root{
+    --ground:#f7f4eb; --card:#fff; --ink:#545454; --display:#312110;
+    --accent:#993300; --hairline:#9c7f52;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; background:var(--ground); color:var(--ink);
+    font-family:-apple-system, "Segoe UI", "Open Sans", sans-serif;
+    padding:40px 24px 64px;
+  }
+  h1{ font-family:Georgia, serif; color:var(--display); font-weight:600;
+      font-size:28px; margin:0 auto 6px; max-width:1080px; }
+  .sub{ max-width:1080px; margin:0 auto 28px; font-size:14px; }
+  .sub a{ color:var(--accent); }
+  #cards{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));
+    gap:22px; max-width:1080px; margin:0 auto;
+  }
+  .card{
+    background:var(--card); border:1px solid var(--hairline); border-radius:8px;
+    padding:14px; display:flex; flex-direction:column; gap:10px;
+  }
+  /* The inlined thumb: a live, scaled iframe of the design itself — always
+     current, no screenshot step, no click needed just to see it. */
+  .shot{
+    width:100%; aspect-ratio:3/2; overflow:hidden; position:relative;
+    background:var(--ground); border:1px solid var(--hairline); border-radius:4px;
+    pointer-events:none;
+  }
+  .shot iframe{
+    position:absolute; top:0; left:0; width:1200px; height:800px; border:0;
+    transform-origin:top left; pointer-events:none;
+  }
+  .card h2{ font-size:16px; color:var(--display); margin:0; display:flex;
+            align-items:center; gap:8px; }
+  .badge{
+    font-size:9px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--accent); border:1px solid var(--accent); border-radius:999px;
+    padding:0 6px; line-height:1.6;
+  }
+  .card p{ margin:0; font-size:13px; line-height:1.55; flex:1; }
+  .card .standout{ font-size:12px; color:var(--display); font-style:italic; }
+  .open{
+    align-self:flex-start; text-decoration:none; font-size:13px; font-weight:600;
+    color:var(--accent); border:1px solid var(--accent); border-radius:6px;
+    padding:6px 14px;
+  }
+  .open:hover{ background:var(--accent); color:#fff; }
+</style>
+</head>
+<body>
+
+<h1>Design explorations — download checkout</h1>
+<p class="sub">
+  Anahata · CourseLit — a single $9 MP3 download run through the multi-plan
+  membership checkout template feels templated and clunky. Four ways to make
+  the page belong to the practice you're buying.
+  Compare any two side-by-side: <a href="compare.html">compare.html</a>.
+</p>
+
+<div id="cards"></div>
+
+<script>
+(function(){
+  "use strict";
+  /* ================= CONFIG — edit ONLY this block =================
+     One entry per design. concept = one line; standout = the strongest
+     single move (often the critique's verdict); badge optional. */
+  var DESIGNS = [
+    { src:"01-the-object.html", name:"01 · The Object",
+      concept:"Buying one beautiful thing — big cover-art hero, a confident price, one button. Reduction over chrome.",
+      standout:"The art framed as a record cover, with $9.00 stated as a giant authoritative fact rather than a chooser." },
+    { src:"02-keepsake-ticket.html", name:"02 · The Keepsake",
+      concept:"The checkout is a printed artifact — a perforated liner-note ticket, order details typeset like a program.",
+      standout:"The perforated admit-one ticket — program on the main, price + “issue” action on a torn stub." },
+    { src:"03-breath-paced.html", name:"03 · The Breath",
+      concept:"Meditative single column — whitespace as rest, a lotus section mark, an unhurried descent to one button.",
+      standout:"The vertical breath-paced descent — one focal point per screen, ending on the exhale-button." },
+    { src:"04-warm-counter.html", name:"04 · The Counter",
+      concept:"The realistic drop-in — same two-pane shape, every mis-fit fixed; a sticky pay panel, no radio-of-one.",
+      standout:"The honestly-fixed CourseLit counter — kept the sticky pay panel buyers expect, killed the radio-of-one and the cart chrome." }
+  ];
+  /* =============== END CONFIG =============== */
+
+  var cards = document.getElementById("cards");
+  DESIGNS.forEach(function(d){
+    var card = document.createElement("div");
+    card.className = "card";
+
+    var shot = document.createElement("div");
+    shot.className = "shot";
+    var f = document.createElement("iframe");
+    f.src = d.src; f.setAttribute("tabindex", "-1"); f.loading = "lazy";
+    shot.appendChild(f);
+    card.appendChild(shot);
+
+    var h = document.createElement("h2");
+    h.textContent = d.name;
+    if (d.badge){
+      var b = document.createElement("span");
+      b.className = "badge"; b.textContent = d.badge;
+      h.appendChild(b);
+    }
+    card.appendChild(h);
+
+    var c = document.createElement("p");
+    c.textContent = d.concept;
+    card.appendChild(c);
+
+    if (d.standout){
+      var s = document.createElement("p");
+      s.className = "standout"; s.textContent = "Standout: " + d.standout;
+      card.appendChild(s);
+    }
+
+    var a = document.createElement("a");
+    a.className = "open"; a.href = d.src; a.textContent = "Open full size";
+    card.appendChild(a);
+
+    cards.appendChild(card);
+  });
+
+  /* Scale each thumb iframe to fit its box; re-fit on resize. */
+  function fit(){
+    document.querySelectorAll(".shot").forEach(function(shot){
+      var f = shot.querySelector("iframe");
+      f.style.transform = "scale(" + (shot.clientWidth / 1200) + ")";
+    });
+  }
+  fit();
+  window.addEventListener("resize", fit);
+})();
+</script>
+</body>
+</html>

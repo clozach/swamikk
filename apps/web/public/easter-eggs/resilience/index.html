@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Developing Resilience — five sales-page explorations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,500&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#f7f4eb; --card:#fff; --ink:#545454; --cocoa:#312110;
+    --saffron:#ff9900; --rust:#993300; --rust-pressed:#7a2900;
+    --marigold:#f6d36a; --border-warm:#9c7f52; --ocean:#216097; --navy:#012772;
+    --font-display:"Playfair Display", Georgia, serif;
+    --font-body:"Open Sans", -apple-system, "Segoe UI", sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; max-width:100%; overflow-x:hidden; }
+  body{
+    background:var(--cream); color:var(--ink);
+    font-family:var(--font-body); font-size:16px; line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+  img{ max-width:100%; display:block; }
+  .wrap{ max-width:920px; margin:0 auto; padding:0 24px; }
+
+  /* ---- header ---- */
+  header.top{
+    background:var(--cream);
+    border-top:6px solid var(--rust);
+    border-bottom:1px solid var(--marigold);
+    padding:16px 0;
+  }
+  header.top .wrap{ display:flex; align-items:center; gap:14px; }
+  header.top img{ height:40px; width:40px; object-fit:contain; }
+  header.top .word{
+    font-family:var(--font-display); color:var(--rust); font-size:15px;
+    letter-spacing:.04em; line-height:1.15;
+  }
+
+  /* ---- intro ---- */
+  .intro{ padding:64px 0 20px; }
+  .intro .eyebrow{
+    font-family:var(--font-body); font-weight:700; font-size:12.5px;
+    letter-spacing:.24em; text-transform:uppercase; color:var(--rust); margin:0 0 18px;
+  }
+  .intro h1{
+    font-family:var(--font-display); font-weight:700; color:var(--rust);
+    font-size:clamp(2.2rem,5.4vw,3.4rem); line-height:1.08; margin:0 0 20px;
+  }
+  .intro p{
+    font-size:1.06rem; color:var(--cocoa); max-width:62ch; margin:0 0 .8em;
+  }
+  .intro .meta{
+    margin-top:22px; font-size:.92rem; color:var(--ink);
+    border-top:1px solid var(--border-warm); padding-top:18px;
+  }
+  .intro .meta b{ color:var(--rust); }
+
+  /* ---- exploration cards ---- */
+  .cards{ padding:26px 0 40px; display:flex; flex-direction:column; gap:22px; }
+  .card{
+    background:var(--card); border:1px solid var(--border-warm); border-radius:6px;
+    padding:30px 32px;
+    display:grid; grid-template-columns:auto 1fr; gap:26px; align-items:start;
+  }
+  .chip{
+    flex:0 0 auto; width:58px; height:58px; border-radius:12px;
+    background:var(--saffron); color:var(--cocoa);   /* saffron FILL, cocoa text = 7.24:1 */
+    font-family:var(--font-display); font-weight:700; font-size:24px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .card .body{ min-width:0; }
+  .card h2{
+    font-family:var(--font-display); font-weight:700; color:var(--rust);
+    font-size:1.6rem; line-height:1.15; margin:0 0 2px;
+  }
+  .card .concept{ font-size:1rem; color:var(--cocoa); margin:.35em 0 1em; }
+  .card .standout{
+    font-family:var(--font-display); font-style:italic; color:var(--ink);
+    font-size:1.02rem; line-height:1.5; margin:0 0 1.4em;
+    border-left:3px solid var(--marigold); padding:.1em 0 .1em 1em;
+  }
+  .card .standout .lab{
+    display:block; font-family:var(--font-body); font-style:normal; font-weight:700;
+    font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--rust); margin-bottom:6px;
+  }
+
+  /* ---- the ONLY hover targets ---- */
+  .open{
+    display:inline-block; background:#fff; color:var(--rust);
+    font-family:var(--font-body); font-weight:700; font-size:14px;
+    letter-spacing:.02em; text-decoration:none; text-align:center;
+    padding:11px 30px; border:1px solid var(--rust); border-radius:10px;
+    transition:background .12s ease-in, color .12s ease-in, border-color .12s ease-in;
+  }
+  .open:hover{ background:var(--rust); color:#fff; border-color:var(--rust); }
+  .open:active{ background:var(--rust-pressed); color:#fff; border-color:var(--rust-pressed); }
+  .open:focus-visible{ outline:2px solid var(--rust); outline-offset:3px; }
+  .open .arw{ font-weight:400; }
+
+  /* ---- footer ---- */
+  footer{ background:var(--ocean); color:#fff; padding:36px 0 0; margin-top:24px; }
+  footer .wrap{ display:flex; flex-wrap:wrap; gap:8px 24px; justify-content:space-between; align-items:baseline; }
+  footer .ft-title{ font-family:var(--font-display); text-transform:uppercase; font-weight:400; font-size:22px; margin:0; }
+  footer .ft-sub{ font-size:.9rem; color:#eaf1f6; margin:0; }
+  .strip{ background:var(--navy); color:#fff; font-size:12px; padding:11px 0; margin-top:28px; }
+  .strip .wrap{ text-align:center; }
+
+  @media (max-width:620px){
+    .card{ grid-template-columns:1fr; gap:16px; }
+    .chip{ width:48px; height:48px; font-size:20px; }
+    .intro{ padding:44px 0 12px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <img src="assets/swami-kk-logo.png" alt="Swami Karma Karuna">
+    <span class="word">Developing Resilience</span>
+  </div>
+</header>
+
+<section class="intro">
+  <div class="wrap">
+    <p class="eyebrow">Design explorations · sales page</p>
+    <h1>Five ways to sell one course.</h1>
+    <p>Five self-contained sales-page concepts for the <b>2026 Developing Resilience Online Course</b> with Swami Karma Karuna &mdash; each a distinct world built from the same fixed, verbatim course copy, on the Anahata design system.</p>
+    <p class="meta">Every page carries the identical body copy; only the <b>selection, sequencing, typesetting and pacing</b> differ. Open each below.</p>
+  </div>
+</section>
+
+<section class="cards">
+  <div class="wrap" style="padding:0 24px; display:flex; flex-direction:column; gap:22px;">
+
+    <!-- 01 -->
+    <article class="card">
+      <div class="chip" aria-hidden="true">01</div>
+      <div class="body">
+        <h2>The long-form letter (VSL)</h2>
+        <p class="concept">A true video-sales-letter arc in prose: agitate with the three questions, breathe through refrain bands over the mountains, reveal the toolkit, and return four times to a spec-worded call to enrol.</p>
+        <p class="standout"><span class="lab">Standout</span>The four-part CTA-chorus rhythm &mdash; each Enrol button introduced by a different verbatim spec sentence &mdash; is the best repeated, spec-faithful path-to-purchase in the whole set.</p>
+        <a class="open" href="01-long-form-letter-vsl.html">View exploration <span class="arw">&rarr;</span></a>
+      </div>
+    </article>
+
+    <!-- 02 -->
+    <article class="card">
+      <div class="chip" aria-hidden="true">02</div>
+      <div class="body">
+        <h2>The Bihar yantra</h2>
+        <p class="concept">Sacred geometry as a layout system: a twelve-petal Anahata lotus and shatkona drawn once and reused as section marks, roman-numeral &ldquo;movements,&rdquo; a bead-on-thread mala, and a lotus that fills as you scroll.</p>
+        <p class="standout"><span class="lab">Standout</span>The reusable yantra geometry plus the literal &ldquo;mala&rdquo; &mdash; six mantras as beads strung on a rust thread &mdash; sacred geometry deployed as an actual layout system, not sprinkled decoration.</p>
+        <a class="open" href="02-bihar-yantra.html">View exploration <span class="arw">&rarr;</span></a>
+      </div>
+    </article>
+
+    <!-- 03 -->
+    <article class="card">
+      <div class="chip" aria-hidden="true">03</div>
+      <div class="body">
+        <h2>The editorial magazine</h2>
+        <p class="concept">A print feature: masthead and dateline, a cover with Fig.&nbsp;1, justified two-column body with an At-a-Glance sidebar, full-bleed figure bands, a dot-leadered Contents index, and a tipped-in bind-in reply card.</p>
+        <p class="standout"><span class="lab">Standout</span>The &ldquo;Contents&rdquo; index &mdash; a true magazine table-of-contents with dotted leaders and run-times &mdash; is the single most elegant treatment of the what&rsquo;s-included data anywhere in the set, and it sidesteps card-clutter entirely.</p>
+        <a class="open" href="03-editorial-magazine.html">View exploration <span class="arw">&rarr;</span></a>
+      </div>
+    </article>
+
+    <!-- 04 -->
+    <article class="card">
+      <div class="chip" aria-hidden="true">04</div>
+      <div class="body">
+        <h2>The breath-paced page</h2>
+        <p class="concept">The page <em>is</em> a breath cycle: cream &ldquo;inhale&rdquo; text beats alternate with full-bleed &ldquo;exhale&rdquo; photo beats, threaded by a persistent mala plumb-line and revealed by pure-CSS scroll timing.</p>
+        <p class="standout"><span class="lab">Standout</span>The inhale/exhale structural rhythm driven by CSS <code>animation-timeline: view()</code>: motion that literally IS the breath concept, needs no JS, and degrades to fully-visible static content where unsupported or when reduced-motion is set &mdash; the reference implementation of the brief&rsquo;s motion clause.</p>
+        <a class="open" href="04-breath-paced.html">View exploration <span class="arw">&rarr;</span></a>
+      </div>
+    </article>
+
+    <!-- 05 -->
+    <article class="card">
+      <div class="chip" aria-hidden="true">05</div>
+      <div class="body">
+        <h2>The handwritten letter</h2>
+        <p class="concept">An intimate first-person letter: Caveat handwriting for the asides over a Playfair body, tipped-in tilted &ldquo;snap&rdquo; photos, an enclosure of what is sent, and an RSVP reply card to close.</p>
+        <p class="standout"><span class="lab">Standout</span>The epistolary conceit carried end-to-end &mdash; the pull-quote set as a margin-ruled confidence, spec phrases (&ldquo;return to your center,&rdquo; &ldquo;rise from challenges&rdquo;) reused as handwritten photo captions, and the signature sign-off &mdash; the warmest, most human read in the set.</p>
+        <a class="open" href="05-handwritten-letter.html">View exploration <span class="arw">&rarr;</span></a>
+      </div>
+    </article>
+
+    <!-- compare -->
+    <article class="card">
+      <div class="chip" aria-hidden="true">&harr;</div>
+      <div class="body">
+        <h2>Side-by-side comparator</h2>
+        <p class="concept">All five explorations in two live panes. Hover a pane&rsquo;s top third to open a large picker of thumbnails and swap designs in place; on a phone it becomes a swipeable carousel.</p>
+        <a class="open" href="compare.html">Open comparator <span class="arw">&rarr;</span></a>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p class="ft-title">Anahata Yoga Retreat</p>
+    <p class="ft-sub">New Zealand &middot; Developing Resilience with Swami Karma Karuna</p>
+  </div>
+  <div class="strip"><div class="wrap">&copy; 2026 Anahata Yoga Retreat &middot; design explorations, not for publication</div></div>
+</footer>
+
+</body>
+</html>

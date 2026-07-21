@@ -1,0 +1,536 @@
+<title>2026 Developing Resilience Online Course — Anahata Yoga Retreat</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Open+Sans:wght@300;400;600;700&display=swap');
+
+  :root{
+    --cream:#f7f4eb; --card:#fff; --ink:#545454; --cocoa:#312110;
+    --saffron:#ff9900; --rust:#993300; --rust-pressed:#7a2900;
+    --marigold:#f6d36a; --border-warm:#9c7f52; --ocean:#216097; --navy:#012772;
+    --font-display:"Playfair Display", Georgia, serif;
+    --font-body:"Open Sans", -apple-system, "Segoe UI", sans-serif;
+    --thread: rgba(156,127,82,.5);
+  }
+
+  *{ box-sizing:border-box; }
+  html{ -webkit-text-size-adjust:100%; }
+  body{
+    margin:0; background:var(--cream); color:var(--ink);
+    font-family:var(--font-body); font-size:16px; line-height:1.7;
+    overflow-x:hidden;
+  }
+  img{ max-width:100%; display:block; }
+
+  /* ---- the plumb line: the one persistent element (the mala thread) ---- */
+  .page{ position:relative; }
+  .thread{
+    position:absolute; top:0; bottom:0; left:50%; width:1px;
+    transform:translateX(-50%);
+    background:var(--thread);
+    z-index:3; pointer-events:none;
+  }
+  /* a bead sits on the thread at the head of each breath */
+  .beat{ position:relative; }
+  .bead{
+    position:absolute; top:0; left:50%;
+    transform:translate(-50%,-50%);
+    width:11px; height:11px; border-radius:50%;
+    background:var(--rust); box-shadow:0 0 0 4px var(--cream);
+    z-index:4;
+  }
+  .exhale .bead{ box-shadow:0 0 0 4px rgba(247,244,235,.28), 0 0 10px 2px rgba(0,0,0,.35); }
+  .count{
+    position:absolute; top:26px; left:50%; transform:translateX(-50%);
+    font-family:var(--font-body); font-size:12px; letter-spacing:.32em;
+    text-transform:uppercase; color:var(--ink); z-index:4;
+    white-space:nowrap;
+  }
+  .exhale .count{ color:rgba(247,244,235,.72); }
+
+  /* ---- the breath beats ---- */
+  .beat{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:16vh 24px; position:relative;
+  }
+  .inhale{ background:var(--cream); min-height:96vh; }
+  /* content sits ABOVE the thread (z-index 3) so the plumb-line draws behind
+     text — beads/counts (z-index 4) still ride on top of the thread. */
+  .wrap{ max-width:760px; margin:0 auto; width:100%; position:relative; z-index:5; }
+
+  /* ---- exhale: full-bleed photograph, generous scrim, silence ---- */
+  .exhale{
+    min-height:88vh; padding:0; justify-content:center;
+    background-size:cover; background-position:center; background-repeat:no-repeat;
+    color:#fff;
+  }
+  .exhale .scrim{
+    position:absolute; inset:0; z-index:1;
+    background:rgba(49,33,16,.4);
+  }
+  .exhale--speak .scrim{
+    background:linear-gradient(180deg, rgba(49,33,16,.5) 0%, rgba(49,33,16,.62) 55%, rgba(49,33,16,.7) 100%);
+  }
+  .exhale--band{ min-height:52vh; }
+  .exhale .wrap{ z-index:5; }
+
+  /* ---- type voices ---- */
+  .eyebrow{
+    font-family:var(--font-body); font-weight:700; font-size:13px;
+    letter-spacing:.28em; text-transform:uppercase; color:var(--rust);
+    margin:0 0 28px;
+  }
+  .exhale .eyebrow{ color:#f6d36a; }
+  h1.title{
+    font-family:var(--font-display); font-weight:700; color:var(--rust);
+    font-size:clamp(2.5rem, 6.4vw, 5rem); line-height:1.06; margin:0 0 30px;
+    letter-spacing:-.01em;
+  }
+  .subhead{
+    font-family:var(--font-display); font-style:italic; font-weight:400;
+    color:var(--cocoa); font-size:clamp(1.25rem, 2.6vw, 1.7rem);
+    line-height:1.5; margin:0 auto; max-width:620px;
+  }
+  .question{
+    font-family:var(--font-display); font-weight:500; color:var(--cocoa);
+    font-size:clamp(1.9rem, 4.6vw, 3.4rem); line-height:1.18; margin:0;
+    letter-spacing:-.005em;
+  }
+  .question + .question{ margin-top:1.1em; }
+  .lead{
+    font-size:clamp(1.1rem, 2vw, 1.4rem); line-height:1.7; color:var(--ink);
+    max-width:640px; margin:0 auto;
+  }
+  .kicker{
+    font-family:var(--font-display); font-weight:400; color:var(--rust);
+    font-size:clamp(1.8rem, 4vw, 3rem); line-height:1.25; margin:0 0 .7em;
+  }
+  .h2{
+    font-family:var(--font-display); font-weight:700; color:var(--rust);
+    font-size:clamp(2rem, 5vw, 3.6rem); line-height:1.12; margin:0 0 .5em;
+  }
+  .body p{ font-size:1.08rem; line-height:1.78; color:var(--ink); margin:0 0 1.35em; }
+  .body p:last-child{ margin-bottom:0; }
+
+  /* pull-quote over the mountains */
+  .pquote{
+    font-family:var(--font-display); font-style:italic; font-weight:400; color:#fff;
+    font-size:clamp(1.7rem, 4vw, 3.1rem); line-height:1.36; margin:0 auto; max-width:820px;
+    text-shadow:0 1px 18px rgba(0,0,0,.45);
+  }
+
+  /* ---- the enormous, light numerals ---- */
+  .numbers{
+    display:flex; flex-wrap:wrap; justify-content:center; align-items:flex-start;
+    gap:clamp(2rem, 7vw, 6rem); margin:0 auto;
+  }
+  .num{ text-align:center; }
+  .num .fig{
+    font-family:var(--font-display); font-weight:400; color:var(--rust);
+    font-size:clamp(4rem, 13vw, 8.5rem); line-height:.9; letter-spacing:-.02em;
+  }
+  .num .lab{
+    display:block; margin-top:14px; font-size:13px; letter-spacing:.22em;
+    text-transform:uppercase; color:var(--cocoa); font-weight:600;
+  }
+
+  /* ---- clear-selling panels ---- */
+  .highlights{ list-style:none; padding:0; margin:0 auto; max-width:720px; text-align:left; }
+  .highlights li{
+    padding:22px 0; border-top:1px solid var(--border-warm);
+    display:grid; grid-template-columns:auto 1fr; gap:20px; align-items:baseline;
+  }
+  .highlights li:last-child{ border-bottom:1px solid var(--border-warm); }
+  .highlights .no{
+    font-family:var(--font-display); font-size:1.9rem; color:var(--rust);
+    line-height:1; font-weight:400; min-width:1.4em;
+  }
+  .highlights .lab{ font-weight:700; color:var(--rust); }
+  .highlights .txt{ color:var(--ink); }
+
+  .incl{
+    display:grid; grid-template-columns:repeat(2,1fr); gap:22px;
+    max-width:900px; margin:0 auto; text-align:left; width:100%;
+  }
+  .incl .card{
+    background:var(--card); border:1px solid var(--border-warm); border-radius:6px;
+    padding:26px 26px 28px;
+  }
+  .incl .card h3{
+    font-family:var(--font-body); font-weight:700; color:var(--rust);
+    font-size:1.12rem; margin:0 0 4px; letter-spacing:.01em;
+  }
+  .incl .card .n{
+    font-family:var(--font-display); font-size:2.4rem; font-weight:400;
+    color:var(--rust); line-height:1; margin:0 0 10px;
+  }
+  /* group-count numeral in rust — saffron is fill-only, never text. */
+  .incl .card ul{ list-style:none; margin:14px 0 0; padding:0; }
+  .incl .card li{
+    font-size:.98rem; color:var(--ink); padding:7px 0; line-height:1.5;
+    border-top:1px solid rgba(156,127,82,.28);
+  }
+  .incl .card li:first-child{ border-top:none; }
+  .incl .card li .t{ color:var(--rust); font-variant-numeric:tabular-nums; }
+
+  .sessions{
+    max-width:680px; margin:0 auto; text-align:center;
+  }
+  .sessions .big{
+    font-family:var(--font-display); font-weight:400; color:var(--cocoa);
+    font-size:clamp(1.3rem,2.6vw,1.8rem); line-height:1.4; margin:0 0 .8em;
+  }
+  .sessions .when{
+    display:inline-block; margin-top:18px; padding:16px 26px;
+    background:var(--marigold); border-radius:8px; color:var(--cocoa);
+    font-weight:600; letter-spacing:.02em; line-height:1.7;
+  }
+  .sessions .when strong{ display:block; font-size:1.05rem; letter-spacing:.14em; text-transform:uppercase; }
+  .access{
+    max-width:600px; margin:2.4em auto 0; font-size:1.02rem; color:var(--ink);
+    line-height:1.7;
+  }
+
+  /* ---- the teacher ---- */
+  .bio{
+    display:grid; grid-template-columns:minmax(0,0.9fr) minmax(0,1.1fr);
+    gap:clamp(2rem,5vw,4.5rem); align-items:center;
+    max-width:1020px; margin:0 auto; text-align:left; width:100%;
+  }
+  .bio .portrait{
+    border-radius:8px; overflow:hidden; border:1px solid var(--border-warm);
+  }
+  .bio .portrait img{ width:100%; height:100%; object-fit:cover; aspect-ratio:4/5; }
+  .bio h2{
+    font-family:var(--font-display); font-weight:700; color:var(--rust);
+    font-size:clamp(1.7rem,3.4vw,2.5rem); margin:0 0 .1em; line-height:1.12;
+  }
+  .bio .role{
+    font-family:var(--font-body); font-weight:600; font-size:13px;
+    letter-spacing:.2em; text-transform:uppercase; color:var(--cocoa); margin:0 0 1.2em;
+  }
+  .bio p{ font-size:1.02rem; line-height:1.72; margin:0 0 1.1em; color:var(--ink); }
+  .bio .sig{ margin-top:1.4em; max-width:260px; }
+  .bio .sig img{ width:100%; height:auto; }
+
+  /* ---- CTA ---- */
+  .price{
+    font-family:var(--font-display); font-weight:400; color:var(--cocoa);
+    font-size:clamp(2.6rem, 7vw, 4.6rem); line-height:1; margin:0 0 .1em;
+  }
+  .price small{
+    display:block; font-family:var(--font-body); font-size:13px; font-weight:600;
+    letter-spacing:.2em; text-transform:uppercase; color:var(--rust); margin-top:14px;
+  }
+  .cta-dates{
+    font-size:14px; letter-spacing:.06em; color:var(--ink); margin:0 0 6px; font-weight:600;
+  }
+  .enrol{
+    display:inline-block; background:var(--saffron); color:var(--cocoa);
+    font-family:var(--font-body); font-weight:700; font-size:17px;
+    text-decoration:none; padding:18px 54px; border:none; border-radius:10px;
+    min-width:220px; margin-top:26px; letter-spacing:.02em; cursor:pointer;
+    transition:background .12s ease-in, color .12s ease-in, transform .12s ease-in;
+  }
+  .enrol:hover{ background:var(--rust); color:#fff; }
+  .enrol:active{ background:var(--rust-pressed); color:#fff; transform:translateY(1px); }
+  .enrol:focus-visible{ outline:2px solid var(--rust); outline-offset:3px; }
+
+  .begin{
+    display:inline-flex; align-items:center; gap:.5em; margin-top:40px;
+    font-family:var(--font-body); font-weight:600; font-size:14px;
+    letter-spacing:.22em; text-transform:uppercase; color:var(--rust);
+    text-decoration:none; border-bottom:1px solid transparent; padding-bottom:3px;
+    transition:border-color .12s ease-in, color .12s ease-in;
+  }
+  .begin:hover{ color:var(--rust-pressed); border-color:var(--rust-pressed); }
+  .begin:focus-visible{ outline:2px solid var(--rust); outline-offset:4px; }
+  .begin .arw{ font-size:15px; }
+
+  .contact{ margin-top:2.4em; font-size:1.02rem; color:var(--ink); }
+  .contact a{ color:var(--rust); text-decoration:none; border-bottom:1px solid transparent; transition:border-color .12s ease-in, color .12s ease-in; }
+  .contact a:hover{ color:var(--rust-pressed); border-color:var(--rust-pressed); }
+  .contact a:focus-visible{ outline:2px solid var(--rust); outline-offset:3px; }
+
+  /* logo lockup */
+  .lockup{ margin:0 auto 42px; }
+  .lockup img{ width:80px; height:80px; object-fit:contain; margin:0 auto; opacity:.95; }
+
+  /* ---- footer ---- */
+  footer{ background:var(--ocean); color:#fff; text-align:center; padding:54px 24px 30px; position:relative; z-index:5; }
+  footer img{ width:72px; height:72px; object-fit:contain; margin:0 auto 20px; filter:brightness(0) invert(1); opacity:.92; }
+  footer .fline{ font-family:var(--font-display); font-size:1.3rem; letter-spacing:.02em; margin:0 0 10px; }
+  footer a{ color:#fff; text-decoration:none; border-bottom:1px solid rgba(255,255,255,.5); transition:border-color .12s ease-in; }
+  footer a:hover{ border-color:#fff; }
+  footer a:focus-visible{ outline:2px solid #fff; outline-offset:3px; }
+  .strip{ background:var(--navy); color:#fff; font-size:12px; padding:12px 24px; text-align:center; position:relative; z-index:5; }
+
+  /* ---- breath-paced reveal: static by default; motion only when supported AND welcomed ---- */
+  @supports (animation-timeline: view()){
+    @media (prefers-reduced-motion: no-preference){
+      html{ scroll-behavior:smooth; }
+      .reveal{
+        opacity:0; transform:translateY(26px);
+        animation:breathe-in linear both;
+        animation-timeline:view();
+        animation-range:entry 4% cover 32%;
+      }
+      .reveal.r2{ animation-range:entry 12% cover 40%; }
+      .reveal.r3{ animation-range:entry 20% cover 48%; }
+      @keyframes breathe-in{
+        to{ opacity:1; transform:none; }
+      }
+    }
+  }
+
+  /* ---- responsive ---- */
+  @media (max-width:720px){
+    .incl{ grid-template-columns:1fr; }
+    .bio{ grid-template-columns:1fr; text-align:left; }
+    .bio .portrait{ max-width:340px; margin:0 auto; }
+    .bio .sig{ margin-left:0; }
+    .beat{ padding:13vh 20px; }
+    .inhale{ min-height:auto; }
+    #hero, #questions, #cta-1, #cta-2, #numbers{ min-height:92vh; }
+    .highlights li{ grid-template-columns:auto 1fr; gap:14px; }
+  }
+  @media (max-width:400px){
+    .numbers{ gap:2.2rem; }
+    .enrol{ padding:16px 38px; min-width:0; width:100%; }
+  }
+</style>
+
+<div class="page">
+  <div class="thread" aria-hidden="true"></div>
+
+  <!-- ============ BREATH 1 · opening inhale ============ -->
+  <section class="beat inhale" id="hero">
+    <span class="bead" aria-hidden="true"></span>
+    <span class="count" aria-hidden="true">i</span>
+    <div class="wrap">
+      <div class="lockup"><img src="assets/swami-kk-logo.png" alt="Swami Karma Karuna" /></div>
+      <p class="eyebrow">Thursday 02 July, 2026 &nbsp;—&nbsp; Thursday 23 July, 2026</p>
+      <h1 class="title">2026 Developing Resilience Online Course</h1>
+      <p class="subhead">Embrace your innate ability to return to your center, rise from challenges, and creatively tackle obstacles.</p>
+      <a class="begin" href="#questions"><span>Begin</span><span class="arw" aria-hidden="true">↓</span></a>
+    </div>
+  </section>
+
+  <!-- ============ exhale · sunrise, silence ============ -->
+  <section class="beat exhale" style="background-image:url('assets/hp-hero-bg.jpg')">
+    <span class="bead" aria-hidden="true"></span>
+    <span class="count" aria-hidden="true">e</span>
+    <div class="scrim" aria-hidden="true"></div>
+  </section>
+
+  <!-- ============ BREATH 2 · the three questions ============ -->
+  <section class="beat inhale" id="questions">
+    <span class="bead" aria-hidden="true"></span>
+    <span class="count" aria-hidden="true">i</span>
+    <div class="wrap">
+      <p class="question reveal">Are you wanting to improve your ability to withstand life’s challenges?</p>
+      <p class="question reveal r2">Do you wish you had a greater capacity to cope and adapt to adversity?</p>
+      <p class="question reveal r3">Are you wanting to intentionally respond to life rather than react?</p>
+    </div>
+  </section>
+
+  <!-- ============ inhale · the invitation ============ -->
+  <section class="beat inhale">
+    <span class="bead" aria-hidden="true"></span>
+    <div class="wrap">
+      <p class="lead reveal">Join Swami Karma Karuna for an enriching course where you’ll learn to gracefully respond to life’s challenges with resilience and strength. Train both your body and mind to function harmoniously and maintain more balance in daily life.</p>
+    </div>
+  </section>
+
+  <!-- ============ exhale · mountains, the pull-quote ============ -->
+  <section class="beat exhale exhale--speak" style="background-image:url('assets/mountains-band.jpg')">
+    <span class="bead" aria-hidden="true"></span>
+    <span class="count" aria-hidden="true">e</span>
+    <div class="scrim" aria-hidden="true"></div>
+    <div class="wrap">
+      <p class="pquote reveal">“Luckily, our inner resilience is a natural part of who we are and is a trait that we can strengthen, cultivate and build upon.”</p>
+    </div>
+  </section>
+
+  <!-- ============ BREATH 3 · what it is ============ -->
+  <section class="beat inhale">
+    <span class="bead" aria-hidden="true"></span>
+    <span class="count" aria-hidden="true">i</span>
+    <div class="wrap">
+      <p class="kicker reveal">Resilience is not just an option; it’s essential for navigating the complexities of modern life.</p>
+      <div class="body">
+        <p class="reveal r2">‘Developing Resilience’ with Swami Karma Karuna offers you a comprehensive toolkit to support your body, mind, and nervous system amid global changes. Dive into 4 interactive live sessions with Swami Karma Karuna, alongside in-depth theory, yoga, breathing, relaxation exercises, and introspective practices.</p>
+        <p class="reveal r3">Experience how Hatha Yoga subtly introduces manageable stress levels, promoting resilience that transcends the yoga mat and enters daily life. Learn the profound impact of simple yet potent yogic tools on your journey to cultivating a resilient body and mind. This course welcomes everyone, from total beginners to seasoned practitioners.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ inhale · the enormous, light numbers ============ -->
+  <section class="beat inhale" id="numbers">
+    <span class="bead" aria-hidden="true"></span>
+    <div class="wrap">
+      <div class="numbers">
+        <div class="num reveal"><span class="fig">4</span><span class="lab">Live Zoom Sessions</span></div>
+        <div class="num reveal r2"><span class="fig">7</span><span class="lab">Inspirational Videos</span></div>
+        <div class="num reveal r3"><span class="fig">$247</span><span class="lab">One-time · yours to keep</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ exhale · woman meditating in the bush ============ -->
+  <section class="beat exhale" style="background-image:url('assets/forest-meditation-sq.jpg')">
+    <span class="bead" aria-hidden="true"></span>
+    <span class="count" aria-hidden="true">e</span>
+    <div class="scrim" aria-hidden="true"></div>
+  </section>
+
+  <!-- ============ CTA #1 · mid-breath, after the exhale ============ -->
+  <section class="beat inhale" id="cta-1">
+    <span class="bead" aria-hidden="true"></span>
+    <div class="wrap">
+      <p class="price reveal">NZD&nbsp;$247<small>Three months’ access · all materials downloadable</small></p>
+      <p class="cta-dates reveal r2" style="margin-top:22px;">Thursday 02 July — Thursday 23 July, 2026</p>
+      <a class="enrol reveal r2" href="#cta-2">Enrol Now</a>
+    </div>
+  </section>
+
+  <!-- ============ BREATH 4 · course highlights ============ -->
+  <section class="beat inhale">
+    <span class="bead" aria-hidden="true"></span>
+    <span class="count" aria-hidden="true">i</span>
+    <div class="wrap" style="max-width:820px;">
+      <p class="eyebrow reveal" style="text-align:center;">What you will cultivate</p>
+      <ol class="highlights">
+        <li class="reveal"><span class="no">01</span><span><span class="lab">Mindful Responses.</span> <span class="txt">Cultivate the art of responding, not reacting, to life’s ups and downs.</span></span></li>
+        <li class="reveal"><span class="no">02</span><span><span class="lab">Nervous System Mastery.</span> <span class="txt">Engage in practices like conscious breathing, yoga nidra, and restorative yoga to soothe and stabilize your nervous system.</span></span></li>
+        <li class="reveal"><span class="no">03</span><span><span class="lab">Everyday Resilience Techniques.</span> <span class="txt">Equip yourself with practical strategies for resilience you can apply in daily life.</span></span></li>
+        <li class="reveal"><span class="no">04</span><span><span class="lab">Neural Pathway Reformation.</span> <span class="txt">Develop new brain pathways that support resilience and equanimity.</span></span></li>
+        <li class="reveal"><span class="no">05</span><span><span class="lab">Supportive Live Sessions.</span> <span class="txt">Access live guidance and support from Swami Karma Karuna.</span></span></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============ inhale · what's included ============ -->
+  <section class="beat inhale">
+    <span class="bead" aria-hidden="true"></span>
+    <div class="wrap" style="max-width:960px;">
+      <p class="eyebrow reveal" style="text-align:center;">What’s included</p>
+      <div class="incl">
+        <div class="card reveal">
+          <p class="n">7</p>
+          <h3>Inspirational Short Videos</h3>
+          <ul>
+            <li>What is Resilience? <span class="t">5 mins</span></li>
+            <li>The Breath <span class="t">11 mins</span></li>
+            <li>Yoga Nidra <span class="t">11 mins</span></li>
+            <li>Stress &amp; the Nervous System <span class="t">12 mins</span></li>
+            <li>Mantra <span class="t">8 mins</span></li>
+            <li>Hatha Yoga <span class="t">8 mins</span></li>
+            <li>Yoga Lifestyle Attitudes <span class="t">11 mins</span></li>
+          </ul>
+        </div>
+        <div class="card reveal r2">
+          <p class="n">6</p>
+          <h3>Practice MP3s &amp; Videos</h3>
+          <ul>
+            <li>Natural Breath Meditation MP3 <span class="t">19:39</span></li>
+            <li>Yogic Breath MP3</li>
+            <li>4 Stage Yoga Nidra MP3 <span class="t">20:10</span></li>
+            <li>8 Stage Yoga Nidra MP3 <span class="t">28:58</span></li>
+            <li>Inner Silence Meditation (Antar Mouna) MP3 <span class="t">18:34</span></li>
+            <li>Restorative Yoga Video <span class="t">30 mins</span></li>
+          </ul>
+        </div>
+        <div class="card reveal">
+          <p class="n">6</p>
+          <h3>Morning Mantras MP3s</h3>
+          <ul>
+            <li>Peace Mantra <span class="t">4:18</span></li>
+            <li>Maha Mritunjaya Healing Mantra <span class="t">3:07</span></li>
+            <li>Gayatri Mantra for Energy and Intuition <span class="t">3:17</span></li>
+            <li>Durga Mantra for Strength <span class="t">4:16</span></li>
+            <li>Hanuman Chalisa for Courage and Faith <span class="t">10:22</span></li>
+            <li>Closing Mantras <span class="t">3:03</span></li>
+          </ul>
+        </div>
+        <div class="card reveal r2">
+          <p class="n">+</p>
+          <h3>Other Resources</h3>
+          <ul>
+            <li>Yoga and Resilience Article</li>
+            <li>SWAN Sadhana — Exploring Strength, Weaknesses, Aims and Needs</li>
+            <li>Managing Mind and Emotions Article</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ inhale · the live sessions ============ -->
+  <section class="beat inhale">
+    <span class="bead" aria-hidden="true"></span>
+    <div class="wrap">
+      <div class="sessions">
+        <p class="big reveal">4x Live ZOOM Sessions (1.5 Hours) with Swami Karma Karuna <span style="color:var(--ink);">— recordings available</span> &amp; extra resources including additional theory, Q and A, and a resilience practice each week.</p>
+        <div class="when reveal r2">
+          <strong>Thursdays · 2nd, 9th, 16th &amp; 23rd of July</strong>
+          7:00 pm NZT &nbsp;·&nbsp; 5:00 pm AEST &nbsp;·&nbsp; 9:00 am CEST &nbsp;·&nbsp; 3:00 pm SGT
+        </div>
+        <p class="access reveal r3">Course content is accessible for 3 months from time of enrollment. All course materials are fully downloadable so you can continue your practice indefinitely.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ exhale · practitioners in prayer (short band) ============ -->
+  <section class="beat exhale exhale--band" style="background-image:url('assets/namaste-band.jpg')">
+    <span class="bead" aria-hidden="true"></span>
+    <span class="count" aria-hidden="true">e</span>
+    <div class="scrim" aria-hidden="true"></div>
+  </section>
+
+  <!-- ============ BREATH 5 · the teacher ============ -->
+  <section class="beat inhale">
+    <span class="bead" aria-hidden="true"></span>
+    <span class="count" aria-hidden="true">i</span>
+    <div class="wrap" style="max-width:1020px;">
+      <div class="bio">
+        <div class="portrait reveal">
+          <img src="assets/swami-band.jpg" alt="Swami Karma Karuna Saraswati" />
+        </div>
+        <div class="reveal r2">
+          <h2>Swami Karma Karuna</h2>
+          <p class="role">Saraswati · IAYT Certified Yoga Therapist</p>
+          <p>Swami Karma Karuna Saraswati is an engaging, intuitive yoga and meditation teacher, inspirational speaker, writer and IAYT Certified Yoga Therapist with 30 years of experience in the yoga field, including significant training in Nepal and India and ongoing visits and guidance with her teachers from the Bihar School of Yoga. She is certified by Yoga Alliance and Yoga New Zealand, and is a senior teacher of Yoga Australia/New Zealand.</p>
+          <p>A Bachelor of Arts in Interpersonal Communications with a minor in Psychology determined an early interest in working with groups and individuals. Swami Karma Karuna specialises in a range of areas such as stress and emotion management, Yoga Nidra, Restorative Yoga, Prana, Chakras, Yoga Psychology and Women’s Health.</p>
+          <p>She is also a co-founder and director of Anahata Yoga Retreat, New Zealand and travels throughout the world, leading workshops, training yoga teachers, presenting at international events, guiding spiritual sadhana retreats and offering therapeutic one to one yoga sessions.</p>
+          <p>Swami Karma Karuna is passionate about sharing an authentic and down to earth approach, weaving together the ancient practices with a touch of psychology and brain science aimed at motivating people to live their yoga here and now.</p>
+          <div class="sig"><img src="assets/swami-sig.png" alt="Swami Karma Karuna, signed" /></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ final exhale · the return to sunrise ============ -->
+  <section class="beat exhale" style="background-image:url('assets/hp-hero-bg.jpg')">
+    <span class="bead" aria-hidden="true"></span>
+    <span class="count" aria-hidden="true">e</span>
+    <div class="scrim" aria-hidden="true"></div>
+  </section>
+
+  <!-- ============ CTA #2 · at the end, after the exhale ============ -->
+  <section class="beat inhale" id="cta-2">
+    <span class="bead" aria-hidden="true"></span>
+    <div class="wrap">
+      <h2 class="h2 reveal">Develop Your Resilience</h2>
+      <p class="lead reveal r2" style="max-width:520px;">Access live guidance and support from Swami Karma Karuna.</p>
+      <p class="cta-dates reveal r2" style="margin-top:26px;">Thursday 02 July — Thursday 23 July, 2026 &nbsp;·&nbsp; NZD $247</p>
+      <a class="enrol reveal r2" href="mailto:yoga@anahata-retreat.org.nz?subject=Enrol%20—%20Developing%20Resilience">Enrol Now</a>
+      <p class="contact reveal r3">Questions? Get in touch! <br><a href="mailto:yoga@anahata-retreat.org.nz">yoga@anahata-retreat.org.nz</a></p>
+    </div>
+  </section>
+
+  <footer>
+    <img src="assets/swami-kk-logo.png" alt="Swami Karma Karuna" />
+    <p class="fline">Anahata Yoga Retreat · New Zealand</p>
+    <p><a href="mailto:yoga@anahata-retreat.org.nz">yoga@anahata-retreat.org.nz</a></p>
+  </footer>
+  <div class="strip">© 2026 Anahata Yoga Retreat. Developing Resilience with Swami Karma Karuna.</div>
+</div>

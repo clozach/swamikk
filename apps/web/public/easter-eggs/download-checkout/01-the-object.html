@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkout · Natural Breath Awareness — Anahata</title>
+<!--
+  DIRECTION 01 — "THE OBJECT"
+  Confident reduction: you are acquiring one beautiful audio object, not
+  filling in a billing form. The forest-meditation square is the hero,
+  treated as cover art / a record. The plan radio is gone; price is a
+  fact stated with authority. One column of intent, no cart-recap column
+  — the object IS the summary.
+
+  AA (WCAG relative-luminance formula), every pairing / every state:
+  - --ink #545454 on white  = 7.57:1  (body/meta)      PASS
+  - --ink #545454 on cream  = 6.89:1  (page text)      PASS
+  - --rust #993300 on white = 7.43:1  (headings/price) PASS
+  - --rust #993300 on cream = 6.75:1  (nav hover/link) PASS
+  - --cocoa #312110 on white= 14.09:1 (strong meta)    PASS
+  - button rest: cocoa on saffron        = 7.24:1      PASS
+  - button hover: white on rust          = 7.43:1      PASS
+  - button active: white on rust-pressed = 9.79:1      PASS (set explicitly)
+  - focus ring: 2px rust, 3.47:1 on saffron ground / 6.75:1+ on page
+  - footer: white on ocean = 6.59:1 ; white on navy = 13.69:1
+  No text sits over the product photo — the art stands alone as the
+  object, so no scrim is required. Blue lives only in the footer + logo.
+-->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Open+Sans:wght@300;400;600;700&display=swap');
+
+:root{
+  --cream:#f7f4eb;  --card:#fff;  --ink:#545454;  --cocoa:#312110;
+  --saffron:#ff9900;  --rust:#993300;  --rust-pressed:#7a2900;
+  --marigold:#f6d36a;  --border-warm:#9c7f52;  --amber:#ffbf00;
+  --ocean:#216097;  --navy:#012772;
+  --font-display:"Playfair Display", Georgia, serif;
+  --font-body:"Open Sans", -apple-system, "Segoe UI", sans-serif;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--cream);
+  color:var(--ink);
+  font-family:var(--font-body);
+  font-size:15px;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+img{max-width:100%;display:block;}
+a{color:inherit;}
+
+/* ---------- Header / nav ---------- */
+.an-header{
+  background:var(--cream);
+  border-top:6px solid var(--rust);
+  border-bottom:1px solid var(--amber);
+  padding:14px 24px 16px;
+}
+.an-header-inner{
+  max-width:1140px;margin:0 auto;
+  display:flex;align-items:center;gap:20px;
+  flex-wrap:wrap;
+}
+.an-logo{display:flex;align-items:center;gap:12px;text-decoration:none;flex:0 0 auto;}
+.an-logo img{height:46px;width:auto;}
+.an-logo .wordmark{
+  font-family:var(--font-display);
+  font-size:22px;color:var(--rust);letter-spacing:.02em;line-height:1;
+}
+.an-logo .wordmark small{
+  display:block;font-family:var(--font-body);font-weight:600;
+  font-size:10px;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--ink);margin-top:3px;
+}
+.an-nav{
+  margin-left:auto;
+  display:flex;align-items:center;gap:2px;
+  flex-wrap:wrap;
+}
+.an-nav a{
+  font-family:var(--font-body);font-size:12px;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink);text-decoration:none;
+  padding:6px 9px;border-radius:6px;
+  transition:color var(--dur,120ms) ease-in;
+}
+.an-nav a:hover,.an-nav a:focus-visible{color:var(--rust);}
+.an-nav a:focus-visible{outline:2px solid var(--rust);outline-offset:2px;}
+/* Decorative dark-mode moon — rendered, not wired */
+.moon-toggle{
+  margin-left:6px;flex:0 0 auto;
+  width:34px;height:34px;border-radius:50%;
+  border:1px solid var(--border-warm);background:transparent;
+  display:inline-flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--rust);
+}
+.moon-toggle:focus-visible{outline:2px solid var(--rust);outline-offset:2px;}
+.moon-toggle svg{width:17px;height:17px;display:block;}
+
+/* ---------- Wayfinding ---------- */
+.wayfind{
+  max-width:1140px;margin:0 auto;
+  padding:38px 24px 8px;
+}
+.wayfind .eyebrow{
+  font-family:var(--font-body);font-weight:700;
+  font-size:11px;letter-spacing:.34em;text-transform:uppercase;
+  color:var(--rust);margin:0 0 6px;
+}
+.wayfind h1{
+  font-family:var(--font-display);font-weight:700;
+  font-size:clamp(38px,7vw,60px);line-height:1.05;
+  color:var(--rust);margin:0;
+}
+.wayfind .lede{
+  margin:12px 0 0;max-width:34ch;
+  font-size:16px;color:var(--ink);
+}
+
+/* ---------- The object card ---------- */
+.stage{max-width:1140px;margin:0 auto;padding:22px 24px 56px;}
+.object{
+  background:var(--card);
+  border:1px solid var(--border-warm);
+  border-radius:14px;
+  box-shadow:0 22px 48px -30px rgba(49,33,16,.5);
+  overflow:hidden;
+  display:grid;
+  grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);
+}
+
+/* --- Left: the art, treated as a record / cover --- */
+.cover{
+  position:relative;
+  padding:34px;
+  background:
+    radial-gradient(120% 120% at 30% 20%, #fbf9f2 0%, #f2ecdd 70%, #f0e9d8 100%);
+  border-right:1px solid var(--border-warm);
+  display:flex;align-items:center;justify-content:center;
+}
+.cover-frame{
+  width:100%;max-width:440px;
+  padding:14px;
+  background:var(--card);
+  border:1px solid var(--border-warm);
+  border-radius:8px;
+  box-shadow:0 14px 34px -18px rgba(49,33,16,.55);
+}
+.cover-frame img{
+  width:100%;aspect-ratio:1/1;object-fit:cover;
+  border-radius:4px;
+  border:1px solid rgba(49,33,16,.18);
+}
+.cover-caption{
+  margin:14px 2px 2px;
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  font-family:var(--font-body);
+  font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink); /* 7.57:1 on white */
+}
+.cover-caption .side{color:var(--cocoa);font-weight:700;}
+
+/* --- Right: the liner credits + the confident price --- */
+.intent{
+  padding:44px 46px;
+  display:flex;flex-direction:column;
+}
+.credit-eyebrow{
+  font-family:var(--font-body);font-weight:700;
+  font-size:11px;letter-spacing:.3em;text-transform:uppercase;
+  color:var(--rust);margin:0 0 14px;
+}
+.title{
+  font-family:var(--font-display);font-weight:700;
+  font-size:clamp(30px,4.4vw,42px);line-height:1.08;
+  color:var(--rust);margin:0;
+}
+.subtitle{
+  font-family:var(--font-display);font-style:italic;font-weight:400;
+  font-size:21px;color:var(--cocoa);margin:8px 0 0;
+}
+.meta{
+  margin:18px 0 0;padding:0;list-style:none;
+  font-size:14px;color:var(--ink);
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px;
+}
+.meta li{display:inline-flex;align-items:center;}
+.meta .dot{color:var(--border-warm);}
+.meta .num{font-weight:700;color:var(--cocoa);font-variant-numeric:tabular-nums;}
+.byline{
+  margin:16px 0 0;font-size:14px;color:var(--ink);
+}
+.byline em{font-family:var(--font-display);font-style:italic;color:var(--cocoa);}
+
+.rule{border:0;border-top:1px solid var(--border-warm);opacity:.6;margin:26px 0;}
+
+/* Price — a fact stated with authority, not a chooser */
+.price-block{display:flex;align-items:flex-end;gap:16px;}
+.price{
+  font-family:var(--font-display);font-weight:700;
+  font-size:clamp(48px,8vw,64px);line-height:.9;
+  color:var(--rust);letter-spacing:-.01em;
+}
+.price-qual{
+  padding-bottom:8px;
+}
+.price-qual .one-time{
+  display:block;
+  font-family:var(--font-body);font-weight:700;
+  font-size:12px;letter-spacing:.26em;text-transform:uppercase;
+  color:var(--cocoa);
+}
+.price-qual .sub{
+  display:block;font-size:13px;color:var(--ink);margin-top:3px;
+}
+
+/* Email read-back — calm, confirmed, not an editable field */
+.signed-in{
+  margin:24px 0 0;
+  display:flex;align-items:center;gap:11px;
+  padding:12px 15px;
+  background:var(--cream);
+  border:1px solid var(--border-warm);
+  border-radius:8px;
+  font-size:14px;color:var(--ink);
+}
+.signed-in .tick{
+  flex:0 0 auto;width:20px;height:20px;border-radius:50%;
+  background:var(--marigold);
+  display:inline-flex;align-items:center;justify-content:center;
+  color:var(--cocoa); /* cocoa on marigold — high contrast glyph */
+}
+.signed-in .tick svg{width:12px;height:12px;display:block;}
+.signed-in .who{color:var(--cocoa);font-weight:600;}
+.signed-in .label{
+  font-size:10px;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--rust);font-weight:700;margin-right:2px;
+}
+
+.spacer{flex:1 1 auto;min-height:26px;}
+
+/* The one button */
+.buy{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;
+  background:var(--saffron);
+  color:var(--cocoa); /* 7.24:1 */
+  font-family:var(--font-body);font-weight:700;font-size:17px;
+  letter-spacing:.01em;
+  border:none;border-radius:10px;
+  padding:17px 28px;
+  cursor:pointer;
+  transition:background 120ms ease-in,color 120ms ease-in;
+}
+.buy:hover{background:var(--rust);color:#fff;}          /* 7.43:1 */
+.buy:active{background:var(--rust-pressed);color:#fff;}  /* 9.79:1 — explicit */
+.buy:focus-visible{outline:2px solid var(--rust);outline-offset:2px;}
+.buy svg{width:17px;height:17px;display:block;flex:0 0 auto;}
+.buy[aria-busy="true"]{background:var(--rust-pressed);color:#fff;cursor:default;}
+
+.delivery{
+  margin:15px 0 0;text-align:center;
+  font-size:13px;color:var(--ink);
+}
+.delivery strong{color:var(--cocoa);font-weight:600;}
+.pay-line{
+  margin:4px 0 0;text-align:center;
+  font-size:12px;color:var(--ink);letter-spacing:.02em;
+}
+
+/* ---------- Footer ---------- */
+.an-footer{background:var(--ocean);color:#fff;padding:34px 24px;}
+.an-footer-inner{
+  max-width:1140px;margin:0 auto;
+  display:flex;flex-wrap:wrap;gap:14px 26px;align-items:center;
+}
+.an-footer .ft-title{
+  font-family:var(--font-display);font-weight:400;
+  font-size:20px;text-transform:uppercase;letter-spacing:.04em;
+  margin:0;color:#fff;
+}
+.an-footer nav{margin-left:auto;display:flex;flex-wrap:wrap;gap:6px 18px;}
+.an-footer nav a{
+  color:#fff;text-decoration:none;font-size:13px;
+  letter-spacing:.04em;
+}
+.an-footer nav a:hover{text-decoration:underline;}
+.an-footer nav a:focus-visible{outline:2px solid #fff;outline-offset:2px;}
+.an-footer-strip{
+  background:var(--navy);color:#fff;font-size:12px;
+  padding:9px 24px;text-align:center;letter-spacing:.02em;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width:860px){
+  .object{grid-template-columns:1fr;}
+  .cover{border-right:none;border-bottom:1px solid var(--border-warm);padding:26px;}
+  .intent{padding:34px 26px;}
+  .an-nav{width:100%;margin-left:0;justify-content:flex-start;}
+}
+@media (max-width:520px){
+  .wayfind{padding-top:28px;}
+  .intent{padding:28px 20px;}
+  .price-block{gap:12px;}
+  .an-logo .wordmark small{letter-spacing:.2em;}
+}
+
+/* ---------- Motion: one breath on arrival, meaning not decoration ---------- */
+@media (prefers-reduced-motion:no-preference){
+  .object{animation:breath-in 900ms cubic-bezier(.22,.61,.36,1) both;}
+  @keyframes breath-in{
+    from{opacity:0;transform:translateY(14px);}
+    to{opacity:1;transform:translateY(0);}
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header class="an-header">
+  <div class="an-header-inner">
+    <a class="an-logo" href="#" aria-label="Anahata Yoga Retreat — home">
+      <img src="assets/swami-kk-logo.png" alt="Anahata lotus mark">
+      <span class="wordmark">Anahata<small>Yoga Retreat</small></span>
+    </a>
+    <nav class="an-nav" aria-label="Primary">
+      <a href="#">Events and Trainings</a>
+      <a href="#">Stay</a>
+      <a href="#">Give</a>
+      <a href="#">Blog</a>
+      <a href="#">About</a>
+      <a href="#">Contact</a>
+      <a href="#">Our Newsletter</a>
+      <a href="#" class="active">Shop</a>
+    </nav>
+    <button class="moon-toggle" type="button" aria-label="Toggle dark mode (decorative)" title="Dark mode">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" fill="currentColor"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<!-- ============ WAYFINDING ============ -->
+<div class="wayfind">
+  <p class="eyebrow">Anahata&nbsp;·&nbsp;Shop</p>
+  <h1>Checkout</h1>
+  <p class="lede">One practice, one price. Yours to keep the moment you complete it.</p>
+</div>
+
+<!-- ============ THE OBJECT ============ -->
+<main class="stage">
+  <div class="object">
+
+    <!-- Left: the art as cover / record -->
+    <div class="cover">
+      <figure class="cover-frame" style="margin:0;">
+        <!-- Product art is the hero; no text laid over it, so no scrim needed. -->
+        <img src="assets/forest-meditation-sq.jpg"
+             alt="A practitioner seated in stillness in a lush forest, eyes closed in guided breath practice.">
+        <figcaption class="cover-caption">
+          <span>19:40 · MP3</span>
+        </figcaption>
+      </figure>
+    </div>
+
+    <!-- Right: liner credits, the confident price, the one action -->
+    <div class="intent">
+      <p class="credit-eyebrow">Guided Practice</p>
+
+      <!-- Product name verbatim, typeset across title + subtitle:
+           "Natural Breath Awareness — Guided Practice (MP3)" -->
+      <h2 class="title">Natural Breath<br>Awareness</h2>
+      <p class="subtitle">Guided Practice (MP3)</p>
+
+      <ul class="meta">
+        <li><span class="num">19:40</span></li>
+        <li class="dot" aria-hidden="true">·</li>
+        <li>guided breath practice</li>
+        <li class="dot" aria-hidden="true">·</li>
+        <li>MP3</li>
+      </ul>
+
+      <p class="byline">Guided by <em>Swami Karma Karuna</em></p>
+
+      <hr class="rule">
+
+      <!-- Price: a fact stated with authority. No radio, no chooser. -->
+      <div class="price-block">
+        <div class="price">$9.00</div>
+        <div class="price-qual">
+          <span class="one-time">one-time</span>
+          <span class="sub">not a subscription</span>
+        </div>
+      </div>
+
+      <!-- Personal Information (verbatim section label). Email confirmed as a
+           calm read-back line (member is signed in); Name is empty in source —
+           omitted gracefully. -->
+      <p class="credit-eyebrow" style="margin-top:26px;">Personal Information</p>
+      <div class="signed-in">
+        <span class="tick" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5 10 17.5 19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span><span class="label">Signed in</span> <span class="who">clozach@ilovelife.com</span></span>
+      </div>
+
+      <div class="spacer"></div>
+
+      <!-- The one button -->
+      <button class="buy" type="button" id="buyBtn">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M5 20h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="buy-label">Complete Purchase</span>
+      </button>
+
+      <p class="delivery">Instant MP3 download — <strong>yours to keep.</strong></p>
+      <p class="pay-line">One-time payment of $9.00</p>
+    </div>
+
+  </div>
+</main>
+
+<!-- ============ FOOTER (the one cool place) ============ -->
+<footer class="an-footer">
+  <div class="an-footer-inner">
+    <p class="ft-title">Anahata Yoga Retreat</p>
+    <nav aria-label="Footer">
+      <a href="#">Events and Trainings</a>
+      <a href="#">Stay</a>
+      <a href="#">Give</a>
+      <a href="#">Blog</a>
+      <a href="#">About</a>
+      <a href="#">Contact</a>
+      <a href="#">Shop</a>
+    </nav>
+  </div>
+</footer>
+<div class="an-footer-strip">© Anahata Yoga Retreat · Golden Bay, Aotearoa New Zealand</div>
+
+<script>
+  // Plausible submitting state only — shows "Working…" then settles.
+  (function(){
+    var btn = document.getElementById('buyBtn');
+    var label = btn.querySelector('.buy-label');
+    btn.addEventListener('click', function(){
+      if (btn.getAttribute('aria-busy') === 'true') return;
+      var original = label.textContent;
+      btn.setAttribute('aria-busy','true');
+      label.textContent = 'Working…';
+      setTimeout(function(){
+        btn.removeAttribute('aria-busy');
+        label.textContent = original;
+      }, 1600);
+    });
+  })();
+</script>
+</body>
+</html>

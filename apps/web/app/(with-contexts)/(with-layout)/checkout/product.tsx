@@ -10,7 +10,7 @@ import { TOAST_TITLE_ERROR } from "@ui-config/strings";
 import { notFound, useSearchParams } from "next/navigation";
 import { useCallback, useContext, useEffect, useState } from "react";
 import type { RuntimeLoginProvider } from "@/lib/login-providers";
-import { Header1 } from "@courselit/page-primitives";
+import { Header1, Text1 } from "@courselit/page-primitives";
 import { ThemeContext } from "@components/contexts";
 
 const { MembershipEntityType } = Constants;
@@ -231,9 +231,12 @@ export default function ProductCheckout() {
 
     return (
         <>
-            <Header1 theme={theme.theme} className="mb-8">
+            <Header1 theme={theme.theme} className="mb-2">
                 Checkout
             </Header1>
+            <Text1 theme={theme.theme} className="mb-8 text-muted-foreground">
+                Review your order and complete your purchase below.
+            </Text1>
             <Checkout
                 product={product}
                 paymentPlans={paymentPlans}

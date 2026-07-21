@@ -2,20 +2,24 @@
 
 import Image from "next/image";
 import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { ShoppingCart, ChevronUp } from "lucide-react";
-import { PageCard, PageCardContent } from "@courselit/page-primitives";
-import { Text1, Header3, Header4 } from "@courselit/page-primitives";
+    Button,
+    PageCard,
+    PageCardContent,
+    Text1,
+    Text2,
+    Header3,
+    Header4,
+} from "@courselit/page-primitives";
 import { PaymentPlan, Constants } from "@courselit/common-models";
 import { getPlanPrice } from "@ui-lib/utils";
 import { CHECKOUT_PAGE_ORDER_SUMMARY } from "@ui-config/strings";
 
 const { PaymentPlanType: paymentPlanType } = Constants;
 
-function getPlanDescription(plan: PaymentPlan, currencySymbol: string): string {
+export function getPlanDescription(
+    plan: PaymentPlan,
+    currencySymbol: string,
+): string {
     if (!plan) {
         return "N/A";
     }
@@ -49,164 +53,60 @@ export interface Product {
     joiningReasonText?: string;
 }
 
-export interface OrderSummaryProps {
+export interface PayPanelProps {
     product: Product;
     selectedPlan: PaymentPlan | null;
     paymentPlans: PaymentPlan[];
     currencySymbol: string;
     theme: any;
-    isOrderSummaryOpen: boolean;
-    setIsOrderSummaryOpen: (open: boolean) => void;
+    submitDisabled: boolean;
+    isSubmitting: boolean;
 }
 
-export function MobileOrderSummary({
+export interface MobilePayBarProps {
+    selectedPlan: PaymentPlan | null;
+    paymentPlans: PaymentPlan[];
+    currencySymbol: string;
+    theme: any;
+    submitDisabled: boolean;
+    isSubmitting: boolean;
+}
+
+/**
+ * Desktop-only sticky "pay panel" — the settled Total plus the Complete
+ * Purchase submit button. Rendered inside the checkout <form>, so its
+ * type="submit" button drives form.handleSubmit directly (no form id needed).
+ */
+export function PayPanel({
     product,
     selectedPlan,
     paymentPlans,
     currencySymbol,
     theme,
-    isOrderSummaryOpen,
-    setIsOrderSummaryOpen,
-}: OrderSummaryProps) {
+    submitDisabled,
+    isSubmitting,
+}: PayPanelProps) {
+    const plan = selectedPlan || paymentPlans[0] || null;
+    const price = getPlanPrice(plan as PaymentPlan);
+
     return (
-        <div className="md:hidden w-full sticky top-20 z-11 mb-8">
+        <aside
+            className="hidden md:block md:sticky md:top-20 self-start"
+            aria-label="Order summary and payment"
+        >
             <PageCard theme={theme.theme}>
                 <PageCardContent theme={theme.theme} className="p-0">
-                    <div className="w-full">
-                        <div
-                            className="flex items-center justify-between p-4 border-b w-full"
-                            style={{
-                                borderBottomColor: theme.theme.colors.border,
-                            }}
+                    <div className="px-6 py-4 border-b border-border">
+                        <Text2
+                            theme={theme.theme}
+                            className="uppercase tracking-wide font-semibold text-muted-foreground"
                         >
-                            <div className="flex items-center gap-1">
-                                <ShoppingCart className="h-5 w-5" />
-                                <Text1
-                                    className="p-0 !m-0 h-auto font-normal hover:bg-transparent flex items-center"
-                                    onClick={() =>
-                                        setIsOrderSummaryOpen(
-                                            !isOrderSummaryOpen,
-                                        )
-                                    }
-                                    theme={theme.theme}
-                                >
-                                    {isOrderSummaryOpen ? "Hide" : "Show"} order
-                                    summary
-                                    <ChevronUp
-                                        className={`h-4 w-4 ml-1 transition-transform duration-200 ${isOrderSummaryOpen ? "" : "rotate-180"}`}
-                                    />
-                                </Text1>
-                            </div>
-                            <div className="font-medium flex items-center">
-                                {currencySymbol}
-                                {getPlanPrice(
-                                    selectedPlan || paymentPlans[0],
-                                ).amount.toFixed(2)}
-                                <span className="text-sm text-muted-foreground ml-1">
-                                    {
-                                        getPlanPrice(
-                                            selectedPlan || paymentPlans[0],
-                                        ).period
-                                    }
-                                </span>
-                            </div>
-                        </div>
+                            {CHECKOUT_PAGE_ORDER_SUMMARY}
+                        </Text2>
                     </div>
 
-                    <Collapsible
-                        open={isOrderSummaryOpen}
-                        onOpenChange={setIsOrderSummaryOpen}
-                    >
-                        <CollapsibleTrigger className="sr-only">
-                            Toggle order summary
-                        </CollapsibleTrigger>
-                        <CollapsibleContent
-                            style={{
-                                borderBottomColor: theme.theme.colors.border,
-                            }}
-                        >
-                            <div className="p-4 space-y-4">
-                                <div className="flex gap-4">
-                                    <div className="h-16 w-16 relative rounded-lg overflow-hidden">
-                                        <Image
-                                            src={
-                                                product.featuredImage ||
-                                                "/courselit_backdrop_square.webp"
-                                            }
-                                            alt={product.name}
-                                            fill
-                                            className="object-cover"
-                                        />
-                                    </div>
-                                    <div>
-                                        <Header3 theme={theme.theme}>
-                                            {product.name}
-                                        </Header3>
-                                        {product.description && (
-                                            <Text1 theme={theme.theme}>
-                                                {product.description}
-                                            </Text1>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {selectedPlan && (
-                                    <div className="space-y-4">
-                                        <div
-                                            className="flex justify-between pt-4 border-t"
-                                            style={{
-                                                borderTopColor:
-                                                    theme.theme.colors.border,
-                                            }}
-                                        >
-                                            <Header3 theme={theme.theme}>
-                                                Total
-                                            </Header3>
-                                            <div className="text-right flex items-center">
-                                                <Header4 className="font-medium">
-                                                    {currencySymbol}
-                                                    {getPlanPrice(
-                                                        selectedPlan,
-                                                    ).amount.toFixed(2)}
-                                                </Header4>
-                                                <Text1 theme={theme.theme}>
-                                                    {
-                                                        getPlanPrice(
-                                                            selectedPlan,
-                                                        ).period
-                                                    }
-                                                </Text1>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </CollapsibleContent>
-                    </Collapsible>
-                </PageCardContent>
-            </PageCard>
-        </div>
-    );
-}
-
-export function DesktopOrderSummary({
-    product,
-    selectedPlan,
-    currencySymbol,
-    theme,
-}: Omit<
-    OrderSummaryProps,
-    "paymentPlans" | "isOrderSummaryOpen" | "setIsOrderSummaryOpen"
->) {
-    return (
-        <div className="hidden md:block sticky top-20 self-start">
-            <PageCard theme={theme.theme}>
-                <PageCardContent theme={theme.theme} className="space-y-4">
-                    <Header3 theme={theme.theme}>
-                        {CHECKOUT_PAGE_ORDER_SUMMARY}
-                    </Header3>
-                    <div className="flex items-start gap-4 pb-4">
-                        <div className="h-16 w-16 relative rounded-lg overflow-hidden bg-muted">
+                    <div className="flex gap-4 px-6 py-5">
+                        <div className="h-[72px] w-[72px] relative rounded-lg overflow-hidden border border-border bg-muted shrink-0">
                             <Image
                                 src={
                                     product.featuredImage ||
@@ -214,49 +114,112 @@ export function DesktopOrderSummary({
                                 }
                                 alt={product.name}
                                 fill
+                                sizes="72px"
                                 className="object-cover"
                             />
                         </div>
-                        <div>
-                            <Header4 theme={theme.theme}>
+                        <div className="min-w-0">
+                            <Header4
+                                theme={theme.theme}
+                                className="text-base leading-snug"
+                            >
                                 {product.name}
                             </Header4>
-                            {product.description && (
-                                <Text1 theme={theme.theme}>
-                                    {product.description}
-                                </Text1>
-                            )}
                         </div>
                     </div>
-                    {selectedPlan && (
-                        <div
-                            className="mt-4 pt-4 border-t"
-                            style={{
-                                borderTopColor: theme.theme.colors.border,
-                            }}
+
+                    <div className="border-t border-border mx-6" />
+
+                    <div className="flex items-baseline justify-between px-6 pt-4">
+                        <Text1
+                            theme={theme.theme}
+                            className="font-semibold uppercase tracking-wide"
                         >
-                            <div className="flex justify-between items-center">
-                                <Header4 theme={theme.theme}>Total</Header4>
-                                <Header4 theme={theme.theme}>
-                                    {currencySymbol}
-                                    {getPlanPrice(selectedPlan).amount.toFixed(
-                                        2,
-                                    )}
-                                    <span className="text-sm text-muted-foreground ml-1">
-                                        {getPlanPrice(selectedPlan).period}
-                                    </span>
-                                </Header4>
-                            </div>
-                            <Text1 theme={theme.theme}>
-                                {getPlanDescription(
-                                    selectedPlan,
-                                    currencySymbol,
-                                )}
-                            </Text1>
-                        </div>
+                            Total
+                        </Text1>
+                        <Header3 theme={theme.theme}>
+                            {currencySymbol}
+                            {price.amount.toFixed(2)}
+                            {price.period && (
+                                <span className="text-sm text-muted-foreground ml-1">
+                                    {price.period}
+                                </span>
+                            )}
+                        </Header3>
+                    </div>
+
+                    {plan && (
+                        <Text2
+                            theme={theme.theme}
+                            className="px-6 pt-1 pb-4 text-muted-foreground"
+                        >
+                            {getPlanDescription(plan, currencySymbol)}
+                        </Text2>
                     )}
+
+                    <div className="px-6 pb-6">
+                        <Button
+                            type="submit"
+                            disabled={submitDisabled}
+                            theme={theme.theme}
+                            className="w-full"
+                        >
+                            {isSubmitting ? "Working..." : "Complete Purchase"}
+                        </Button>
+                    </div>
                 </PageCardContent>
             </PageCard>
+        </aside>
+    );
+}
+
+/**
+ * Mobile-only fixed bottom pay bar (replaces the old collapsible cart chrome).
+ * Rendered inside the checkout <form> so its type="submit" button submits the
+ * same action as the desktop panel.
+ */
+export function MobilePayBar({
+    selectedPlan,
+    paymentPlans,
+    currencySymbol,
+    theme,
+    submitDisabled,
+    isSubmitting,
+}: MobilePayBarProps) {
+    const plan = selectedPlan || paymentPlans[0] || null;
+    const price = getPlanPrice(plan as PaymentPlan);
+
+    return (
+        <div
+            className="fixed bottom-0 inset-x-0 z-40 md:hidden bg-card text-card-foreground border-t border-border shadow-[0_-4px_16px_rgba(0,0,0,0.12)] px-4 py-3 flex items-center gap-4"
+            style={{
+                paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))",
+            }}
+        >
+            <div className="flex flex-col leading-tight shrink-0">
+                <span className="text-lg font-semibold">
+                    {currencySymbol}
+                    {price.amount.toFixed(2)}
+                    {price.period && (
+                        <span className="text-xs text-muted-foreground ml-1">
+                            {price.period}
+                        </span>
+                    )}
+                </span>
+                {plan?.type === paymentPlanType.ONE_TIME && (
+                    <span className="text-xs text-muted-foreground">
+                        one-time
+                    </span>
+                )}
+            </div>
+            <Button
+                type="submit"
+                disabled={submitDisabled}
+                theme={theme.theme}
+                className="flex-1"
+            >
+                {isSubmitting ? "Working..." : "Complete Purchase"}
+            </Button>
         </div>
     );
 }
