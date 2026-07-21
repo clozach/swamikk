@@ -13,6 +13,7 @@ import {
     Section,
     Text1,
     Link as PageLink,
+    PageCard,
 } from "@courselit/page-primitives";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { FormEvent } from "react";
@@ -197,8 +198,24 @@ export default function LoginForm({
 
     return (
         <Section theme={theme.theme}>
-            <div className="flex flex-col gap-4 min-h-[80vh]">
-                <div className="flex justify-center grow items-center px-4 mx-auto lg:max-w-[1200px] w-full">
+            {/* Centred card built from the theme-driven PageCard (bg-card +
+                the theme's own border/shadow) with a primary-coloured top
+                accent, so it tracks whatever palette is active — anahata today
+                — in both light and dark, with no hardcoded brand hexes to drift
+                out of step. The OTP form stays on the same themed primitives. */}
+            <div className="flex min-h-[72vh] items-center justify-center px-4 py-12">
+                <PageCard
+                    theme={theme.theme}
+                    className="w-full max-w-[400px] overflow-hidden rounded-xl border-t-4 border-t-primary px-7 py-8 shadow-lg"
+                >
+                    {siteinfo.logo?.file ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                            src={siteinfo.logo.file}
+                            alt={siteinfo.title || ""}
+                            className="mx-auto mb-5 h-11 w-auto"
+                        />
+                    ) : null}
                     <div className="flex flex-col gap-4">
                         {siteinfo.logins?.includes(
                             Constants.LoginProvider.EMAIL,
@@ -210,9 +227,9 @@ export default function LoginForm({
                                             color: theme?.theme?.colors?.light
                                                 ?.destructive,
                                         }}
-                                        className="flex items-center gap-2 mb-4"
+                                        className="flex items-center gap-2 mb-2"
                                     >
-                                        <TriangleAlert className="w-4 h-4" />
+                                        <TriangleAlert className="w-4 h-4 shrink-0" />
                                         <div>
                                             <Text1 theme={theme.theme}>
                                                 {error}
@@ -224,13 +241,13 @@ export default function LoginForm({
                                     <div>
                                         <Text1
                                             theme={theme.theme}
-                                            className="mb-4"
+                                            className="mb-4 text-center"
                                         >
                                             {LOGIN_FORM_LABEL}
                                         </Text1>
                                         <Form
                                             onSubmit={requestCode}
-                                            className="flex flex-col gap-4 w-full lg:w-[360px] mx-auto"
+                                            className="flex flex-col gap-4 w-full"
                                         >
                                             <Input
                                                 type="email"
@@ -257,13 +274,13 @@ export default function LoginForm({
                                     <div>
                                         <Text1
                                             theme={theme.theme}
-                                            className="mb-4"
+                                            className="mb-4 text-center"
                                         >
                                             {LOGIN_CODE_INTIMATION_MESSAGE}{" "}
                                             <strong>{email}</strong>
                                         </Text1>
                                         <Form
-                                            className="flex flex-col gap-4 mb-4 w-full lg:w-[360px] mx-auto"
+                                            className="flex flex-col gap-4 mb-4 w-full"
                                             onSubmit={signInUser}
                                         >
                                             <Input
@@ -283,7 +300,6 @@ export default function LoginForm({
                                             >
                                                 {loading ? LOADING : BTN_LOGIN}
                                             </Button>
-                                            {/* </div> */}
                                         </Form>
                                         <div className="flex justify-center items-center gap-1 text-sm">
                                             <Caption
@@ -316,7 +332,7 @@ export default function LoginForm({
                                 key={provider.key}
                                 provider={provider}
                                 theme={theme.theme}
-                                className="w-full lg:w-[360px] mx-auto"
+                                className="w-full"
                                 onClick={async () => {
                                     await authClient.signIn.sso({
                                         providerId: provider.providerId,
@@ -332,7 +348,7 @@ export default function LoginForm({
                             </Link>
                         </Caption>
                     </div>
-                </div>
+                </PageCard>
             </div>
             <RecaptchaScriptLoader />
         </Section>

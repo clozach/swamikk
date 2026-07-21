@@ -74,6 +74,18 @@ function LayoutContent({
             startTransition(() => {
                 void updateUserProfile();
             });
+        } else if (address && !session) {
+            // No session (signed out, or never signed in): reset the client
+            // profile to a guest so consumers reading ProfileContext flip to
+            // their signed-out state. Without this, an in-place sign-out
+            // (fetch + router.refresh, as the anahata header does) would re-run
+            // this effect with session=null but leave the stale signed-in
+            // profile in state — the header would keep showing the avatar until
+            // a full navigation. A hard-reload logout hid this because remount
+            // starts from defaultState; a soft refresh does not.
+            startTransition(() => {
+                setProfile({ ...defaultState.profile, fetched: true });
+            });
         }
     }, [address, session, updateUserProfile]);
 

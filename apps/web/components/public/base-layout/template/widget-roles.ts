@@ -1,5 +1,5 @@
 import widgets from "@/ui-config/widgets";
-import { Footer, Header } from "@courselit/page-blocks";
+import { Footer } from "@courselit/page-blocks";
 import type { WidgetRole } from "@courselit/common-models";
 
 /**
@@ -18,7 +18,11 @@ export function roleOf(widgetName: string | undefined): WidgetRole | undefined {
         | undefined;
     if (declared) return declared;
 
-    if (widgetName === Header.metadata.name) return "header";
+    // "header" is the stock CourseLit header block's name. That block has been
+    // removed (anahataHeader carries role:"header" instead), but the literal
+    // fallback stays so any legacy layout still stored under the bare name
+    // resolves to the header slot rather than flowing inline.
+    if (widgetName === "header") return "header";
     if (widgetName === Footer.metadata.name) return "footer";
     return undefined;
 }

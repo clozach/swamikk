@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
+import { useRouter } from "next/navigation";
 import { Profile } from "@courselit/common-models";
 import {
     accountLoginLabel as defaultLoginLabel,
@@ -168,23 +169,37 @@ function Avatar({ profile }: { profile: Profile }) {
     );
 }
 
-/* Sign out in place, mirroring what authClient.signOut() does under the hood
- * (POST the better-auth sign-out endpoint, then land on /login) — kept as a
- * plain same-origin fetch so the block needs no auth SDK. The redirect runs
- * whether or not the POST succeeds: /login is a safe landing either way, and a
- * failed sign-out simply shows the form while the session lingers, rather than
- * stranding the user on a dead control. */
-function performSignOut(): void {
-    void fetch("/api/auth/sign-out", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: "{}",
-        credentials: "same-origin",
-    })
-        .catch(() => undefined)
-        .finally(() => {
-            window.location.href = accountLoginHref;
+/* Sign out, mirroring what authClient.signOut() does under the hood (POST the
+ * better-auth sign-out endpoint) — kept as a plain same-origin fetch so the
+ * block needs no auth SDK. Resolves whether or not the POST succeeds; the
+ * caller then re-renders the header (router.refresh) so the pill returns in
+ * place. A failed sign-out leaves the session lingering and the refresh simply
+ * shows the avatar still, rather than stranding the user on a dead control.
+ *
+ * Why in-place (router.refresh) rather than a redirect: the anahata header
+ * only ever renders on public page types (site/product/blog/community — see
+ * metadata.compatibleWith), so signing out never strands the user on a page
+ * they can no longer view; the same page just re-renders in its signed-out
+ * form. That keeps them exactly where they were — no whole-page trip — which
+ * is the point of the in-place pill. (The dashboard, the one place logout
+ * *must* leave, has its own control at /logout that lands on the home page.)
+ *
+ * No-JS note: this is an onClick-only button, so with JavaScript disabled it
+ * does nothing. A production no-JS logout needs a real
+ * <form method="post" action="/api/auth/sign-out"> the browser can submit
+ * natively — a known gap, intentionally out of scope for the demo. */
+async function requestSignOut(): Promise<void> {
+    try {
+        await fetch("/api/auth/sign-out", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "{}",
+            credentials: "same-origin",
         });
+    } catch {
+        /* Network error — the refresh below will just show the still-signed-in
+         * header, which is the honest state. */
+    }
 }
 
 /* Inline two-click logout confirm with the Figma "wipe" animation. First click
@@ -203,10 +218,12 @@ function performSignOut(): void {
 function LogoutButton({
     armed,
     onArm,
+    onConfirm,
     variant,
 }: {
     armed: boolean;
     onArm: () => void;
+    onConfirm: () => void;
     variant: "menu" | "drawer";
 }) {
     const isMenu = variant === "menu";
@@ -222,7 +239,7 @@ function LogoutButton({
             onClick={(event) => {
                 event.stopPropagation();
                 if (armed) {
-                    performSignOut();
+                    onConfirm();
                 } else {
                     onArm();
                 }
@@ -305,6 +322,7 @@ function SignedIn({
     const [confirmingLogout, setConfirmingLogout] = useState(false);
     const rootRef = useRef<HTMLDivElement | null>(null);
     const triggerRef = useRef<HTMLButtonElement | null>(null);
+    const router = useRouter();
 
     // Closing always disarms the logout confirm, so re-opening starts clean.
     const close = useCallback(() => {
@@ -414,6 +432,15 @@ function SignedIn({
                     <LogoutButton
                         armed={confirmingLogout}
                         onArm={() => setConfirmingLogout(true)}
+                        onConfirm={async () => {
+                            await requestSignOut();
+                            // Dismiss the dropdown immediately, then re-render
+                            // the header in place: profile clears to guest and
+                            // this whole SignedIn subtree is replaced by the
+                            // signed-out pill — no navigation.
+                            close();
+                            router.refresh();
+                        }}
                         variant="menu"
                     />
                 </div>
@@ -545,6 +572,7 @@ export function MobileAccountSection({
 }) {
     // Declared before the early return so the hook order stays stable.
     const [confirmingLogout, setConfirmingLogout] = useState(false);
+    const router = useRouter();
     const loggedIn = Boolean(profile?.email);
 
     if (!loggedIn || !profile) {
@@ -608,6 +636,13 @@ export function MobileAccountSection({
             <LogoutButton
                 armed={confirmingLogout}
                 onArm={() => setConfirmingLogout(true)}
+                onConfirm={async () => {
+                    await requestSignOut();
+                    // Close the drawer, then re-render in place: the signed-out
+                    // mobile CTA replaces this block — no navigation.
+                    onNavigate();
+                    router.refresh();
+                }}
                 variant="drawer"
             />
         </div>
