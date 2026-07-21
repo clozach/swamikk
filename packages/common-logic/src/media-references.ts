@@ -164,6 +164,61 @@ export interface MediaUsageEntry {
     entityType: string;
     entityId: string;
     title: string;
+    // Dashboard deep-link to the referencing entity, or undefined when the
+    // type has no dashboard page (or a required id is missing). Lets the media
+    // library turn each attribution into a click-through to its source.
+    href?: string;
+}
+
+/**
+ * Dashboard deep-link for a referencing entity. Route knowledge lives here,
+ * beside the id/label fields, so "how do I point at this entity" is defined
+ * once per entity type. Returns undefined when the type has no dashboard page
+ * or a required id is missing — a missing link beats a `/undefined` one.
+ *
+ * The entityType strings must match those in getReferenceSources.
+ */
+export function usageHref(
+    entityType: string,
+    doc: Record<string, any>,
+): string | undefined {
+    const seg = (v: unknown): string | undefined => (v ? String(v) : undefined);
+    switch (entityType) {
+        case "course": {
+            const id = seg(doc.courseId);
+            return id ? `/dashboard/product/${id}` : undefined;
+        }
+        case "lesson": {
+            const c = seg(doc.courseId);
+            const g = seg(doc.groupId);
+            const l = seg(doc.lessonId);
+            return c && g && l
+                ? `/dashboard/product/${c}/content/section/${g}/lesson?id=${l}`
+                : undefined;
+        }
+        case "page": {
+            const id = seg(doc.pageId);
+            return id ? `/dashboard/page/${id}` : undefined;
+        }
+        case "user": {
+            const id = seg(doc.userId);
+            return id ? `/dashboard/users/${id}` : undefined;
+        }
+        case "community": {
+            const id = seg(doc.communityId);
+            return id ? `/dashboard/community/${id}` : undefined;
+        }
+        // A comment has no page of its own; point at the post that holds it.
+        case "communityPost":
+        case "communityComment": {
+            const c = seg(doc.communityId);
+            const p = seg(doc.postId);
+            return c && p ? `/dashboard/community/${c}/${p}` : undefined;
+        }
+        // domain, certificateTemplate: no dashboard page to link to.
+        default:
+            return undefined;
+    }
 }
 
 /**
@@ -194,6 +249,7 @@ export async function collectMediaUsage(
                     document[source.idField] ?? document._id ?? "",
                 ),
                 title: String(document[source.labelField] ?? ""),
+                href: usageHref(source.entityType, document),
             };
             for (const mediaId of mediaIds) {
                 const existing = usage.get(mediaId);

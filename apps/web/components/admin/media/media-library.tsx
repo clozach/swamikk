@@ -3,6 +3,7 @@
 import { AddressContext } from "@components/contexts";
 import { FetchBuilder } from "@courselit/utils";
 import { Chip, Image } from "@courselit/components-library";
+import Link from "next/link";
 import {
     MEDIA_MANAGER_EMPTY,
     MEDIA_MANAGER_LOAD_MORE,
@@ -22,6 +23,7 @@ interface MediaUsage {
     entityType: string;
     entityId: string;
     title: string;
+    href?: string;
 }
 
 interface MediaWithUsage {
@@ -74,7 +76,7 @@ export default function MediaLibrary() {
                     size
                     access
                     thumbnail
-                    usage { entityType entityId title }
+                    usage { entityType entityId title href }
                 }
             }`;
         setLoading(true);
@@ -133,6 +135,12 @@ export default function MediaLibrary() {
                             </div>
                         </div>
                         <div className="flex flex-col gap-2 p-4">
+                            {/* Deferred (Al, 2026-07-21): click the filename to
+                                reveal the file. A literal Finder reveal is
+                                blocked — this runs in a Linux container +
+                                sandboxed browser, and the file is a MinIO object
+                                blob, not a disk file. Counter-offer is
+                                open/preview-in-tab; see kk-open-loops.md §F. */}
                             <p
                                 className="font-medium truncate"
                                 title={m.originalFileName}
@@ -160,9 +168,18 @@ export default function MediaLibrary() {
                                                     )}
                                                     :{" "}
                                                 </span>
-                                                <span>
-                                                    {u.title || u.entityId}
-                                                </span>
+                                                {u.href ? (
+                                                    <Link
+                                                        href={u.href}
+                                                        className="underline underline-offset-2 hover:text-primary"
+                                                    >
+                                                        {u.title || u.entityId}
+                                                    </Link>
+                                                ) : (
+                                                    <span>
+                                                        {u.title || u.entityId}
+                                                    </span>
+                                                )}
                                             </li>
                                         ))}
                                     </ul>

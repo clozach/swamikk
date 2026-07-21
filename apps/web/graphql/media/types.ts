@@ -26,6 +26,7 @@ const mediaUsageType = new GraphQLObjectType({
         entityType: { type: GraphQLString },
         entityId: { type: GraphQLString },
         title: { type: GraphQLString },
+        href: { type: GraphQLString },
     },
 });
 
