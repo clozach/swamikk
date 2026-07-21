@@ -370,6 +370,9 @@ export default function Widget({
                             profile={profile}
                             editing={editing}
                             loginLabel={accountLoginLabel}
+                            recaptchaConfigured={Boolean(
+                                state?.config?.recaptchaSiteKey,
+                            )}
                         />
                     </div>
                 </div>

@@ -11,7 +11,6 @@ import {
     accountContentLabel,
     accountContentHref,
     accountLogoutLabel,
-    accountLogoutConfirmLabel,
 } from "../defaults";
 import {
     ACCOUNT_LOGIN_PILL,
@@ -25,6 +24,7 @@ import {
     ACCOUNT_MOBILE_LINK,
 } from "./tokens";
 import Chevron from "./chevron";
+import LoginPanel from "./login-popover";
 
 /* ------------------------------------------------------------------ *
  * Inline SVGs. page-blocks does not depend on lucide (see theme-toggle.tsx),
@@ -187,12 +187,19 @@ function performSignOut(): void {
         });
 }
 
-/* Inline two-click logout confirm (Al's spec): the control arms in place to
- * read "Log out?" on first click and signs out on the second — no navigation
- * to the whole-page /logout confirmation. Arming is owned by the parent so it
- * can be cancelled by Escape / clicking elsewhere without closing the whole
- * menu. `stopPropagation` lets an ancestor's onClick treat "any click that
- * isn't this button" as a cancel. */
+/* Inline two-click logout confirm with the Figma "wipe" animation. First click
+ * arms; a rust panel (#993300 — the same red as the Log in pill) wipes in
+ * left→right via clip-path over the resting row, flipping the text to the
+ * light menu colour as it passes; the logout icon slides right and fades to 0
+ * before the edge; a "?" fades in where it lands. A second click on the armed
+ * control signs out. Arming is owned by the parent so Escape / a click
+ * elsewhere can cancel it (reverses the same animation) without closing the
+ * menu; `stopPropagation` lets an ancestor treat "any other click" as cancel.
+ *
+ * Two stacked layers share one row layout so the reveal reads as an in-place
+ * recolour: the REST layer (dark, icon + label + an invisible "?" that just
+ * reserves width so the control never resizes) sits under the WIPE layer
+ * (rust ground, light content), which is clip-revealed. */
 function LogoutButton({
     armed,
     onArm,
@@ -202,20 +209,16 @@ function LogoutButton({
     onArm: () => void;
     variant: "menu" | "drawer";
 }) {
-    const armedClass =
-        variant === "menu"
-            ? "bg-[color-mix(in_srgb,var(--nav-fg-hover)_14%,transparent)] text-[var(--nav-fg-hover)]"
-            : "text-[#ff9900]";
+    const isMenu = variant === "menu";
+    const row =
+        "flex w-full items-center gap-[11px] px-[10px] py-[9px] text-[13.5px] font-semibold leading-none whitespace-nowrap" +
+        (isMenu ? "" : " uppercase tracking-[0.01em]");
     return (
         <button
             type="button"
-            role={variant === "menu" ? "menuitem" : undefined}
+            role={isMenu ? "menuitem" : undefined}
             aria-label={armed ? "Confirm log out" : accountLogoutLabel}
-            className={clsx(
-                variant === "menu" ? ACCOUNT_MENU_ITEM : ACCOUNT_MOBILE_LINK,
-                variant === "drawer" && "w-full text-left",
-                armed && armedClass,
-            )}
+            className="group relative isolate flex w-full cursor-pointer overflow-hidden rounded-[6px] border-0 bg-transparent p-0 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--nav-fg-hover)]"
             onClick={(event) => {
                 event.stopPropagation();
                 if (armed) {
@@ -225,8 +228,60 @@ function LogoutButton({
                 }
             }}
         >
-            <LogoutIcon />
-            {armed ? accountLogoutConfirmLabel : accountLogoutLabel}
+            {/* REST layer — stays put; the wipe reveals over it. */}
+            <span
+                className={clsx(
+                    row,
+                    "relative z-[1]",
+                    isMenu
+                        ? "text-[var(--nav-fg)] group-hover:bg-[color-mix(in_srgb,var(--nav-fg-hover)_10%,transparent)] group-hover:text-[var(--nav-fg-hover)]"
+                        : "text-white group-hover:text-[#ff9900]",
+                )}
+            >
+                <LogoutIcon />
+                <span>
+                    {accountLogoutLabel}
+                    <span aria-hidden="true" className="ml-[5px] opacity-0">
+                        ?
+                    </span>
+                </span>
+            </span>
+            {/* WIPE layer — rust ground + light content, clip-revealed L→R. */}
+            <span
+                aria-hidden="true"
+                className={clsx(
+                    row,
+                    "pointer-events-none absolute inset-0 z-[2] bg-[#993300] text-[#f7f4eb]",
+                )}
+                style={{
+                    clipPath: armed ? "inset(0 0 0 0)" : "inset(0 100% 0 0)",
+                    transition: "clip-path 300ms ease",
+                }}
+            >
+                <span
+                    className="flex shrink-0"
+                    style={{
+                        transform: armed ? "translateX(88px)" : "translateX(0)",
+                        opacity: armed ? 0 : 1,
+                        transition:
+                            "transform 320ms ease, opacity 220ms ease-in",
+                    }}
+                >
+                    <LogoutIcon />
+                </span>
+                <span>
+                    {accountLogoutLabel}
+                    <span
+                        className="ml-[5px]"
+                        style={{
+                            opacity: armed ? 1 : 0,
+                            transition: "opacity 200ms ease 140ms",
+                        }}
+                    >
+                        ?
+                    </span>
+                </span>
+            </span>
         </button>
     );
 }
@@ -368,21 +423,95 @@ function SignedIn({
 }
 
 /* ------------------------------------------------------------------ *
- * The desktop account control. Signed-out renders the sign-in pill;
- * signed-in renders the avatar + dropdown. "Signed in" is read straight
- * off the profile the page already put in `state` — the same `profile.email`
- * test the app's own layouts use to set `auth.guest`. The profile is fetched
- * before the page paints for authenticated users, so the pill never flashes
- * ahead of the avatar.
+ * Signed-out control: the "Log in" pill opens the login popover right
+ * beneath it (the OTP form happens contiguous to the button, not on a
+ * whole-page /login). The pill is a real <a href="/login"> whose click is
+ * intercepted only when JS can drive the popover — so no-JS, the page
+ * builder (editing), and reCAPTCHA-configured sites all fall back to the
+ * full /login page. Open/close is owned here (Escape + outside pointerdown),
+ * matching the signed-in dropdown.
+ * ------------------------------------------------------------------ */
+const LOGIN_PANEL_ID = "anahata-login-panel";
+
+function SignedOut({
+    loginLabel,
+    editing,
+    recaptchaConfigured,
+}: {
+    loginLabel: string;
+    editing: boolean;
+    recaptchaConfigured: boolean;
+}) {
+    const [open, setOpen] = useState(false);
+    const rootRef = useRef<HTMLDivElement | null>(null);
+    const triggerRef = useRef<HTMLAnchorElement | null>(null);
+    const close = useCallback(() => setOpen(false), []);
+
+    useEffect(() => {
+        if (!open || typeof document === "undefined") {
+            return;
+        }
+        const onPointerDown = (event: PointerEvent) => {
+            if (!rootRef.current?.contains(event.target as Node)) {
+                close();
+            }
+        };
+        document.addEventListener("pointerdown", onPointerDown);
+        return () => document.removeEventListener("pointerdown", onPointerDown);
+    }, [open, close]);
+
+    const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+        if (event.key === "Escape" && open) {
+            event.preventDefault();
+            event.stopPropagation();
+            close();
+            triggerRef.current?.focus();
+        }
+    };
+
+    return (
+        <div className="relative" ref={rootRef} onKeyDown={onKeyDown}>
+            <a
+                ref={triggerRef}
+                href={accountLoginHref}
+                className={ACCOUNT_LOGIN_PILL}
+                aria-haspopup="dialog"
+                aria-expanded={open}
+                aria-controls={open ? LOGIN_PANEL_ID : undefined}
+                onClick={(event) => {
+                    if (editing || recaptchaConfigured) {
+                        return; // let the /login href stand
+                    }
+                    event.preventDefault();
+                    setOpen((current) => !current);
+                }}
+            >
+                <PersonIcon />
+                {loginLabel || defaultLoginLabel}
+            </a>
+            {open && <LoginPanel panelId={LOGIN_PANEL_ID} />}
+        </div>
+    );
+}
+
+/* ------------------------------------------------------------------ *
+ * The desktop account control. Signed-out renders the sign-in pill (+
+ * popover); signed-in renders the avatar + dropdown. "Signed in" is read
+ * straight off the profile the page already put in `state` — the same
+ * `profile.email` test the app's own layouts use to set `auth.guest`. The
+ * profile is fetched before the page paints for authenticated users, so the
+ * pill never flashes ahead of the avatar.
  * ------------------------------------------------------------------ */
 export default function AccountControl({
     profile,
     editing,
     loginLabel,
+    recaptchaConfigured,
 }: {
     profile: Profile | undefined;
     editing: boolean;
     loginLabel: string;
+    recaptchaConfigured: boolean;
 }) {
     const loggedIn = Boolean(profile?.email);
 
@@ -391,10 +520,11 @@ export default function AccountControl({
     }
 
     return (
-        <a href={accountLoginHref} className={ACCOUNT_LOGIN_PILL}>
-            <PersonIcon />
-            {loginLabel || defaultLoginLabel}
-        </a>
+        <SignedOut
+            loginLabel={loginLabel}
+            editing={editing}
+            recaptchaConfigured={recaptchaConfigured}
+        />
     );
 }
 

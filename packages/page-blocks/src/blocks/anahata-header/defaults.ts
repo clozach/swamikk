@@ -63,15 +63,23 @@ export const accountLoginLabel = "Log in";
 export const accountLoginHref = "/login";
 export const accountLoginMobileLabel = "Log in / Create account";
 export const accountLoginMobileHint = "One tap — we email you a sign-in code.";
+
+/* Copy for the inline login popover (the OTP form anchored to the pill). */
+export const accountLoginPanelHeading = "Sign in or create an account";
+export const accountLoginCodeHeadingPrefix = "Enter the code sent to";
+export const accountLoginGetCodeLabel = "Get code";
+export const accountLoginContinueLabel = "Continue";
+export const accountLoginResendLabel = "Resend";
+export const accountLoginResendPrompt = "Didn't get it?";
 export const accountManageLabel = "Manage account";
 export const accountManageHref = "/dashboard/profile";
 export const accountContentLabel = "My content";
 export const accountContentHref = "/dashboard";
-export const accountLogoutLabel = "Log out";
-/* The armed second state of the inline confirm. Logging out is a two-click
-   action in place (Log out → Log out?), rather than a jump to the whole-page
-   /logout confirmation — no navigation, no separate page. */
-export const accountLogoutConfirmLabel = "Log out?";
+/* "Logout" (one word) to match the Figma confirm-animation frames. Logging
+   out is a two-click action in place: the control arms, a rust panel wipes in
+   left→right, the icon flies off and a "?" takes its place; a second click
+   confirms. No navigation to the whole-page /logout confirmation. */
+export const accountLogoutLabel = "Logout";
 
 export const menu: MenuItem[] = [
     {
