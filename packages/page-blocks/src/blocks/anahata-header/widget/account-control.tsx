@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import clsx from "clsx";
 import { Profile } from "@courselit/common-models";
 import {
     accountLoginLabel as defaultLoginLabel,
@@ -10,7 +11,7 @@ import {
     accountContentLabel,
     accountContentHref,
     accountLogoutLabel,
-    accountLogoutHref,
+    accountLogoutConfirmLabel,
 } from "../defaults";
 import {
     ACCOUNT_LOGIN_PILL,
@@ -167,11 +168,76 @@ function Avatar({ profile }: { profile: Profile }) {
     );
 }
 
+/* Sign out in place, mirroring what authClient.signOut() does under the hood
+ * (POST the better-auth sign-out endpoint, then land on /login) — kept as a
+ * plain same-origin fetch so the block needs no auth SDK. The redirect runs
+ * whether or not the POST succeeds: /login is a safe landing either way, and a
+ * failed sign-out simply shows the form while the session lingers, rather than
+ * stranding the user on a dead control. */
+function performSignOut(): void {
+    void fetch("/api/auth/sign-out", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+        credentials: "same-origin",
+    })
+        .catch(() => undefined)
+        .finally(() => {
+            window.location.href = accountLoginHref;
+        });
+}
+
+/* Inline two-click logout confirm (Al's spec): the control arms in place to
+ * read "Log out?" on first click and signs out on the second — no navigation
+ * to the whole-page /logout confirmation. Arming is owned by the parent so it
+ * can be cancelled by Escape / clicking elsewhere without closing the whole
+ * menu. `stopPropagation` lets an ancestor's onClick treat "any click that
+ * isn't this button" as a cancel. */
+function LogoutButton({
+    armed,
+    onArm,
+    variant,
+}: {
+    armed: boolean;
+    onArm: () => void;
+    variant: "menu" | "drawer";
+}) {
+    const armedClass =
+        variant === "menu"
+            ? "bg-[color-mix(in_srgb,var(--nav-fg-hover)_14%,transparent)] text-[var(--nav-fg-hover)]"
+            : "text-[#ff9900]";
+    return (
+        <button
+            type="button"
+            role={variant === "menu" ? "menuitem" : undefined}
+            aria-label={armed ? "Confirm log out" : accountLogoutLabel}
+            className={clsx(
+                variant === "menu" ? ACCOUNT_MENU_ITEM : ACCOUNT_MOBILE_LINK,
+                variant === "drawer" && "w-full text-left",
+                armed && armedClass,
+            )}
+            onClick={(event) => {
+                event.stopPropagation();
+                if (armed) {
+                    performSignOut();
+                } else {
+                    onArm();
+                }
+            }}
+        >
+            <LogoutIcon />
+            {armed ? accountLogoutConfirmLabel : accountLogoutLabel}
+        </button>
+    );
+}
+
 /* ------------------------------------------------------------------ *
  * Signed-in dropdown. Behaviour mirrors the nav flyout's tap-open menu
  * (see ./desktop-nav.tsx): click toggles, Escape closes and returns focus
  * to the trigger, an outside pointerdown closes. The panel is right-anchored
- * so it cannot leave the viewport.
+ * so it cannot leave the viewport. Log out is an inline two-click confirm
+ * (see LogoutButton) whose armed state Escape / a click elsewhere cancels
+ * before it would close the menu.
  * ------------------------------------------------------------------ */
 function SignedIn({
     profile,
@@ -181,10 +247,15 @@ function SignedIn({
     editing: boolean;
 }) {
     const [open, setOpen] = useState(false);
+    const [confirmingLogout, setConfirmingLogout] = useState(false);
     const rootRef = useRef<HTMLDivElement | null>(null);
     const triggerRef = useRef<HTMLButtonElement | null>(null);
 
-    const close = useCallback(() => setOpen(false), []);
+    // Closing always disarms the logout confirm, so re-opening starts clean.
+    const close = useCallback(() => {
+        setOpen(false);
+        setConfirmingLogout(false);
+    }, []);
 
     useEffect(() => {
         if (!open || typeof document === "undefined") {
@@ -200,12 +271,19 @@ function SignedIn({
     }, [open, close]);
 
     const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-        if (event.key === "Escape" && open) {
-            event.preventDefault();
-            event.stopPropagation();
-            close();
-            triggerRef.current?.focus();
+        if (event.key !== "Escape" || !open) {
+            return;
         }
+        event.preventDefault();
+        event.stopPropagation();
+        // Escape disarms an armed logout first, leaving the menu open; only a
+        // second Escape closes the menu. Matches "Esc cancels back to Log out".
+        if (confirmingLogout) {
+            setConfirmingLogout(false);
+            return;
+        }
+        close();
+        triggerRef.current?.focus();
     };
 
     const firstName = profile.name?.split(" ")[0];
@@ -236,7 +314,17 @@ function SignedIn({
                 </span>
             </button>
             {open && (
-                <div className={ACCOUNT_MENU} role="menu">
+                <div
+                    className={ACCOUNT_MENU}
+                    role="menu"
+                    // Any click inside the panel that isn't the (stopPropagation)
+                    // logout button counts as "elsewhere" and disarms the confirm.
+                    onClick={() => {
+                        if (confirmingLogout) {
+                            setConfirmingLogout(false);
+                        }
+                    }}
+                >
                     <div className="flex items-center gap-[11px] px-[10px] pb-[12px] pt-[9px]">
                         <Avatar profile={profile} />
                         <span className="min-w-0">
@@ -268,14 +356,11 @@ function SignedIn({
                         {accountContentLabel}
                     </a>
                     <div className={ACCOUNT_MENU_SEP} />
-                    <a
-                        href={accountLogoutHref}
-                        role="menuitem"
-                        className={ACCOUNT_MENU_ITEM}
-                    >
-                        <LogoutIcon />
-                        {accountLogoutLabel}
-                    </a>
+                    <LogoutButton
+                        armed={confirmingLogout}
+                        onArm={() => setConfirmingLogout(true)}
+                        variant="menu"
+                    />
                 </div>
             )}
         </div>
@@ -328,6 +413,8 @@ export function MobileAccountSection({
     profile: Profile | undefined;
     onNavigate: () => void;
 }) {
+    // Declared before the early return so the hook order stays stable.
+    const [confirmingLogout, setConfirmingLogout] = useState(false);
     const loggedIn = Boolean(profile?.email);
 
     if (!loggedIn || !profile) {
@@ -349,7 +436,16 @@ export function MobileAccountSection({
     }
 
     return (
-        <div className="border-b border-solid border-[rgba(255,255,255,0.09)] px-5 pb-[10px] pt-[2px]">
+        <div
+            className="border-b border-solid border-[rgba(255,255,255,0.09)] px-5 pb-[10px] pt-[2px]"
+            // A tap anywhere in the block that isn't the (stopPropagation)
+            // logout button disarms the confirm — the mobile "click elsewhere".
+            onClick={() => {
+                if (confirmingLogout) {
+                    setConfirmingLogout(false);
+                }
+            }}
+        >
             <div className="mb-[10px] flex items-center gap-[11px]">
                 <Avatar profile={profile} />
                 <span className="min-w-0">
@@ -379,14 +475,11 @@ export function MobileAccountSection({
                 <GridIcon />
                 {accountContentLabel}
             </a>
-            <a
-                href={accountLogoutHref}
-                onClick={onNavigate}
-                className={ACCOUNT_MOBILE_LINK}
-            >
-                <LogoutIcon />
-                {accountLogoutLabel}
-            </a>
+            <LogoutButton
+                armed={confirmingLogout}
+                onArm={() => setConfirmingLogout(true)}
+                variant="drawer"
+            />
         </div>
     );
 }

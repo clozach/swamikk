@@ -68,7 +68,10 @@ export const accountManageHref = "/dashboard/profile";
 export const accountContentLabel = "My content";
 export const accountContentHref = "/dashboard";
 export const accountLogoutLabel = "Log out";
-export const accountLogoutHref = "/logout";
+/* The armed second state of the inline confirm. Logging out is a two-click
+   action in place (Log out → Log out?), rather than a jump to the whole-page
+   /logout confirmation — no navigation, no separate page. */
+export const accountLogoutConfirmLabel = "Log out?";
 
 export const menu: MenuItem[] = [
     {
