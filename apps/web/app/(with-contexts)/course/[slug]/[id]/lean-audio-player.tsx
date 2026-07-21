@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Pause, Play, Volume2, VolumeX } from "lucide-react";
+import { Pause, Play } from "lucide-react";
 import { Button } from "@components/ui/button";
 import { useMediaTeardown } from "@components/public/use-media-teardown";
 
@@ -158,9 +158,9 @@ export default function LeanAudioPlayer({ src }: { src?: string }) {
                 aria-label={playing ? "Pause" : "Play"}
             >
                 {playing ? (
-                    <Pause className="h-5 w-5" />
+                    <Pause className="h-5 w-5" fill="currentColor" />
                 ) : (
-                    <Play className="h-5 w-5" />
+                    <Play className="h-5 w-5" fill="currentColor" />
                 )}
             </Button>
             <span className="hidden shrink-0 text-sm tabular-nums text-muted-foreground min-[420px]:inline">
@@ -184,14 +184,72 @@ export default function LeanAudioPlayer({ src }: { src?: string }) {
             <Button
                 variant="ghost"
                 size="icon"
-                className="shrink-0 text-muted-foreground hover:text-foreground"
+                className="shrink-0 text-foreground"
                 onClick={toggleMute}
                 aria-label={muted ? "Unmute" : "Mute"}
             >
                 {muted ? (
-                    <VolumeX className="h-5 w-5" />
+                    // VolumeX — filled cone + X strokes
+                    <svg
+                        viewBox="0 0 24 24"
+                        className="h-5 w-5"
+                        aria-hidden="true"
+                    >
+                        <path
+                            d="M11 5 6 9H2v6h4l5 4z"
+                            fill="currentColor"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                            strokeLinejoin="round"
+                        />
+                        <line
+                            x1="22"
+                            y1="9"
+                            x2="16"
+                            y2="15"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                        />
+                        <line
+                            x1="16"
+                            y1="9"
+                            x2="22"
+                            y2="15"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                        />
+                    </svg>
                 ) : (
-                    <Volume2 className="h-5 w-5" />
+                    // Volume2 — filled cone + stroked waves (NOT filled → no blob)
+                    <svg
+                        viewBox="0 0 24 24"
+                        className="h-5 w-5"
+                        aria-hidden="true"
+                    >
+                        <path
+                            d="M11 5 6 9H2v6h4l5 4z"
+                            fill="currentColor"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                            strokeLinejoin="round"
+                        />
+                        <path
+                            d="M15.54 8.46a5 5 0 0 1 0 7.07"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                        />
+                        <path
+                            d="M19.07 4.93a10 10 0 0 1 0 14.14"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                        />
+                    </svg>
                 )}
             </Button>
         </div>
