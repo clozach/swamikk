@@ -26,6 +26,7 @@ import {
     LESSON_TYPE_VIDEO,
 } from "@/ui-config/constants";
 import { getCourseViewerSessionParams } from "@/lib/course-viewer-session-params";
+import LeanAudioPlayer from "./lean-audio-player";
 import type { CourseFrontend } from "./helpers";
 
 /**
@@ -54,13 +55,6 @@ export default function DownloadProductContent({
 
     return (
         <div className="flex w-full flex-col gap-8 pb-[100px] lg:max-w-[40rem] xl:max-w-[48rem] mx-auto">
-            <style>{`
-                .er-lean-media::-webkit-media-controls-enclosure,
-                .er-lean-media::-webkit-media-controls-panel {
-                    background: transparent;
-                    box-shadow: none;
-                }
-            `}</style>
             {single ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <BookOpen className="h-4 w-4 shrink-0" />
@@ -209,12 +203,11 @@ function DownloadLessonRow({
     // Native players render UA-chrome; keep it matched to the active theme
     // without touching global color-scheme (which would restyle scrollbars
     // and inputs everywhere).
-    // The native player's gray lozenge is the Chromium/WebKit shadow-DOM
-    // enclosure, which the host element's background-color cannot reach — so
-    // the controls read as embedded directly in the page (see the global
-    // .er-lean-media rule injected once by DownloadProductContent).
+    // Audio uses LeanAudioPlayer (page-native controls; the UA player's gray
+    // pill is unstylable shadow DOM). Video keeps native controls — its
+    // chrome overlays the picture, so there's no lozenge to fight.
     const mediaClassName =
-        "er-lean-media w-full [color-scheme:light] dark:[color-scheme:dark]";
+        "w-full [color-scheme:light] dark:[color-scheme:dark]";
 
     return (
         <div className="flex flex-col gap-4">
@@ -229,20 +222,9 @@ function DownloadLessonRow({
             )}
             {lessonType === LESSON_TYPE_AUDIO && (
                 <div className="flex items-center gap-3">
-                    <audio
-                        ref={setMediaRef}
-                        controls
-                        controlsList="nodownload"
-                        onContextMenu={(e) => e.preventDefault()}
-                        className={mediaClassName + " flex-1 min-w-0"}
-                        style={{ backgroundColor: "transparent" }}
-                    >
-                        <source
-                            src={(media?.file as string) || undefined}
-                            type="audio/mpeg"
-                        />
-                        Your browser does not support the audio tag.
-                    </audio>
+                    <LeanAudioPlayer
+                        src={(media?.file as string) || undefined}
+                    />
                     {canDownload && (
                         <DownloadButton
                             href={downloadHref}
