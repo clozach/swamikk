@@ -141,7 +141,7 @@ export function ImageSettings({
                             className="aspect-square rounded border-2 border-transparent hover:border-blue-500 overflow-hidden transition-colors"
                         >
                             <img
-                                src={url || "/placeholder.svg"}
+                                src={url || "/placeholder-image.svg"}
                                 alt={`Sample ${index + 1}`}
                                 className="w-full h-full object-cover"
                             />

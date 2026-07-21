@@ -173,7 +173,7 @@ export function VideoWithPreview({
         }
 
         // Fall back to placeholder
-        return "/placeholder.svg?height=480&width=854";
+        return "/placeholder-image.svg";
     };
 
     // Dismiss the modal with Escape while it is open. Registered in capture
@@ -297,7 +297,7 @@ export function VideoWithPreview({
                         onClick={handleThumbnailClick}
                     >
                         <img
-                            src={getThumbnailUrl() || "/placeholder.svg"}
+                            src={getThumbnailUrl() || "/placeholder-image.svg"}
                             alt={`Thumbnail for ${title}`}
                             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />

@@ -656,7 +656,7 @@ export default function Page(props: {
                             <Image
                                 src={
                                     featuredImage?.thumbnail ||
-                                    "/courselit-backdrop-square.webp"
+                                    "/courselit_backdrop_square.webp"
                                 }
                                 alt={name}
                             />
