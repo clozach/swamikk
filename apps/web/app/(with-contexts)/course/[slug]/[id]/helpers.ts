@@ -20,6 +20,7 @@ type CourseWithoutGroups = Pick<
     | "slug"
     | "cost"
     | "courseId"
+    | "type"
     | "tags"
     | "paymentPlans"
     | "defaultPaymentPlan"
@@ -49,6 +50,7 @@ export const getProduct = async (
                         slug,
                         cost,
                         courseId,
+                        type,
                         isPreview,
                         discussions,
                         groups {
@@ -133,6 +135,13 @@ export function formatCourse(
         slug: post.slug,
         cost: post.cost,
         courseId: post.courseId,
+        // GraphQL serializes the course-type enum by NAME ("DOWNLOAD");
+        // normalize once at the boundary so every consumer can compare
+        // against the lowercase Constants.CourseType values.
+        type:
+            typeof post.type === "string"
+                ? (post.type.toLowerCase() as Course["type"])
+                : post.type,
         isPreview: Boolean(
             (post as Course & { isPreview?: boolean }).isPreview,
         ),

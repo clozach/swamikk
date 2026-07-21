@@ -32,7 +32,8 @@ import {
     appendCourseViewerSessionParamsToHref,
 } from "@/lib/course-viewer-session-params";
 import { useSearchParams } from "next/navigation";
-import type { Profile } from "@courselit/common-models";
+import { Constants, type Profile } from "@courselit/common-models";
+import DownloadProductContent from "./download-product-content";
 
 export default function ProductPage(props: {
     params: Promise<{ slug: string; id: string }>;
@@ -85,6 +86,15 @@ export default function ProductPage(props: {
         viewerProfile && isEnrolled(product.courseId, viewerProfile),
     );
     const isPreview = Boolean(product.isPreview);
+
+    // Download-type products collapse to one lean page for anyone entitled
+    // to the content; prospects keep the regular intro (price + enroll CTA).
+    if (
+        product.type === Constants.CourseType.DOWNLOAD &&
+        (enrolled || isPreview)
+    ) {
+        return <DownloadProductContent product={product} />;
+    }
 
     return (
         <div className="flex flex-col pb-[100px] lg:max-w-[40rem] xl:max-w-[48rem] mx-auto">

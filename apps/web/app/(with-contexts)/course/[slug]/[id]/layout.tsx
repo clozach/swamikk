@@ -2,14 +2,41 @@ import { Metadata, ResolvingMetadata } from "next";
 import { getFullSiteSetup } from "@ui-lib/utils";
 import { headers } from "next/headers";
 import { FetchBuilder } from "@courselit/utils";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { Constants } from "@courselit/common-models";
 import LayoutWithSidebar from "./layout-with-sidebar";
+import LeanDownloadLayout from "./lean-download-layout";
 import { getProduct } from "./helpers";
 import { getAddressFromHeaders } from "@/app/actions";
 import {
     COURSE_VIEWER_CURRENT_URL_HEADER,
+    appendCourseViewerSessionParamsToHref,
     getCourseViewerSessionParamsFromUrl,
 } from "@/lib/course-viewer-session-params";
+
+/**
+ * True when the proxy-reported viewer URL points at a lesson sub-route
+ * (/course/[slug]/[id]/[lesson]) rather than the intro or the discussions
+ * overlay. Download-type products collapse to a single lean page, so lesson
+ * deep-links (old bookmarks, stale emails) bounce back to the intro.
+ */
+function isLessonSubPath(viewerUrl: string | null): boolean {
+    if (!viewerUrl) {
+        return false;
+    }
+    try {
+        const segments = new URL(viewerUrl, "http://localhost").pathname
+            .split("/")
+            .filter(Boolean);
+        return (
+            segments.length === 4 &&
+            segments[0] === "course" &&
+            segments[3] !== "discussions"
+        );
+    } catch {
+        return false;
+    }
+}
 
 export async function generateMetadata(
     props: { params: Promise<{ slug: string; id: string }> },
@@ -96,6 +123,29 @@ export default async function Layout(props: {
         );
     } catch (error) {
         notFound();
+    }
+
+    if (product.type === Constants.CourseType.DOWNLOAD) {
+        // One lean page, no intro/lesson split: bounce lesson deep-links back
+        // to the intro. redirect() must stay outside the try/catch above —
+        // it throws NEXT_REDIRECT, which the catch would turn into a 404.
+        if (
+            isLessonSubPath(
+                requestHeaders.get(COURSE_VIEWER_CURRENT_URL_HEADER),
+            )
+        ) {
+            redirect(
+                appendCourseViewerSessionParamsToHref(
+                    `/course/${params.slug}/${id}`,
+                    viewerSessionParams,
+                ),
+            );
+        }
+        return (
+            <LeanDownloadLayout product={product}>
+                {children}
+            </LeanDownloadLayout>
+        );
     }
 
     return <LayoutWithSidebar product={product}>{children}</LayoutWithSidebar>;
