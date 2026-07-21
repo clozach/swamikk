@@ -120,6 +120,12 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
                                 <div className="flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg">
                                     <Image
                                         borderRadius={1}
+                                        // Eager, not the wrapper's lazy default:
+                                        // the brand logo is always above the fold,
+                                        // and Safari intermittently never fires the
+                                        // lazy load for it (blank/broken until a
+                                        // repaint).
+                                        loading="eager"
                                         src={siteInfo.logo?.file || ""}
                                         alt="logo"
                                         className="w-full h-full object-cover"
