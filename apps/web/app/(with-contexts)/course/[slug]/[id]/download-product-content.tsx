@@ -230,22 +230,20 @@ function DownloadLessonRow({
             )}
             {lessonType === LESSON_TYPE_AUDIO && (
                 <div className="flex items-center gap-3">
-                    <div className="flex min-w-0 flex-1 flex-col gap-1">
-                        <audio
-                            ref={setMediaRef}
-                            controls
-                            controlsList="nodownload"
-                            onContextMenu={(e) => e.preventDefault()}
-                            className={mediaClassName}
-                        >
-                            <source
-                                src={(media?.file as string) || undefined}
-                                type="audio/mpeg"
-                            />
-                            Your browser does not support the audio tag.
-                        </audio>
-                        <Caption text={captionText} />
-                    </div>
+                    <audio
+                        ref={setMediaRef}
+                        controls
+                        controlsList="nodownload"
+                        onContextMenu={(e) => e.preventDefault()}
+                        className={mediaClassName + " flex-1 min-w-0"}
+                        style={{ backgroundColor: "transparent" }}
+                    >
+                        <source
+                            src={(media?.file as string) || undefined}
+                            type="audio/mpeg"
+                        />
+                        Your browser does not support the audio tag.
+                    </audio>
                     {canDownload && (
                         <DownloadButton
                             href={downloadHref}
@@ -255,13 +253,14 @@ function DownloadLessonRow({
                 </div>
             )}
             {lessonType === LESSON_TYPE_VIDEO && (
-                <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-3">
                     <video
                         ref={setMediaRef}
                         controls
                         controlsList="nodownload"
                         onContextMenu={(e) => e.preventDefault()}
-                        className={mediaClassName}
+                        className={mediaClassName + " flex-1 min-w-0"}
+                        style={{ backgroundColor: "transparent" }}
                     >
                         <source
                             src={(media?.file as string) || undefined}
@@ -269,37 +268,27 @@ function DownloadLessonRow({
                         />
                         Your browser does not support the video tag.
                     </video>
-                    <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                            <Caption text={captionText} />
-                        </div>
-                        {canDownload && (
-                            <DownloadButton
-                                href={downloadHref}
-                                name={media?.originalFileName}
-                            />
-                        )}
-                    </div>
+                    {canDownload && (
+                        <DownloadButton
+                            href={downloadHref}
+                            name={media?.originalFileName}
+                        />
+                    )}
                 </div>
             )}
             {lessonType === LESSON_TYPE_PDF && (
-                <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-3">
                     <iframe
                         src={`${media?.file}#toolbar=0`}
-                        className="h-[70vh] w-full"
+                        className="h-[70vh] w-full flex-1 min-w-0"
                         title={lesson.title}
                     />
-                    <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                            <Caption text={captionText} />
-                        </div>
-                        {canDownload && (
-                            <DownloadButton
-                                href={downloadHref}
-                                name={media?.originalFileName}
-                            />
-                        )}
-                    </div>
+                    {canDownload && (
+                        <DownloadButton
+                            href={downloadHref}
+                            name={media?.originalFileName}
+                        />
+                    )}
                 </div>
             )}
             {lessonType === LESSON_TYPE_TEXT && lesson.content && (
