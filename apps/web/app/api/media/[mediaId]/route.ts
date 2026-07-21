@@ -122,38 +122,49 @@ export async function GET(
             return mediaNotFound();
         }
 
-        const lesson = await LessonModel.findOne({
+        // One media record can back lessons in several courses (the demo
+        // content reuses files), so gather every owning lesson and grant the
+        // download if ANY of them passes the full gate. Per lesson, server-
+        // side and independent of any client-side button logic: the author's
+        // downloadable flag and published state are enforced, enrollment is
+        // required UNCONDITIONALLY (requiresEnrollment only governs the
+        // in-app viewer), and dripped groups stay locked until released.
+        const lessons = await LessonModel.find({
             "media.mediaId": mediaId,
             domain: domain._id,
         });
-        if (!lesson) {
-            return mediaNotFound();
-        }
 
-        // Server-side gates, independent of any client-side button logic:
-        // the author's downloadable flag and published state are enforced
-        // here, enrollment is required UNCONDITIONALLY (requiresEnrollment
-        // only governs the in-app viewer), and dripped groups stay locked
-        // until released.
-        if (!lesson.downloadable || !lesson.published) {
-            return mediaNotFound();
-        }
-
-        if (!isEnrolled(lesson.courseId, user)) {
-            return mediaNotFound();
-        }
-
-        if (await isPartOfDripGroup(lesson, domain._id)) {
-            const progress = user.purchases?.find(
-                (purchase: { courseId: string }) =>
-                    purchase.courseId === lesson.courseId,
-            );
-            if (
-                !progress ||
-                progress.accessibleGroups.indexOf(lesson.groupId) === -1
-            ) {
-                return mediaNotFound();
+        let authorized = false;
+        for (const lesson of lessons) {
+            try {
+                if (!lesson.downloadable || !lesson.published) {
+                    continue;
+                }
+                if (!isEnrolled(lesson.courseId, user)) {
+                    continue;
+                }
+                if (await isPartOfDripGroup(lesson, domain._id)) {
+                    const progress = user.purchases?.find(
+                        (purchase: { courseId: string }) =>
+                            purchase.courseId === lesson.courseId,
+                    );
+                    if (
+                        !progress ||
+                        progress.accessibleGroups.indexOf(lesson.groupId) === -1
+                    ) {
+                        continue;
+                    }
+                }
+                authorized = true;
+                break;
+            } catch {
+                // an orphaned lesson (missing course) can't authorize —
+                // skip it rather than failing the whole request
+                continue;
             }
+        }
+        if (!authorized) {
+            return mediaNotFound();
         }
 
         return await streamAsAttachment(media);
