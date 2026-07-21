@@ -3,38 +3,60 @@ FROM node:22-alpine AS base
 # Install pnpm in base image
 RUN corepack enable pnpm
 
-# Install dependencies only when needed
-FROM base AS deps
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
+# ---------------------------------------------------------------------------
+# builder — dependency install is a manifests-only cached layer so that a
+# pure source edit (the common case) reuses the install instead of re-running
+# it. Ordering: lockfile + every workspace package.json first, `pnpm install`
+# (cached), THEN the sources. Only prepublishOnly scripts build these packages
+# and those never fire on install, so installing before sources is safe.
+# The pnpm store and Next's .next/cache ride BuildKit cache mounts, so they
+# persist across the fresh `git archive` build dirs (and on the Hetzner box).
+# ---------------------------------------------------------------------------
+FROM base AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
+RUN pnpm config set store-dir /pnpm/store
 
-# copy pnpm specific files
-COPY package.json /app/package.json
-COPY pnpm-lock.yaml /app/pnpm-lock.yaml
-COPY pnpm-workspace.yaml /app/pnpm-workspace.yaml
+# -- Layer A: dependency graph only (busts only on a lockfile/manifest change)
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/icons/package.json packages/icons/
+COPY packages/tailwind-config/package.json packages/tailwind-config/
+COPY packages/tsconfig/package.json packages/tsconfig/
+COPY packages/page-models/package.json packages/page-models/
+COPY packages/email-editor/package.json packages/email-editor/
+COPY packages/common-models/package.json packages/common-models/
+COPY packages/common-logic/package.json packages/common-logic/
+COPY packages/orm-models/package.json packages/orm-models/
+COPY packages/page-primitives/package.json packages/page-primitives/
+COPY packages/page-blocks/package.json packages/page-blocks/
+COPY packages/components-library/package.json packages/components-library/
+COPY packages/text-editor/package.json packages/text-editor/
+COPY packages/utils/package.json packages/utils/
+COPY apps/web/package.json apps/web/
+# sharing=locked: concurrent builds are normal on this project; the default
+# shared mode can corrupt the store under contention.
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store,sharing=locked \
+    pnpm install
 
-# copy project related files
-COPY packages/icons /app/packages/icons
-COPY packages/tailwind-config /app/packages/tailwind-config
-COPY packages/tsconfig /app/packages/tsconfig
-COPY packages/page-models /app/packages/page-models
-COPY packages/email-editor /app/packages/email-editor
-COPY packages/common-models /app/packages/common-models
-COPY packages/common-logic /app/packages/common-logic
-COPY packages/orm-models /app/packages/orm-models
-COPY packages/page-primitives /app/packages/page-primitives
-COPY packages/page-blocks /app/packages/page-blocks
-COPY packages/components-library /app/packages/components-library
-COPY packages/text-editor /app/packages/text-editor
-COPY packages/utils /app/packages/utils
-COPY apps/web /app/apps/web
-
-# Install dependencies based on the preferred package manager
-RUN pnpm install
-
-FROM base AS builder
-WORKDIR /app
+# -- Layer B: sources (busts on any edit; the install layer above stays cached).
+# Same package list as the deps COPY above; NOT `COPY packages ./packages`,
+# which would also pull in packages/scripts (nothing imports it) and next-env
+# noise. node_modules created by install survive these copies (COPY adds/
+# overwrites files, never deletes; sources carry no node_modules — dockerignored).
+COPY packages/icons packages/icons
+COPY packages/tailwind-config packages/tailwind-config
+COPY packages/tsconfig packages/tsconfig
+COPY packages/page-models packages/page-models
+COPY packages/email-editor packages/email-editor
+COPY packages/common-models packages/common-models
+COPY packages/common-logic packages/common-logic
+COPY packages/orm-models packages/orm-models
+COPY packages/page-primitives packages/page-primitives
+COPY packages/page-blocks packages/page-blocks
+COPY packages/components-library packages/components-library
+COPY packages/text-editor packages/text-editor
+COPY packages/utils packages/utils
+COPY apps/web apps/web
 
 # The standalone Next.js build evaluates next.config.js at build time, so
 # the media server origin must be known here for next/image to allowlist
@@ -44,10 +66,11 @@ WORKDIR /app
 ARG MEDIALIT_SERVER
 ENV MEDIALIT_SERVER=$MEDIALIT_SERVER
 
-COPY --from=deps /app/ ./
-
-# Build all workspaces
-RUN pnpm run build
+# Build all workspaces. The .next/cache mount preserves Next's incremental
+# artifacts (TypeScript .tsbuildinfo etc.) across builds; it is NOT copied
+# into the runtime image (runner takes only standalone/static/public below).
+RUN --mount=type=cache,id=next-cache,target=/app/apps/web/.next/cache,sharing=locked \
+    pnpm run build
 
 # Production image
 FROM base AS runner
