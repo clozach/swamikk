@@ -94,17 +94,6 @@ export default function DownloadProductContent({
     );
 }
 
-function Caption({ text }: { text: string }) {
-    if (!text) {
-        return null;
-    }
-    return (
-        <div className="flex justify-center">
-            <p className="text-sm text-muted-foreground">{text}</p>
-        </div>
-    );
-}
-
 function DownloadButton({ href, name }: { href: string; name?: string }) {
     return (
         <Tooltip>
@@ -209,7 +198,6 @@ function DownloadLessonRow({
     const downloadHref = mediaId
         ? `/api/media/${encodeURIComponent(mediaId)}`
         : "";
-    const captionText = media?.caption ?? media?.originalFileName ?? "";
     const lessonType = String(lesson.type ?? "").toLowerCase();
     // Native players render UA-chrome; keep it matched to the active theme
     // without touching global color-scheme (which would restyle scrollbars
