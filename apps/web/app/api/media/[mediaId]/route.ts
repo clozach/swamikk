@@ -83,7 +83,10 @@ export async function GET(
     }
 
     try {
-        const media = await getMedia(mediaId);
+        // A nonexistent mediaId must be indistinguishable from a denied one,
+        // and the medialit client throws on unknown ids — resolve to the
+        // same uniform 404 instead of letting it surface as a 500.
+        const media = await getMedia(mediaId).catch(() => null);
 
         if (!media || !media.file) {
             return mediaNotFound();
