@@ -115,8 +115,14 @@ export const TOP_BAR_LINK =
    matching how the icon-only theme toggle already centers beside it. */
 export const NAV_LINK =
     "flex h-[50px] items-center whitespace-nowrap font-bold uppercase text-[var(--nav-fg)] no-underline transition-colors duration-100 ease-in hover:text-[var(--nav-fg-hover)] focus-visible:text-[var(--nav-fg-hover)] active:text-[var(--nav-fg-active)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--nav-fg-hover)]";
+/* The `max-[1099px]:px-[10px]` step (was `max-[829px]`) tightens the nav
+   through the 961–1099 pinch zone, where the newly-added account control on
+   the right leaves the 8-item nav just short of a single line at px-[13].
+   Paired with hiding the account's first name below 1100 (ACCOUNT_TRIGGER_NAME),
+   this keeps the masthead one row across the whole realistic desktop range;
+   below 961 (tablet-ish) the nav still wraps, which is acceptable there. */
 export const NAV_LINK_METRICS =
-    "px-[25px] text-[16px] max-[1419px]:px-[20px] max-[1419px]:text-[15px] max-[1309px]:px-[13px] max-[1309px]:text-[14px] max-[829px]:px-[10px]";
+    "px-[25px] text-[16px] max-[1419px]:px-[20px] max-[1419px]:text-[15px] max-[1309px]:px-[13px] max-[1309px]:text-[14px] max-[1099px]:px-[10px]";
 
 /* The flyout's top accent bar was saffron (2.14:1 on its white panel,
    under the 3:1 UI-boundary floor) — rust reaches 7.43:1 in light mode.
@@ -161,8 +167,11 @@ export const ACCOUNT_LOGIN_PILL =
    button, matching the flyout triggers. */
 export const ACCOUNT_TRIGGER =
     "flex items-center gap-[9px] cursor-pointer rounded-[8px] border-0 bg-transparent py-[5px] pl-[5px] pr-[8px] text-[var(--nav-fg)] transition-colors duration-100 ease-in hover:bg-[color-mix(in_srgb,var(--nav-fg)_8%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--nav-fg-hover)]";
+/* The first name drops out below 1100px (avatar + chevron only), which both
+   frees room for the nav through the pinch zone and is a conventional compact
+   header form; the full name still shows in the dropdown. */
 export const ACCOUNT_TRIGGER_NAME =
-    "whitespace-nowrap text-[14px] font-bold text-[var(--nav-fg)] max-[959px]:hidden";
+    "whitespace-nowrap text-[14px] font-bold text-[var(--nav-fg)] max-[1099px]:hidden";
 
 /* The avatar chip. Rust ground with cream initials reads on both bands
    (cream on rust is 6.7:1) and is replaced by the member's photo when set. */
