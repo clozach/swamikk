@@ -21,7 +21,13 @@ import InvoiceModel from "@models/Invoice";
 import ActivityModel from "@models/Activity";
 import MembershipModel from "@models/Membership";
 import UserModel from "@/models/User";
+import CourseModel from "@/models/Course";
+import { checkIfAuthenticated } from "@/lib/graphql";
+import { checkPermission } from "@courselit/utils";
+import constants from "@/config/constants";
 import { getCourseOrThrow } from "./logic";
+
+const { permissions } = constants;
 
 // Stripe Checkout Sessions created with a TEST key are prefixed `cs_test_`
 // (live keys produce `cs_live_`). This is the authoritative "not a real sale"
@@ -106,6 +112,106 @@ export const getProductPurchases = async ({
                 createdAt: invoice.createdAt
                     ? new Date(invoice.createdAt).toISOString()
                     : null,
+            };
+        })
+        .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+};
+
+export interface ProductPurchaseWithProduct extends ProductPurchase {
+    courseId: string;
+    productTitle: string;
+}
+
+/**
+ * List every purchase across every product the caller can manage (all
+ * products for manageAnyCourse, own-authored products otherwise), newest
+ * first. Powers the global Transactions page linked from the Overview Sales
+ * chart, the multi-product counterpart to getProductPurchases above.
+ */
+export const getAllPurchases = async ({
+    ctx,
+}: {
+    ctx: GQLContext;
+}): Promise<ProductPurchaseWithProduct[]> => {
+    checkIfAuthenticated(ctx);
+
+    if (
+        !checkPermission(ctx.user.permissions, [
+            permissions.manageCourse,
+            permissions.manageAnyCourse,
+        ])
+    ) {
+        throw new Error(responses.action_not_allowed);
+    }
+
+    const courseQuery: Record<string, unknown> = {
+        domain: ctx.subdomain._id,
+    };
+    if (!checkPermission(ctx.user.permissions, [permissions.manageAnyCourse])) {
+        courseQuery.creatorId = ctx.user.userId;
+    }
+
+    const courses = await CourseModel.find(courseQuery)
+        .select("courseId title")
+        .lean();
+    if (!courses.length) {
+        return [];
+    }
+    const courseIds = courses.map((c: any) => c.courseId);
+    const titleByCourseId = new Map(
+        courses.map((c: any) => [c.courseId, c.title]),
+    );
+
+    const memberships = await MembershipModel.find({
+        domain: ctx.subdomain._id,
+        entityId: { $in: courseIds },
+        entityType: Constants.MembershipEntityType.COURSE,
+    }).lean();
+
+    const membershipIds = memberships.map((m: any) => m.membershipId);
+    if (!membershipIds.length) {
+        return [];
+    }
+
+    const invoices = await InvoiceModel.find({
+        domain: ctx.subdomain._id,
+        membershipId: { $in: membershipIds },
+    }).lean();
+
+    const buyerIds = Array.from(new Set(memberships.map((m: any) => m.userId)));
+    const users = await UserModel.find({
+        domain: ctx.subdomain._id,
+        userId: { $in: buyerIds },
+    })
+        .select("userId email name")
+        .lean();
+
+    const userById = new Map(users.map((u: any) => [u.userId, u]));
+    const membershipById = new Map(
+        memberships.map((m: any) => [m.membershipId, m]),
+    );
+
+    return invoices
+        .map((invoice: any): ProductPurchaseWithProduct => {
+            const membership = membershipById.get(invoice.membershipId);
+            const buyer = membership ? userById.get(membership.userId) : null;
+            const courseId = membership ? membership.entityId : "";
+            return {
+                purchaseId: invoice.membershipSessionId,
+                invoiceId: invoice.invoiceId,
+                userId: membership ? membership.userId : null,
+                userEmail: buyer ? buyer.email : null,
+                userName: buyer ? buyer.name || null : null,
+                amount: invoice.amount,
+                currencyISOCode: invoice.currencyISOCode || null,
+                status: invoice.status,
+                isTest: isTestInvoice(invoice),
+                createdAt: invoice.createdAt
+                    ? new Date(invoice.createdAt).toISOString()
+                    : null,
+                courseId,
+                productTitle:
+                    titleByCourseId.get(courseId) || "Unknown product",
             };
         })
         .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));

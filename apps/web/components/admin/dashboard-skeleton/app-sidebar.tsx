@@ -9,6 +9,7 @@ import {
     Mail,
     MailCheck,
     MessageCircleHeart,
+    Receipt,
     Settings,
     Target,
     Text,
@@ -96,8 +97,13 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
         return null;
     }
 
-    const { navMainItems, navProjectItems, navSecondaryItems } =
-        getSidebarItems({ profile, path, tab, checklist, totalChecklistItems });
+    const { navGroups, navProjectItems, navSecondaryItems } = getSidebarItems({
+        profile,
+        path,
+        tab,
+        checklist,
+        totalChecklistItems,
+    });
 
     return (
         <Sidebar collapsible="icon" {...props}>
@@ -143,7 +149,7 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
             </SidebarHeader>
             <SidebarContent>
                 <NavProjects projects={navProjectItems} />
-                {navMainItems.length > 0 && <NavMain items={navMainItems} />}
+                <NavMain groups={navGroups} />
                 <NavSecondary items={navSecondaryItems} className="mt-auto" />
             </SidebarContent>
             <SidebarFooter>
@@ -167,7 +173,16 @@ function getSidebarItems({
     path?: string | null;
     tab?: string | null;
 }) {
-    const navMainItems: any[] = [];
+    // Four themed groups instead of one flat "Create" list (that label was
+    // template cruft — most of these pages are dashboards/settings, not
+    // creation flows). Insights pairs the aggregate Overview with the
+    // Transactions ledger behind its "View transactions" link, so the
+    // underlying record for any stat on Overview is one click away instead
+    // of being data with no navigational home.
+    const insightsItems: any[] = [];
+    const contentItems: any[] = [];
+    const audienceItems: any[] = [];
+    const systemItems: any[] = [];
 
     if (
         checkPermission(profile.permissions!, [
@@ -175,13 +190,19 @@ function getSidebarItems({
             permissions.manageAnyCourse,
         ])
     ) {
-        navMainItems.push({
+        insightsItems.push({
             title: "Overview",
             url: "/dashboard/overview",
             icon: Target,
             isActive: path === "/dashboard/overview",
         });
-        navMainItems.push({
+        insightsItems.push({
+            title: "Transactions",
+            url: "/dashboard/transactions",
+            icon: Receipt,
+            isActive: path === "/dashboard/transactions",
+        });
+        contentItems.push({
             title: "Products",
             url: "/dashboard/products",
             icon: Box,
@@ -192,7 +213,7 @@ function getSidebarItems({
         });
     }
     if (checkPermission(profile.permissions!, [permissions.manageCommunity])) {
-        navMainItems.push({
+        contentItems.push({
             title: "Communities",
             beta: true,
             url: "/dashboard/communities",
@@ -202,7 +223,7 @@ function getSidebarItems({
         });
     }
     if (checkPermission(profile.permissions!, [permissions.publishCourse])) {
-        navMainItems.push({
+        contentItems.push({
             title: SIDEBAR_MENU_BLOGS,
             url: "/dashboard/blogs",
             icon: Text,
@@ -213,7 +234,7 @@ function getSidebarItems({
         });
     }
     if (profile.permissions!.includes(permissions.manageSite)) {
-        navMainItems.push({
+        contentItems.push({
             title: SIDEBAR_MENU_PAGES,
             url: "/dashboard/pages",
             icon: Globe,
@@ -233,7 +254,7 @@ function getSidebarItems({
         profile.permissions!.includes(permissions.manageMedia) &&
         checkPermission(profile.permissions!, ADMIN_PERMISSIONS)
     ) {
-        navMainItems.push({
+        systemItems.push({
             title: SIDEBAR_MENU_MEDIA,
             url: "/dashboard/media",
             icon: Images,
@@ -242,7 +263,7 @@ function getSidebarItems({
         });
     }
     if (profile.permissions!.includes(permissions.manageUsers)) {
-        navMainItems.push({
+        audienceItems.push({
             title: SIDEBAR_MENU_USERS,
             url: "#",
             icon: Users,
@@ -267,14 +288,14 @@ function getSidebarItems({
                 },
             ],
         });
-        navMainItems.push({
+        audienceItems.push({
             title: SIDEBAR_MENU_SUBSCRIBERS,
             url: "/dashboard/subscribers",
             icon: MailCheck,
             isActive: path === "/dashboard/subscribers",
             items: [],
         });
-        navMainItems.push({
+        audienceItems.push({
             title: SIDEBAR_MENU_MAILS,
             beta: true,
             url: "#",
@@ -345,7 +366,7 @@ function getSidebarItems({
                     `/dashboard/settings?tab=${SITE_MISCELLANEOUS_SETTING_HEADER}`,
             },
         ];
-        navMainItems.push({
+        systemItems.push({
             title: SIDEBAR_MENU_SETTINGS,
             url: "#",
             icon: Settings,
@@ -353,6 +374,13 @@ function getSidebarItems({
             items,
         });
     }
+
+    const navGroups = [
+        { label: "Insights", items: insightsItems },
+        { label: "Content", items: contentItems },
+        { label: "Audience", items: audienceItems },
+        { label: "System", items: systemItems },
+    ].filter((group) => group.items.length > 0);
 
     const navSecondaryItems: any[] = [];
     if (
@@ -393,5 +421,5 @@ function getSidebarItems({
         },
     ];
 
-    return { navMainItems, navSecondaryItems, navProjectItems };
+    return { navGroups, navSecondaryItems, navProjectItems };
 }

@@ -128,7 +128,11 @@ export default function Page() {
                     duration={timeRange}
                 />
             </div>
-            <SalesCard data={salesData} loading={salesLoading} />
+            <SalesCard
+                data={salesData}
+                loading={salesLoading}
+                transactionsHref="/dashboard/transactions"
+            />
         </DashboardContent>
     );
 }
