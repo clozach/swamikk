@@ -69,6 +69,41 @@ const nextConfig = {
     reactStrictMode: false,
     typescript: {},
     images: getImagesConfig(),
+    // Safari fix (2026-07-21): Next serves /public static files with
+    // `Cache-Control: public, max-age=0`, so the browser revalidates them over
+    // the network on EVERY view. Safari 18+/26.x has a keep-alive connection-
+    // reuse bug (Apple Dev Forums thread 796906) that intermittently drops such
+    // revalidations ("the network connection was lost") without retrying — so
+    // the constantly-revalidated brand images (the header logo + the /anahata/*
+    // replica media) render broken now and then, while the /_next/image
+    // thumbnails (max-age=14400, served from cache with no per-view network)
+    // never do. Give these static brand assets a real freshness lifetime with
+    // stale-while-revalidate: within the hour Safari serves them from cache with
+    // NO network request (removing the per-view revalidation that triggers the
+    // bug); after that, SWR serves the cached bytes INSTANTLY while refreshing
+    // in the background, so even a failed background revalidation never shows a
+    // blank frame. Deliberately NOT `immutable`: these files are edited/
+    // re-swapped in place at the same path (esp. the bind-mounted /anahata/*
+    // edit loop), and immutable would pin stale bytes in Safari for up to a
+    // year; SWR lets a same-filename swap propagate within ~1h (hard-refresh to
+    // see it sooner). /public files aren't content-hash fingerprinted, so a
+    // headers() rule is the supported way to set their caching.
+    async headers() {
+        const brandCache = [
+            {
+                key: "Cache-Control",
+                value: "public, max-age=3600, stale-while-revalidate=86400",
+            },
+        ];
+        return [
+            { source: "/anahata/:path*", headers: brandCache },
+            { source: "/swami-kk-logo.png", headers: brandCache },
+            { source: "/swami-signature.png", headers: brandCache },
+            { source: "/anahata-logo-2021.png", headers: brandCache },
+            { source: "/anahata-emblem-64.png", headers: brandCache },
+            { source: "/placeholder-image.svg", headers: brandCache },
+        ];
+    },
     transpilePackages: [
         "@courselit/page-blocks",
         "@courselit/components-library",
