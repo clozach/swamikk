@@ -93,13 +93,13 @@ export const menu: MenuItem[] = [
         ],
     },
     /* Menu pivot (2026-07-21): STAY removed entirely, and ABOUT (with its
-       Yoga subtree) replaced by a top-level FAQ item. FAQ no longer navigates
-       — it toggles the demo-walkthrough tracker tray (an internal tool used to
-       drive the four-journey demo; expected to be removed later). Events /
-       Give / Contact / Our Newsletter stay as styled placeholders. */
+       Yoga subtree) removed. The FAQ item that briefly lived here (it toggled
+       the demo-walkthrough tracker) is gone too — that tool became the
+       keyboard-summoned Journey Card, mounted site-wide outside this block
+       (apps/web/components/dev/journey-card). Events / Give / Contact / Our
+       Newsletter stay as styled placeholders. */
     { id: "give", label: "Give", href: "#" },
     { id: "blog", label: "Blog", href: "/blog" },
-    { id: "faq", label: "FAQ", href: "#", action: "tutorial-tracker" },
     { id: "contact", label: "Contact", href: "#" },
     { id: "newsletter", label: "Our Newsletter", href: "#" },
     {

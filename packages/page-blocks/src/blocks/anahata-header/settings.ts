@@ -11,12 +11,6 @@ export interface MenuItem {
     label: string;
     href: string;
     children?: MenuItem[];
-    /**
-     * When set, the item is a button that runs an in-nav action instead of
-     * navigating. "tutorial-tracker" toggles the demo-walkthrough tray (the
-     * repurposed FAQ item — an internal tool, expected to be removed later).
-     */
-    action?: "tutorial-tracker";
 }
 
 /** A utility-strip entry (Cart / Search / Menu / Contact). Never nested. */

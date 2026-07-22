@@ -1,35 +1,52 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
-import { FONT_BODY } from "./tokens";
 
 /* ------------------------------------------------------------------ *
- * Demo-walkthrough tracker — the "fake rock" behind the FAQ nav item.
+ * Journey Card — the persistent, keyboard-summoned demo test-plan.
  *
- * THROWAWAY internal tool: a faithful port of the approved standalone
- * prototype (design-explorations/faq/05-tutorial-tracker.html). It drives
- * the four-journey demo of the live site and is expected to be removed
- * later, so it is intentionally self-contained — one component, its own
- * scoped `<style>` (kk-tt- prefix), hard-coded palette hexes that match
- * ./tokens. It does NOT touch the block's sticky-band / spacer / sentinel
- * machinery; index.tsx anchors it absolutely below the header band.
+ * DEV TOOL (durable, not throwaway). Grew out of the "fake rock" tutorial
+ * tracker that hid behind the FAQ nav item; Al chose to double down and
+ * make it a first-class dev tool. It drives the four-journey demo of the
+ * live site and is meant to stay: a model session that ships UI-facing
+ * work finishes by authoring/updating the Journey Card that walks it (see
+ * the fork AGENTS.md § Journey Cards). Deliberately self-contained — one
+ * component, its own scoped `<style>` (kk-tt- prefix), hard-coded Anahata
+ * palette hexes — so it can be reasoned about and edited in one place.
  *
- * Interaction (verbatim from the prototype):
+ * Mounted once, site-wide, as a sibling of MediaDebugOverlay in
+ * app/(with-contexts)/layout.tsx — armed out-of-band, never a page element.
+ *
+ * Phase 0 (this commit): the tracker moved here verbatim and became a
+ * self-managing no-prop client component (open state internal, default
+ * closed). There is no opener yet — the Ctrl+Shift+J / ?jc=1 summon, the
+ * sessionStorage persistence, and the band-above-nav presentation arrive
+ * in Phase 1. Until then it renders nothing (closed), which is the intended
+ * default-closed checkpoint.
+ *
+ * Interaction (from the approved prototype, unchanged this phase):
  *  - Four vertical name-spines packed left. Click a name to open its
  *    journey; the spines after it float right and its numbered steps fan
  *    out (dotted connector ↔ circle ↔ action label ↔ next circle).
  *  - Opening a name auto-closes the others. Click a circle to bring that
  *    step's label into focus; the rest collapse to just their circle.
- *  - Esc or a click away closes the whole tray (pointer-obvious dismissal).
+ *  - Esc closes the whole tray.
  * ------------------------------------------------------------------ */
+
+/* Inlined from the anahata-header block's ./tokens FONT_BODY — the
+   --font-open-sans CSS var is applied app-wide (apps/web/lib/fonts.ts,
+   wired in app/layout.tsx), so it resolves here too. */
+const FONT_BODY =
+    'var(--font-open-sans), "Open Sans", -apple-system, "Segoe UI", sans-serif';
 
 interface Journey {
     id: string;
     name: string;
     /** Each step is a small HTML fragment (may contain <code>…</code>),
      *  copied verbatim from the prototype and rendered as-is. Static,
-     *  author-controlled content — no user input reaches this. */
+     *  author-controlled content — no user input reaches this. (Phase 2
+     *  replaces these HTML strings with a typed segment registry.) */
     steps: string[];
 }
 
@@ -84,18 +101,13 @@ const JOURNEYS: Journey[] = [
     },
 ];
 
-/* Marker so the tray's own click-away handler ignores taps on the FAQ
-   trigger button (which owns the open/close toggle) — the prototype's
-   `faqBtn.contains(e.target)` guard, decoupled from a shared ref. The
-   button in ./desktop-nav.tsx carries the same attribute. */
-export const TRACKER_TRIGGER_ATTR = "data-kk-tt-trigger";
-
-/* Scoped, throwaway styles. Prefix every selector with `.kk-tt-` so nothing
-   leaks into the page. Hexes are the Anahata tokens (see ./tokens): rust
-   #993300, rust-pressed #7a2900, cocoa #312110, saffron #ff9900, cream
-   #f7f4eb, sand #efe9da, marigold #f6d36a, border-warm #9c7f52. Serif is the
-   prototype's Playfair with graceful fallbacks; sans inherits FONT_BODY. */
-const SERIF = '"Playfair Display", Georgia, "Times New Roman", serif';
+/* Scoped styles. Prefix every selector with `.kk-tt-` so nothing leaks into
+   the page. Hexes are the Anahata tokens: rust #993300, rust-pressed #7a2900,
+   cocoa #312110, saffron #ff9900, cream #f7f4eb, sand #efe9da, marigold
+   #f6d36a, border-warm #9c7f52. Serif is the app's Playfair via its next/font
+   CSS var (a raw "Playfair Display" family does NOT resolve under next/font's
+   hashed names — it would silently fall back to Georgia). */
+const SERIF = 'var(--font-playfair-display), Georgia, "Times New Roman", serif';
 const TRACKER_CSS = `
 .kk-tt-root, .kk-tt-root *{ box-sizing:border-box; }
 .kk-tt-root{ color:#545454; line-height:1.5; text-align:left; }
@@ -167,64 +179,44 @@ const TRACKER_CSS = `
 }
 `;
 
-export default function TutorialTracker({
-    open,
-    onClose,
-}: {
-    open: boolean;
-    onClose: () => void;
-}): JSX.Element | null {
-    // Which journey spine is expanded (id) or null; which step is active per
-    // journey (defaults to 0). Matches the prototype: closing resets the open
-    // journey but keeps each journey's last active step.
+export default function JourneyCard(): JSX.Element | null {
+    // Self-managed open state (Phase 0: default closed, no opener yet — the
+    // summon lands in Phase 1). Which journey spine is expanded (id) or null;
+    // which step is active per journey (defaults to 0). Closing resets the
+    // open journey but keeps each journey's last active step — the per-journey
+    // memory the sessionStorage schema will preserve in Phase 1.
+    const [open, setOpen] = useState(false);
     const [openJourney, setOpenJourney] = useState<string | null>(null);
     const [activeStep, setActiveStep] = useState<Record<string, number>>({});
     const rootRef = useRef<HTMLDivElement | null>(null);
 
-    // A closed tray starts collapsed again next time it opens.
-    useEffect(() => {
-        if (!open) {
-            setOpenJourney(null);
-        }
-    }, [open]);
+    // Closing collapses the open journey (so it starts fresh next time) but
+    // keeps each journey's last active step — the per-journey memory the
+    // Phase-1 sessionStorage schema preserves. Done here in the close handler,
+    // not a reactive effect (there is only one close path this phase).
+    const close = useCallback(() => {
+        setOpen(false);
+        setOpenJourney(null);
+    }, []);
 
-    // Pointer-obvious dismissal: a pointerdown outside the tray (and not on the
-    // FAQ trigger, which owns the toggle) closes it; Esc closes and returns
-    // focus to the trigger. Mirrors ./desktop-nav.tsx's outside-close idiom.
+    // Esc closes the tray while it is open. (Phase 1 replaces this with the
+    // codebase's uniform open-only Esc handling + the compare-tool bail-out
+    // precedence; the click-away handler is dropped there — the card persists
+    // while you interact with the page.)
     useEffect(() => {
         if (!open || typeof document === "undefined") {
             return;
         }
-        const onPointerDown = (event: PointerEvent) => {
-            const target = event.target as Node | null;
-            if (rootRef.current?.contains(target)) {
-                return;
-            }
-            if (
-                target instanceof Element &&
-                target.closest(`[${TRACKER_TRIGGER_ATTR}]`)
-            ) {
-                return;
-            }
-            onClose();
-        };
         const onKeyDown = (event: KeyboardEvent) => {
-            if (event.key === "Escape") {
-                onClose();
-                (
-                    document.querySelector(
-                        `[${TRACKER_TRIGGER_ATTR}]`,
-                    ) as HTMLElement | null
-                )?.focus();
+            if (event.key === "Escape" && !event.defaultPrevented) {
+                close();
             }
         };
-        document.addEventListener("pointerdown", onPointerDown);
         document.addEventListener("keydown", onKeyDown);
         return () => {
-            document.removeEventListener("pointerdown", onPointerDown);
             document.removeEventListener("keydown", onKeyDown);
         };
-    }, [open, onClose]);
+    }, [open, close]);
 
     if (!open) {
         return null;
@@ -242,14 +234,14 @@ export default function TutorialTracker({
             ref={rootRef}
             className="kk-tt-root"
             role="region"
-            aria-label="Demo walkthrough tracker"
+            aria-label="Journey Card — demo walkthrough"
             style={{
                 position: "absolute",
                 top: "100%",
                 left: 0,
                 right: 0,
-                // Above ordinary page content; deliberately below the nav
-                // flyouts / account menu (z-[10001]) so those still win.
+                // Phase 1 raises this to the fixed band-above-nav treatment;
+                // for now the tray is never opened, so positioning is inert.
                 zIndex: 30,
                 fontFamily: FONT_BODY,
             }}
@@ -263,9 +255,7 @@ export default function TutorialTracker({
                             Pick a traveller, then step through their journey on
                             the live site.
                         </p>
-                        <span className="kk-tt-tray-hint">
-                            Esc or click away to close
-                        </span>
+                        <span className="kk-tt-tray-hint">Esc to close</span>
                     </div>
                     <div className="kk-tt-rail">
                         {JOURNEYS.map((journey) => {
