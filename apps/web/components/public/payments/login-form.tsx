@@ -296,6 +296,7 @@ export function LoginForm({
                                                     theme={theme.theme}
                                                     type="text"
                                                     placeholder="Enter OTP"
+                                                    data-journey="checkout-otp"
                                                     {...field}
                                                 />
                                             </FormControl>

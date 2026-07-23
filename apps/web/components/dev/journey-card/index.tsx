@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { JOURNEYS, type Journey, type JourneyStep, type Seg } from "./journeys";
 import { executeAuto } from "./automation";
+import { isDoneNow, scopeMatches, sweepFrontier, type Loc } from "./detection";
 
 /* ------------------------------------------------------------------ *
  * Journey Card — the persistent, keyboard-summoned demo test-plan.
@@ -19,33 +21,40 @@ import { executeAuto } from "./automation";
  * Mounted once, site-wide, as a sibling of MediaDebugOverlay in
  * app/(with-contexts)/layout.tsx — armed out-of-band, never a page element.
  *
- * Phase 1 (this commit): summon + persistence + band presentation.
- *  - Summon: Ctrl+Shift+J (keyboard; unclaimed — the app's only global chord
- *    is Cmd/Ctrl+K for the dashboard sidebar; macOS DevTools is Cmd+Opt+J, and
- *    the Windows-Chrome Ctrl+Shift+J collision is irrelevant on this Mac rig).
- *    Touch has no chord, so `?jc=1` in the URL arms it (mirrors
- *    MediaDebugOverlay's ?mediadebug=1). The struck FAQ item is gone for good.
- *  - Persistence: sessionStorage (key kk-journey-card:v1), parse-at-boundary
- *    hydration, SSR-safe first paint (first render is always closed/default;
- *    storage is read only in a mount effect, like media-debug-overlay.tsx).
- *    Per-journey step memory: switching journeys never forgets the others.
- *  - Presentation: a fixed band ACROSS THE TOP of the viewport, ABOVE the
- *    site nav, that PUSHES the nav and page down (ResizeObserver-measured
- *    --jc-band-height → body padding-top; the anahata header pins below it via
- *    tokens.ts STICKY_HEADER_BAND_FIXED). It never masks page content.
- *    Dismiss: ✕ (top-right) or Esc. No click-away — the card persists while
- *    you interact with the page.
+ * Phase 1: summon (Ctrl+Shift+J / ?jc=1) + sessionStorage persistence
+ * (kk-journey-card:v1, parse-at-boundary hydration, SSR-safe first paint) +
+ * the band-above-nav presentation that PUSHES the page down (ResizeObserver →
+ * --jc-band-height → body padding; the anahata header pins below it).
+ * Dismiss = ✕/Esc; no click-away.
  *
- * Phase 2 (this commit): the journey data moved to ./journeys.ts as a typed
- * registry (segments, not HTML strings — no dangerouslySetInnerHTML), with
+ * Phase 2: the typed registry (journeys.ts) — Seg[] labels, StepAuto union,
  * stable per-step ids that sessionStorage keys on.
  *
- * Phase 3 (this commit): click a focused step's label to "do it for me"
- * (automation.ts). An automatable label renders as a button with a ▶ hint;
- * a `manual` step renders hands-on (never clickable) with a ✋ hint + its
- * `why` as a tooltip. navigate advances-then-assigns (persisting the next
- * step synchronously so the card re-hydrates already advanced on the next
- * page); a missed selector flashes the label; copy shows a transient note.
+ * Phase 3: "do it for me" (automation.ts) — click a focused step's label to
+ * run its auto; navigate persists the advance BEFORE the side-effect.
+ *
+ * Phase 5 (bidirectional sync — this commit): the guide follows the tester.
+ *  - detection.ts evaluates the frontier step's `done` evidence; while it
+ *    fires, the card advances (frontier-only consecutive chaining,
+ *    structurally bounded — a satisfied LATER step can never vault the card
+ *    over unperformed intermediates because non-frontier steps are never
+ *    consulted).
+ *  - Five triggers in two classes. nav-class (level-triggered; clears the
+ *    activation baseline): mount-after-hydration, usePathname change (the
+ *    card lives in the persistent app-router layout, so soft <Link> navs
+ *    never remount it), and pageshow(persisted) for Safari bfcache restores
+ *    (the back-from-Stripe leg both others miss). mutation-class
+ *    (edge-triggered; baseline-suppressed): one scope-gated MutationObserver
+ *    collapsed to ≤1 sweep per animation frame, plus a visibility/focus
+ *    safety net.
+ *  - Handoff itineraries: steps that leave the site (OTP inbox, Stripe) show
+ *    a route strip — where you're going, where you land back, click-to-copy
+ *    test card — plus a reassure line rendered ONLY when the step's detector
+ *    can actually deliver the promised catch-up.
+ *  - Everything narrated: ✓ dots for completed steps, a pop on fresh
+ *    completions, and a note for every automatic movement ("Welcome back —
+ *    right on schedule" / "✓ Saw that — next: …" / "✓ Caught up — n steps
+ *    already done"). Nothing moves unexplained.
  * ------------------------------------------------------------------ */
 
 const STORAGE_KEY = "kk-journey-card:v1";
@@ -70,6 +79,14 @@ const DEFAULT_STATE: StoredState = {
     open: false,
     openJourneyId: null,
     stepByJourney: {},
+};
+
+/** Set when the USER activates a step (dot-click) or opens a spine.
+ *  Hydration restore is NOT an activation. Never persisted. */
+type ActivationBaseline = {
+    journeyId: string;
+    stepId: string;
+    satisfiedAtActivation: boolean;
 };
 
 /** Parse-at-boundary hydration: malformed / wrong-version → defaults; unknown
@@ -121,6 +138,18 @@ function hydrate(raw: string | null): StoredState {
         openJourneyId,
         stepByJourney,
     };
+}
+
+function currentLoc(): Loc {
+    return {
+        pathname: window.location.pathname,
+        search: window.location.search,
+    };
+}
+
+/** Plain-text of a step label, for note copy. */
+function plainLabel(step: JourneyStep | undefined): string {
+    return step ? step.label.map((seg) => seg.text).join("") : "";
 }
 
 /* Scoped styles. Prefix every selector with `.kk-tt-` so nothing leaks into the
@@ -190,6 +219,9 @@ const TRACKER_CSS = `
 .kk-tt-dot:hover{ background:#efe9da; }
 .kk-tt-dot:focus-visible{ outline:2px solid #993300; outline-offset:2px; }
 .kk-tt-step.kk-tt-on .kk-tt-dot{ background:#ff9900; border-color:#d97a00; color:#312110; transform:scale(1.06); }
+.kk-tt-dot.kk-tt-done{ background:#efe9da; border-color:#993300; color:#993300; }
+.kk-tt-dot.kk-tt-just-done{ animation:kk-tt-pop .36s ease; }
+@keyframes kk-tt-pop{ 0%{ transform:scale(1); } 45%{ transform:scale(1.18); background:#ff9900; } 100%{ transform:scale(1); } }
 .kk-tt-link{ flex:none; width:12px; border-top:2px dotted #9c7f52; }
 .kk-tt-lab{
   display:flex; align-items:center; max-width:0; overflow:hidden; opacity:0;
@@ -197,6 +229,9 @@ const TRACKER_CSS = `
 }
 .kk-tt-step.kk-tt-on .kk-tt-lab{ max-width:460px; opacity:1; }
 .kk-tt-lab::before{ content:""; width:16px; border-top:2px dotted #9c7f52; flex:none; margin:0 6px; }
+.kk-tt-lab.kk-tt-lab-col{ flex-direction:column; align-items:flex-start; gap:4px; }
+.kk-tt-lab.kk-tt-lab-col::before{ display:none; }
+.kk-tt-step.kk-tt-on .kk-tt-lab.kk-tt-lab-col{ max-width:560px; padding-left:12px; }
 .kk-tt-txt{
   white-space:nowrap; font-size:13.5px; color:#312110; font-weight:600;
   background:#fff; border:1px solid #9c7f52; border-radius:8px; padding:6px 12px;
@@ -224,10 +259,29 @@ const TRACKER_CSS = `
   flex:none; font-size:10px; font-weight:700; color:#8a7f6a;
   background:#efe9da; border-radius:999px; padding:2px 7px; white-space:nowrap;
 }
+/* The off-site itinerary strip (handoff). Dashed border = the path continues
+   off the map (echoes the band's own dashed bottom border); marigold return
+   chip = solid ground; saffron never as text on cream. */
+.kk-tt-route{
+  display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
+  background:#efe9da; border:1px dashed #9c7f52; border-radius:10px;
+  padding:4px 10px; font-size:11px; color:#545454;
+}
+.kk-tt-route-lead{ color:#993300; font-weight:700; }
+.kk-tt-route-arrow{ color:#9c7f52; }
+.kk-tt-route-away{ background:#fff; border:1px dashed #9c7f52; border-radius:999px; padding:1px 8px; color:#312110; }
+.kk-tt-route-away::after{ content:" ↗"; color:#993300; }
+.kk-tt-route-back{ background:#f6d36a; border-radius:999px; padding:1px 8px; color:#312110; font-weight:600; }
+.kk-tt-route-copy{
+  background:#f6d36a; border:1px solid #d97a00; border-radius:999px; padding:1px 8px;
+  color:#312110; font-weight:700; cursor:pointer;
+  font-family:ui-monospace,"SF Mono",Menlo,monospace; font-size:10.5px;
+}
+.kk-tt-route-reassure{ font-size:11px; font-style:italic; color:#8a7f6a; }
 /* Missed-selector flash. */
 @keyframes kk-tt-miss{ 0%,100%{ background:#fff; } 30%,60%{ background:#ffd9cf; border-color:#c0392b; } }
 .kk-tt-miss .kk-tt-txt{ animation:kk-tt-miss .6s ease; }
-/* Transient "copied" note in the head. */
+/* Transient note in the head. */
 .kk-tt-note{
   margin-left:10px; font-size:11px; font-weight:700; color:#312110;
   background:#f6d36a; border-radius:999px; padding:2px 10px; white-space:nowrap;
@@ -258,18 +312,166 @@ export default function JourneyCard(): JSX.Element | null {
     // read only in the mount effect below (hydration-mismatch guard, exactly
     // like media-debug-overlay.tsx).
     const [state, setState] = useState<StoredState>(DEFAULT_STATE);
-    // Transient "do it for me" feedback: a step whose selector missed (flash),
-    // and a short-lived note (e.g. "copied"). Neither is persisted.
+    // Transient feedback: a step whose "do it" selector missed (flash), a
+    // short-lived note, and the ✓-pop on steps a sweep just completed. None
+    // of these are persisted.
     const [missStepId, setMissStepId] = useState<string | null>(null);
     const [note, setNote] = useState<string | null>(null);
+    const [justDone, setJustDone] = useState<string[]>([]);
     const hydratedRef = useRef(false);
     const bandRef = useRef<HTMLDivElement | null>(null);
     const noteTimer = useRef<number | undefined>(undefined);
     const missTimer = useRef<number | undefined>(undefined);
+    const justDoneTimer = useRef<number | undefined>(undefined);
+    const rafPendingRef = useRef(false);
+
+    // Always-fresh mirror of state for event-driven code (observers,
+    // listeners) that must not capture a stale render.
+    const stateRef = useRef(state);
+    stateRef.current = state;
+
+    /* The activation baseline — the one subtle invariant here. Five rules:
+     * 1. Set on USER activation only: a dot-click, or opening a spine —
+     *    recording whether the frontier's detector was ALREADY satisfied at
+     *    that moment. Hydration restore never sets one.
+     * 2. mutation/refocus sweeps are SKIPPED while the baseline matches the
+     *    current (journey, frontier) and satisfiedAtActivation is true —
+     *    clicking back to a dot while parked on a page that already satisfies
+     *    it must not instantly re-advance (never fight the user).
+     * 3. If a suppressed sweep finds the frontier currently UNSATISFIED, flip
+     *    satisfiedAtActivation to false — the world left the satisfying
+     *    state, so a later satisfaction is a fresh false→true edge and DOES
+     *    advance (this keeps "the guide follows you" alive after a dot-click).
+     * 4. nav-class events clear the baseline — a navigation is genuinely new
+     *    evidence (accepted: a hard reload while parked re-licenses level
+     *    evaluation).
+     * 5. Any advance — detection or runAuto — clears the baseline. */
+    const baselineRef = useRef<ActivationBaseline | null>(null);
 
     const { open, openJourneyId, stepByJourney } = state;
+    const pathname = usePathname();
 
-    // --- hydrate from sessionStorage + honour ?jc=1 (touch summon) ---------
+    const showNote = useCallback((text: string, ms = 1800) => {
+        window.clearTimeout(noteTimer.current);
+        setNote(text);
+        noteTimer.current = window.setTimeout(() => setNote(null), ms);
+    }, []);
+
+    const flashMiss = useCallback((stepId: string) => {
+        window.clearTimeout(missTimer.current);
+        setMissStepId(stepId);
+        missTimer.current = window.setTimeout(
+            () => setMissStepId((c) => (c === stepId ? null : c)),
+            650,
+        );
+    }, []);
+
+    /* One detection sweep. Sweep classes:
+     *   nav       — level-triggered (mount, pathname change, bfcache restore);
+     *               caller clears the baseline first.
+     *   mutation  — edge-triggered (rAF-collapsed observer batch);
+     *               baseline-suppressed.
+     *   refocus   — visibility/focus safety net; baseline-suppressed.
+     *   delegated — a "do it" click missed; a click is delegated intent, so
+     *               evaluate ignoring the baseline and use the miss note.
+     * Returns true if the card advanced. */
+    const applySweep = useCallback(
+        (sweepClass: "nav" | "mutation" | "refocus" | "delegated"): boolean => {
+            if (typeof window === "undefined" || !hydratedRef.current) {
+                return false;
+            }
+            const s = stateRef.current;
+            if (!s.open || !s.openJourneyId) {
+                return false;
+            }
+            const journey = JOURNEYS.find((j) => j.id === s.openJourneyId);
+            if (!journey || journey.steps.length === 0) {
+                return false;
+            }
+            const frontierId =
+                s.stepByJourney[journey.id] ?? journey.steps[0].id;
+            const loc = currentLoc();
+
+            if (sweepClass === "mutation" || sweepClass === "refocus") {
+                const b = baselineRef.current;
+                if (
+                    b &&
+                    b.journeyId === journey.id &&
+                    b.stepId === frontierId &&
+                    b.satisfiedAtActivation
+                ) {
+                    const step = journey.steps.find(
+                        (st) => st.id === frontierId,
+                    );
+                    if (step && !isDoneNow(step.done, loc)) {
+                        // Rule 3: the world left the satisfying state.
+                        b.satisfiedAtActivation = false;
+                    }
+                    return false; // rule 2: suppressed
+                }
+            }
+
+            const { completed, frontierId: newFrontier } = sweepFrontier(
+                journey,
+                frontierId,
+                loc,
+            );
+            if (completed.length === 0) {
+                return false;
+            }
+
+            const advanced: StoredState = {
+                v: 1,
+                open: true,
+                openJourneyId: journey.id,
+                stepByJourney: {
+                    ...s.stepByJourney,
+                    [journey.id]: newFrontier,
+                },
+            };
+            window.sessionStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify(advanced),
+            );
+            stateRef.current = advanced;
+            setState(advanced);
+            baselineRef.current = null; // rule 5
+
+            // ✓-pop the steps this sweep completed.
+            window.clearTimeout(justDoneTimer.current);
+            setJustDone(completed.map((c) => c.id));
+            justDoneTimer.current = window.setTimeout(
+                () => setJustDone([]),
+                450,
+            );
+
+            // Narration — nothing moves unexplained.
+            if (sweepClass === "delegated") {
+                showNote("Already done — moved you ahead", 2600);
+            } else {
+                const greeted = completed.find((c) => c.handoff?.returnNote);
+                if (greeted?.handoff?.returnNote) {
+                    showNote(greeted.handoff.returnNote, 2600);
+                } else if (completed.length === 1) {
+                    const next = journey.steps.find(
+                        (st) => st.id === newFrontier,
+                    );
+                    showNote(`✓ Saw that — next: ${plainLabel(next)}`, 2600);
+                } else {
+                    showNote(
+                        `✓ Caught up — ${completed.length} steps already done`,
+                        2600,
+                    );
+                }
+            }
+            return true;
+        },
+        [showNote],
+    );
+
+    // --- hydrate from sessionStorage + honour ?jc=1 (touch summon), then run
+    // the mount nav-sweep (full loads: every CMS CTA hop, location.assign,
+    // the Stripe return). ---------------------------------------------------
     useEffect(() => {
         if (typeof window === "undefined") {
             return;
@@ -277,13 +479,100 @@ export default function JourneyCard(): JSX.Element | null {
         const stored = hydrate(window.sessionStorage.getItem(STORAGE_KEY));
         const armedByUrl =
             new URLSearchParams(window.location.search).get("jc") === "1";
+        const next = armedByUrl ? { ...stored, open: true } : stored;
+        stateRef.current = next;
         // Query string + sessionStorage are client-only, so this necessarily
         // runs post-mount — the SSR-safe hydration pattern (same as
         // media-debug-overlay.tsx). First paint was the closed default.
         // eslint-disable-next-line react-hooks/set-state-in-effect
-        setState(armedByUrl ? { ...stored, open: true } : stored);
+        setState(next);
         hydratedRef.current = true;
+        baselineRef.current = null; // hydration restore is NOT an activation
+        applySweep("nav");
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // --- nav-class trigger 2: soft navigations. The card lives in the
+    // persistent app-router layout, so <Link> navs never remount it —
+    // usePathname is core, not an enhancement. Skip the initial run (the
+    // hydration effect owns the mount sweep). -------------------------------
+    const pathnameRanRef = useRef(false);
+    useEffect(() => {
+        if (!pathnameRanRef.current) {
+            pathnameRanRef.current = true;
+            return;
+        }
+        baselineRef.current = null; // rule 4
+        applySweep("nav");
+    }, [pathname, applySweep]);
+
+    // --- nav-class trigger 3: Safari bfcache restore (back-from-Stripe) ----
+    useEffect(() => {
+        if (typeof window === "undefined") {
+            return;
+        }
+        const onPageShow = (event: PageTransitionEvent) => {
+            if (event.persisted) {
+                baselineRef.current = null; // rule 4
+                applySweep("nav");
+            }
+        };
+        window.addEventListener("pageshow", onPageShow);
+        return () => window.removeEventListener("pageshow", onPageShow);
+    }, [applySweep]);
+
+    // --- mutation-class triggers 4+5: one scope-gated MutationObserver
+    // (collapsed to ≤1 sweep per animation frame) + a visibility/focus safety
+    // net. Armed ONLY when: band open ∧ journey open ∧ the frontier's
+    // detector is a scope-matching `dom`. On pages where the selector
+    // legitimately never exists the arming condition fails — no observer is
+    // even attached; zero cost, zero misfire; the step waits. ---------------
+    useEffect(() => {
+        if (typeof window === "undefined" || !open || !openJourneyId) {
+            return;
+        }
+        const journey = JOURNEYS.find((j) => j.id === openJourneyId);
+        if (!journey || journey.steps.length === 0) {
+            return;
+        }
+        const frontierId = stepByJourney[journey.id] ?? journey.steps[0].id;
+        const step = journey.steps.find((st) => st.id === frontierId);
+        if (!step || step.done.kind !== "dom") {
+            return;
+        }
+        if (!scopeMatches(step.done.scope, currentLoc())) {
+            return;
+        }
+        const scheduleSweep = () => {
+            if (rafPendingRef.current) {
+                return;
+            }
+            rafPendingRef.current = true;
+            window.requestAnimationFrame(() => {
+                rafPendingRef.current = false;
+                applySweep("mutation");
+            });
+        };
+        const observer = new MutationObserver(scheduleSweep);
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ["disabled", "aria-disabled", "data-journey"],
+        });
+        const onRefocus = () => {
+            if (document.visibilityState === "visible") {
+                applySweep("refocus");
+            }
+        };
+        document.addEventListener("visibilitychange", onRefocus);
+        window.addEventListener("focus", onRefocus);
+        return () => {
+            observer.disconnect();
+            document.removeEventListener("visibilitychange", onRefocus);
+            window.removeEventListener("focus", onRefocus);
+        };
+    }, [open, openJourneyId, stepByJourney, pathname, applySweep]);
 
     // --- write-through (skip the pre-hydration default paint) --------------
     useEffect(() => {
@@ -369,6 +658,7 @@ export default function JourneyCard(): JSX.Element | null {
         () => () => {
             window.clearTimeout(noteTimer.current);
             window.clearTimeout(missTimer.current);
+            window.clearTimeout(justDoneTimer.current);
         },
         [],
     );
@@ -377,38 +667,64 @@ export default function JourneyCard(): JSX.Element | null {
         return null;
     }
 
-    const toggleJourney = (id: string) =>
-        setState((s) => ({
+    const toggleJourney = (id: string) => {
+        const s = stateRef.current;
+        const opening = s.openJourneyId !== id;
+        const next: StoredState = {
             ...s,
-            openJourneyId: s.openJourneyId === id ? null : id,
-        }));
-    const selectStep = (journeyId: string, stepId: string) =>
-        setState((s) => ({
+            openJourneyId: opening ? id : null,
+        };
+        stateRef.current = next;
+        setState(next);
+        if (opening) {
+            // Baseline rule 1: opening a spine is a user activation.
+            const journey = JOURNEYS.find((j) => j.id === id);
+            const frontierId = journey
+                ? (next.stepByJourney[id] ?? journey.steps[0]?.id)
+                : undefined;
+            const step = journey?.steps.find((st) => st.id === frontierId);
+            baselineRef.current =
+                journey && step && frontierId
+                    ? {
+                          journeyId: id,
+                          stepId: frontierId,
+                          satisfiedAtActivation: isDoneNow(
+                              step.done,
+                              currentLoc(),
+                          ),
+                      }
+                    : null;
+        } else {
+            baselineRef.current = null;
+        }
+    };
+
+    const selectStep = (journeyId: string, stepId: string) => {
+        const s = stateRef.current;
+        const next: StoredState = {
             ...s,
             openJourneyId: journeyId,
             stepByJourney: { ...s.stepByJourney, [journeyId]: stepId },
-        }));
-
-    const flashMiss = (stepId: string) => {
-        window.clearTimeout(missTimer.current);
-        setMissStepId(stepId);
-        missTimer.current = window.setTimeout(
-            () => setMissStepId((c) => (c === stepId ? null : c)),
-            650,
-        );
-    };
-    const showNote = (text: string) => {
-        window.clearTimeout(noteTimer.current);
-        setNote(text);
-        noteTimer.current = window.setTimeout(() => setNote(null), 1800);
+        };
+        stateRef.current = next;
+        setState(next);
+        // Baseline rule 1: a dot-click is a user activation.
+        const journey = JOURNEYS.find((j) => j.id === journeyId);
+        const step = journey?.steps.find((st) => st.id === stepId);
+        baselineRef.current = step
+            ? {
+                  journeyId,
+                  stepId,
+                  satisfiedAtActivation: isDoneNow(step.done, currentLoc()),
+              }
+            : null;
     };
 
     // "Do it for me": run the focused step's auto, then advance. A step's
     // side-effect can navigate the page (a buy-now/enrol-now <a>, or Complete
     // Purchase → Stripe), so we persist the advance to sessionStorage BEFORE
     // running it and roll back if the selector missed (a miss never navigates).
-    // That way the card re-hydrates on the next page already advanced — the
-    // whole cross-page trick, no orchestration needed.
+    // That way the card re-hydrates on the next page already advanced.
     const runAuto = (journey: Journey, step: JourneyStep) => {
         if (step.auto.kind === "manual") {
             return;
@@ -429,21 +745,25 @@ export default function JourneyCard(): JSX.Element | null {
 
         const outcome = executeAuto(step.auto);
         if (outcome.kind === "miss") {
-            // Nothing fired — undo the optimistic advance, flash the label, and
-            // SAY why (an unexplained no-op reads as a dead button). A miss here
-            // almost always means the target control isn't in the page's current
-            // state — e.g. the checkout email field is absent when you're already
-            // signed in, so the fill/click has nothing to act on.
+            // Nothing fired — undo the optimistic advance first.
             if (prev === null) {
                 window.sessionStorage.removeItem(STORAGE_KEY);
             } else {
                 window.sessionStorage.setItem(STORAGE_KEY, prev);
             }
+            // A click is delegated intent: run one level detection pass
+            // ignoring the baseline. If evidence advances the card, say so;
+            // only otherwise flash the old miss-note.
+            if (applySweep("delegated")) {
+                return;
+            }
             flashMiss(step.id);
             showNote("Nothing to do here — you may already be past this step");
             return;
         }
+        stateRef.current = advanced;
         setState(advanced);
+        baselineRef.current = null; // baseline rule 5
         if (outcome.kind === "copy") {
             showNote(outcome.note ? `Copied — ${outcome.note}` : "Copied");
         } else if (outcome.kind === "navigate") {
@@ -492,6 +812,9 @@ export default function JourneyCard(): JSX.Element | null {
                         const isOpen = openJourneyId === journey.id;
                         const activeStepId =
                             stepByJourney[journey.id] ?? journey.steps[0]?.id;
+                        const frontierIndex = journey.steps.findIndex(
+                            (st) => st.id === activeStepId,
+                        );
                         return (
                             <React.Fragment key={journey.id}>
                                 <button
@@ -514,8 +837,14 @@ export default function JourneyCard(): JSX.Element | null {
                                             const isActive =
                                                 isOpen &&
                                                 step.id === activeStepId;
+                                            const isDoneDot =
+                                                isOpen &&
+                                                frontierIndex >= 0 &&
+                                                index < frontierIndex;
                                             const automatable =
                                                 step.auto.kind !== "manual";
+                                            const showHandoff =
+                                                isActive && step.handoff;
                                             return (
                                                 <React.Fragment key={step.id}>
                                                     <div
@@ -530,10 +859,20 @@ export default function JourneyCard(): JSX.Element | null {
                                                     >
                                                         <button
                                                             type="button"
-                                                            className="kk-tt-dot"
-                                                            aria-label={`Step ${
-                                                                index + 1
-                                                            }`}
+                                                            className={clsx(
+                                                                "kk-tt-dot",
+                                                                isDoneDot &&
+                                                                    "kk-tt-done",
+                                                                justDone.includes(
+                                                                    step.id,
+                                                                ) &&
+                                                                    "kk-tt-just-done",
+                                                            )}
+                                                            aria-label={
+                                                                isDoneDot
+                                                                    ? `Step ${index + 1} — done`
+                                                                    : `Step ${index + 1}`
+                                                            }
                                                             tabIndex={
                                                                 isOpen ? 0 : -1
                                                             }
@@ -544,9 +883,17 @@ export default function JourneyCard(): JSX.Element | null {
                                                                 )
                                                             }
                                                         >
-                                                            {index + 1}
+                                                            {isDoneDot
+                                                                ? "✓"
+                                                                : index + 1}
                                                         </button>
-                                                        <div className="kk-tt-lab">
+                                                        <div
+                                                            className={clsx(
+                                                                "kk-tt-lab",
+                                                                showHandoff &&
+                                                                    "kk-tt-lab-col",
+                                                            )}
+                                                        >
                                                             {isActive &&
                                                             automatable ? (
                                                                 <button
@@ -597,6 +944,100 @@ export default function JourneyCard(): JSX.Element | null {
                                                                     }
                                                                 />
                                                             )}
+                                                            {showHandoff &&
+                                                                step.handoff && (
+                                                                    <>
+                                                                        <span className="kk-tt-route">
+                                                                            <span className="kk-tt-route-lead">
+                                                                                {
+                                                                                    step
+                                                                                        .handoff
+                                                                                        .lead
+                                                                                }
+
+                                                                                :
+                                                                            </span>
+                                                                            {step.handoff.route.map(
+                                                                                (
+                                                                                    tok,
+                                                                                    i,
+                                                                                ) => (
+                                                                                    <React.Fragment
+                                                                                        key={
+                                                                                            i
+                                                                                        }
+                                                                                    >
+                                                                                        {i >
+                                                                                            0 && (
+                                                                                            <span className="kk-tt-route-arrow">
+                                                                                                →
+                                                                                            </span>
+                                                                                        )}
+                                                                                        {tok.kind ===
+                                                                                        "away" ? (
+                                                                                            <span className="kk-tt-route-away">
+                                                                                                {
+                                                                                                    tok.text
+                                                                                                }
+                                                                                            </span>
+                                                                                        ) : tok.kind ===
+                                                                                          "back" ? (
+                                                                                            <span className="kk-tt-route-back">
+                                                                                                {
+                                                                                                    tok.text
+                                                                                                }
+                                                                                            </span>
+                                                                                        ) : tok.kind ===
+                                                                                          "copy" ? (
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                className="kk-tt-route-copy"
+                                                                                                title="Click to copy"
+                                                                                                onClick={() => {
+                                                                                                    executeAuto(
+                                                                                                        {
+                                                                                                            kind: "copy",
+                                                                                                            text: tok.text,
+                                                                                                            note: tok.note,
+                                                                                                        },
+                                                                                                    );
+                                                                                                    showNote(
+                                                                                                        `Copied — ${tok.note}`,
+                                                                                                    );
+                                                                                                }}
+                                                                                            >
+                                                                                                {
+                                                                                                    tok.text
+                                                                                                }
+                                                                                            </button>
+                                                                                        ) : (
+                                                                                            <span>
+                                                                                                {
+                                                                                                    tok.text
+                                                                                                }
+                                                                                            </span>
+                                                                                        )}
+                                                                                    </React.Fragment>
+                                                                                ),
+                                                                            )}
+                                                                        </span>
+                                                                        {step
+                                                                            .handoff
+                                                                            .reassure &&
+                                                                            step
+                                                                                .done
+                                                                                .kind !==
+                                                                                "none" && (
+                                                                                <span className="kk-tt-route-reassure">
+                                                                                    {
+                                                                                        step
+                                                                                            .handoff
+                                                                                            .reassure
+                                                                                    }
+                                                                                </span>
+                                                                            )}
+                                                                    </>
+                                                                )}
                                                         </div>
                                                     </div>
                                                     {index <

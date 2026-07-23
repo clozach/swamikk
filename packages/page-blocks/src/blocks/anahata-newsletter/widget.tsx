@@ -392,6 +392,14 @@ export default function Widget({
                             ref={feedbackRef}
                             id={feedbackId}
                             tabIndex={-1}
+                            /* Success-only stamp for the Journey Card detector:
+                               the tagged union guarantees invalid/error/
+                               submitting can never carry it. */
+                            data-journey={
+                                submission.kind === "subscribed"
+                                    ? "newsletter-subscribed"
+                                    : undefined
+                            }
                             className="mx-auto mb-0 mt-[20px] max-w-[520px] rounded-[4px] border p-[20px] text-center text-[18px] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#993300]"
                             style={{
                                 backgroundColor: CARD,

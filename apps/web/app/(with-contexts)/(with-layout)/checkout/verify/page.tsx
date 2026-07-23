@@ -50,7 +50,16 @@ function VerifyContent() {
             <div className="mx-auto flex max-w-md flex-col items-center justify-center space-y-6 pb-16 pt-20 text-center">
                 {paymentStatus === "paid" ? (
                     <>
-                        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                        {/* data-journey="purchase-verified": the Journey Card's
+                            ONLY Stripe-return detector. It must stay on this
+                            paid-only branch — failed/pending render at the same
+                            URL, so a URL detector would lie. If this page is
+                            redesigned, keep a paid-only element carrying this
+                            attribute (see journey-card/journeys.ts inventory). */}
+                        <span
+                            data-journey="purchase-verified"
+                            className="flex h-16 w-16 items-center justify-center rounded-full bg-muted"
+                        >
                             <Check
                                 className="h-8 w-8 text-secondary"
                                 aria-hidden="true"

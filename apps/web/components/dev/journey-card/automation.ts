@@ -23,8 +23,10 @@ export type AutoOutcome =
     | { kind: "miss" }; // selector matched nothing visible; flash the label
 
 /** An element counts as actionable only if it is actually on screen — several
- *  controls render twice (e.g. the desktop + mobile Complete Purchase). */
-function firstVisible(selector: string): HTMLElement | null {
+ *  controls render twice (e.g. the desktop + mobile Complete Purchase).
+ *  Exported: detection.ts evaluates `dom` detectors through this SAME rule,
+ *  so detection and "do it" can never disagree about what's real. */
+export function firstVisible(selector: string): HTMLElement | null {
     const nodes = document.querySelectorAll<HTMLElement>(selector);
     for (let i = 0; i < nodes.length; i++) {
         const node = nodes[i];
