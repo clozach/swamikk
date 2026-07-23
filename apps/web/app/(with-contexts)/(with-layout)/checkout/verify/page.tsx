@@ -15,6 +15,9 @@ function VerifyContent() {
     const id = params?.get("id");
     const [paymentStatus, setPaymentStatus] =
         useState<InvoicesStatus>("pending");
+    const [purchasedEntityId, setPurchasedEntityId] = useState<string | null>(
+        null,
+    );
     const [loading, setLoading] = useState(false);
     const address = useContext(AddressContext);
     const { theme } = useContext(ThemeContext);
@@ -35,6 +38,9 @@ function VerifyContent() {
             if (response.status) {
                 setPaymentStatus(response.status);
             }
+            if (typeof response.entityId === "string") {
+                setPurchasedEntityId(response.entityId);
+            }
         } catch (error) {
         } finally {
             setLoading(false);
@@ -53,11 +59,17 @@ function VerifyContent() {
                         {/* data-journey="purchase-verified": the Journey Card's
                             ONLY Stripe-return detector. It must stay on this
                             paid-only branch — failed/pending render at the same
-                            URL, so a URL detector would lie. If this page is
-                            redesigned, keep a paid-only element carrying this
-                            attribute (see journey-card/journeys.ts inventory). */}
+                            URL, so a URL detector would lie. data-journey-product
+                            carries WHICH product this paid page proves; the
+                            card's detectors pin on it so another product's paid
+                            page can never satisfy this journey. If this page is
+                            redesigned, keep a paid-only element carrying both
+                            attributes (see journey-card/journeys.ts inventory). */}
                         <span
                             data-journey="purchase-verified"
+                            data-journey-product={
+                                purchasedEntityId ?? undefined
+                            }
                             className="flex h-16 w-16 items-center justify-center rounded-full bg-muted"
                         >
                             <Check

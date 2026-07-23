@@ -147,6 +147,27 @@ function currentLoc(): Loc {
     };
 }
 
+/* sessionStorage can THROW (SecurityError) for cookie-blocked visitors — the
+ * card must still work, it just won't persist. All storage goes through these. */
+function readStorage(): string | null {
+    try {
+        return window.sessionStorage.getItem(STORAGE_KEY);
+    } catch {
+        return null;
+    }
+}
+function writeStorage(value: string | null): void {
+    try {
+        if (value === null) {
+            window.sessionStorage.removeItem(STORAGE_KEY);
+        } else {
+            window.sessionStorage.setItem(STORAGE_KEY, value);
+        }
+    } catch {
+        /* storage blocked — in-memory state still drives the card */
+    }
+}
+
 /** Plain-text of a step label, for note copy. */
 function plainLabel(step: JourneyStep | undefined): string {
     return step ? step.label.map((seg) => seg.text).join("") : "";
@@ -326,9 +347,14 @@ export default function JourneyCard(): JSX.Element | null {
     const rafPendingRef = useRef(false);
 
     // Always-fresh mirror of state for event-driven code (observers,
-    // listeners) that must not capture a stale render.
+    // listeners) that must not capture a stale render. Synced two ways, never
+    // during render (concurrent-mode discipline): every direct state write
+    // below assigns it explicitly before setState, and this effect covers the
+    // few updater-form writes as belt-and-braces.
     const stateRef = useRef(state);
-    stateRef.current = state;
+    useEffect(() => {
+        stateRef.current = state;
+    }, [state]);
 
     /* The activation baseline — the one subtle invariant here. Five rules:
      * 1. Set on USER activation only: a dot-click, or opening a spine —
@@ -429,17 +455,14 @@ export default function JourneyCard(): JSX.Element | null {
                     [journey.id]: newFrontier,
                 },
             };
-            window.sessionStorage.setItem(
-                STORAGE_KEY,
-                JSON.stringify(advanced),
-            );
+            writeStorage(JSON.stringify(advanced));
             stateRef.current = advanced;
             setState(advanced);
             baselineRef.current = null; // rule 5
 
             // ✓-pop the steps this sweep completed.
             window.clearTimeout(justDoneTimer.current);
-            setJustDone(completed.map((c) => c.id));
+            setJustDone(completed.map((c) => `${journey.id}/${c.id}`));
             justDoneTimer.current = window.setTimeout(
                 () => setJustDone([]),
                 450,
@@ -476,7 +499,7 @@ export default function JourneyCard(): JSX.Element | null {
         if (typeof window === "undefined") {
             return;
         }
-        const stored = hydrate(window.sessionStorage.getItem(STORAGE_KEY));
+        const stored = hydrate(readStorage());
         const armedByUrl =
             new URLSearchParams(window.location.search).get("jc") === "1";
         const next = armedByUrl ? { ...stored, open: true } : stored;
@@ -506,15 +529,27 @@ export default function JourneyCard(): JSX.Element | null {
         applySweep("nav");
     }, [pathname, applySweep]);
 
-    // --- nav-class trigger 3: Safari bfcache restore (back-from-Stripe) ----
+    // --- trigger 3: bfcache restore (Safari back/forward, incl. back-from-
+    // Stripe). TWO deliberate differences from a plain nav sweep:
+    // 1. RE-HYDRATE first — bfcache restores a frozen JS heap, so in-memory
+    //    state may be OLDER than what this tab persisted after navigating
+    //    away; sweeping against the stale state could clobber newer progress.
+    // 2. Run as refocus-class (baseline RETAINED, suppression honored) — a
+    //    back/forward swipe restores the SAME document, so a deliberate
+    //    dot-click rewind must survive it (on iOS Safari the edge-swipe is
+    //    the default navigation gesture, not a rare F5). After re-hydration
+    //    the baseline only still applies if it matches the persisted
+    //    frontier, which is exactly the rewind case it exists to protect.
     useEffect(() => {
         if (typeof window === "undefined") {
             return;
         }
         const onPageShow = (event: PageTransitionEvent) => {
             if (event.persisted) {
-                baselineRef.current = null; // rule 4
-                applySweep("nav");
+                const fresh = hydrate(readStorage());
+                stateRef.current = fresh;
+                setState(fresh);
+                applySweep("refocus");
             }
         };
         window.addEventListener("pageshow", onPageShow);
@@ -526,7 +561,14 @@ export default function JourneyCard(): JSX.Element | null {
     // net. Armed ONLY when: band open ∧ journey open ∧ the frontier's
     // detector is a scope-matching `dom`. On pages where the selector
     // legitimately never exists the arming condition fails — no observer is
-    // even attached; zero cost, zero misfire; the step waits. ---------------
+    // even attached; zero cost, zero misfire; the step waits.
+    // KNOWN LIMITATION (accepted, false-negative-only): a client-side
+    // navigation that changes ONLY the query string keeps usePathname
+    // identical, so neither the nav sweep nor this arming effect re-runs.
+    // Today every relevant route full-loads; if a future router.push swaps
+    // just ?id=, detection waits until the next real nav/refocus. isDoneNow
+    // re-checks scope per sweep, so a stale-armed observer can never
+    // false-fire. -----------------------------------------------------------
     useEffect(() => {
         if (typeof window === "undefined" || !open || !openJourneyId) {
             return;
@@ -585,12 +627,16 @@ export default function JourneyCard(): JSX.Element | null {
         if (!hydratedRef.current || typeof window === "undefined") {
             return;
         }
-        window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        writeStorage(JSON.stringify(state));
     }, [state]);
 
     const close = useCallback(() => {
         // Dismiss keeps openJourney/step memory so re-summoning resumes.
-        setState((s) => ({ ...s, open: false }));
+        // Explicit stateRef sync so an in-flight sweep can never act on a
+        // stale open:true between this write and the sync effect.
+        const next: StoredState = { ...stateRef.current, open: false };
+        stateRef.current = next;
+        setState(next);
     }, []);
 
     // --- Ctrl+Shift+J summon: one always-bound window listener --------------
@@ -608,7 +654,12 @@ export default function JourneyCard(): JSX.Element | null {
                 !event.defaultPrevented
             ) {
                 event.preventDefault();
-                setState((s) => ({ ...s, open: !s.open }));
+                const next: StoredState = {
+                    ...stateRef.current,
+                    open: !stateRef.current.open,
+                };
+                stateRef.current = next;
+                setState(next);
             }
         };
         window.addEventListener("keydown", onKeyDown);
@@ -746,24 +797,20 @@ export default function JourneyCard(): JSX.Element | null {
                 [journey.id]: nextStep ? nextStep.id : step.id,
             },
         };
-        const prev = window.sessionStorage.getItem(STORAGE_KEY);
-        window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(advanced));
+        const prev = readStorage();
+        writeStorage(JSON.stringify(advanced));
 
         const outcome = executeAuto(step.auto);
         if (outcome.kind === "miss") {
             // Nothing fired — undo the optimistic advance first.
-            if (prev === null) {
-                window.sessionStorage.removeItem(STORAGE_KEY);
-            } else {
-                window.sessionStorage.setItem(STORAGE_KEY, prev);
-            }
+            writeStorage(prev);
             // A click is delegated intent: run one level detection pass
             // ignoring the baseline. If evidence advances the card, say so;
             // only otherwise flash the old miss-note.
             if (applySweep("delegated")) {
                 return;
             }
-            flashMiss(step.id);
+            flashMiss(`${journey.id}/${step.id}`);
             showNote("Nothing to do here — you may already be past this step");
             return;
         }
@@ -859,7 +906,7 @@ export default function JourneyCard(): JSX.Element | null {
                                                             isActive &&
                                                                 "kk-tt-on",
                                                             missStepId ===
-                                                                step.id &&
+                                                                `${journey.id}/${step.id}` &&
                                                                 "kk-tt-miss",
                                                         )}
                                                     >
@@ -870,7 +917,7 @@ export default function JourneyCard(): JSX.Element | null {
                                                                 isDoneDot &&
                                                                     "kk-tt-done",
                                                                 justDone.includes(
-                                                                    step.id,
+                                                                    `${journey.id}/${step.id}`,
                                                                 ) &&
                                                                     "kk-tt-just-done",
                                                             )}

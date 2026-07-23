@@ -54,7 +54,15 @@ export async function POST(req: NextRequest) {
             return Response.json({}, { status: 401 });
         }
 
-        return Response.json({ status: invoice.status });
+        // entityId (the purchased product's id) rides along so the verify page
+        // can stamp WHICH product this paid page proves — the Journey Card's
+        // purchase detector pins on it (see journey-card/journeys.ts). The
+        // caller is the authenticated owner of this membership (checked above),
+        // so this discloses nothing they don't already know.
+        return Response.json({
+            status: invoice.status,
+            entityId: membership.entityId,
+        });
     } catch (err: any) {
         error(`Error verifying invoice: ${err.message}`, {
             domain: domainName,

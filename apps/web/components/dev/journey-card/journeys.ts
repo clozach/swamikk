@@ -40,9 +40,12 @@
  * control; keep this inventory in sync):
  *   checkout-email · checkout-continue · checkout-otp · complete-purchase
  *   · newsletter-email · newsletter-subscribe · newsletter-subscribed
- *   · purchase-verified
+ *   · purchase-verified (+ data-journey-product=<entityId> on the same
+ *     element — the per-product pin the purchase detectors key on)
  * (buy-now / enrol-now target the page's sole `a[href^="/checkout"]` CTA
- * instead — those CTAs are CMS page-block content, not fixed components.)
+ * instead — those CTAs are CMS page-block content, not fixed components.
+ * karuna/login keys on the admin-gated `a[href="/dashboard/overview"]` rail
+ * link — fork-owned chrome, no stamp needed.)
  * ------------------------------------------------------------------ */
 
 /** A run of step text. `code` segments render as monospace chips. */
@@ -160,15 +163,29 @@ const APRIL_CHECKOUT: DetectScope = {
     query: { id: APRIL_COURSE_ID },
 };
 
-/* Shared detector fragments. Arm 2 of LOGIN_EVIDENCE deliberately keys on
+/* Shared detector fragments. Arm 2 of OTP_OR_SIGNED_IN deliberately keys on
  * DOWNSTREAM evidence (an enabled Complete Purchase proves the login steps
  * are moot for an already-signed-in tester) — evidence-of-state, not gesture;
- * do not copy this pattern without the same argument. */
+ * do not copy this pattern without the same argument. Accepted trade-off:
+ * it is persona-blind — ANY session (April's, the admin's) fast-forwards
+ * Jake's login steps; the subsequent purchase then lands on that account.
+ * For a demo tool this is honest (the steps ARE moot), but testers doing
+ * multi-persona runs should sign out between journeys. */
 const OTP_OR_SIGNED_IN =
     '[data-journey="checkout-otp"], [data-journey="complete-purchase"]:not([disabled]):not([aria-disabled="true"])';
 const SIGNED_IN =
     '[data-journey="complete-purchase"]:not([disabled]):not([aria-disabled="true"])';
-const PURCHASE_VERIFIED = '[data-journey="purchase-verified"]';
+/* Product-PINNED paid stamp. The bare stamp alone would be purchase-agnostic —
+ * any paid /checkout/verify render (another journey's purchase, or an old
+ * paid page revisited) would satisfy it, and the ?id= there is an INVOICE id,
+ * unknowable at authoring time. The verify page therefore also stamps
+ * data-journey-product with the purchased entityId, and each journey pins on
+ * its own product — same doctrine as the pinned /checkout scopes. Accepted
+ * residual (documented): revisiting an old paid verify page FOR THE SAME
+ * product still satisfies it — that evidence is genuinely true of this
+ * product, just possibly from a previous demo run. */
+const PURCHASE_VERIFIED_FOR = (productId: string) =>
+    `[data-journey="purchase-verified"][data-journey-product="${productId}"]`;
 const VERIFY_SCOPE: DetectScope = {
     at: "path-equals",
     path: "/checkout/verify",
@@ -281,7 +298,7 @@ export const JOURNEYS: Journey[] = [
                 done: {
                     kind: "dom",
                     scope: VERIFY_SCOPE,
-                    selector: PURCHASE_VERIFIED,
+                    selector: PURCHASE_VERIFIED_FOR(JAKE_MP3_ID),
                 },
                 handoff: STRIPE_HANDOFF,
             },
@@ -299,7 +316,7 @@ export const JOURNEYS: Journey[] = [
                 done: {
                     kind: "dom",
                     scope: VERIFY_SCOPE,
-                    selector: PURCHASE_VERIFIED,
+                    selector: PURCHASE_VERIFIED_FOR(JAKE_MP3_ID),
                 },
             },
             {
@@ -381,7 +398,7 @@ export const JOURNEYS: Journey[] = [
                 done: {
                     kind: "dom",
                     scope: VERIFY_SCOPE,
-                    selector: PURCHASE_VERIFIED,
+                    selector: PURCHASE_VERIFIED_FOR(APRIL_COURSE_ID),
                 },
                 handoff: STRIPE_HANDOFF,
             },
@@ -396,7 +413,7 @@ export const JOURNEYS: Journey[] = [
                 done: {
                     kind: "dom",
                     scope: VERIFY_SCOPE,
-                    selector: PURCHASE_VERIFIED,
+                    selector: PURCHASE_VERIFIED_FOR(APRIL_COURSE_ID),
                 },
             },
             {
@@ -502,12 +519,17 @@ export const JOURNEYS: Journey[] = [
                 id: "login",
                 label: [c("/login"), t(" → "), c("Get code")],
                 auto: { kind: "navigate", href: "/login" },
-                // Server auth-gates /dashboard/*; presence proves
-                // authenticated-into-admin. (Arrival at /login itself proves
-                // nothing — that would be a pre-state detector.)
+                // NOT a bare /dashboard path detector: the dashboard shell
+                // renders for ANY session (a customer from the earlier
+                // journeys lands at /dashboard/my-content via 'Go to my
+                // content'), so mere presence proves nothing about ADMIN
+                // login. The Overview rail link is gated on manageCourse/
+                // manageAnyCourse (app-sidebar.tsx) — evidence of an
+                // admin-side session, which is this step's actual promise.
                 done: {
-                    kind: "path",
+                    kind: "dom",
                     scope: { at: "path-prefix", path: "/dashboard" },
+                    selector: 'a[href="/dashboard/overview"]',
                 },
             },
             {
