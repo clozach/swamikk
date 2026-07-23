@@ -146,7 +146,7 @@ export default function DashboardContent({
                     checkPermission(profile.permissions!, permissions) ? (
                         children
                     ) : (
-                        <PermissionError missingPermissions={permissions} />
+                        <PermissionError />
                     )
                 ) : (
                     children

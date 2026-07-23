@@ -22,7 +22,6 @@ import { useRouter } from "next/navigation";
 import { AddressContext } from "@components/contexts";
 import DashboardContent from "@components/admin/dashboard-content";
 import { UIConstants } from "@courselit/common-models";
-import RequirePermission from "@components/require-permission";
 
 const { permissions } = UIConstants;
 
@@ -84,33 +83,34 @@ export default function Page() {
     };
 
     return (
-        <RequirePermission permissions={[permissions.manageUsers]}>
-            <DashboardContent breadcrumbs={breadcrumbs}>
-                <h1 className="text-4xl font-semibold mb-4">{BTN_NEW_TAG}</h1>
-                <Form onSubmit={createTag} className="flex flex-col gap-4">
-                    <FormField
-                        required
-                        label="Tag name"
-                        name="name"
-                        value={name}
-                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                            setName(e.target.value)
-                        }
-                    />
-                    <div className="flex gap-2">
-                        <Button disabled={!name || loading} onClick={createTag}>
-                            {BTN_CONTINUE}
-                        </Button>
-                        <Button
-                            component="link"
-                            href="/dashboard/users/tags"
-                            variant="soft"
-                        >
-                            {BUTTON_CANCEL_TEXT}
-                        </Button>
-                    </div>
-                </Form>
-            </DashboardContent>
-        </RequirePermission>
+        <DashboardContent
+            breadcrumbs={breadcrumbs}
+            permissions={[permissions.manageUsers]}
+        >
+            <h1 className="text-4xl font-semibold mb-4">{BTN_NEW_TAG}</h1>
+            <Form onSubmit={createTag} className="flex flex-col gap-4">
+                <FormField
+                    required
+                    label="Tag name"
+                    name="name"
+                    value={name}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        setName(e.target.value)
+                    }
+                />
+                <div className="flex gap-2">
+                    <Button disabled={!name || loading} onClick={createTag}>
+                        {BTN_CONTINUE}
+                    </Button>
+                    <Button
+                        component="link"
+                        href="/dashboard/users/tags"
+                        variant="soft"
+                    >
+                        {BUTTON_CANCEL_TEXT}
+                    </Button>
+                </div>
+            </Form>
+        </DashboardContent>
     );
 }

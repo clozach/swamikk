@@ -37,9 +37,7 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
     ) {
         return (
             <div className="flex h-screen w-screen items-center justify-center bg-background">
-                <PermissionError
-                    missingPermissions={[UIConstants.permissions.manageSite]}
-                />
+                <PermissionError />
             </div>
         );
     }

@@ -18,11 +18,11 @@ export const metadata: Metadata = {
  *
  * Next.js renders this one inside the ROOT layout only — no route group, so
  * neither the storefront shell nor the context providers are available. It
- * therefore resolves the theme directly and hands it to the shared
- * {@link StatusScreen}, which is the same layout an in-app auth failure shows
- * (see `require-permission.tsx`) — one dead-end screen, two entry points.
- * After 5s it quietly returns the visitor to the site root; the logo and Home
- * button are the immediate way out.
+ * therefore resolves the theme directly and hands it to {@link StatusScreen}
+ * (a full-screen takeover — there's no shell to stay inside here, unlike an
+ * in-app permission denial, which uses `PermissionError` instead). After 5s
+ * it quietly returns the visitor to the site root; the logo and Home button
+ * are the immediate way out.
  */
 export default async function NotFound() {
     const address = await getAddressFromHeaders(headers);
