@@ -1,11 +1,10 @@
 "use client";
 
 import { useContext } from "react";
-import LoadingScreen from "@components/admin/loading-screen";
-import { checkPermission } from "@courselit/utils";
-import { AddressContext, ProfileContext } from "@components/contexts";
+import { AddressContext } from "@components/contexts";
 import { UIConstants } from "@courselit/common-models";
 import DashboardContent from "@components/admin/dashboard-content";
+import RequirePermission from "@components/require-permission";
 import {
     APIKEY_NEW_HEADER,
     SITE_MISCELLANEOUS_SETTING_HEADER,
@@ -28,18 +27,12 @@ const breadcrumbs = [
 
 export default function Page() {
     const address = useContext(AddressContext);
-    const { profile } = useContext(ProfileContext);
-
-    if (
-        !profile ||
-        !checkPermission(profile.permissions!, [permissions.manageSettings])
-    ) {
-        return <LoadingScreen />;
-    }
 
     return (
-        <DashboardContent breadcrumbs={breadcrumbs}>
-            <ApikeyNew address={address} />
-        </DashboardContent>
+        <RequirePermission permissions={[permissions.manageSettings]}>
+            <DashboardContent breadcrumbs={breadcrumbs}>
+                <ApikeyNew address={address} />
+            </DashboardContent>
+        </RequirePermission>
     );
 }

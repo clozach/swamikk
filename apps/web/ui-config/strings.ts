@@ -1069,3 +1069,9 @@ export const SOCIAL_HERO_SAVE_SUCCESS = "Social hero settings saved.";
 export const SOCIAL_HERO_KIND_MANUAL = "Manual photo";
 export const SOCIAL_HERO_KIND_INSTAGRAM = "Instagram";
 export const SOCIAL_HERO_KIND_FACEBOOK = "Facebook";
+
+// --- Status / catch screen (403 auth failures; shared with the 404 route) ---
+export const ACCESS_DENIED_TITLE = "Access denied";
+export const ACCESS_DENIED_DESCRIPTION =
+    "You don't have permission to view this page. We'll take you back to somewhere you can go.";
+export const STATUS_REDIRECT_NOTICE_PREFIX = "Redirecting to the homepage in";
