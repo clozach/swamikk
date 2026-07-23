@@ -61,3 +61,7 @@
 ## PR instructions
 
 - Always run `pnpm lint` and `pnpm prettier` before committing.
+
+## Journey Cards (dev tool)
+
+The site ships a keyboard-summoned test-plan overlay (`Ctrl+Shift+J`; `?jc=1` on touch): **Journey Cards**, defined in `apps/web/components/dev/journey-card/journeys.ts`. **If your change adds or alters anything a tester exercises through the UI, finish by adding or updating the Journey Card that walks it.** (Pure refactors and bugfixes that leave the steps unchanged are exempt.) Rules: journeys and steps carry stable kebab-case `id`s — never rename or reuse an existing id; append new steps, and a deleted step's id retires forever (stale saved state falls back to the journey start). Use `auto` actions where automatable (`navigate`/`click`/`fill`/`copy`) and `{ kind: "manual", why }` where not; add `data-journey="<token>"` attributes to any new fixed controls your selectors target (CMS/page-block content isn't a fixed control — target it by a stable natural selector like `a[href^="/checkout"]` instead). Then prove it live: the card ships baked into the image — summon it on the rebuilt rig and click through your steps; a card verified only by reading the diff is unverified.
