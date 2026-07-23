@@ -24,6 +24,7 @@ import {
 import Settings, {
     BannerFit,
     BannerHeightMode,
+    BannerMode,
     BannerPosition,
     CtaStyle,
     HeroAnimation,
@@ -247,6 +248,9 @@ export default function AdminWidget({
     const [bannerHeightMode, setBannerHeightMode] = useState<BannerHeightMode>(
         settings.bannerHeightMode || defaults.bannerHeightMode,
     );
+    const [bannerModeKind, setBannerModeKind] = useState<BannerMode["kind"]>(
+        settings.bannerMode?.kind || defaults.bannerMode.kind,
+    );
     const [bannerAspectRatio, setBannerAspectRatio] = useState<string>(
         settings.bannerAspectRatio || defaults.bannerAspectRatio,
     );
@@ -319,6 +323,7 @@ export default function AdminWidget({
             bannerFit,
             bannerPosition,
             bannerHeightMode,
+            bannerMode: { kind: bannerModeKind },
             bannerAspectRatio,
             bannerMinHeight,
             wordmark,
@@ -346,6 +351,7 @@ export default function AdminWidget({
         bannerFit,
         bannerPosition,
         bannerHeightMode,
+        bannerModeKind,
         bannerAspectRatio,
         bannerMinHeight,
         wordmark,
@@ -427,6 +433,28 @@ export default function AdminWidget({
                     max={1200}
                     unit="px"
                 />
+                <Select
+                    title="Banner mode"
+                    tooltip="Static shows the single banner photo below. Social rotation cycles through photos from your social feeds; manage those feeds under Dashboard → System → Settings → Social hero. The banner photo below always stays as the fallback."
+                    value={bannerModeKind}
+                    options={[
+                        { label: "Static (single photo)", value: "static" },
+                        {
+                            label: "Social rotation (from your feeds)",
+                            value: "social-rotation",
+                        },
+                    ]}
+                    onChange={(value: BannerMode["kind"]) =>
+                        setBannerModeKind(value)
+                    }
+                />
+                {bannerModeKind === "social-rotation" ? (
+                    <p className="text-sm text-muted-foreground">
+                        Manage feed sources under Dashboard → System → Settings
+                        → Social hero. This banner photo stays as frame 0 and
+                        the fallback if a feed is unavailable.
+                    </p>
+                ) : null}
                 <Select
                     title="Banner height"
                     tooltip="Full screen fills the viewport below the site header, like the real site. Fixed sizes the band off the aspect ratio below."

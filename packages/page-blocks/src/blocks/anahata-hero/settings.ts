@@ -59,6 +59,15 @@ export type BannerPosition =
 /** Entrance treatment for the banner. Pure CSS — never JS-gated. */
 export type HeroAnimation = "none" | "fade";
 
+/**
+ * How the banner behaves. `static` (the default when absent) is today's
+ * single-photo hero. `social-rotation` draws a photo pool from the admin's
+ * social feeds and rotates client-side; the stored `bannerImage` stays as
+ * frame 0 and the permanent fallback, so a feed outage never breaks the hero.
+ * Tagged union so the two modes can never be half-configured into each other.
+ */
+export type BannerMode = { kind: "static" } | { kind: "social-rotation" };
+
 /** The three real button recipes from the Anahata stylesheet. */
 export type CtaStyle = "saffron" | "saffron-big" | "white";
 
@@ -73,6 +82,8 @@ export default interface Settings extends WidgetDefaultSettings {
     bannerAspectRatio?: string;
     /** Floor (px) so the band never collapses on narrow screens, either mode. */
     bannerMinHeight?: number;
+    /** Static single photo (default) vs pool-driven social rotation. */
+    bannerMode?: BannerMode;
     /** Wordmark laid over the banner. Omit to show the banner bare. */
     wordmark?: HeroImage;
     /** Natural width (px) of the wordmark; it is clamped to the band. */

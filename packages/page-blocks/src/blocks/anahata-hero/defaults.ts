@@ -1,6 +1,7 @@
 import type {
     BannerFit,
     BannerHeightMode,
+    BannerMode,
     BannerPosition,
     CtaStyle,
     HeroAnimation,
@@ -30,6 +31,8 @@ export const bannerHeightMode: BannerHeightMode = "full-screen";
 export const bannerAspectRatio = "1920 / 947"; // revslider natural size; used in "fixed" mode
 export const bannerMinHeight = 220; // px floor on narrow screens, both modes
 export const bannerFit: BannerFit = "cover";
+/** Static single photo by default — social rotation is opt-in per block. */
+export const bannerMode: BannerMode = { kind: "static" };
 export const bannerPosition: BannerPosition = "center";
 export const wordmarkMaxWidth = 835; // natural width of the wordmark PNG
 export const animation: HeroAnimation = "fade";
