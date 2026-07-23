@@ -13,8 +13,79 @@ import {
 import { PaymentPlan, Constants } from "@courselit/common-models";
 import { getPlanPrice } from "@ui-lib/utils";
 import { CHECKOUT_PAGE_ORDER_SUMMARY } from "@ui-config/strings";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const { PaymentPlanType: paymentPlanType } = Constants;
+
+/**
+ * The Complete Purchase submit button, wrapped so that WHEN IT IS DISABLED a
+ * tooltip explains exactly why (a native disabled <button> swallows pointer
+ * events, so the tooltip trigger is a span AROUND it). `blockedReason` is the
+ * single source of truth for both the disabled state's explanation and,
+ * upstream, the disabling itself. No reason ⇒ plain enabled button, no tooltip.
+ */
+function CompletePurchaseButton({
+    theme,
+    disabled,
+    isSubmitting,
+    blockedReason,
+    className,
+}: {
+    theme: any;
+    disabled: boolean;
+    isSubmitting: boolean;
+    blockedReason?: string | null;
+    className?: string;
+}) {
+    const label = isSubmitting ? "Working..." : "Complete Purchase";
+
+    if (!blockedReason) {
+        // Enabled (or plainly disabled without an explanation): the button IS
+        // the layout slot, so it carries the passed className.
+        return (
+            <Button
+                type="submit"
+                disabled={disabled}
+                theme={theme.theme}
+                className={className}
+            >
+                {label}
+            </Button>
+        );
+    }
+
+    // Disabled WITH a reason: the wrapper span becomes the layout slot (it
+    // carries className + receives the pointer events the disabled button can't),
+    // and the button fills it.
+    return (
+        <TooltipProvider delayDuration={150}>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    {/* tabIndex so keyboard users can surface the reason too */}
+                    <span
+                        tabIndex={0}
+                        className={`inline-block ${className ?? ""}`}
+                    >
+                        <Button
+                            type="submit"
+                            disabled={disabled}
+                            theme={theme.theme}
+                            className="w-full"
+                        >
+                            {label}
+                        </Button>
+                    </span>
+                </TooltipTrigger>
+                <TooltipContent>{blockedReason}</TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+    );
+}
 
 export function getPlanDescription(
     plan: PaymentPlan,
@@ -61,6 +132,8 @@ export interface PayPanelProps {
     theme: any;
     submitDisabled: boolean;
     isSubmitting: boolean;
+    /** When submit is blocked, the human-readable reason (drives the tooltip). */
+    submitBlockedReason?: string | null;
 }
 
 export interface MobilePayBarProps {
@@ -70,6 +143,8 @@ export interface MobilePayBarProps {
     theme: any;
     submitDisabled: boolean;
     isSubmitting: boolean;
+    /** When submit is blocked, the human-readable reason (drives the tooltip). */
+    submitBlockedReason?: string | null;
 }
 
 /**
@@ -85,6 +160,7 @@ export function PayPanel({
     theme,
     submitDisabled,
     isSubmitting,
+    submitBlockedReason,
 }: PayPanelProps) {
     const plan = selectedPlan || paymentPlans[0] || null;
     const price = getPlanPrice(plan as PaymentPlan);
@@ -158,14 +234,13 @@ export function PayPanel({
                     )}
 
                     <div className="px-6 pb-6">
-                        <Button
-                            type="submit"
+                        <CompletePurchaseButton
+                            theme={theme}
                             disabled={submitDisabled}
-                            theme={theme.theme}
+                            isSubmitting={isSubmitting}
+                            blockedReason={submitBlockedReason}
                             className="w-full"
-                        >
-                            {isSubmitting ? "Working..." : "Complete Purchase"}
-                        </Button>
+                        />
                     </div>
                 </PageCardContent>
             </PageCard>
@@ -185,6 +260,7 @@ export function MobilePayBar({
     theme,
     submitDisabled,
     isSubmitting,
+    submitBlockedReason,
 }: MobilePayBarProps) {
     const plan = selectedPlan || paymentPlans[0] || null;
     const price = getPlanPrice(plan as PaymentPlan);
@@ -212,14 +288,13 @@ export function MobilePayBar({
                     </span>
                 )}
             </div>
-            <Button
-                type="submit"
+            <CompletePurchaseButton
+                theme={theme}
                 disabled={submitDisabled}
-                theme={theme.theme}
+                isSubmitting={isSubmitting}
+                blockedReason={submitBlockedReason}
                 className="flex-1"
-            >
-                {isSubmitting ? "Working..." : "Complete Purchase"}
-            </Button>
+            />
         </div>
     );
 }

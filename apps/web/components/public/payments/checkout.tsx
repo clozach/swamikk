@@ -88,7 +88,27 @@ export default function Checkout({
     const currencySymbol =
         getSymbolFromCurrency(siteinfo.currencyISOCode || "USD") || "$";
 
-    const [selectedPlan, setSelectedPlan] = useState<PaymentPlan | null>(null);
+    // Resolve the plan the checkout opens on, SYNCHRONOUSLY, so the submit
+    // button is never transiently disabled on first paint waiting for the
+    // init effect below: the default plan if set, otherwise the sole plan when
+    // there is exactly one (the single-plan "settled line" has no radio to
+    // click, so nothing else would ever select it). Mirror this in the effect.
+    const resolveInitialPlan = (): PaymentPlan | null => {
+        if (product.defaultPaymentPlanId) {
+            const byDefault = paymentPlans.find(
+                (p) => p.planId === product.defaultPaymentPlanId,
+            );
+            if (byDefault) {
+                return byDefault;
+            }
+        }
+        return paymentPlans.length === 1 ? paymentPlans[0] : null;
+    };
+    const initialPlan = resolveInitialPlan();
+
+    const [selectedPlan, setSelectedPlan] = useState<PaymentPlan | null>(
+        initialPlan,
+    );
     const [isLoggedIn, setIsLoggedIn] = useState(!!profile?.email);
     const [userEmail, setUserEmail] = useState(profile?.email || "");
     const [userName, setUserName] = useState(profile?.name || "");
@@ -104,7 +124,8 @@ export default function Checkout({
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema as any),
         defaultValues: {
-            selectedPlan: product.defaultPaymentPlanId || "",
+            selectedPlan:
+                initialPlan?.planId || product.defaultPaymentPlanId || "",
             joiningReason: "",
         },
     });
@@ -326,13 +347,22 @@ export default function Checkout({
     // watch (not getValues) so the button re-enables the moment a free-
     // community joiningReason is typed — getValues is not reactive.
     const joiningReasonValue = form.watch("joiningReason");
-    const submitDisabled =
-        isSubmitting ||
-        !isLoggedIn ||
-        !form.formState.isValid ||
-        (selectedPlan?.type === paymentPlanType.FREE &&
-            product.type === Constants.MembershipEntityType.COMMUNITY &&
-            !joiningReasonValue);
+    // Gate on the actual business rules, not form.formState.isValid: under RHF's
+    // default onSubmit mode isValid stays false until a validation event, so a
+    // single-plan checkout (no radio to trigger one) could show a stuck-disabled
+    // button. selectedPlan is the real "is a plan chosen?" signal and is set
+    // synchronously (initialPlan) for default/single-plan products. Each branch
+    // yields the human-readable reason the tooltip shows on the disabled button.
+    const submitBlockedReason: string | null = !isLoggedIn
+        ? "Enter your email and verify the code above to continue."
+        : !selectedPlan
+          ? "Choose a plan to continue."
+          : selectedPlan.type === paymentPlanType.FREE &&
+              product.type === Constants.MembershipEntityType.COMMUNITY &&
+              !joiningReasonValue
+            ? "Add your reason for joining to continue."
+            : null;
+    const submitDisabled = isSubmitting || submitBlockedReason !== null;
 
     const isBlocked =
         membershipStatus === Constants.MembershipStatus.ACTIVE ||
@@ -635,6 +665,7 @@ export default function Checkout({
                                     theme={theme}
                                     submitDisabled={submitDisabled}
                                     isSubmitting={isSubmitting}
+                                    submitBlockedReason={submitBlockedReason}
                                 />
                             </div>
 
@@ -646,6 +677,7 @@ export default function Checkout({
                                 theme={theme}
                                 submitDisabled={submitDisabled}
                                 isSubmitting={isSubmitting}
+                                submitBlockedReason={submitBlockedReason}
                             />
                         </form>
                     </FormProvider>
