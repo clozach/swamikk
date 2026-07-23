@@ -93,8 +93,13 @@ export const HEADER_CONTAINER =
    normal flow) state; STICKY_HEADER_BAND_FIXED is the pinned state. */
 export const STICKY_HEADER_BAND_BASE =
     "relative z-20 transition-shadow duration-200 ease-out motion-reduce:transition-none";
+/* Pins BELOW the Journey Card dev band when it is open: the band publishes its
+   height as --jc-band-height (apps/web/components/dev/journey-card), and this
+   `top` tracks it. Band closed ⇒ the var is unset ⇒ 0px ⇒ byte-identical to the
+   old `top-0`. Default-preserving; the only header-machinery touch the Journey
+   Card makes. */
 export const STICKY_HEADER_BAND_FIXED =
-    "fixed inset-x-0 top-0 z-20 transition-shadow duration-200 ease-out motion-reduce:transition-none";
+    "fixed inset-x-0 top-[var(--jc-band-height,0px)] z-20 transition-shadow duration-200 ease-out motion-reduce:transition-none";
 /* live site: #site-header-sticky-wrapper.is-sticky .has-sticky-dropshadow */
 export const STICKY_HEADER_BAND_STUCK = "shadow-[0_2px_5px_rgba(0,0,0,0.1)]";
 
