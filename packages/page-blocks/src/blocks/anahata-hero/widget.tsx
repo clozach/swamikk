@@ -15,7 +15,7 @@ import Settings, {
 } from "./settings";
 import * as defaults from "./defaults";
 import { useSocialRotation } from "./use-social-rotation";
-import { NetworkGlyph, networkLabel } from "./network-glyph";
+import { networkLabel } from "./network-label";
 
 /** CSS-safe scope token derived from the widget instance id (stable across SSR). */
 function toScope(id: string | undefined): string {
@@ -248,11 +248,14 @@ export default function Widget({
     const rotation = useSocialRotation(bannerMode.kind === "social-rotation");
     const rotationActive =
         bannerMode.kind === "social-rotation" && rotation.ready;
-    /* In rotation the a11y name follows the current photo's caption; otherwise
-       it's the stored banner's alt (empty = decorative, as before). */
-    const bannerAlt = rotationActive
-        ? (rotation.current?.alt ?? "")
-        : bannerImage.alt;
+    /* The a11y name follows the SHOWN pool photo's caption; when the static
+       fallback is what's visible (no loaded pool photo) it's the stored
+       banner's alt (empty = decorative, as before). Tied to `current` so the
+       label always matches the image on screen. */
+    const bannerAlt =
+        rotationActive && rotation.current
+            ? rotation.current.alt
+            : bannerImage.alt;
 
     /* Two `height` declarations, not one: a browser that doesn't understand
        `100svh` treats the whole second declaration as invalid and ignores
@@ -302,11 +305,11 @@ export default function Widget({
             }
         >
             {bannerSrc && (
-                /* `group` so the overlay button can reveal on band hover; the
-                   button is a SIBLING AFTER the banner div (not a child) so it
-                   is not swallowed by the div's `role="img"` subtree and reads
-                   AFTER the image description (§4). */
-                <div className="relative group">
+                /* The credit is a SIBLING AFTER the banner div (not a child) so
+                   it is not swallowed by the div's `role="img"` subtree and
+                   reads AFTER the image description (§4). `relative` anchors the
+                   credit's absolute position to the band. */
+                <div className="relative">
                     <div
                         ref={bannerRef}
                         className={clsx(
@@ -358,7 +361,9 @@ export default function Widget({
                                     aria-hidden="true"
                                     className="absolute inset-0 bg-no-repeat transition-opacity duration-700 ease-in-out motion-reduce:transition-none"
                                     style={{
-                                        backgroundImage: `url("${rotation.layerA}")`,
+                                        backgroundImage: rotation.layerA
+                                            ? `url("${rotation.layerA}")`
+                                            : undefined,
                                         backgroundSize: bannerFit,
                                         backgroundPosition: bannerPosition,
                                         opacity: rotation.showA ? 1 : 0,
@@ -395,36 +400,29 @@ export default function Widget({
                             </div>
                         )}
                     </div>
-                    {/* Source-post link. Real anchor, in DOM AFTER the banner
-                        (so SR reads image → link). Hidden at rest; revealed on
-                        band hover AND on its own keyboard focus (an invisible
-                        focus target is a WCAG 2.4.7 failure); kept faintly
-                        visible on coarse pointers, which have no hover. Never
-                        display:none, so it stays focusable. */}
+                    {/* Photo credit. A real anchor, in DOM AFTER the banner (so
+                        a screen reader reads the image description THEN this
+                        credit link). Small, gray, non-underlined small-print
+                        bottom-right; a soft text-shadow keeps it legible over
+                        any photo. Rendered ONLY when a loaded pool photo is
+                        shown (`current`), so it is HIDDEN whenever the static
+                        fallback is what's visible — the credit can never
+                        mislabel the image. */}
                     {rotationActive && rotation.current && (
                         <a
                             href={rotation.current.postUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className={clsx(
-                                "absolute bottom-4 right-4 z-10 inline-flex items-center gap-2",
-                                "rounded-[10px] bg-white text-[#993300] no-underline shadow-md",
-                                "px-[16px] py-[8px] text-[14px] font-bold font-open-sans",
-                                "hover:bg-[#993300] hover:text-white",
-                                "transition-opacity duration-200 ease-in motion-reduce:transition-none",
-                                "opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
-                                "[@media(pointer:coarse)]:opacity-90",
-                                "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#993300]",
+                                "absolute bottom-2 right-3 z-10 cursor-pointer no-underline",
+                                "text-xs text-white/70 hover:text-white/90",
+                                "[text-shadow:0_1px_2px_rgba(0,0,0,0.55)]",
+                                "transition-colors duration-150 ease-in motion-reduce:transition-none",
+                                "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
                             )}
                         >
-                            <NetworkGlyph
-                                domain={rotation.current.networkDomain}
-                                className="text-[1.1em]"
-                            />
-                            <span>
-                                View this photo on{" "}
-                                {networkLabel(rotation.current.networkDomain)}
-                            </span>
+                            Photo from{" "}
+                            {networkLabel(rotation.current.networkDomain)}
                         </a>
                     )}
                 </div>
