@@ -25,11 +25,10 @@ import {
 import { FetchBuilder } from "@courselit/utils";
 import { FormEvent, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { AddressContext, ProfileContext } from "@components/contexts";
+import { AddressContext } from "@components/contexts";
 import DashboardContent from "@components/admin/dashboard-content";
 import { Course, UIConstants } from "@courselit/common-models";
-import { checkPermission } from "@courselit/utils";
-import LoadingScreen from "@components/admin/loading-screen";
+import RequirePermission from "@components/require-permission";
 
 const { permissions } = UIConstants;
 
@@ -56,7 +55,6 @@ export default function Page() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
     const { toast } = useToast();
-    const { profile } = useContext(ProfileContext);
 
     const loadCourses = useCallback(async () => {
         const query = `
@@ -151,73 +149,67 @@ export default function Page() {
         }
     };
 
-    if (!profile) {
-        return <LoadingScreen />;
-    }
-
-    if (
-        !checkPermission(profile.permissions ?? [], [permissions.manageUsers])
-    ) {
-        return <LoadingScreen />;
-    }
-
     return (
-        <DashboardContent breadcrumbs={breadcrumbs}>
-            <h1 className="text-4xl font-semibold mb-4">{COHORT_NEW_HEADER}</h1>
-            <Form onSubmit={createCohort} className="flex flex-col gap-4">
-                <FormField
-                    required
-                    label={COHORT_NAME_LABEL}
-                    name="name"
-                    value={name}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                        setName(e.target.value)
-                    }
-                />
-                <Select
-                    title={COHORT_COURSE_LABEL}
-                    value={courseId}
-                    onChange={setCourseId}
-                    options={courses.map((course) => ({
-                        label: course.title,
-                        value: course.courseId,
-                    }))}
-                    placeholderMessage={COHORT_COURSE_PLACEHOLDER}
-                />
-                <FormField
-                    type="datetime-local"
-                    label={COHORT_SCHEDULE_START_LABEL}
-                    name="startAt"
-                    value={startAt}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                        setStartAt(e.target.value)
-                    }
-                />
-                <FormField
-                    type="datetime-local"
-                    label={COHORT_SCHEDULE_END_LABEL}
-                    name="endAt"
-                    value={endAt}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                        setEndAt(e.target.value)
-                    }
-                />
-                <div className="flex gap-2">
-                    <Button
-                        disabled={!name || !courseId || loading}
-                        onClick={createCohort}
-                    >
-                        {BTN_CONTINUE}
-                    </Button>
-                    <Button
-                        component="link"
-                        href="/dashboard/cohorts"
-                        variant="soft"
-                    >
-                        {BUTTON_CANCEL_TEXT}
-                    </Button>
-                </div>
-            </Form>
-        </DashboardContent>
+        <RequirePermission permissions={[permissions.manageUsers]}>
+            <DashboardContent breadcrumbs={breadcrumbs}>
+                <h1 className="text-4xl font-semibold mb-4">
+                    {COHORT_NEW_HEADER}
+                </h1>
+                <Form onSubmit={createCohort} className="flex flex-col gap-4">
+                    <FormField
+                        required
+                        label={COHORT_NAME_LABEL}
+                        name="name"
+                        value={name}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                            setName(e.target.value)
+                        }
+                    />
+                    <Select
+                        title={COHORT_COURSE_LABEL}
+                        value={courseId}
+                        onChange={setCourseId}
+                        options={courses.map((course) => ({
+                            label: course.title,
+                            value: course.courseId,
+                        }))}
+                        placeholderMessage={COHORT_COURSE_PLACEHOLDER}
+                    />
+                    <FormField
+                        type="datetime-local"
+                        label={COHORT_SCHEDULE_START_LABEL}
+                        name="startAt"
+                        value={startAt}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                            setStartAt(e.target.value)
+                        }
+                    />
+                    <FormField
+                        type="datetime-local"
+                        label={COHORT_SCHEDULE_END_LABEL}
+                        name="endAt"
+                        value={endAt}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                            setEndAt(e.target.value)
+                        }
+                    />
+                    <div className="flex gap-2">
+                        <Button
+                            disabled={!name || !courseId || loading}
+                            onClick={createCohort}
+                        >
+                            {BTN_CONTINUE}
+                        </Button>
+                        <Button
+                            component="link"
+                            href="/dashboard/cohorts"
+                            variant="soft"
+                        >
+                            {BUTTON_CANCEL_TEXT}
+                        </Button>
+                    </div>
+                </Form>
+            </DashboardContent>
+        </RequirePermission>
     );
 }

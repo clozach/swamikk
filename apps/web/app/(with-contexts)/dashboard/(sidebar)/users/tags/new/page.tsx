@@ -19,11 +19,10 @@ import {
 import { FetchBuilder } from "@courselit/utils";
 import { FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { AddressContext, ProfileContext } from "@components/contexts";
+import { AddressContext } from "@components/contexts";
 import DashboardContent from "@components/admin/dashboard-content";
 import { UIConstants } from "@courselit/common-models";
-import { checkPermission } from "@courselit/utils";
-import LoadingScreen from "@components/admin/loading-screen";
+import RequirePermission from "@components/require-permission";
 
 const { permissions } = UIConstants;
 
@@ -48,7 +47,6 @@ export default function Page() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
     const { toast } = useToast();
-    const { profile } = useContext(ProfileContext);
 
     const createTag = async (e: FormEvent) => {
         e.preventDefault();
@@ -85,42 +83,34 @@ export default function Page() {
         }
     };
 
-    if (!profile) {
-        return <LoadingScreen />;
-    }
-
-    if (
-        !checkPermission(profile.permissions ?? [], [permissions.manageUsers])
-    ) {
-        return <LoadingScreen />;
-    }
-
     return (
-        <DashboardContent breadcrumbs={breadcrumbs}>
-            <h1 className="text-4xl font-semibold mb-4">{BTN_NEW_TAG}</h1>
-            <Form onSubmit={createTag} className="flex flex-col gap-4">
-                <FormField
-                    required
-                    label="Tag name"
-                    name="name"
-                    value={name}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                        setName(e.target.value)
-                    }
-                />
-                <div className="flex gap-2">
-                    <Button disabled={!name || loading} onClick={createTag}>
-                        {BTN_CONTINUE}
-                    </Button>
-                    <Button
-                        component="link"
-                        href="/dashboard/users/tags"
-                        variant="soft"
-                    >
-                        {BUTTON_CANCEL_TEXT}
-                    </Button>
-                </div>
-            </Form>
-        </DashboardContent>
+        <RequirePermission permissions={[permissions.manageUsers]}>
+            <DashboardContent breadcrumbs={breadcrumbs}>
+                <h1 className="text-4xl font-semibold mb-4">{BTN_NEW_TAG}</h1>
+                <Form onSubmit={createTag} className="flex flex-col gap-4">
+                    <FormField
+                        required
+                        label="Tag name"
+                        name="name"
+                        value={name}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                            setName(e.target.value)
+                        }
+                    />
+                    <div className="flex gap-2">
+                        <Button disabled={!name || loading} onClick={createTag}>
+                            {BTN_CONTINUE}
+                        </Button>
+                        <Button
+                            component="link"
+                            href="/dashboard/users/tags"
+                            variant="soft"
+                        >
+                            {BUTTON_CANCEL_TEXT}
+                        </Button>
+                    </div>
+                </Form>
+            </DashboardContent>
+        </RequirePermission>
     );
 }

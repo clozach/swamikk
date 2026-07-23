@@ -1,11 +1,10 @@
 "use client";
 
 import DashboardContent from "@components/admin/dashboard-content";
-import LoadingScreen from "@components/admin/loading-screen";
+import RequirePermission from "@components/require-permission";
 import Tags from "@components/admin/users/tags";
-import { AddressContext, ProfileContext } from "@components/contexts";
+import { AddressContext } from "@components/contexts";
 import { UIConstants } from "@courselit/common-models";
-import { checkPermission } from "@courselit/utils";
 import {
     USERS_MANAGER_PAGE_HEADING,
     USERS_TAG_HEADER,
@@ -27,21 +26,12 @@ const breadcrumbs = [
 
 export default function Page() {
     const address = useContext(AddressContext);
-    const { profile } = useContext(ProfileContext);
-
-    if (!profile) {
-        return <LoadingScreen />;
-    }
-
-    if (
-        !checkPermission(profile.permissions ?? [], [permissions.manageUsers])
-    ) {
-        return <LoadingScreen />;
-    }
 
     return (
-        <DashboardContent breadcrumbs={breadcrumbs}>
-            <Tags address={address} />
-        </DashboardContent>
+        <RequirePermission permissions={[permissions.manageUsers]}>
+            <DashboardContent breadcrumbs={breadcrumbs}>
+                <Tags address={address} />
+            </DashboardContent>
+        </RequirePermission>
     );
 }
