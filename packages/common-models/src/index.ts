@@ -10,6 +10,9 @@ export type {
     SocialFeedSource,
     SocialFeedSourceKind,
     SocialHeroConfig,
+    SocialHeroPhoto,
+    CachedSocialHeroPhoto,
+    SocialHeroPoolCache,
 } from "./social-hero";
 export type { default as State } from "./state";
 export type { default as User } from "./user";

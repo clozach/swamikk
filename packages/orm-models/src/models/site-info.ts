@@ -72,4 +72,8 @@ export const SettingsSchema = new mongoose.Schema<SiteInfo>({
     logins: { type: [String], enum: Object.values(Constants.LoginProvider) },
     ssoTrustedDomain: { type: String },
     socialHero: { type: SocialHeroConfigSchema },
+    // Derived server-side SWR cache of the built pool — permissive Mixed; the
+    // pool builder is its only writer and the shape (SocialHeroPoolCache) is
+    // enforced in app code, not the DB.
+    socialHeroPool: { type: mongoose.Schema.Types.Mixed },
 });

@@ -1,7 +1,7 @@
 import { LoginProvider } from "./login-provider";
 import { Media } from "./media";
 import { PaymentMethod } from "./payment-method";
-import { SocialHeroConfig } from "./social-hero";
+import { SocialHeroConfig, SocialHeroPoolCache } from "./social-hero";
 
 export default interface SiteInfo {
     title?: string;
@@ -31,4 +31,6 @@ export default interface SiteInfo {
     ssoTrustedDomain?: string;
     /** Social-media hero rotation config. Absent = feature off. */
     socialHero?: SocialHeroConfig;
+    /** Server-side stale-while-revalidate cache of the built photo pool. */
+    socialHeroPool?: SocialHeroPoolCache;
 }

@@ -67,3 +67,42 @@ export interface SocialHeroConfig {
     poolRefreshMinutes: number;
     sources: SocialFeedSource[];
 }
+
+/**
+ * One normalized photo as SERVED to the client by the pool endpoint.
+ * Carries no credentials and no upstream/expiring URL.
+ */
+export interface SocialHeroPhoto {
+    /** Network-scoped post id, or the manual source id. */
+    id: string;
+    /**
+     * The URL the CLIENT loads. Manual photos point at their stable image URL;
+     * network photos point at the same-origin image proxy
+     * (`/api/social-hero/img/<id>`) because upstream CDN URLs expire.
+     */
+    src: string;
+    /** Canonical post permalink the overlay button links to. */
+    postUrl: string;
+    /** e.g. "instagram.com" — drives the button glyph. */
+    networkDomain: string;
+    /** Caption-derived (truncated) or admin-supplied description. */
+    alt: string;
+    /** ISO timestamp the photo entered the pool. */
+    fetchedAt: string;
+}
+
+/**
+ * A pooled photo AS CACHED server-side. Adds the expiring upstream URL the
+ * image proxy fetches from; this field is stripped before the photo is served.
+ */
+export interface CachedSocialHeroPhoto extends SocialHeroPhoto {
+    /** SERVER-ONLY: upstream (CDN) URL the proxy streams from. Never served. */
+    upstreamUrl?: string;
+}
+
+/** The cached, stale-while-revalidate pool, stored on the domain settings. */
+export interface SocialHeroPoolCache {
+    /** ISO timestamp the pool was last built. */
+    builtAt: string;
+    photos: CachedSocialHeroPhoto[];
+}
