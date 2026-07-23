@@ -349,6 +349,7 @@ export default function Widget({
                             id={fieldId}
                             name="email"
                             type="email"
+                            data-journey="newsletter-email"
                             autoComplete="email"
                             inputMode="email"
                             value={email}
@@ -377,6 +378,7 @@ export default function Widget({
                             className={BUTTON_CLASSES}
                             disabled={isSubmitting}
                             aria-disabled={isSubmitting}
+                            data-journey="newsletter-subscribe"
                             style={{ fontFamily: FONT_BODY }}
                         >
                             {isSubmitting ? "Submitting…" : caption}

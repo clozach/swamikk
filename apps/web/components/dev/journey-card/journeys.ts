@@ -22,11 +22,12 @@
  *   copy     → clipboard assist (e.g. the Stripe test card).
  *   manual   → not automatable; renders hands-on, never looks clickable.
  *
- * data-journey tokens the selectors below rely on (added to controls in
- * Phase 3; keep this list in sync when you add a selector):
- *   buy-now · enrol-now · checkout-email · checkout-continue · checkout-otp
- *   · complete-purchase · newsletter-email · newsletter-subscribe
- *   · login-email · login-getcode
+ * data-journey tokens the fill/click selectors below rely on (added to the
+ * fixed controls in Phase 3; keep this list in sync when you add a selector):
+ *   checkout-email · checkout-continue · complete-purchase
+ *   · newsletter-email · newsletter-subscribe
+ * (buy-now / enrol-now target the page's sole `a[href^="/checkout"]` CTA
+ * instead — those CTAs are CMS page-block content, not fixed components.)
  * ------------------------------------------------------------------ */
 
 /** A run of step text. `code` segments render as monospace chips. */
@@ -89,7 +90,10 @@ export const JOURNEYS: Journey[] = [
             {
                 id: "buy-now",
                 label: [c("Buy now")],
-                auto: { kind: "click", selector: '[data-journey="buy-now"]' },
+                // The product-landing CTA is CMS page-block content, not a
+                // fixed component — but it is the only /checkout link on the
+                // page, so target it by href rather than a data-journey tag.
+                auto: { kind: "click", selector: 'a[href^="/checkout"]' },
             },
             {
                 id: "email-continue",
@@ -151,7 +155,8 @@ export const JOURNEYS: Journey[] = [
             {
                 id: "enrol-now",
                 label: [c("Enrol Now")],
-                auto: { kind: "click", selector: '[data-journey="enrol-now"]' },
+                // CMS CTA — the only /checkout link on the editorial page.
+                auto: { kind: "click", selector: 'a[href^="/checkout"]' },
             },
             {
                 id: "email-continue",

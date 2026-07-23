@@ -53,6 +53,7 @@ function CompletePurchaseButton({
                 disabled={disabled}
                 theme={theme.theme}
                 className={className}
+                data-journey="complete-purchase"
             >
                 {label}
             </Button>
@@ -76,6 +77,7 @@ function CompletePurchaseButton({
                             disabled={disabled}
                             theme={theme.theme}
                             className="w-full"
+                            data-journey="complete-purchase"
                         >
                             {label}
                         </Button>

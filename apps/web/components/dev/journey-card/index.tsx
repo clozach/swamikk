@@ -2,7 +2,8 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
-import { JOURNEYS, type Seg } from "./journeys";
+import { JOURNEYS, type Journey, type JourneyStep, type Seg } from "./journeys";
+import { executeAuto } from "./automation";
 
 /* ------------------------------------------------------------------ *
  * Journey Card — the persistent, keyboard-summoned demo test-plan.
@@ -39,8 +40,12 @@ import { JOURNEYS, type Seg } from "./journeys";
  * registry (segments, not HTML strings — no dangerouslySetInnerHTML), with
  * stable per-step ids that sessionStorage keys on.
  *
- * Phase 3 (next): click a focused step's label to "do it for me"
- * (automation.ts + data-journey attributes on the load-bearing controls).
+ * Phase 3 (this commit): click a focused step's label to "do it for me"
+ * (automation.ts). An automatable label renders as a button with a ▶ hint;
+ * a `manual` step renders hands-on (never clickable) with a ✋ hint + its
+ * `why` as a tooltip. navigate advances-then-assigns (persisting the next
+ * step synchronously so the card re-hydrates already advanced on the next
+ * page); a missed selector flashes the label; copy shows a transient note.
  * ------------------------------------------------------------------ */
 
 const STORAGE_KEY = "kk-journey-card:v1";
@@ -200,6 +205,34 @@ const TRACKER_CSS = `
   font-family:ui-monospace,"SF Mono",Menlo,monospace; font-size:12px;
   background:#f6d36a; color:#312110; border-radius:4px; padding:1px 5px;
 }
+/* Interactive label (automatable step): a button wrapping the chip + a ▶ hint. */
+.kk-tt-run{
+  display:inline-flex; align-items:center; gap:7px; cursor:pointer;
+  background:none; border:0; padding:0; font:inherit; color:inherit;
+}
+.kk-tt-run .kk-tt-txt{ transition:background .16s ease, border-color .16s ease; }
+.kk-tt-run:hover .kk-tt-txt, .kk-tt-run:focus-visible .kk-tt-txt{ background:#fff8e6; border-color:#d97a00; }
+.kk-tt-run:focus-visible{ outline:2px solid #993300; outline-offset:2px; border-radius:8px; }
+.kk-tt-hint{
+  flex:none; font-size:10px; font-weight:700; letter-spacing:.03em;
+  color:#7a2900; background:#f6d36a; border-radius:999px; padding:2px 7px; white-space:nowrap;
+}
+.kk-tt-run:hover .kk-tt-hint, .kk-tt-run:focus-visible .kk-tt-hint{ background:#ffbf00; }
+/* Manual step: hands-on, deliberately NOT button-like. */
+.kk-tt-manual{ display:inline-flex; align-items:center; gap:7px; cursor:default; }
+.kk-tt-hint-manual{
+  flex:none; font-size:10px; font-weight:700; color:#8a7f6a;
+  background:#efe9da; border-radius:999px; padding:2px 7px; white-space:nowrap;
+}
+/* Missed-selector flash. */
+@keyframes kk-tt-miss{ 0%,100%{ background:#fff; } 30%,60%{ background:#ffd9cf; border-color:#c0392b; } }
+.kk-tt-miss .kk-tt-txt{ animation:kk-tt-miss .6s ease; }
+/* Transient "copied" note in the head. */
+.kk-tt-note{
+  margin-left:10px; font-size:11px; font-weight:700; color:#312110;
+  background:#f6d36a; border-radius:999px; padding:2px 10px; white-space:nowrap;
+  animation:kk-tt-slide .2s ease;
+}
 @media (prefers-reduced-motion: reduce){
   .kk-tt-root *, .kk-tt-root{ transition:none !important; animation:none !important; }
 }
@@ -225,8 +258,14 @@ export default function JourneyCard(): JSX.Element | null {
     // read only in the mount effect below (hydration-mismatch guard, exactly
     // like media-debug-overlay.tsx).
     const [state, setState] = useState<StoredState>(DEFAULT_STATE);
+    // Transient "do it for me" feedback: a step whose selector missed (flash),
+    // and a short-lived note (e.g. "copied"). Neither is persisted.
+    const [missStepId, setMissStepId] = useState<string | null>(null);
+    const [note, setNote] = useState<string | null>(null);
     const hydratedRef = useRef(false);
     const bandRef = useRef<HTMLDivElement | null>(null);
+    const noteTimer = useRef<number | undefined>(undefined);
+    const missTimer = useRef<number | undefined>(undefined);
 
     const { open, openJourneyId, stepByJourney } = state;
 
@@ -325,6 +364,15 @@ export default function JourneyCard(): JSX.Element | null {
         };
     }, [open, openJourneyId]);
 
+    // Clear the transient-feedback timers on unmount.
+    useEffect(
+        () => () => {
+            window.clearTimeout(noteTimer.current);
+            window.clearTimeout(missTimer.current);
+        },
+        [],
+    );
+
     if (!open) {
         return null;
     }
@@ -340,6 +388,54 @@ export default function JourneyCard(): JSX.Element | null {
             openJourneyId: journeyId,
             stepByJourney: { ...s.stepByJourney, [journeyId]: stepId },
         }));
+
+    const flashMiss = (stepId: string) => {
+        window.clearTimeout(missTimer.current);
+        setMissStepId(stepId);
+        missTimer.current = window.setTimeout(
+            () => setMissStepId((c) => (c === stepId ? null : c)),
+            650,
+        );
+    };
+    const showNote = (text: string) => {
+        window.clearTimeout(noteTimer.current);
+        setNote(text);
+        noteTimer.current = window.setTimeout(() => setNote(null), 1800);
+    };
+
+    // "Do it for me": run the focused step's auto, then advance. For a
+    // navigation we persist the advance to sessionStorage SYNCHRONOUSLY before
+    // assigning, so the card re-hydrates on the next page already showing the
+    // next step (the whole cross-page trick — no orchestration needed).
+    const runAuto = (journey: Journey, step: JourneyStep) => {
+        const outcome = executeAuto(step.auto);
+        if (outcome.kind === "manual") {
+            return;
+        }
+        if (outcome.kind === "miss") {
+            flashMiss(step.id);
+            return;
+        }
+        const idx = journey.steps.findIndex((s) => s.id === step.id);
+        const nextStep = journey.steps[idx + 1] ?? null;
+        const advanced: StoredState = {
+            v: 1,
+            open: true,
+            openJourneyId: journey.id,
+            stepByJourney: {
+                ...stepByJourney,
+                [journey.id]: nextStep ? nextStep.id : step.id,
+            },
+        };
+        // Persist first (survives a page unload), then apply to React state.
+        window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(advanced));
+        setState(advanced);
+        if (outcome.kind === "copy") {
+            showNote(outcome.note ? `Copied — ${outcome.note}` : "Copied");
+        } else if (outcome.kind === "navigate") {
+            window.location.assign(outcome.href);
+        }
+    };
 
     return (
         <>
@@ -364,6 +460,7 @@ export default function JourneyCard(): JSX.Element | null {
                         Pick a traveller, then step through their journey on the
                         live site.
                     </p>
+                    {note && <span className="kk-tt-note">{note}</span>}
                     <span className="kk-tt-tray-hint">
                         Ctrl+Shift+J · Esc to close
                     </span>
@@ -399,48 +496,103 @@ export default function JourneyCard(): JSX.Element | null {
                                     aria-hidden={!isOpen}
                                 >
                                     <div className="kk-tt-steps">
-                                        {journey.steps.map((step, index) => (
-                                            <React.Fragment key={step.id}>
-                                                <div
-                                                    className={clsx(
-                                                        "kk-tt-step",
-                                                        isOpen &&
-                                                            step.id ===
-                                                                activeStepId &&
-                                                            "kk-tt-on",
-                                                    )}
-                                                >
-                                                    <button
-                                                        type="button"
-                                                        className="kk-tt-dot"
-                                                        aria-label={`Step ${
-                                                            index + 1
-                                                        }`}
-                                                        tabIndex={
-                                                            isOpen ? 0 : -1
-                                                        }
-                                                        onClick={() =>
-                                                            selectStep(
-                                                                journey.id,
-                                                                step.id,
-                                                            )
-                                                        }
+                                        {journey.steps.map((step, index) => {
+                                            const isActive =
+                                                isOpen &&
+                                                step.id === activeStepId;
+                                            const automatable =
+                                                step.auto.kind !== "manual";
+                                            return (
+                                                <React.Fragment key={step.id}>
+                                                    <div
+                                                        className={clsx(
+                                                            "kk-tt-step",
+                                                            isActive &&
+                                                                "kk-tt-on",
+                                                            missStepId ===
+                                                                step.id &&
+                                                                "kk-tt-miss",
+                                                        )}
                                                     >
-                                                        {index + 1}
-                                                    </button>
-                                                    <div className="kk-tt-lab">
-                                                        <StepLabel
-                                                            label={step.label}
-                                                        />
+                                                        <button
+                                                            type="button"
+                                                            className="kk-tt-dot"
+                                                            aria-label={`Step ${
+                                                                index + 1
+                                                            }`}
+                                                            tabIndex={
+                                                                isOpen ? 0 : -1
+                                                            }
+                                                            onClick={() =>
+                                                                selectStep(
+                                                                    journey.id,
+                                                                    step.id,
+                                                                )
+                                                            }
+                                                        >
+                                                            {index + 1}
+                                                        </button>
+                                                        <div className="kk-tt-lab">
+                                                            {isActive &&
+                                                            automatable ? (
+                                                                <button
+                                                                    type="button"
+                                                                    className="kk-tt-run"
+                                                                    title="Do this step for me"
+                                                                    onClick={() =>
+                                                                        runAuto(
+                                                                            journey,
+                                                                            step,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <StepLabel
+                                                                        label={
+                                                                            step.label
+                                                                        }
+                                                                    />
+                                                                    <span className="kk-tt-hint">
+                                                                        ▶ do it
+                                                                    </span>
+                                                                </button>
+                                                            ) : isActive &&
+                                                              step.auto.kind ===
+                                                                  "manual" ? (
+                                                                <span
+                                                                    className="kk-tt-manual"
+                                                                    title={
+                                                                        step
+                                                                            .auto
+                                                                            .why
+                                                                    }
+                                                                >
+                                                                    <StepLabel
+                                                                        label={
+                                                                            step.label
+                                                                        }
+                                                                    />
+                                                                    <span className="kk-tt-hint-manual">
+                                                                        ✋
+                                                                        hands-on
+                                                                    </span>
+                                                                </span>
+                                                            ) : (
+                                                                <StepLabel
+                                                                    label={
+                                                                        step.label
+                                                                    }
+                                                                />
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                {index <
-                                                    journey.steps.length -
-                                                        1 && (
-                                                    <div className="kk-tt-link" />
-                                                )}
-                                            </React.Fragment>
-                                        ))}
+                                                    {index <
+                                                        journey.steps.length -
+                                                            1 && (
+                                                        <div className="kk-tt-link" />
+                                                    )}
+                                                </React.Fragment>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             </React.Fragment>

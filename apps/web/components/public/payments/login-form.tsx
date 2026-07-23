@@ -235,6 +235,7 @@ export function LoginForm({
                                                     theme={theme.theme}
                                                     type="email"
                                                     placeholder="Email address"
+                                                    data-journey="checkout-email"
                                                     {...field}
                                                 />
                                             </FormControl>
@@ -273,6 +274,7 @@ export function LoginForm({
                                     className="w-full"
                                     disabled={loading}
                                     theme={theme.theme}
+                                    data-journey="checkout-continue"
                                 >
                                     Continue
                                 </Button>
