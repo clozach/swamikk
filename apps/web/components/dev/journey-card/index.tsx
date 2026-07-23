@@ -548,10 +548,16 @@ export default function JourneyCard(): JSX.Element | null {
                 return;
             }
             rafPendingRef.current = true;
-            window.requestAnimationFrame(() => {
+            // Coalesced via the pending flag. Deliberately setTimeout, NOT
+            // requestAnimationFrame: rAF suspends entirely in hidden tabs,
+            // and the tester is often in ANOTHER TAB (reading the OTP email)
+            // at the exact moment the mutation lands — a suspended rAF would
+            // silently drop the sweep until refocus. Timers throttle in
+            // background tabs (~1s) but always fire.
+            window.setTimeout(() => {
                 rafPendingRef.current = false;
                 applySweep("mutation");
-            });
+            }, 50);
         };
         const observer = new MutationObserver(scheduleSweep);
         observer.observe(document.body, {
