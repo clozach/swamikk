@@ -403,17 +403,14 @@ export default function JourneyCard(): JSX.Element | null {
         noteTimer.current = window.setTimeout(() => setNote(null), 1800);
     };
 
-    // "Do it for me": run the focused step's auto, then advance. For a
-    // navigation we persist the advance to sessionStorage SYNCHRONOUSLY before
-    // assigning, so the card re-hydrates on the next page already showing the
-    // next step (the whole cross-page trick — no orchestration needed).
+    // "Do it for me": run the focused step's auto, then advance. A step's
+    // side-effect can navigate the page (a buy-now/enrol-now <a>, or Complete
+    // Purchase → Stripe), so we persist the advance to sessionStorage BEFORE
+    // running it and roll back if the selector missed (a miss never navigates).
+    // That way the card re-hydrates on the next page already advanced — the
+    // whole cross-page trick, no orchestration needed.
     const runAuto = (journey: Journey, step: JourneyStep) => {
-        const outcome = executeAuto(step.auto);
-        if (outcome.kind === "manual") {
-            return;
-        }
-        if (outcome.kind === "miss") {
-            flashMiss(step.id);
+        if (step.auto.kind === "manual") {
             return;
         }
         const idx = journey.steps.findIndex((s) => s.id === step.id);
@@ -427,8 +424,20 @@ export default function JourneyCard(): JSX.Element | null {
                 [journey.id]: nextStep ? nextStep.id : step.id,
             },
         };
-        // Persist first (survives a page unload), then apply to React state.
+        const prev = window.sessionStorage.getItem(STORAGE_KEY);
         window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(advanced));
+
+        const outcome = executeAuto(step.auto);
+        if (outcome.kind === "miss") {
+            // Nothing fired — undo the optimistic advance and flash the label.
+            if (prev === null) {
+                window.sessionStorage.removeItem(STORAGE_KEY);
+            } else {
+                window.sessionStorage.setItem(STORAGE_KEY, prev);
+            }
+            flashMiss(step.id);
+            return;
+        }
         setState(advanced);
         if (outcome.kind === "copy") {
             showNote(outcome.note ? `Copied — ${outcome.note}` : "Copied");
