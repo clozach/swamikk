@@ -429,13 +429,18 @@ export default function JourneyCard(): JSX.Element | null {
 
         const outcome = executeAuto(step.auto);
         if (outcome.kind === "miss") {
-            // Nothing fired — undo the optimistic advance and flash the label.
+            // Nothing fired — undo the optimistic advance, flash the label, and
+            // SAY why (an unexplained no-op reads as a dead button). A miss here
+            // almost always means the target control isn't in the page's current
+            // state — e.g. the checkout email field is absent when you're already
+            // signed in, so the fill/click has nothing to act on.
             if (prev === null) {
                 window.sessionStorage.removeItem(STORAGE_KEY);
             } else {
                 window.sessionStorage.setItem(STORAGE_KEY, prev);
             }
             flashMiss(step.id);
+            showNote("Nothing to do here — you may already be past this step");
             return;
         }
         setState(advanced);
