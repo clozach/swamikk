@@ -1026,3 +1026,46 @@ export const SUBSCRIBERS_UNSUBSCRIBE_DIALOG_DESCRIPTION =
 export const SUBSCRIBERS_UNSUBSCRIBE_ACTION_LOADING = "Removing…";
 export const SUBSCRIBERS_UNSUBSCRIBE_CONFIRM = "Unsubscribe";
 export const APP_MESSAGE_SUBSCRIBER_UNSUBSCRIBED = "Subscriber removed";
+
+// --- Social hero (System → Settings child page) ---
+export const SOCIAL_HERO_SETTINGS_HEADER = "Social hero";
+export const SOCIAL_HERO_SETTINGS_DESCRIPTION =
+    "Rotate the homepage hero through photos drawn from your social feeds.";
+export const SOCIAL_HERO_CONFIG_CARD_HEADER = "Rotation";
+export const SOCIAL_HERO_ENABLED_LABEL = "Enable rotation";
+export const SOCIAL_HERO_ENABLED_HINT =
+    "When off, the hero shows its single stored photo. The hero never breaks if a feed is unavailable — it falls back to that photo.";
+export const SOCIAL_HERO_ROTATION_SECONDS_LABEL = "Rotation interval (seconds)";
+export const SOCIAL_HERO_REFRESH_MINUTES_LABEL =
+    "Feed refresh interval (minutes)";
+export const SOCIAL_HERO_SOURCES_HEADER = "Feed sources";
+export const SOCIAL_HERO_NO_SOURCES =
+    "No sources yet. Add a manual photo to see rotation work today.";
+export const SOCIAL_HERO_ADD_MANUAL = "Add manual photo";
+export const SOCIAL_HERO_ADD_INSTAGRAM = "Add Instagram";
+export const SOCIAL_HERO_ADD_FACEBOOK = "Add Facebook";
+export const SOCIAL_HERO_SOURCE_LABEL = "Name";
+export const SOCIAL_HERO_SOURCE_LABEL_PLACEHOLDER = "e.g. KK's Instagram";
+export const SOCIAL_HERO_MANUAL_IMAGE_URL = "Image URL";
+export const SOCIAL_HERO_MANUAL_POST_URL = "Post URL";
+export const SOCIAL_HERO_MANUAL_NETWORK_DOMAIN = "Network domain";
+export const SOCIAL_HERO_MANUAL_NETWORK_DOMAIN_HINT =
+    "e.g. instagram.com — sets the network glyph on the overlay button.";
+export const SOCIAL_HERO_MANUAL_ALT = "Image description";
+export const SOCIAL_HERO_MANUAL_ALT_HINT =
+    "Read by screen readers before the source-post link. Leave blank only if purely decorative.";
+export const SOCIAL_HERO_IG_USER_ID = "Instagram user ID";
+export const SOCIAL_HERO_FB_PAGE_ID = "Facebook Page ID";
+export const SOCIAL_HERO_ACCESS_TOKEN = "Access token";
+export const SOCIAL_HERO_ACCESS_TOKEN_HINT =
+    "Stored server-side only and never shown again in full.";
+export const SOCIAL_HERO_ACCESS_TOKEN_STORED_PLACEHOLDER =
+    "Stored — leave blank to keep it";
+export const SOCIAL_HERO_LIMIT_LABEL = "Max photos from this source";
+export const SOCIAL_HERO_NOT_WIRED_NOTE =
+    "Automatic fetching for Instagram/Facebook is not wired up yet — this source will not contribute photos until a later phase. Manual sources work today.";
+export const SOCIAL_HERO_REMOVE_SOURCE = "Remove";
+export const SOCIAL_HERO_SAVE_SUCCESS = "Social hero settings saved.";
+export const SOCIAL_HERO_KIND_MANUAL = "Manual photo";
+export const SOCIAL_HERO_KIND_INSTAGRAM = "Instagram";
+export const SOCIAL_HERO_KIND_FACEBOOK = "Facebook";

@@ -190,6 +190,82 @@ const loginProviderType = new GraphQLObjectType({
     },
 });
 
+/**
+ * Social-hero feed source — MASKED read shape. A raw `accessToken` is never a
+ * field here; a network source exposes only `hasAccessToken` + a `…last4`
+ * hint. One flat object type (not a GraphQL union) with `kind` selecting the
+ * meaningful subset, mirroring how `SiteInfo` models its optional fields.
+ */
+const socialHeroSourceType = new GraphQLObjectType({
+    name: "SocialHeroSource",
+    fields: {
+        kind: { type: new GraphQLNonNull(GraphQLString) },
+        id: { type: new GraphQLNonNull(GraphQLString) },
+        label: { type: new GraphQLNonNull(GraphQLString) },
+        // instagram / facebook
+        igUserId: { type: GraphQLString },
+        pageId: { type: GraphQLString },
+        limit: { type: GraphQLInt },
+        hasAccessToken: { type: GraphQLBoolean },
+        accessTokenLast4: { type: GraphQLString },
+        // manual
+        imageUrl: { type: GraphQLString },
+        postUrl: { type: GraphQLString },
+        networkDomain: { type: GraphQLString },
+        alt: { type: GraphQLString },
+    },
+});
+
+const socialHeroConfigType = new GraphQLObjectType({
+    name: "SocialHeroConfig",
+    fields: {
+        enabled: { type: new GraphQLNonNull(GraphQLBoolean) },
+        rotationSeconds: { type: new GraphQLNonNull(GraphQLInt) },
+        poolRefreshMinutes: { type: new GraphQLNonNull(GraphQLInt) },
+        sources: {
+            type: new GraphQLNonNull(
+                new GraphQLList(new GraphQLNonNull(socialHeroSourceType)),
+            ),
+        },
+    },
+});
+
+/**
+ * Write shape. `accessToken` is accepted here (write-only) — a blank/omitted
+ * token on a network source means "keep the stored one" (resolver merge). No
+ * masked/read-only fields (`hasAccessToken`, `accessTokenLast4`) appear.
+ */
+const socialHeroSourceInputType = new GraphQLInputObjectType({
+    name: "SocialHeroSourceInput",
+    fields: {
+        kind: { type: new GraphQLNonNull(GraphQLString) },
+        id: { type: new GraphQLNonNull(GraphQLString) },
+        label: { type: new GraphQLNonNull(GraphQLString) },
+        igUserId: { type: GraphQLString },
+        pageId: { type: GraphQLString },
+        accessToken: { type: GraphQLString },
+        limit: { type: GraphQLInt },
+        imageUrl: { type: GraphQLString },
+        postUrl: { type: GraphQLString },
+        networkDomain: { type: GraphQLString },
+        alt: { type: GraphQLString },
+    },
+});
+
+const socialHeroConfigInputType = new GraphQLInputObjectType({
+    name: "SocialHeroConfigInput",
+    fields: {
+        enabled: { type: new GraphQLNonNull(GraphQLBoolean) },
+        rotationSeconds: { type: new GraphQLNonNull(GraphQLInt) },
+        poolRefreshMinutes: { type: new GraphQLNonNull(GraphQLInt) },
+        sources: {
+            type: new GraphQLNonNull(
+                new GraphQLList(new GraphQLNonNull(socialHeroSourceInputType)),
+            ),
+        },
+    },
+});
+
 const types = {
     siteUpdateType,
     sitePaymentUpdateType,
@@ -202,6 +278,8 @@ const types = {
     ssoProviderSettingsType,
     googleProviderSettingsType,
     loginProviderType,
+    socialHeroConfigType,
+    socialHeroConfigInputType,
 };
 
 export default types;

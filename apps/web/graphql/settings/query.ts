@@ -5,6 +5,7 @@ import {
     getFeatures,
     getGoogleProviderSettings,
     getSiteInfo,
+    getSocialHeroConfig,
     getSSOProvider,
     getSSOProviderSettings,
 } from "./logic";
@@ -45,6 +46,11 @@ const queries = {
         type: new GraphQLList(GraphQLString),
         args: {},
         resolve: (_: any, {}: any, context: GQLContext) => getFeatures(context),
+    },
+    getSocialHeroConfig: {
+        type: types.socialHeroConfigType,
+        resolve: (_: any, {}: any, context: GQLContext) =>
+            getSocialHeroConfig(context),
     },
 };
 

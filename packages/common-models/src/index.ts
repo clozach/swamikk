@@ -6,6 +6,11 @@ export type { default as Lesson } from "./lesson";
 export type { default as Link } from "./link";
 export type { default as Profile } from "./profile";
 export type { default as SiteInfo } from "./site-info";
+export type {
+    SocialFeedSource,
+    SocialFeedSourceKind,
+    SocialHeroConfig,
+} from "./social-hero";
 export type { default as State } from "./state";
 export type { default as User } from "./user";
 export type { default as WidgetMetadata } from "./widget-metadata";

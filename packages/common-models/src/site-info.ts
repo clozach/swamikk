@@ -1,6 +1,7 @@
 import { LoginProvider } from "./login-provider";
 import { Media } from "./media";
 import { PaymentMethod } from "./payment-method";
+import { SocialHeroConfig } from "./social-hero";
 
 export default interface SiteInfo {
     title?: string;
@@ -28,4 +29,6 @@ export default interface SiteInfo {
     lemonsqueezyWebhookSecret?: string;
     logins?: LoginProvider[];
     ssoTrustedDomain?: string;
+    /** Social-media hero rotation config. Absent = feature off. */
+    socialHero?: SocialHeroConfig;
 }

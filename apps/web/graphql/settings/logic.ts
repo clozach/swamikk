@@ -26,6 +26,13 @@ import {
     RuntimeLoginProvider,
 } from "@/lib/login-providers";
 import { invalidateDomainCache } from "@/lib/domain-cache";
+import {
+    DEFAULT_SOCIAL_HERO_CONFIG,
+    maskSocialHeroConfig,
+    mergePreservedTokens,
+    parseSocialHeroConfig,
+} from "./social-hero-helpers";
+import type { SocialHeroConfig } from "@courselit/common-models";
 
 const { permissions } = constants;
 
@@ -124,6 +131,11 @@ export const getSiteInfo = async (ctx: GQLContext) => {
         "settings.paypalSecret": 0,
         "settings.razorpaySecret": 0,
         "settings.razorpayWebhookSecret": 0,
+        // Social-hero config is admin-only + read server-side by the pool
+        // builder; the public site query never needs it, so exclude the whole
+        // subtree (defence-in-depth atop the output-type omission + the SSR
+        // formatSiteInfo allowlist). Tokens especially must never ride along.
+        "settings.socialHero": 0,
     };
     const isSiteEditor =
         ctx.user &&
@@ -281,6 +293,48 @@ export const resetPaymentMethod = async (ctx: GQLContext) => {
     await (domain as any).save();
 
     return domain;
+};
+
+export const getSocialHeroConfig = async (ctx: GQLContext) => {
+    assertCanManageSettings(ctx);
+
+    const domain = await DomainModel.findById(ctx.subdomain._id, {
+        "settings.socialHero": 1,
+    }).lean();
+
+    const config = (domain?.settings?.socialHero ??
+        DEFAULT_SOCIAL_HERO_CONFIG) as SocialHeroConfig;
+
+    return maskSocialHeroConfig(config);
+};
+
+export const updateSocialHeroConfig = async (
+    rawConfig: Record<string, unknown>,
+    ctx: GQLContext,
+) => {
+    assertCanManageSettings(ctx);
+
+    const domain: Domain | null = await DomainModel.findById(ctx.subdomain._id);
+    if (!domain) {
+        return null;
+    }
+
+    if (!domain.settings) {
+        domain.settings = {};
+    }
+
+    // Preserve any stored token an edit left blank, THEN validate the merged
+    // shape into the safe tagged union. A network source still tokenless after
+    // the merge is genuinely unconfigured and zod rejects it.
+    const merged = mergePreservedTokens(rawConfig, domain.settings.socialHero);
+    const parsed = parseSocialHeroConfig(merged);
+
+    domain.settings.socialHero = parsed;
+    (domain as any).markModified("settings");
+    await (domain as any).save();
+    invalidateDomainCache(ctx.subdomain.name);
+
+    return maskSocialHeroConfig(parsed);
 };
 
 export const getApikeys = async (ctx: GQLContext) => {

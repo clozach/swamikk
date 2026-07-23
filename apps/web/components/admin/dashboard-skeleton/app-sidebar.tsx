@@ -49,6 +49,7 @@ import {
     SIDEBAR_MENU_USERS,
     SITE_CUSTOMISATIONS_SETTING_HEADER,
     SITE_MISCELLANEOUS_SETTING_HEADER,
+    SOCIAL_HERO_SETTINGS_HEADER,
     SITE_SETTINGS_SECTION_GENERAL,
     SITE_SETTINGS_SECTION_MAILS,
     SITE_SETTINGS_SECTION_PAYMENT,
@@ -364,6 +365,12 @@ function getSidebarItems({
                 isActive:
                     `${path}?tab=${tab}` ===
                     `/dashboard/settings?tab=${SITE_MISCELLANEOUS_SETTING_HEADER}`,
+            },
+            {
+                // A child PAGE (not a ?tab=), mirroring settings/apikeys.
+                title: SOCIAL_HERO_SETTINGS_HEADER,
+                url: `/dashboard/settings/social-hero`,
+                isActive: path === "/dashboard/settings/social-hero",
             },
         ];
         systemItems.push({

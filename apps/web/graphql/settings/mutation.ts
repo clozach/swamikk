@@ -17,6 +17,7 @@ import {
     toggleLoginProvider,
     updateGoogleProvider,
     updateSSOProvider,
+    updateSocialHeroConfig,
 } from "./logic";
 import { LoginProvider, Typeface } from "@courselit/common-models";
 
@@ -166,6 +167,19 @@ const mutations = {
             },
             context: any,
         ) => toggleLoginProvider({ provider, value, ctx: context }),
+    },
+    updateSocialHeroConfig: {
+        type: types.socialHeroConfigType,
+        args: {
+            config: {
+                type: new GraphQLNonNull(types.socialHeroConfigInputType),
+            },
+        },
+        resolve: async (
+            _: any,
+            { config }: { config: Record<string, unknown> },
+            context: any,
+        ) => updateSocialHeroConfig(config, context),
     },
 };
 
