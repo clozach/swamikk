@@ -47,7 +47,7 @@ html
                                         td(align="center" style="background-color:#ff9900; border-radius:10px;")
                                             a(
                                                 href=loginLink
-                                                style="display:inline-block; padding:14px 32px; font-family:'Open Sans', -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; font-size:15px; font-weight:700; color:#ffffff; text-decoration:none;"
+                                                style="display:inline-block; padding:14px 32px; font-family:'Open Sans', -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; font-size:15px; font-weight:700; color:#312110; text-decoration:none;"
                                             ) Log in to start
                         tr
                             td(style="padding:32px 36px 0 36px;")

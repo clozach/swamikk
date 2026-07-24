@@ -42,7 +42,7 @@ html
                                         td(align="center" style="background-color:#ff9900; border-radius:10px;")
                                             a(
                                                 href=downloadLink
-                                                style="display:inline-block; padding:14px 32px; font-family:'Open Sans', -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; font-size:15px; font-weight:700; color:#ffffff; text-decoration:none;"
+                                                style="display:inline-block; padding:14px 32px; font-family:'Open Sans', -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; font-size:15px; font-weight:700; color:#312110; text-decoration:none;"
                                             ) Download now
                         tr
                             td(align="center" style="padding:20px 36px 0 36px;")
