@@ -8,6 +8,7 @@ const config = {
     testEnvironment: "jsdom",
     setupFilesAfterEnv: ["<rootDir>/setupTests.client.ts"],
     watchPathIgnorePatterns: ["globalConfig"],
+    modulePathIgnorePatterns: ["<rootDir>/.next/"],
     testPathIgnorePatterns: [
         "/node_modules/",
         "/.next/",

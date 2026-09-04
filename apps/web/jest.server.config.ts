@@ -3,6 +3,7 @@ import type { Config } from "jest";
 const config: Config = {
     setupFilesAfterEnv: ["<rootDir>/setupTests.server.ts"],
     watchPathIgnorePatterns: ["globalConfig"],
+    modulePathIgnorePatterns: ["<rootDir>/.next/"],
     testEnvironment: "node",
     moduleNameMapper: {
         "@courselit/utils": "<rootDir>/../../packages/utils/src",
