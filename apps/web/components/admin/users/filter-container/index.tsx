@@ -307,6 +307,7 @@ export default function FilterContainer({
                     <div>
                         <Input
                             placeholder="Search by email"
+                            aria-label="Search users by email"
                             value={searchEmail}
                             onChange={(e) => setSearchEmail(e.target.value)}
                             onBlur={() => {

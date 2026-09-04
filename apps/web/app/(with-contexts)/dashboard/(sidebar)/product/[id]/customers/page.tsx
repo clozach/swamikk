@@ -278,6 +278,7 @@ export default function CustomersPage() {
             >
                 <Input
                     placeholder="Search customers..."
+                    aria-label="Search customers"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="max-w-sm"

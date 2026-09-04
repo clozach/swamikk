@@ -90,6 +90,7 @@ function GifSelectorComponent({ onGifSelect }: GifSelectorProps) {
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                     placeholder="Search GIFs"
+                    aria-label="Search GIFs"
                     className="pl-8"
                     value={search}
                     onChange={handleSearchChange}
