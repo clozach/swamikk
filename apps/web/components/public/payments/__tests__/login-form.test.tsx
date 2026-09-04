@@ -1,7 +1,10 @@
 import type { ReactNode } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { Constants } from "@courselit/common-models";
-import { LOGIN_PROVIDER_AUTH_TYPE } from "@/lib/login-providers";
+import {
+    LOGIN_PROVIDER_AUTH_TYPE,
+    type RuntimeLoginProvider,
+} from "@/lib/login-providers";
 import {
     LOGIN_PROVIDER_SSO_BUTTON,
     LOGIN_PROVIDER_SSO_LABEL,
@@ -73,29 +76,41 @@ jest.mock("@components/recaptcha-script-loader", () => () => null, {
 
 jest.mock(
     "@/components/ui/form",
-    () => ({
-        FormControl: ({ children }: { children: ReactNode }) => children,
-        FormField: ({
-            name,
-            render,
-        }: {
-            name: string;
-            render: (props: { field: Record<string, unknown> }) => ReactNode;
-        }) =>
-            render({
-                field: {
-                    name,
-                    value: "",
-                    onChange: jest.fn(),
-                    onBlur: jest.fn(),
-                    ref: jest.fn(),
-                },
-            }),
-        FormItem: ({ children }: { children: ReactNode }) => (
-            <div>{children}</div>
-        ),
-        FormMessage: () => null,
-    }),
+    () => {
+        const React = require("react");
+
+        return {
+            FormField: ({
+                name,
+                render,
+            }: {
+                name: string;
+                render: (props: {
+                    field: Record<string, unknown>;
+                }) => ReactNode;
+            }) =>
+                render({
+                    field: {
+                        name,
+                        value: "",
+                        onChange: jest.fn(),
+                        onBlur: jest.fn(),
+                        ref: jest.fn(),
+                    },
+                }),
+            FormItem: ({ children }: { children: ReactNode }) => (
+                <div>{children}</div>
+            ),
+            FormLabel: ({ children }: { children: ReactNode }) => (
+                <label htmlFor="form-field">{children}</label>
+            ),
+            FormControl: ({ children }: { children: ReactNode }) =>
+                React.cloneElement(children, {
+                    id: "form-field",
+                }),
+            FormMessage: () => null,
+        };
+    },
     { virtual: true },
 );
 
@@ -133,7 +148,23 @@ import {
     ThemeContext,
 } from "@components/contexts";
 
-function renderLoginForm() {
+function renderLoginForm({
+    logins = [Constants.LoginProvider.SSO],
+    loginProviders = [
+        {
+            key: Constants.LoginProvider.SSO,
+            providerId: Constants.LoginProvider.SSO,
+            label: LOGIN_PROVIDER_SSO_LABEL,
+            buttonText: LOGIN_PROVIDER_SSO_BUTTON,
+            authType: LOGIN_PROVIDER_AUTH_TYPE.SAML,
+        },
+    ],
+}: {
+    logins?: Array<
+        (typeof Constants.LoginProvider)[keyof typeof Constants.LoginProvider]
+    >;
+    loginProviders?: RuntimeLoginProvider[];
+} = {}) {
     return render(
         <AddressContext.Provider
             value={{
@@ -176,7 +207,7 @@ function renderLoginForm() {
                             lemonsqueezyOneTimeVariantId: "",
                             lemonsqueezySubscriptionMonthlyVariantId: "",
                             lemonsqueezySubscriptionYearlyVariantId: "",
-                            logins: [Constants.LoginProvider.SSO],
+                            logins,
                         }}
                     >
                         <ThemeContext.Provider
@@ -193,15 +224,7 @@ function renderLoginForm() {
                                 onLoginComplete={jest.fn()}
                                 type={Constants.MembershipEntityType.COURSE}
                                 id="course-123"
-                                loginProviders={[
-                                    {
-                                        key: Constants.LoginProvider.SSO,
-                                        providerId: Constants.LoginProvider.SSO,
-                                        label: LOGIN_PROVIDER_SSO_LABEL,
-                                        buttonText: LOGIN_PROVIDER_SSO_BUTTON,
-                                        authType: LOGIN_PROVIDER_AUTH_TYPE.SAML,
-                                    },
-                                ]}
+                                loginProviders={loginProviders}
                             />
                         </ThemeContext.Provider>
                     </SiteInfoContext.Provider>
@@ -230,5 +253,16 @@ describe("Checkout LoginForm", () => {
                 callbackURL: "/checkout?type=course&id=course-123",
             });
         });
+    });
+
+    it("names the email field for assistive technology", () => {
+        renderLoginForm({
+            logins: [Constants.LoginProvider.EMAIL],
+            loginProviders: [],
+        });
+
+        expect(
+            screen.getByRole("textbox", { name: "Email address" }),
+        ).toBeInTheDocument();
     });
 });

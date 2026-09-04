@@ -9,6 +9,7 @@ import {
     FormControl,
     FormField,
     FormItem,
+    FormLabel,
     FormMessage,
 } from "@/components/ui/form";
 import {
@@ -230,6 +231,9 @@ export function LoginForm({
                                     name="email"
                                     render={({ field }) => (
                                         <FormItem>
+                                            <FormLabel className="sr-only">
+                                                Email address
+                                            </FormLabel>
                                             <FormControl>
                                                 <Input
                                                     theme={theme.theme}
@@ -291,6 +295,9 @@ export function LoginForm({
                                     name="otp"
                                     render={({ field }) => (
                                         <FormItem>
+                                            <FormLabel className="sr-only">
+                                                Verification code
+                                            </FormLabel>
                                             <FormControl>
                                                 <Input
                                                     theme={theme.theme}

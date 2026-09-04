@@ -10,6 +10,7 @@ import {
     Button,
     Caption,
     Input,
+    Label,
     Section,
     Text1,
     Link as PageLink,
@@ -249,7 +250,15 @@ export default function LoginForm({
                                             onSubmit={requestCode}
                                             className="flex flex-col gap-4 w-full"
                                         >
+                                            <Label
+                                                theme={theme.theme}
+                                                htmlFor="login-email"
+                                                className="sr-only"
+                                            >
+                                                Email address
+                                            </Label>
                                             <Input
+                                                id="login-email"
                                                 type="email"
                                                 value={email}
                                                 placeholder="Enter your email"
@@ -283,7 +292,15 @@ export default function LoginForm({
                                             className="flex flex-col gap-4 mb-4 w-full"
                                             onSubmit={signInUser}
                                         >
+                                            <Label
+                                                theme={theme.theme}
+                                                htmlFor="login-code"
+                                                className="sr-only"
+                                            >
+                                                Verification code
+                                            </Label>
                                             <Input
+                                                id="login-code"
                                                 type="text"
                                                 value={code}
                                                 placeholder="Code"

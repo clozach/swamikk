@@ -174,6 +174,11 @@ export default function Widget({
         product.leadMagnet &&
         product.paymentPlans.length === 1 &&
         product.paymentPlans[0].type === Constants.PaymentPlanType.FREE;
+    const displayedPlanPrice = getPlanPrice(
+        product.paymentPlans.find(
+            (plan) => plan.planId === product.defaultPaymentPlan,
+        ),
+    );
 
     const titleText: string = (title ||
         (type === Constants.PageType.SITE
@@ -221,15 +226,12 @@ export default function Widget({
                                     {getSymbolFromCurrency(
                                         state.siteinfo.currencyISOCode,
                                     )}
-                                    {
-                                        getPlanPrice(
-                                            product.paymentPlans.find(
-                                                (x) =>
-                                                    x.planId ===
-                                                    product.defaultPaymentPlan,
-                                            ),
-                                        ).amount
-                                    }
+                                    {displayedPlanPrice.amount}
+                                    {displayedPlanPrice.period && (
+                                        <span className="ml-1">
+                                            {displayedPlanPrice.period}
+                                        </span>
+                                    )}
                                 </Preheader>
                             )}
                         <div className="pb-1 mb-4">
@@ -286,6 +288,7 @@ export default function Widget({
                                                 </Label>
                                                 <Input
                                                     theme={overiddenTheme}
+                                                    id="email"
                                                     value={email}
                                                     onChange={(e) =>
                                                         setEmail(e.target.value)
