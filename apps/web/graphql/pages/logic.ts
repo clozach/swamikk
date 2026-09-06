@@ -1,6 +1,7 @@
 import {
     SITE_FOOTER_WIDGET,
     SITE_HEADER_WIDGET,
+    hasMandatoryBlocks,
 } from "../../config/site-chrome";
 import { responses } from "../../config/strings";
 import DomainModel from "@models/Domain";
@@ -173,13 +174,10 @@ export const updatePage = async ({
             let layout;
             try {
                 layout = JSON.parse(inputLayout);
-                const headerWidget = layout.find(
-                    (widget: any) => widget.name === "header",
-                );
-                const footerWidget = layout.find(
-                    (widget: any) => widget.name === "footer",
-                );
-                if (!headerWidget || !footerWidget) {
+                // The site's chrome may be a replacement block (SITE_*_WIDGET),
+                // not only the stock "header"/"footer" names; checking the
+                // literals rejected every save on a site running its own chrome.
+                if (!hasMandatoryBlocks(layout)) {
                     throw new Error(responses.missing_mandatory_blocks);
                 }
             } catch (err) {

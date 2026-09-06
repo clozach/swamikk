@@ -1499,3 +1499,81 @@ describe("Media cleanup", () => {
         });
     });
 });
+
+describe("updatePage mandatory blocks", () => {
+    let domain: any;
+    let ctx: GQLContext;
+
+    beforeAll(async () => {
+        domain = await DomainModel.create({
+            name: `mandatory-blocks-domain-${Date.now()}-${Math.floor(Math.random() * 100000)}`,
+            email: "owner@test.com",
+            sharedWidgets: {},
+            draftSharedWidgets: {},
+        });
+    });
+
+    beforeEach(() => {
+        ctx = {
+            subdomain: domain,
+            user: {
+                userId: "admin-user",
+                permissions: [permissions.manageSite],
+            } as any,
+            address: "http://test",
+        } as unknown as GQLContext;
+    });
+
+    it("rejects a layout that lacks a footer slot", async () => {
+        const page = await PageModel.create({
+            domain: ctx.subdomain._id,
+            pageId: "mandatory-blocks-missing",
+            type: constants.site,
+            creatorId: "admin-user",
+            name: "Missing footer",
+            layout: [makeHeaderWidget(), makeFooterWidget()],
+        });
+
+        await expect(
+            updatePage({
+                context: ctx,
+                pageId: page.pageId,
+                layout: JSON.stringify([makeHeaderWidget()]),
+            }),
+        ).rejects.toThrow(responses.missing_mandatory_blocks);
+    });
+
+    it("accepts a layout whose chrome blocks carry the configured names", async () => {
+        const page = await PageModel.create({
+            domain: ctx.subdomain._id,
+            pageId: "mandatory-blocks-present",
+            type: constants.site,
+            creatorId: "admin-user",
+            name: "Both slots",
+            layout: [makeHeaderWidget(), makeFooterWidget()],
+        });
+
+        const result = await updatePage({
+            context: ctx,
+            pageId: page.pageId,
+            layout: JSON.stringify([
+                makeHeaderWidget(),
+                {
+                    widgetId: "rich-text-1",
+                    name: "rich-text",
+                    shared: false,
+                    deleteable: true,
+                    settings: { text: { type: "doc", content: [] } },
+                },
+                makeFooterWidget(),
+            ]),
+        });
+
+        expect(result).toBeDefined();
+        const saved = (await PageModel.findOne({
+            domain: ctx.subdomain._id,
+            pageId: page.pageId,
+        }).lean()) as unknown as Page | null;
+        expect(saved?.draftLayout).toHaveLength(3);
+    });
+});

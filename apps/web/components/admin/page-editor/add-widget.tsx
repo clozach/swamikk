@@ -17,7 +17,11 @@ function AddWidget({ pageType, onSelection, onClose }: WidgetsListProps) {
     return (
         <ul>
             {Object.keys(widgets)
-                .filter((widget) => !["header", "footer"].includes(widget))
+                .filter(
+                    (widget) =>
+                        !["header", "footer"].includes(widget) &&
+                        !widgets[widget].metadata.role,
+                )
                 .map((item, index) =>
                     widgets[item].metadata.compatibleWith.includes(pageType) ? (
                         <li

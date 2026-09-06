@@ -11,6 +11,7 @@ import { responses } from "../../config/strings";
 import {
     SITE_FOOTER_WIDGET,
     SITE_HEADER_WIDGET,
+    isSiteChromeBlock,
 } from "../../config/site-chrome";
 
 const MAX_SLUG_ATTEMPTS = 100;
@@ -369,5 +370,7 @@ export async function copySharedWidgetsToDomain(
 }
 
 function isSharedWidget(widget: any) {
-    return ["header", "footer"].includes(widget.name);
+    // Same species as the mandatory-block check: the configured chrome blocks
+    // are the shared ones, so their settings land in draftSharedWidgets.
+    return isSiteChromeBlock(widget?.name);
 }
