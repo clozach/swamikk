@@ -17,6 +17,7 @@ import {
     updateMailInSequence,
 } from "../mails/logic";
 import { assertCanManageCohorts, cohortTag } from "./helpers";
+import { invalidateDomainCache } from "@/lib/domain-cache";
 
 const BLANK_SYSTEM_TEMPLATE_ID = "system-5";
 
@@ -191,6 +192,7 @@ const removeCohort = async (cohort: { cohortId: string }, ctx: GQLContext) => {
         { _id: ctx.subdomain._id },
         { $pull: { tags: tag } },
     );
+    invalidateDomainCache(ctx.subdomain.name);
     await CohortModel.deleteOne({
         domain: ctx.subdomain._id,
         cohortId: cohort.cohortId,

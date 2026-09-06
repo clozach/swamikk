@@ -8,7 +8,7 @@ import connectToDatabase from "../../services/db";
 import { warn } from "@/services/logger";
 import SubscriberModel, { Subscriber } from "@models/Subscriber";
 import { Constants } from "@courselit/common-models";
-import { cacheDomainByName, invalidateDomainCache } from "@/lib/domain-cache";
+import { invalidateDomainCache } from "@/lib/domain-cache";
 import { resolveDomainFromHost } from "./resolve-domain";
 
 const { domainNameForSingleTenancy, schoolNameForSingleTenancy } = constants;
@@ -97,8 +97,9 @@ export async function GET(req: Request) {
             );
             invalidateDomainCache(domain.name);
         }
-
-        cacheDomainByName(domain);
+        // No re-cache here: the resolver already caches on a miss, and
+        // re-caching a hit renewed the TTL on every request, so a stale copy
+        // could outlive any number of writes while traffic kept flowing.
     } else {
         domain = await resolveDomainFromHost({
             multitenant: constants.multitenant,
@@ -145,8 +146,6 @@ export async function GET(req: Request) {
                 },
             );
         }
-
-        cacheDomainByName(domain!);
     }
 
     if (domain!.firstRun) {

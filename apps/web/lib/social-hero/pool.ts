@@ -3,6 +3,7 @@ import type {
     SocialHeroPoolCache,
 } from "@courselit/common-models";
 import DomainModel, { Domain } from "@models/Domain";
+import { invalidateDomainCache } from "@/lib/domain-cache";
 import { buildPool, isPoolStale, toServedPhoto } from "./pool-core";
 import type { ServedPool } from "./pool-core";
 
@@ -22,6 +23,7 @@ async function rebuildAndPersist(
         { _id: (domain as any)._id },
         { $set: { "settings.socialHeroPool": cache } },
     );
+    invalidateDomainCache(domain.name);
     return cache;
 }
 

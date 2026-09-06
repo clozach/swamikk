@@ -11,7 +11,11 @@ import constants from "@/config/constants";
 import { deleteMedia, sealMedia } from "@/services/medialit";
 import GQLContext from "@/models/GQLContext";
 import { responses } from "@/config/strings";
+import { invalidateDomainCache } from "@/lib/domain-cache";
 
+jest.mock("@/lib/domain-cache", () => ({
+    invalidateDomainCache: jest.fn(),
+}));
 jest.mock("@/services/medialit", () => ({
     deleteMedia: jest.fn().mockResolvedValue(true),
     sealMedia: jest.fn().mockImplementation((id) =>
@@ -1575,5 +1579,47 @@ describe("updatePage mandatory blocks", () => {
             pageId: page.pageId,
         }).lean()) as unknown as Page | null;
         expect(saved?.draftLayout).toHaveLength(3);
+    });
+});
+
+describe("publish and the domain cache", () => {
+    let domain: any;
+    let ctx: GQLContext;
+
+    beforeAll(async () => {
+        domain = await DomainModel.create({
+            name: `publish-cache-domain-${Date.now()}-${Math.floor(Math.random() * 100000)}`,
+            email: "owner@test.com",
+            sharedWidgets: {},
+            draftSharedWidgets: {},
+        });
+    });
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        ctx = {
+            subdomain: domain,
+            user: {
+                userId: "admin-user",
+                permissions: [permissions.manageSite],
+            } as any,
+            address: "http://test",
+        } as unknown as GQLContext;
+    });
+
+    it("invalidates the cached domain after publishing shared widgets", async () => {
+        const page = await PageModel.create({
+            domain: ctx.subdomain._id,
+            pageId: "publish-cache-check",
+            type: constants.site,
+            creatorId: "admin-user",
+            name: "Publish cache",
+            layout: [makeHeaderWidget(), makeFooterWidget()],
+            draftLayout: [makeHeaderWidget(), makeFooterWidget()],
+        });
+
+        await publish(page.pageId, ctx);
+
+        expect(invalidateDomainCache).toHaveBeenCalledWith(ctx.subdomain.name);
     });
 });

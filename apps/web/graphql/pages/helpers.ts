@@ -13,6 +13,7 @@ import {
     SITE_HEADER_WIDGET,
     isSiteChromeBlock,
 } from "../../config/site-chrome";
+import { invalidateDomainCache } from "@/lib/domain-cache";
 
 const MAX_SLUG_ATTEMPTS = 100;
 const MAX_SLUG_LENGTH = 200;
@@ -346,6 +347,7 @@ export async function initSharedWidgets(ctx: GQLContext) {
         (ctx.subdomain as any).markModified("sharedWidgets");
         try {
             await (ctx.subdomain as any).save();
+            invalidateDomainCache(ctx.subdomain.name);
         } catch (e) {}
     }
 }
@@ -366,6 +368,7 @@ export async function copySharedWidgetsToDomain(
     }
     (domain as any).markModified("draftSharedWidgets");
     await (domain as any).save();
+    invalidateDomainCache(domain.name);
     return layout;
 }
 

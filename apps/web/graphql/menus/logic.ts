@@ -6,6 +6,7 @@ import DomainModel, { Domain } from "../../models/Domain";
 import { responses } from "../../config/strings";
 import constants from "../../config/constants";
 import { checkPermission } from "@courselit/utils";
+import { invalidateDomainCache } from "@/lib/domain-cache";
 const { permissions } = constants;
 
 type DomainWithLinks = Domain &
@@ -43,6 +44,7 @@ export const saveLink = async (
         link.newTab = linkData.newTab;
 
         await domain.save();
+        invalidateDomainCache(domain.name);
     } else {
         if (!domain.links) {
             domain.links = [] as any;
@@ -55,6 +57,7 @@ export const saveLink = async (
             newTab: linkData.newTab,
         });
         await domain.save();
+        invalidateDomainCache(domain.name);
     }
 
     return domain;
@@ -79,6 +82,7 @@ export const deleteLink = async (
 
     domain.links?.id(id)?.remove();
     await domain.save();
+    invalidateDomainCache(domain.name);
 
     return domain;
 };

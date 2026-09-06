@@ -60,6 +60,7 @@ const { permissions } = UIConstants;
 import { sealMedia } from "@/services/medialit";
 import { seedNotificationPreferencesForUser } from "../notifications/logic";
 import { sanitizeEmail } from "@/lib/sanitize-email";
+import { invalidateDomainCache } from "@/lib/domain-cache";
 
 const removeAdminFieldsFromUserObject = (user: any) => ({
     id: user._id,
@@ -665,6 +666,7 @@ export const getTags = async (ctx: GQLContext) => {
     if (!ctx.subdomain.tags) {
         ctx.subdomain.tags = [];
         await (ctx.subdomain as any).save();
+        invalidateDomainCache(ctx.subdomain.name);
     }
 
     return ctx.subdomain.tags;
@@ -740,6 +742,7 @@ export const addTags = async (tags: string[], ctx: GQLContext) => {
         }
     }
     await (ctx.subdomain as any).save();
+    invalidateDomainCache(ctx.subdomain.name);
 
     return ctx.subdomain.tags;
 };
@@ -759,6 +762,7 @@ export const deleteTag = async (tag: string, ctx: GQLContext) => {
     ctx.subdomain.tags.splice(tagIndex, 1);
 
     await (ctx.subdomain as any).save();
+    invalidateDomainCache(ctx.subdomain.name);
 
     return getTagsWithDetails(ctx);
 };

@@ -26,6 +26,7 @@ import getDeletedMediaIds from "@/lib/get-deleted-media-ids";
 import { deleteMedia, sealMedia } from "@/services/medialit";
 import CommunityModel from "@models/Community";
 import { replaceTempMediaWithSealedMediaInPageLayout } from "@/lib/replace-temp-media-with-sealed-media-in-page-layout";
+import { invalidateDomainCache } from "@/lib/domain-cache";
 const { product, site, blogPage, communityPage, permissions, defaultPages } =
     constants;
 const { pageNames } = Constants;
@@ -321,6 +322,10 @@ export const publish = async (
             },
         },
     );
+    // The request-scoped domain cache would otherwise keep serving the
+    // pre-publish shared widgets (header/footer settings) for up to a minute —
+    // or indefinitely while requests keep re-caching the stale copy.
+    invalidateDomainCache(ctx.subdomain.name);
     for (const mediaId of mediaToDelete) {
         await deleteMedia(mediaId, ctx.subdomain._id);
     }
