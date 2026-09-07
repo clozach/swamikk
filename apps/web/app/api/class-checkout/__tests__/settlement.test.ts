@@ -6,6 +6,8 @@ import { POST } from "../../payment/initiate/route";
 import { POST as verifyPayment } from "../../payment/verify-new/route";
 import { GET as getStatus } from "../status/route";
 import { activateMembership } from "../../payment/helpers";
+import { recordStripeInvoice } from "../../payment/webhook/stripe-invoice";
+import type Stripe from "stripe";
 import { completeClassBooking } from "@/services/class-checkout/activation";
 import { classCheckoutStatus } from "@/services/class-checkout/status";
 import { deleteUserClassCheckoutReservations } from "@/services/class-checkout/cleanup";
@@ -36,7 +38,7 @@ beforeEach(async () => {
     (getPaymentMethodFromSettings as jest.Mock).mockResolvedValue({
         name: "stripe",
         initiate,
-        getCurrencyISOCode: async () => "NZD",
+        getCurrencyISOCode: async () => "nzd",
     });
 });
 function request(
@@ -78,6 +80,7 @@ async function settle(amount = 10) {
             $set: {
                 status: "paid",
                 amount,
+                currencyISOCode: "NZD",
                 paymentProcessorTransactionId: "cs_test_example",
                 paymentMode: "test",
                 settlement: {
@@ -214,40 +217,106 @@ it("joins only the selected cohort exactly once, including native promotion-code
         ).getTime(),
     ).toBe(new Date(intent.booking.startAt).getTime());
 });
-it.each(["unpaid", "stale-session", "evidence-mismatch", "closed-account"])(
-    "refuses %s completion without adding a roster member",
-    async (mode) => {
-        await POST(request());
-        const intent =
-            mode === "unpaid" ? await currentIntent() : await settle();
-        if (mode === "stale-session")
-            await Membership.updateOne(
-                { _id: f.member._id },
-                { $set: { sessionId: "replacement" } },
-            );
-        if (mode === "evidence-mismatch")
-            await Booking.updateOne(
-                { invoiceId: intent.invoiceId },
-                { $set: { userId: "another-user" } },
-            );
-        if (mode === "closed-account")
-            await beginAccountClosure({
-                domainId: String(f.domain._id),
-                userId: f.user.userId,
-            });
-        await expect(
-            completeClassBooking(
-                String(f.domain._id),
-                f.user.userId,
-                intent.membershipId,
-                intent.membershipSessionId,
-            ),
-        ).rejects.toBeDefined();
-        expect((await Cohort.findById(f.cohort._id).lean())?.members).toEqual(
-            [],
+it("completes a native uppercase Stripe settlement and reuses its original booking on callback recovery", async () => {
+    const other = await Cohort.create({
+        domain: f.domain._id,
+        cohortId: randomUUID(),
+        courseId: f.course.courseId,
+        name: "Another class date",
+        checkoutState: "listed-open",
+        schedule: { startAt: new Date(Date.now() + 45 * 86400000) },
+    });
+    expect((await POST(request())).status).toBe(200);
+    const intent = await currentIntent();
+    expect(intent.currency).toBe("nzd");
+    const member = (await Membership.findById(f.member._id))!;
+    const event = {
+        id: "evt_class_settled",
+        type: "checkout.session.completed",
+        created: 1788780000,
+        livemode: false,
+        data: {
+            object: {
+                id: "cs_test_example",
+                amount_total: 1000,
+                currency: "nzd",
+            },
+        },
+    } as unknown as Stripe.Event;
+    const invoice = await recordStripeInvoice(
+        event,
+        f.domain._id,
+        intent.invoiceId,
+        member,
+    );
+    expect(invoice?.currencyISOCode).toBe("NZD");
+    const bookingBefore = await Booking.findOne({
+        invoiceId: intent.invoiceId,
+    }).lean();
+    await activateMembership(f.domain as any, member, f.plan);
+    expect((await currentIntent()).state.kind).toBe("completed");
+    expect((await Cohort.findById(f.cohort._id).lean())?.members).toEqual([
+        f.user.userId,
+    ]);
+    expect((await Cohort.findById(other._id).lean())?.members).toEqual([]);
+    const completedBefore = await currentIntent();
+    await recordStripeInvoice(event, f.domain._id, intent.invoiceId, member);
+    await activateMembership(f.domain as any, member, f.plan);
+    expect(await currentIntent()).toEqual(completedBefore);
+    expect(
+        await Booking.findOne({ invoiceId: intent.invoiceId }).lean(),
+    ).toEqual(bookingBefore);
+    expect(await Invoice.countDocuments({ domain: f.domain._id })).toBe(1);
+    expect((await Cohort.findById(f.cohort._id).lean())?.members).toEqual([
+        f.user.userId,
+    ]);
+    expect((await Cohort.findById(other._id).lean())?.members).toEqual([]);
+});
+it.each([
+    "unpaid",
+    "stale-session",
+    "evidence-mismatch",
+    "closed-account",
+    "currency-mismatch",
+    "overpayment",
+])("refuses %s completion without adding a roster member", async (mode) => {
+    await POST(request());
+    const intent = mode === "unpaid" ? await currentIntent() : await settle();
+    if (mode === "stale-session")
+        await Membership.updateOne(
+            { _id: f.member._id },
+            { $set: { sessionId: "replacement" } },
         );
-    },
-);
+    if (mode === "evidence-mismatch")
+        await Booking.updateOne(
+            { invoiceId: intent.invoiceId },
+            { $set: { userId: "another-user" } },
+        );
+    if (mode === "currency-mismatch")
+        await Invoice.updateOne(
+            { invoiceId: intent.invoiceId },
+            { $set: { currencyISOCode: "USD" } },
+        );
+    if (mode === "overpayment")
+        await Invoice.updateOne(
+            { invoiceId: intent.invoiceId },
+            { $set: { amount: 11 } },
+        );
+    if (mode === "closed-account")
+        await beginAccountClosure({
+            domainId: String(f.domain._id),
+            userId: f.user.userId,
+        });
+    await expect(
+        completeClassBooking(
+            String(f.domain._id),
+            f.user.userId,
+            intent.membershipId,
+            intent.membershipSessionId,
+        ),
+    ).rejects.toBeDefined();
+    expect((await Cohort.findById(f.cohort._id).lean())?.members).toEqual([]);
+});
 it("account cleanup waits for in-flight allocation, then erases only idle reservation data and retains financial evidence", async () => {
     let started!: () => void, release!: () => void;
     const reached = new Promise<void>((r) => {

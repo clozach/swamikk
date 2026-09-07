@@ -57,7 +57,8 @@ export async function completeClassBooking(
                     Number.isFinite(invoice.amount) &&
                     invoice.amount >= 0 &&
                     invoice.amount <= intent.amount &&
-                    invoice.currencyISOCode === intent.currency &&
+                    invoice.currencyISOCode.toLowerCase() ===
+                        intent.currency.toLowerCase() &&
                     invoice.paymentProcessorTransactionId &&
                     invoice.paymentMode &&
                     ["test", "live"].includes(invoice.paymentMode) &&
