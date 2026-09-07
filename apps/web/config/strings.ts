@@ -25,6 +25,8 @@ export const responses = {
     drip_not_released: "This section is not yet released for you",
     membership_ended_content:
         "Your membership has ended. You can still open the content released to you during your membership from My content.",
+    purchase_refunded_content:
+        "This purchase was fully refunded, so its content access has ended. Other valid purchases remain available in My content.",
     not_a_creator: "You do not have rights to perform this action",
     course_not_empty: "Delete all lessons before trying deleting the course",
     invalid_offset: "Invalid offset",

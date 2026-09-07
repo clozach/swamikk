@@ -15,6 +15,7 @@ import {
 } from "../logic";
 import { responses } from "@/config/strings";
 import { MembershipAccessModel } from "../../../../../packages/common-logic/src/member-access/models";
+import { PurchaseAccessModel } from "../../../../../packages/common-logic/src/purchase-access/model";
 import { sealMedia } from "@/services/medialit";
 import {
     lessonFingerprint,
@@ -434,6 +435,56 @@ describe("Lesson visibility and progress", () => {
             ).rejects.toThrow(responses.membership_ended_content);
         } finally {
             await MembershipAccessModel.deleteOne({ _id: period._id });
+        }
+    });
+
+    it("explains a fully refunded purchase consistently without promising monthly retained content", async () => {
+        const memberships = await MembershipModel.find({
+            domain: testDomain._id,
+            userId: student.userId,
+            entityId: { $in: [course.courseId, quizCourse.courseId] },
+        });
+        await PurchaseAccessModel.insertMany(
+            memberships.map((membership) => ({
+                domain: testDomain._id,
+                userId: student.userId,
+                courseId: membership.entityId,
+                membershipId: membership.membershipId,
+                membershipSessionId: membership.sessionId,
+                state: "ended",
+                writes: [],
+                updatedAt: new Date(),
+            })),
+        );
+        try {
+            for (const operation of [
+                () =>
+                    getLessonDetails(
+                        publishedLessonOne.lessonId,
+                        studentCtx,
+                        course.courseId,
+                    ),
+                () =>
+                    markLessonCompleted(
+                        publishedLessonOne.lessonId,
+                        studentCtx,
+                    ),
+                () =>
+                    evaluateLesson(
+                        dripQuizLesson.lessonId,
+                        { answers: [[0]] },
+                        studentCtx,
+                    ),
+            ]) {
+                await expect(operation()).rejects.toThrow(
+                    /purchase was fully refunded/,
+                );
+            }
+        } finally {
+            await PurchaseAccessModel.deleteMany({
+                domain: testDomain._id,
+                userId: student.userId,
+            });
         }
     });
 

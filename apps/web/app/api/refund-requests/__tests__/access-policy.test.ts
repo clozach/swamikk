@@ -181,7 +181,7 @@ it("approves a partial amount, preserves access, then separately reviews and app
     expect((await approve(next)).state).toBe("complete");
     expect(await access()).toMatchObject({
         kind: "denied",
-        reason: "membership-ended",
+        reason: "purchase-refunded",
     });
     expect(api.refunds.create).toHaveBeenCalledTimes(2);
     const [one, two] = api.refunds.create.mock.calls;

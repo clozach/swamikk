@@ -251,6 +251,7 @@ export async function getMemberCourseReadScope({
             ),
             retainedLessonIds: Array.from(retained),
             processing,
+            purchaseRefunded: refunded.size > 0,
         };
     return { kind: "none", courseId };
 }
@@ -299,7 +300,11 @@ export async function getLessonAccess({
             };
         return {
             kind: "denied",
-            reason: scope.processing ? "access-processing" : "membership-ended",
+            reason: scope.processing
+                ? "access-processing"
+                : scope.purchaseRefunded
+                  ? "purchase-refunded"
+                  : "membership-ended",
         };
     }
     if (scope.kind === "active") {

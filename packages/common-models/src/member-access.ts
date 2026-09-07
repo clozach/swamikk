@@ -115,6 +115,7 @@ export type LessonAccessDecision =
               | "unpublished"
               | "membership-required"
               | "membership-ended"
+              | "purchase-refunded"
               | "not-released"
               | "access-processing";
       };
@@ -134,5 +135,6 @@ export type MemberCourseReadScope =
           lessonIds: string[];
           retainedLessonIds: string[];
           processing: boolean;
+          purchaseRefunded?: boolean;
       }
     | { kind: "none"; courseId: string };
