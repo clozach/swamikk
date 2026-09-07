@@ -1,11 +1,8 @@
 import {
-    readUserRefundEvidence,
-    memberRefundSummary,
+    readRefundProjection,
+    refundSummaryFor,
     withObservedRefund,
 } from "@/payments-new/stripe-lifecycle/refund-projection";
-import RefundLedger from "@/models/StripeChargeRefunds";
-import { withNativeRefundEvidence } from "@/payments-new/stripe-lifecycle/refund-native";
-import BillingCancellation from "@/models/BillingCancellation";
 import type GQLContext from "@/models/GQLContext";
 import { Constants } from "@courselit/common-models";
 import {
@@ -49,10 +46,10 @@ export async function readMemberRefundRequests(
         ...(ctx.memberMimic ? { state: { $ne: "draft" } } : {}),
     }).lean();
     const products: MemberRefundRequestsView["products"] = [];
-    const refunds = await readUserRefundEvidence(
-        String(ctx.subdomain._id),
+    const projection = await readRefundProjection(String(ctx.subdomain._id), [
         ctx.user.userId,
-    );
+    ]);
+    const refunds = projection.evidence;
     for (const invoice of invoices) {
         const member = memberships.find(
             (item) => item.membershipId === invoice.membershipId,
@@ -71,9 +68,10 @@ export async function readMemberRefundRequests(
                 : null;
         products.push({
             invoiceId: invoice.invoiceId,
-            refundSummary: memberRefundSummary(
-                refunds.find((item) => item.invoiceId === invoice.invoiceId),
-            ),
+            refundSummary: refundSummaryFor(projection, {
+                ...invoice,
+                userId: ctx.user.userId,
+            }),
             productName:
                 request?.productName ||
                 course?.title ||
@@ -106,31 +104,17 @@ export async function readOperatorRefundRequests(
         .sort({ submittedAt: 1 })
         .limit(100)
         .lean();
-    const evidenceScope = {
-        domain: ctx.subdomain._id,
-        userId: { $in: records.map((item) => item.userId) },
-    };
-    const [evidence, cancellations, nativeRequests] = await Promise.all([
-        RefundLedger.find(evidenceScope).lean(),
-        BillingCancellation.find(evidenceScope).lean(),
-        RefundRequest.find(evidenceScope).lean(),
-    ]);
-    const native = [...cancellations, ...nativeRequests];
-    const currentEvidence = evidence.map((item) =>
-        withNativeRefundEvidence(item, native),
+    const projection = await readRefundProjection(
+        String(ctx.subdomain._id),
+        records.map((item) => item.userId),
     );
+    const currentEvidence = projection.evidence;
     return {
         requests: records.map((record) => ({
             ...refundRequestView(withObservedRefund(record, currentEvidence), {
                 operator: true,
             }),
-            refundSummary: memberRefundSummary(
-                currentEvidence.find(
-                    (item) =>
-                        item.invoiceId === record.invoiceId &&
-                        item.userId === record.userId,
-                ),
-            ),
+            refundSummary: refundSummaryFor(projection, record),
         })),
     };
 }

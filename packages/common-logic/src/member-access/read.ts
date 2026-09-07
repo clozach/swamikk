@@ -14,6 +14,7 @@ import { accessDate, accessPeriod } from "./keys";
 import { subscriptionEndBoundary } from "./subscription";
 import type { ProviderEndBoundary } from "../../../common-models/src/stripe-lifecycle";
 import { frozenSnapshotWithinProviderEnd } from "./provider-boundary";
+import { PurchaseAccessModel } from "../purchase-access/model";
 
 export async function getMemberCourseReadScope({
     domainId,
@@ -40,6 +41,20 @@ export async function getMemberCourseReadScope({
         entityId: courseId,
         entityType: Constants.MembershipEntityType.COURSE,
     }).lean();
+    const refunded = new Set(
+        (
+            await PurchaseAccessModel.find({
+                domain: domainId,
+                userId,
+                courseId,
+                state: { $ne: "open" },
+            })
+                .select("membershipId membershipSessionId")
+                .lean()
+        ).map(
+            (record) => `${record.membershipId}:${record.membershipSessionId}`,
+        ),
+    );
     const providerCutoffs = new Map<string, ProviderEndBoundary>();
     for (const membership of memberships) {
         const cutoff = await subscriptionEndBoundary({
@@ -57,6 +72,9 @@ export async function getMemberCourseReadScope({
             .filter(
                 (membership) =>
                     membership.status === Constants.MembershipStatus.ACTIVE &&
+                    !refunded.has(
+                        `${membership.membershipId}:${membership.sessionId}`,
+                    ) &&
                     !providerCutoffs.has(
                         `${membership.membershipId}:${membership.sessionId}`,
                     ),
@@ -81,6 +99,9 @@ export async function getMemberCourseReadScope({
     for (const membership of memberships) {
         if (
             membership.status !== Constants.MembershipStatus.ACTIVE ||
+            refunded.has(
+                `${membership.membershipId}:${membership.sessionId}`,
+            ) ||
             providerCutoffs.has(
                 `${membership.membershipId}:${membership.sessionId}`,
             )
@@ -145,6 +166,10 @@ export async function getMemberCourseReadScope({
         );
     let startedAt: Date | undefined, lastRelativeReleaseAt: Date | undefined;
     for (const period of periods) {
+        if (
+            refunded.has(`${period.membershipId}:${period.membershipSessionId}`)
+        )
+            continue;
         const cutoff =
             providerCutoffs.get(
                 `${period.membershipId}:${period.membershipSessionId}`,
@@ -210,6 +235,7 @@ export async function getMemberCourseReadScope({
         };
     if (
         retained.size ||
+        refunded.size ||
         processing ||
         periods.some(
             (period) =>

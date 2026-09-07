@@ -14,6 +14,7 @@ export interface RefundMoneyView {
     expiresAt: string;
     amount: number;
     paidAmount: number;
+    remainingAmount?: number;
     alreadyRefundedAmount: number;
     currency: string;
     mode: "test" | "live";
@@ -62,7 +63,12 @@ export interface RefundRequestView {
                   | "requires_action";
           }
         | { kind: "review-required"; reason: string };
-    access: "unchanged" | "pending" | "resolved";
+    access:
+        | "unchanged"
+        | "pending"
+        | "resolved"
+        | "ended-booking-review"
+        | "review-required";
     notification: { kind: "private-review-queue"; delivery: "not-configured" };
     reviewHash: string;
     decisionExplanation: string | null;
@@ -105,7 +111,13 @@ export interface RefundBookingChoicesView {
 export type RefundRequestCommand =
     | { action: "prepare"; invoiceId: string; reason: string }
     | { action: "submit" | "reconcile"; requestId: string; reviewHash: string }
-    | { action: "review"; requestId: string }
+    | {
+          action: "review";
+          requestId: string;
+          amount?: number;
+          newAttempt?: boolean;
+          reviewHash?: string;
+      }
     | {
           action: "approve" | "decline" | "escalate";
           requestId: string;

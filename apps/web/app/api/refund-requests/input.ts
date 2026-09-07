@@ -18,7 +18,15 @@ export const memberRefundInput = z.discriminatedUnion("action", [
         .strict(),
 ]);
 export const operatorRefundInput = z.discriminatedUnion("action", [
-    z.object({ action: z.literal("review"), requestId: id }).strict(),
+    z
+        .object({
+            action: z.literal("review"),
+            requestId: id,
+            amount: z.number().int().positive().safe().optional(),
+            newAttempt: z.boolean().optional(),
+            reviewHash: reviewHash.optional(),
+        })
+        .strict(),
     z
         .object({
             action: z.literal("approve"),

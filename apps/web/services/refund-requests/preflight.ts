@@ -5,12 +5,24 @@ import { refundReceipt } from "./receipts";
 import { readRefundClassEvidence } from "./booking";
 import { purchaseInput, type RefundRequestDependencies } from "./provider";
 import { approvedRefundAccessDecision } from "./policy";
+import { supportedPurchaseAccessTarget } from "./access";
 export async function validateFirstRefundAttempt(
     ctx: GQLContext,
     record: InternalRefundRequest,
     operator: boolean,
     deps: RefundRequestDependencies,
 ) {
+    requireCondition(
+        await supportedPurchaseAccessTarget(
+            String(record.domain),
+            record.invoiceId,
+            record.membershipId,
+            record.membershipSessionId,
+        ),
+        "needs_review",
+        "This payment’s access association needs review before money can be sent.",
+        409,
+    );
     requireCondition(
         record.accessDecision === approvedRefundAccessDecision,
         "needs_review",

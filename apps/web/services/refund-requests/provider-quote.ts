@@ -25,6 +25,7 @@ export async function preparePurchaseRefund(
     client: PurchaseRefundClient,
     input: PurchaseRefundInput,
     now = new Date(),
+    refundAmount?: number,
 ): Promise<PurchaseRefundQuoteResult> {
     try {
         const { paymentIntentId, customerId, charge } =
@@ -48,6 +49,15 @@ export async function preparePurchaseRefund(
                 charge.amount_refunded,
             "refund-history-incomplete",
         );
+        requireRefund(
+            refundAmount === undefined ||
+                (Number.isSafeInteger(refundAmount) &&
+                    refundAmount > 0 &&
+                    refundAmount <= charge.amount - charge.amount_refunded &&
+                    (!["isk", "ugx"].includes(input.currency) ||
+                        refundAmount % 100 === 0)),
+            "refund-amount-invalid",
+        );
         const quote: Omit<PurchaseRefundQuote, "hash"> = {
             ...input,
             kind: "stripe-purchase-refund",
@@ -57,6 +67,7 @@ export async function preparePurchaseRefund(
             customerId,
             refundedAmount: charge.amount_refunded,
             refundableAmount: charge.amount - charge.amount_refunded,
+            ...(refundAmount === undefined ? {} : { refundAmount }),
             existingRefunds,
             capturedAt: now.toISOString(),
         };

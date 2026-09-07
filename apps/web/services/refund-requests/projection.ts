@@ -7,6 +7,7 @@ export function refundReviewHash(
     record: Pick<
         InternalRefundRequest,
         | "requestId"
+        | "attemptId"
         | "invoiceId"
         | "reason"
         | "quote"
@@ -20,6 +21,7 @@ export function refundReviewHash(
         .update(
             stableJson({
                 requestId: record.requestId,
+                attemptId: record.attemptId || record.requestId,
                 invoiceId: record.invoiceId,
                 reason: record.reason,
                 quoteHash: record.quote?.hash || null,
@@ -85,7 +87,10 @@ export function refundRequestView(
                 ? {
                       hash: record.quote.hash,
                       expiresAt: new Date(record.quoteExpiresAt).toISOString(),
-                      amount: record.quote.refundableAmount,
+                      amount:
+                          record.quote.refundAmount ??
+                          record.quote.refundableAmount,
+                      remainingAmount: record.quote.refundableAmount,
                       paidAmount: record.quote.paidAmount,
                       alreadyRefundedAmount: record.quote.refundedAmount,
                       currency: record.quote.currency,
@@ -105,7 +110,12 @@ export function refundRequestView(
                     ? "The access consequence needs a policy decision before a refund can be applied."
                     : record.accessDecision === "preserve-access"
                       ? "Access to this purchase stays available after the refund."
-                      : "Access granted by this purchase ends after the refund succeeds. Other purchases and membership stay unchanged.",
+                      : record.quote &&
+                          (record.quote.refundAmount ??
+                              record.quote.refundableAmount) <
+                              record.quote.refundableAmount
+                        ? "This partial refund keeps this purchase’s access. A later confirmed full refund ends only this purchase’s access."
+                        : "Once confirmed successful refunds total the original payment, access granted by this purchase ends. Other purchases, a later rejoin and monthly membership stay unchanged.",
         },
         refund,
         access: record.access,

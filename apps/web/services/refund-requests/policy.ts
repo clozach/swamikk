@@ -16,7 +16,6 @@ export function refundRouting(input: {
         : "class-review";
 }
 
-// Product/class access after refund is awaiting Al's explicit policy decision.
-// No application may proceed while this is pending, even if payment/date proof passes.
+// Al approved full purchase/class refund ending only its grant; partial keeps it.
 export const approvedRefundAccessDecision: RefundAccessDecision =
-    "policy-pending";
+    "end-refunded-access";

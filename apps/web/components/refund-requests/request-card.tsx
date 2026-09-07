@@ -92,6 +92,17 @@ export function RequestCard({
             <p role="status" className="text-sm">
                 {refundStatus(request.refund)}
             </p>
+            {request.access === "pending" &&
+                request.refund.kind === "refund" &&
+                request.refund.status === "succeeded" && (
+                    <p role="status">{copy.accessPending}</p>
+                )}
+            {request.access === "review-required" && (
+                <p role="status">{copy.accessReview}</p>
+            )}
+            {request.access === "ended-booking-review" && (
+                <p role="status">{copy.classRosterReview}</p>
+            )}
             {request.decisionExplanation && (
                 <p className="whitespace-pre-wrap break-words text-sm">
                     Review note: {request.decisionExplanation}

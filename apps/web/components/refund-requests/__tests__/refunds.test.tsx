@@ -18,12 +18,94 @@ import { money } from "@/components/member-billing/format";
 import { refundSummaryCopy } from "@/components/refund-summary/copy";
 import OperatorRefunds from "../operator";
 import { ProfileContext } from "@/components/contexts";
+import { reviewedAmount } from "../amount-review";
 let mockMimic: MemberMimicView = { kind: "inactive" };
 jest.mock("@/components/member-mimic/context", () => ({
     useMemberMimic: () => mockMimic,
 }));
 const originalFetch = global.fetch,
     fetchMock = jest.fn();
+
+it("requires a fresh amount review before an edited amount can be approved", async () => {
+    const command = jest.fn(async () => true);
+    render(
+        <OperatorActions
+            request={request({
+                state: "submitted",
+                canApprove: true,
+                canDecline: true,
+            })}
+            busy={false}
+            command={command}
+        />,
+    );
+    fireEvent.change(screen.getByLabelText(copy.explanation), {
+        target: { value: "Approved after review" },
+    });
+    expect(screen.getByRole("button", { name: copy.approve })).toBeEnabled();
+    fireEvent.change(screen.getByLabelText(/Refund amount/), {
+        target: { value: "10.25" },
+    });
+    expect(screen.getByRole("button", { name: copy.approve })).toBeDisabled();
+    await act(async () => {
+        fireEvent.click(
+            screen.getByRole("button", { name: copy.reviewAmount }),
+        );
+    });
+    expect(command).toHaveBeenCalledWith({
+        action: "review",
+        requestId: "request",
+        amount: 1025,
+    });
+    expect(command).toHaveBeenCalledTimes(1);
+});
+it.each([
+    ["10.25", "nzd", 1025],
+    ["10.251", "nzd", null],
+    ["10.5", "jpy", null],
+    ["10", "jpy", 10],
+    ["10.01", "isk", null],
+    ["-1", "nzd", null],
+])(
+    "validates %s %s without rounding the reviewed amount",
+    (value, currency, expected) => {
+        expect(reviewedAmount(value as string, currency as string)).toBe(
+            expected,
+        );
+    },
+);
+it("keeps a completed partial attempt separate from reviewing the remaining refund", async () => {
+    const command = jest.fn(async () => true),
+        saved = request({
+            state: "complete",
+            access: "resolved",
+            refund: { kind: "refund", status: "succeeded" },
+        });
+    saved.quote = { ...saved.quote!, amount: 1000, remainingAmount: 4200 };
+    render(<OperatorActions request={saved} busy={false} command={command} />);
+    fireEvent.click(screen.getByRole("button", { name: copy.reviewRemaining }));
+    expect(command).toHaveBeenCalledWith({
+        action: "review",
+        requestId: "request",
+        reviewHash: "reviewed-hash",
+        newAttempt: true,
+    });
+    expect(
+        screen.queryByRole("button", { name: copy.approve }),
+    ).not.toBeInTheDocument();
+});
+it("shows ended content access and class roster review without claiming another booking was removed", () => {
+    render(
+        <RequestCard
+            request={request({
+                state: "complete",
+                access: "ended-booking-review",
+                refund: { kind: "refund", status: "succeeded" },
+            })}
+        />,
+    );
+    expect(screen.getByText(copy.classRosterReview)).toBeInTheDocument();
+});
 const response = (value: unknown) => ({ ok: true, json: async () => value });
 function request(
     overrides: Partial<RefundRequestView> = {},

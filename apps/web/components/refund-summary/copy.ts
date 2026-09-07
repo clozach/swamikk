@@ -11,6 +11,15 @@ export const refundSummaryCopy = {
     reviewAmounts:
         "These amounts were recorded for this review. Refund history shows later updates.",
     alreadyAtReview: "Already refunded at review",
+    access: {
+        pending:
+            "This purchase was fully refunded. Its access is unavailable while processing finishes.",
+        ended: "This purchase was fully refunded and its access has ended. Other purchases and a later rejoin are unchanged.",
+        "ended-booking-review":
+            "This purchase’s content access has ended. Class roster needs review; shared roster and tag entries are preserved for any other valid booking.",
+        "recovery-required":
+            "The refund result changed after this purchase’s access ended. Contact us for an access recovery review; enrollment has not been restored automatically.",
+    },
     states: {
         pending: "Pending",
         requires_action: "Action required",

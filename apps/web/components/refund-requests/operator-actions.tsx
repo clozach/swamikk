@@ -6,6 +6,8 @@ import type {
 } from "@/services/refund-requests/types";
 import { BookingForm } from "./booking-form";
 import { refundCopy as copy } from "./copy";
+import { AmountReview } from "./amount-review";
+import { fromStripeAmount } from "@/payments-new/stripe-currency";
 
 export function OperatorActions({
     request,
@@ -17,6 +19,7 @@ export function OperatorActions({
     command: (input: RefundRequestCommand) => Promise<boolean>;
 }) {
     const [explanation, setExplanation] = useState("");
+    const [amountDirty, setAmountDirty] = useState(false);
     const [now, setNow] = useState(() => Date.now());
     useEffect(() => {
         if (!request.quote) return;
@@ -37,6 +40,12 @@ export function OperatorActions({
             )}
             {mayReview && (
                 <>
+                    <AmountReview
+                        request={request}
+                        busy={busy}
+                        command={command}
+                        onDirty={setAmountDirty}
+                    />
                     <div className="flex flex-wrap gap-3">
                         <Button
                             variant="outline"
@@ -74,7 +83,9 @@ export function OperatorActions({
                                 [
                                     "approve",
                                     copy.approve,
-                                    request.canApprove && !expired,
+                                    request.canApprove &&
+                                        !expired &&
+                                        !amountDirty,
                                 ],
                                 ["decline", copy.decline, request.canDecline],
                                 [
@@ -122,6 +133,34 @@ export function OperatorActions({
                     Check existing refund
                 </Button>
             )}
+            {request.state === "complete" &&
+                request.access === "resolved" &&
+                request.quote &&
+                request.quote.amount <
+                    (request.quote.remainingAmount ?? request.quote.amount) &&
+                !(
+                    request.refundSummary?.kind === "observed" &&
+                    request.refundSummary.refundedAmount >=
+                        fromStripeAmount(
+                            request.quote.paidAmount,
+                            request.quote.currency,
+                        )
+                ) && (
+                    <Button
+                        variant="outline"
+                        disabled={busy}
+                        onClick={() =>
+                            void command({
+                                action: "review",
+                                requestId: request.requestId,
+                                reviewHash: request.reviewHash,
+                                newAttempt: true,
+                            })
+                        }
+                    >
+                        {copy.reviewRemaining}
+                    </Button>
+                )}
         </div>
     );
 }

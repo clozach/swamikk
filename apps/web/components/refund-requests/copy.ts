@@ -29,8 +29,21 @@ export const refundCopy = {
     decline: "Decline request",
     escalate: "Ask KK to review",
     paymentReview: "Refresh payment review",
+    amount: "Refund amount",
+    amountHelp:
+        "Use the currency amount, not cents. Reviewing a different amount does not send money. Read the refreshed amount and access consequence before approval.",
+    invalidAmount:
+        "Enter a valid positive amount within the remaining payment, using this currency’s supported decimal places.",
+    reviewAmount: "Review this amount",
+    reviewRemaining: "Review a separate remaining refund",
+    accessPending:
+        "The refund succeeded. Access is still being checked; check the existing request again.",
+    accessReview:
+        "Access needs review. Other valid grants are preserved, and a changed refund result does not automatically restore an enrollment.",
+    classRosterReview:
+        "This purchase’s content access has ended. Class roster needs review: shared roster and tag entries are preserved so another valid booking is not removed.",
     quoteUnavailable:
-        "The original payment could not be verified automatically. A reviewer must resolve its payment evidence before a refund can be applied.",
+        "The original payment or its access association could not be verified automatically. A reviewer must resolve the evidence before a refund can be applied.",
     pendingPolicy:
         "The access consequence needs a policy decision before a refund can be applied. The request can still be submitted for review.",
     expired:

@@ -1,3 +1,4 @@
+import { PurchaseAccessModel } from "../../../../../../../packages/common-logic/src/purchase-access/model";
 import { proveRefundCharge } from "@/payments-new/stripe-lifecycle/refund-proof";
 import mongoose from "mongoose";
 import Stripe from "stripe";
@@ -143,6 +144,8 @@ beforeEach(async () => {
         status: "succeeded",
         currency: charge.currency,
         amount_received: 1100,
+        amount: 1100,
+        amount_capturable: 0,
     };
     session = {
         id: "cs_native",
@@ -179,6 +182,7 @@ beforeEach(async () => {
         invoices: { retrieve: jest.fn(async () => ({ ...invoice })) },
         checkout: {
             sessions: {
+                retrieve: jest.fn(async () => ({ ...session })),
                 list: jest.fn(async () => ({
                     data: [{ ...session }],
                     has_more: false,
@@ -224,11 +228,12 @@ afterEach(async () => {
         Ledger,
         Receipt,
         RefundRequest,
+        PurchaseAccessModel,
     ] as any[])
         await model.deleteMany({ domain: domain._id });
     await Domain.deleteOne({ _id: domain._id });
 });
-it("records pending, partial success, failure and full success while preserving paid receipts and access", async () => {
+it("records exact refund statuses, preserves original paid receipts and ends only the fully refunded purchase access", async () => {
     const pending = await send("evt_pending");
     expect(await Ledger.findOne({ domain: domain._id }).lean()).toMatchObject(
         await proveRefundCharge(String(domain._id), "test", provider, charge),
@@ -260,11 +265,11 @@ it("records pending, partial success, failure and full success while preserving 
         amount: 11,
         paymentProcessorTransactionId: "cs_native",
     });
-    expect((await Membership.findById(membership._id)).status).toBe("active");
+    expect((await Membership.findById(membership._id)).status).toBe("expired");
     expect(
         (await readMemberReceipt(ctx, session.metadata.invoiceId))
             .refundSummary,
-    ).toMatchObject({ refundedAmount: 11 });
+    ).toMatchObject({ refundedAmount: 11, purchaseAccess: "ended" });
     expect(provider.refunds.create).not.toHaveBeenCalled();
     expect(JSON.stringify(view)).not.toMatch(
         /ch_native|pi_native|cus_native|re_failed/,

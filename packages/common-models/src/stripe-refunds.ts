@@ -54,11 +54,23 @@ export interface StripeChargeRefunds {
 
 /** No charge, refund, customer, session or payment method IDs cross the member boundary. Amounts are major units. */
 export type MemberRefundSummary =
-    | { kind: "unrecorded" }
+    | {
+          kind: "unrecorded";
+          purchaseAccess?:
+              | "pending"
+              | "ended"
+              | "ended-booking-review"
+              | "recovery-required";
+      }
     | {
           kind: "observed";
           currency: string;
           refundedAmount: number;
           refunds: { status: StripeRefundStatus; amount: number }[];
           observedAt: string;
+          purchaseAccess?:
+              | "pending"
+              | "ended"
+              | "ended-booking-review"
+              | "recovery-required";
       };

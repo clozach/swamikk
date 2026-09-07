@@ -13,6 +13,7 @@ import { accessAssert } from "./errors";
 import { accessDate, accessKey, accessPeriod } from "./keys";
 import { withAccountWrite } from "../account-lifecycle/gate";
 import { subscriptionEndCutoff } from "./subscription";
+import { withPurchaseAccessWrite } from "../purchase-access/gate";
 
 type EnsureMembershipAccessInput = {
     domainId: string;
@@ -28,7 +29,17 @@ export async function ensureMembershipAccess(
             userId: input.membership.userId,
             purpose: "membership-access",
         },
-        () => ensureAccessPeriod(input),
+        () =>
+            withPurchaseAccessWrite(
+                {
+                    domainId: input.domainId,
+                    userId: input.membership.userId,
+                    courseId: input.membership.entityId,
+                    membershipId: input.membership.membershipId,
+                    membershipSessionId: input.membership.sessionId,
+                },
+                () => ensureAccessPeriod(input),
+            ),
     );
 }
 async function ensureAccessPeriod({

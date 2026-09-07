@@ -42,7 +42,13 @@ export async function POST(req: NextRequest) {
             if (input.action === "verify-class")
                 return verifyRefundClassBooking(ctx, input);
             if (input.action === "review")
-                return refreshRefundReview(ctx, input.requestId, true);
+                return refreshRefundReview(
+                    ctx,
+                    input.requestId,
+                    true,
+                    undefined,
+                    input,
+                );
             if (input.action === "reconcile")
                 return applyRefundRequest(
                     ctx,

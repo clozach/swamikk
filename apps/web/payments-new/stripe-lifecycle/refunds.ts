@@ -10,6 +10,7 @@ import {
 import { proveRefundCharge } from "./refund-proof";
 import { providerId, requireStripeFact, StripeLifecycleError } from "./errors";
 import { captureNativeRefunds } from "./refund-native";
+import { reconcilePurchaseRefundAccess } from "@/services/refund-requests/access-evidence";
 
 export const stripeRefundEventTypes = [
     "refund.created",
@@ -18,7 +19,7 @@ export const stripeRefundEventTypes = [
     "charge.refunded",
 ];
 
-/** Read provider facts only. This never creates a refund, approves a request or changes membership access. */
+/** Record current money facts, then apply the approved full purchase-refund access rule. Never create money. */
 export async function reconcileChargeRefunds(
     domainId: string,
     event: Stripe.Event,
@@ -167,8 +168,25 @@ export async function reconcileChargeRefunds(
         );
         if (!saved.matchedCount)
             throw new StripeLifecycleError("refund-claim-unavailable", true);
+        const access = await reconcilePurchaseRefundAccess(
+            domainId,
+            proof.invoiceId,
+            stripe,
+            proof.mode,
+        );
+        if (access === "pending")
+            throw new StripeLifecycleError("refund-access-processing", true);
+        if (access === "review-required")
+            throw new StripeLifecycleError("refund-access-needs-review");
+        if (access === "ended-booking-review")
+            throw new StripeLifecycleError(
+                "refund-access-ended-class-roster-review",
+            );
         return Response.json({
-            message: "Refund status recorded; access unchanged",
+            message:
+                access === "ended"
+                    ? "Refund status recorded; refunded purchase access ended"
+                    : "Refund status recorded; access unchanged",
         });
     } catch (error) {
         if (error instanceof CancellationReview)

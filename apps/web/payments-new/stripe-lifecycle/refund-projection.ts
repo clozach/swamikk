@@ -2,23 +2,95 @@ import Ledger, {
     type InternalStripeChargeRefunds,
 } from "@/models/StripeChargeRefunds";
 import type { MemberRefundSummary } from "../../../../packages/common-models/src/stripe-refunds";
-import type { InternalBillingCancellation } from "@/models/BillingCancellation";
-import type { InternalRefundRequest } from "@/models/RefundRequest";
+import BillingCancellation, {
+    type InternalBillingCancellation,
+} from "@/models/BillingCancellation";
+import RefundRequest, {
+    type InternalRefundRequest,
+} from "@/models/RefundRequest";
 import { fromStripeAmount } from "../stripe-currency";
+import { PurchaseAccessModel } from "../../../../packages/common-logic/src/purchase-access/model";
 import {
-    readNativeRefunds,
     withNativeRefundEvidence,
     nativeRefundOrdering,
 } from "./refund-native";
 
+export async function readRefundProjection(
+    domainId: string,
+    userIds: string[],
+) {
+    const scope = {
+        domain: domainId,
+        userId: { $in: Array.from(new Set(userIds)) },
+    };
+    const [ledgers, cancellations, requests, access] = await Promise.all([
+        Ledger.find(scope).lean(),
+        BillingCancellation.find(scope).lean(),
+        RefundRequest.find(scope).lean(),
+        PurchaseAccessModel.find({ ...scope, state: { $ne: "open" } }).lean(),
+    ]);
+    const native = [...cancellations, ...requests];
+    return {
+        evidence: ledgers.map((record) =>
+            withNativeRefundEvidence(record, native),
+        ),
+        access,
+    };
+}
 export async function readUserRefundEvidence(domainId: string, userId: string) {
-    const ledgers = await Ledger.find({ domain: domainId, userId }).lean();
-    const native = await readNativeRefunds(domainId, userId);
-    return ledgers.map((record) => withNativeRefundEvidence(record, native));
+    return (await readRefundProjection(domainId, [userId])).evidence;
+}
+export function refundSummaryFor(
+    projection: Awaited<ReturnType<typeof readRefundProjection>>,
+    key: {
+        userId: string;
+        invoiceId: string;
+        membershipId: string;
+        membershipSessionId: string;
+    },
+): MemberRefundSummary {
+    const record = projection.evidence.find(
+        (item) =>
+            item.invoiceId === key.invoiceId &&
+            item.userId === key.userId &&
+            item.membershipId === key.membershipId &&
+            item.membershipSessionId === key.membershipSessionId,
+    );
+    const consequence = projection.access.find(
+        (item) =>
+            item.userId === key.userId &&
+            item.membershipId === key.membershipId &&
+            item.membershipSessionId === key.membershipSessionId &&
+            item.proof?.invoiceId === key.invoiceId &&
+            (!record ||
+                (item.proof.chargeId === record.chargeId &&
+                    item.proof.mode === record.mode)),
+    );
+    const summary = memberRefundSummary(record);
+    return consequence
+        ? {
+              ...summary,
+              purchaseAccess: consequence.financialReviewRequired
+                  ? "recovery-required"
+                  : consequence.state === "ending"
+                    ? "pending"
+                    : consequence.bookingReviewRequired
+                      ? "ended-booking-review"
+                      : "ended",
+          }
+        : summary;
 }
 
 export function memberRefundSummary(
-    record?: InternalStripeChargeRefunds | null,
+    record?:
+        | (InternalStripeChargeRefunds & {
+              purchaseAccess?:
+                  | "pending"
+                  | "ended"
+                  | "ended-booking-review"
+                  | "recovery-required";
+          })
+        | null,
 ): MemberRefundSummary {
     if (!record || record.state.kind !== "observed")
         return { kind: "unrecorded" };
@@ -34,6 +106,9 @@ export function memberRefundSummary(
             amount: fromStripeAmount(refund.amount, record.currency),
         })),
         observedAt: new Date(record.state.observedAt).toISOString(),
+        ...(record.purchaseAccess
+            ? { purchaseAccess: record.purchaseAccess }
+            : {}),
     };
 }
 

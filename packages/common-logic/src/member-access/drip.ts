@@ -14,6 +14,7 @@ import {
 } from "./models";
 import { accessAssert, MemberAccessError } from "./errors";
 import { subscriptionEndCutoff } from "./subscription";
+import { purchaseAccessEnded } from "../purchase-access/gate";
 
 const MAX_CAS_ATTEMPTS = 8;
 
@@ -46,6 +47,13 @@ async function membershipIsActive(period: InternalMembershipAccess) {
     }).lean();
     return (
         !!membership &&
+        !(await purchaseAccessEnded({
+            domainId: String(period.domain),
+            userId: period.userId,
+            courseId: period.courseId,
+            membershipId: period.membershipId,
+            membershipSessionId: period.membershipSessionId,
+        })) &&
         !(await subscriptionEndCutoff({
             domainId: String(period.domain),
             ...membership,

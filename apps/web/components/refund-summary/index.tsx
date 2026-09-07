@@ -27,6 +27,9 @@ export default function RefundSummary({
                 className="text-sm text-muted-foreground"
             >
                 <p>{copy.unrecorded}</p>
+                {summary?.purchaseAccess && (
+                    <p role="status">{copy.access[summary.purchaseAccess]}</p>
+                )}
             </section>
         );
     const checked = checkedTime(summary.observedAt);
@@ -79,6 +82,9 @@ export default function RefundSummary({
                 <p>{copy.empty}</p>
             )}
             <p className="text-xs text-muted-foreground">{copy.separate}</p>
+            {summary.purchaseAccess && (
+                <p role="status">{copy.access[summary.purchaseAccess]}</p>
+            )}
         </section>
     );
 }

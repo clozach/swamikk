@@ -28,6 +28,7 @@ export async function reconcilePurchaseRefund(
     },
 ): Promise<PurchaseRefundResult> {
     const { quote, operationId } = input;
+    const amount = quote.refundAmount ?? quote.refundableAmount;
     try {
         requireRefund(
             quote.kind === "stripe-purchase-refund" &&
@@ -38,6 +39,13 @@ export async function reconcilePurchaseRefund(
         requireRefund(
             /^[a-zA-Z0-9_-]{1,100}$/.test(operationId),
             "operation-mismatch",
+        );
+        requireRefund(
+            Number.isSafeInteger(amount) &&
+                amount >= 0 &&
+                amount <= quote.refundableAmount &&
+                (amount > 0 || quote.refundableAmount === 0),
+            "refund-amount-invalid",
         );
         const proof = await provePurchasePayment(client, quote);
         requireRefund(
@@ -55,7 +63,7 @@ export async function reconcilePurchaseRefund(
             const refund = matching[0];
             requireRefund(
                 refund.metadata?.kk_purchase_quote === quote.hash &&
-                    refund.amount === quote.refundableAmount &&
+                    refund.amount === amount &&
                     refund.currency === quote.currency,
                 "operation-mismatch",
             );
@@ -97,7 +105,7 @@ export async function reconcilePurchaseRefund(
         const refund = await client.refunds.create(
             {
                 charge: quote.chargeId,
-                amount: quote.refundableAmount,
+                amount,
                 metadata: {
                     kk_purchase_refund: operationId,
                     kk_purchase_quote: quote.hash,
@@ -108,7 +116,7 @@ export async function reconcilePurchaseRefund(
         );
         requireRefund(
             providerId(refund.charge) === quote.chargeId &&
-                refund.amount === quote.refundableAmount &&
+                refund.amount === amount &&
                 refund.currency === quote.currency &&
                 refund.metadata?.kk_purchase_refund === operationId &&
                 refund.metadata?.kk_purchase_quote === quote.hash,

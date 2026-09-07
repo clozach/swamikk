@@ -1,10 +1,18 @@
-# Purchase and class refund requests — M07 / O10
+# Purchase and class refund requests
+
+Al approved the current policy on September 7: full cumulative successful purchase/class refunds end only that payment’s access; partial refunds keep access. Monthly cancellation/retained-drop rules are unchanged. The original receipt amount, booking evidence and each approved refund attempt stay on record.
+
+The operator can review an exact partial amount in the payment currency. The strict API uses integer Stripe charge units. Editing the amount disables approval until a fresh review returns its exact hash and consequence. After a completed partial attempt, **Review a separate remaining refund** preserves the prior attempt and creates a new operation identity; stale repeats cannot restart it. Provider uncertainty never resets an attempt or creates a second refund.
+
+Native approved results and signed/current external refunds share `access-evidence.ts`. Complete original payment/refund proof is required. Partial/pending/failed/uncertain amounts do not end access. A successful full refund can leave **Access processing** until admitted work drains. Ambiguous shared class roster/tag entries are preserved with **Class roster needs review**; content access still ends. A changed bank result after ending access needs deliberate recovery rather than automatic reenrollment. See [the shared access boundary](../../../../packages/common-logic/src/purchase-access/README.md).
+
+## Routes — M07 / O10
 
 Members use `/dashboard/refunds` to review a paid receipt, save a private text draft, then submit a request. Operators with the tenant's `setting:manage` permission use `/dashboard/refund-review`. Purchases are assigned to Al; an operator can record an escalation to KK. A request, its decision, and the provider's refund result have separate states. Saved requests are in the private review queue; **email notification is not configured by this slice**.
 
 ## Policy gate
 
-`policy.ts` deliberately leaves `approvedRefundAccessDecision` as `policy-pending` until Al answers the purchase/class access-after-refund question. Requests and evidence review work while that choice is open; financial application cannot start. The preserving-access implementation is tested as an isolated fixture, not enabled in production. An ending-access decision needs a corresponding entitlement implementation before the gate can change; expiring a native membership alone would not override the access ledger.
+`policy.ts` enables the approved full-versus-partial rule. Legacy saved policy-pending reviews must be refreshed before a new financial attempt; a prior provider attempt retains its original identity and must be reconciled rather than reset.
 
 A verified class start at least 14 × 24 hours after the durable submission time qualifies for a full refund of the remaining payment. The exact boundary qualifies; a request one millisecond closer needs human review. Dates display in UTC. No class date is inferred or accepted from a browser command. A class whose payment association or schedule is uncertain needs evidence review. The automatic path requires a verified association and an approved access consequence before the member submits. Evidence resolved after submission must be reviewed explicitly; it does not silently apply a new financial consequence.
 
@@ -24,7 +32,7 @@ Known pending, succeeded, failed, canceled and requires-action refunds remain di
 
 `RefundBookingEvidence` records an explicit tenant/invoice/membership/session/user/course/cohort association, the actual stored start time, actor, explanation, revision and verification history. The operator must check the original receipt against the booking and attest to that association. Even a single matching cohort roster entry is insufficient: existing course-to-cohort synchronization can enroll every active course member, including a different historical purchase.
 
-New explicitly listed class checkouts now accept a selected, current cohort fingerprint and persist `source: checkout` evidence before the provider attempt. `services/class-checkout` retains the exact invoice/session, native cohort document, booked start and intent identity; exact paid activation adds only the selected roster. Evidence reads require the completed paid intent, and changed/missing booking or schedule evidence becomes unknown. Existing receipts are not backfilled from current rosters. Active course owners still need operator help for another class; purchase/class refund application remains policy-pending. See `../class-checkout/README.md` for retries, stopped-worker review and source/native proof limits.
+New explicitly listed class checkouts now accept a selected, current cohort fingerprint and persist `source: checkout` evidence before the provider attempt. `services/class-checkout` retains the exact invoice/session, native cohort document, booked start and intent identity; exact paid activation adds only the selected roster. Evidence reads require the completed paid intent, and changed/missing booking or schedule evidence becomes unknown. Existing receipts are not backfilled from current rosters. Active course owners still need operator help for another class. A full refund ends its exact content grant, while shared roster/tag ownership may need a separate review. See `../class-checkout/README.md` for retries, stopped-worker review and source/native proof limits.
 
 ## Privacy and read boundaries
 

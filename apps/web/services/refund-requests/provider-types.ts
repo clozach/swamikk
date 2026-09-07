@@ -27,6 +27,8 @@ export interface PurchaseRefundQuote extends PurchaseRefundInput {
     customerId: string | null;
     refundedAmount: number;
     refundableAmount: number;
+    /** Explicit reviewed amount; absent on old full-remaining attempts. */
+    refundAmount?: number;
     existingRefunds: ExistingStripeRefund[];
     capturedAt: string;
 }

@@ -17,6 +17,7 @@ import {
 } from "./provider";
 import { refundRequestView, refundReviewHash } from "./projection";
 import { withAccountWrite } from "../../../../packages/common-logic/src/account-lifecycle/gate";
+import { supportedPurchaseAccessTarget } from "./access";
 
 /** Save the reason before external reads so a provider failure does not erase the draft. */
 export async function prepareRefundRequest(
@@ -104,6 +105,11 @@ export async function refreshRefundReview(
     requestId: string,
     operator: boolean,
     deps: RefundRequestDependencies = refundRequestDependencies,
+    options: {
+        amount?: number;
+        newAttempt?: boolean;
+        reviewHash?: string;
+    } = {},
 ) {
     if (operator) requireRefundOperator(ctx);
     else requireRefundMember(ctx);
@@ -126,9 +132,21 @@ export async function refreshRefundReview(
         "Submitted refund request not found.",
         404,
     );
+    const restarting = !!options.newAttempt;
     requireCondition(
-        ["draft", "submitted", "review-required"].includes(record.state) &&
-            record.refund.kind === "not-started",
+        !restarting ||
+            (operator &&
+                record.state === "complete" &&
+                record.access === "resolved" &&
+                options.reviewHash === record.reviewHash),
+        "conflict",
+        "Review the completed request before starting a separate remaining refund.",
+        409,
+    );
+    requireCondition(
+        restarting ||
+            (["draft", "submitted", "review-required"].includes(record.state) &&
+                record.refund.kind === "not-started"),
         "conflict",
         "This refund already has a decision or provider attempt. Check its existing result.",
         409,
@@ -138,18 +156,34 @@ export async function refreshRefundReview(
     const now = deps.now();
     const payment = purchaseInput(receipt);
     let quote: typeof record.quote;
-    if (payment) {
+    if (
+        payment &&
+        (await supportedPurchaseAccessTarget(
+            String(record.domain),
+            record.invoiceId,
+            record.membershipId,
+            record.membershipSessionId,
+        ))
+    ) {
         try {
             const result = await preparePurchaseRefund(
                 await deps.client(ctx, payment.mode),
                 payment,
                 now,
+                options.amount,
             );
             if (result.kind === "ready") quote = result.quote;
         } catch {
             /* The persisted draft/review remains available; no provider details enter it. */
         }
     }
+    requireCondition(
+        !restarting || (quote && quote.refundableAmount > 0),
+        "conflict",
+        "No verified remaining payment is available for another refund.",
+        409,
+    );
+    const attemptId = restarting ? randomUUID() : record.attemptId;
     const classEvidence =
         evidence.kind === "verified" ? evidence.evidence : undefined;
     const fields = {
@@ -170,6 +204,7 @@ export async function refreshRefundReview(
             : ("evidence-review" as const),
     };
     const unset = {
+        ...(restarting ? { decision: "" } : {}),
         ...(quote ? {} : { quote: "", quoteExpiresAt: "" }),
         ...(classEvidence ? {} : { classEvidence: "" }),
     };
@@ -178,12 +213,40 @@ export async function refreshRefundReview(
         accessDecision: fields.accessDecision,
         ...(quote ? { quote, quoteExpiresAt: fields.quoteExpiresAt } : {}),
         ...(classEvidence ? { classEvidence } : {}),
-        reviewHash: refundReviewHash({ ...record, ...fields }),
+        ...(restarting
+            ? {
+                  attemptId,
+                  state: "submitted",
+                  refund: { kind: "not-started" },
+                  access: "unchanged",
+              }
+            : {}),
+        reviewHash: refundReviewHash({ ...record, ...fields, attemptId }),
     };
     const updated = await RefundRequest.findOneAndUpdate(
-        { ...scope, revision: record.revision, "refund.kind": "not-started" },
+        {
+            ...scope,
+            revision: record.revision,
+            ...(restarting
+                ? { state: "complete" }
+                : { "refund.kind": "not-started" }),
+        },
         {
             $set: update,
+            ...(restarting
+                ? {
+                      $push: {
+                          priorAttempts: {
+                              attemptId: record.attemptId || record.requestId,
+                              quote: record.quote,
+                              refund: record.refund,
+                              decision: record.decision,
+                              access: record.access,
+                              completedAt: record.updatedAt,
+                          },
+                      },
+                  }
+                : {}),
             ...(Object.keys(unset).length ? { $unset: unset } : {}),
             $inc: { revision: 1 },
         },

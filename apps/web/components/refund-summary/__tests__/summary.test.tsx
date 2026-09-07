@@ -13,6 +13,38 @@ const summary: MemberRefundSummary = {
     ],
     observedAt: "2026-09-07T18:22:00Z",
 };
+it("shows a saved native access outcome while monetary history is still unrecorded", () => {
+    render(
+        <RefundSummary
+            summary={{
+                kind: "unrecorded",
+                purchaseAccess: "ended-booking-review",
+            }}
+        />,
+    );
+    expect(screen.getByText(copy.unrecorded)).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+        copy.access["ended-booking-review"],
+    );
+    expect(screen.queryByText(copy.total)).not.toBeInTheDocument();
+});
+it.each([
+    "pending",
+    "ended",
+    "ended-booking-review",
+    "recovery-required",
+] as const)(
+    "shows the server-confirmed %s access consequence separately from money",
+    (purchaseAccess) => {
+        render(<RefundSummary summary={{ ...summary, purchaseAccess }} />);
+        expect(screen.getByRole("status")).toHaveTextContent(
+            copy.access[purchaseAccess],
+        );
+        expect(screen.getByText(copy.total)).toBeInTheDocument();
+        expect(screen.getByText(copy.checked)).toBeInTheDocument();
+        expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    },
+);
 it("shows major-unit amounts, separate exact statuses and the check time without replacing payment or access", () => {
     render(<RefundSummary summary={summary} />);
     const region = screen.getByRole("region", { name: copy.title });

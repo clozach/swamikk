@@ -10,7 +10,11 @@ import {
     type RefundRequestDependencies,
 } from "./provider";
 import { reconcilePurchaseRefund } from "./provider-refund";
-import { requireApprovedRefundAccess, applyRefundAccess } from "./access";
+import {
+    requireApprovedRefundAccess,
+    applyRefundAccess,
+    withRefundAccessObservation,
+} from "./access";
 
 export async function applyRefundRequest(
     ctx: GQLContext,
@@ -32,8 +36,9 @@ export async function applyRefundRequest(
         requestId,
         ...(operator ? {} : { userId: ctx.user.userId }),
     };
-    let record = await RefundRequest.findOne(scope).lean();
-    requireCondition(record, "not_found", "Refund request not found.", 404);
+    const found = await RefundRequest.findOne(scope).lean();
+    requireCondition(found, "not_found", "Refund request not found.", 404);
+    let record = found;
     requireCondition(
         !expectedReviewHash || record.reviewHash === expectedReviewHash,
         "conflict",
@@ -86,101 +91,136 @@ export async function applyRefundRequest(
     record = claim;
     const ownedClaim = { ...scope, "claim.id": claimId };
     try {
-        if (record.refund.kind === "not-started")
-            await validateFirstRefundAttempt(ctx, record, operator, deps);
-        let result =
-            record.refund.kind === "result" ? record.refund.result : undefined;
-        if (
-            !result ||
-            result.kind === "uncertain" ||
-            (result.kind === "refund" &&
-                ["pending", "requires_action"].includes(result.status))
-        ) {
-            const quote = record.quote!;
-            const client = await deps.client(ctx, quote.mode);
-            let allowCreate = false;
-            if (record.refund.kind === "not-started") {
-                const firstAttemptAt = deps.now();
-                const first = await RefundRequest.findOneAndUpdate(
+        return await withRefundAccessObservation(record, async () => {
+            if (record.refund.kind === "not-started")
+                await validateFirstRefundAttempt(ctx, record, operator, deps);
+            let result =
+                record.refund.kind === "result"
+                    ? record.refund.result
+                    : undefined;
+            if (
+                !result ||
+                result.kind === "uncertain" ||
+                (result.kind === "refund" &&
+                    ["pending", "requires_action"].includes(result.status))
+            ) {
+                const quote = record.quote!;
+                const client = await deps.client(ctx, quote.mode);
+                let allowCreate = false;
+                if (record.refund.kind === "not-started") {
+                    const firstAttemptAt = deps.now();
+                    const first = await RefundRequest.findOneAndUpdate(
+                        {
+                            ...ownedClaim,
+                            "claim.expiresAt": { $gt: firstAttemptAt },
+                            "refund.kind": "not-started",
+                        },
+                        {
+                            $set: {
+                                refund: { kind: "claimed", firstAttemptAt },
+                            },
+                            $inc: { revision: 1 },
+                        },
+                        { new: true },
+                    ).lean();
+                    requireCondition(
+                        first,
+                        "conflict",
+                        "The refund is being reconciled. Refresh it.",
+                        409,
+                    );
+                    record = first;
+                    allowCreate = true;
+                }
+                const firstAttemptAt =
+                    record.refund.kind === "not-started"
+                        ? undefined
+                        : record.refund.firstAttemptAt;
+                result = await reconcilePurchaseRefund(client, {
+                    quote,
+                    operationId: record.attemptId || record.requestId,
+                    firstAttemptAt: firstAttemptAt
+                        ? new Date(firstAttemptAt).toISOString()
+                        : deps.now().toISOString(),
+                    allowCreate,
+                    now: deps.now(),
+                });
+                const saved = await RefundRequest.findOneAndUpdate(
+                    { ...ownedClaim, "claim.expiresAt": { $gt: deps.now() } },
                     {
-                        ...ownedClaim,
-                        "claim.expiresAt": { $gt: firstAttemptAt },
-                        "refund.kind": "not-started",
-                    },
-                    {
-                        $set: { refund: { kind: "claimed", firstAttemptAt } },
+                        $set: {
+                            refund: {
+                                kind: "result",
+                                firstAttemptAt,
+                                result,
+                                observationId: randomUUID(),
+                                observedAt: deps.now(),
+                            },
+                        },
                         $inc: { revision: 1 },
                     },
                     { new: true },
                 ).lean();
                 requireCondition(
-                    first,
+                    saved,
                     "conflict",
-                    "The refund is being reconciled. Refresh it.",
+                    "The refund result needs reconciliation. Refresh it.",
                     409,
                 );
-                record = first;
-                allowCreate = true;
+                record = saved;
             }
-            const firstAttemptAt =
-                record.refund.kind === "not-started"
-                    ? undefined
-                    : record.refund.firstAttemptAt;
-            result = await reconcilePurchaseRefund(client, {
-                quote,
-                operationId: record.requestId,
-                firstAttemptAt: firstAttemptAt
-                    ? new Date(firstAttemptAt).toISOString()
-                    : deps.now().toISOString(),
-                allowCreate,
-                now: deps.now(),
-            });
-            const saved = await RefundRequest.findOneAndUpdate(
-                { ...ownedClaim, "claim.expiresAt": { $gt: deps.now() } },
-                {
-                    $set: {
-                        refund: {
-                            kind: "result",
-                            firstAttemptAt,
-                            result,
-                            observationId: randomUUID(),
-                            observedAt: deps.now(),
+            const access =
+                result.kind === "not-required" || result.kind === "refund"
+                    ? await applyRefundAccess(
+                          record,
+                          await deps.client(ctx, record.quote!.mode),
+                      )
+                    : undefined;
+            if (access === "review-required") {
+                await RefundRequest.updateOne(ownedClaim, {
+                    $set: { access: "review-required" },
+                    $inc: { revision: 1 },
+                });
+                record = { ...record, access: "review-required" };
+            }
+            if (
+                result.kind === "not-required" ||
+                (result.kind === "refund" && result.status === "succeeded")
+            ) {
+                const completed = await RefundRequest.findOneAndUpdate(
+                    ownedClaim,
+                    {
+                        $set: {
+                            state:
+                                access === "pending" ||
+                                access === "review-required"
+                                    ? "approved"
+                                    : "complete",
+                            access:
+                                access === "review-required" ||
+                                access === "ended-booking-review"
+                                    ? access
+                                    : access === "pending"
+                                      ? "pending"
+                                      : "resolved",
                         },
+                        $inc: { revision: 1 },
                     },
-                    $inc: { revision: 1 },
-                },
-                { new: true },
-            ).lean();
-            requireCondition(
-                saved,
-                "conflict",
-                "The refund result needs reconciliation. Refresh it.",
-                409,
+                    { new: true },
+                ).lean();
+                requireCondition(
+                    completed,
+                    "conflict",
+                    "The access result needs reconciliation.",
+                    409,
+                );
+                record = completed;
+            }
+            return refundRequestView(
+                { ...record, claim: undefined },
+                { operator },
             );
-            record = saved;
-        }
-        if (
-            result.kind === "not-required" ||
-            (result.kind === "refund" && result.status === "succeeded")
-        ) {
-            await applyRefundAccess(record);
-            const completed = await RefundRequest.findOneAndUpdate(
-                ownedClaim,
-                {
-                    $set: { state: "complete", access: "resolved" },
-                    $inc: { revision: 1 },
-                },
-                { new: true },
-            ).lean();
-            requireCondition(
-                completed,
-                "conflict",
-                "The access result needs reconciliation.",
-                409,
-            );
-            record = completed;
-        }
-        return refundRequestView({ ...record, claim: undefined }, { operator });
+        });
     } catch (error) {
         // A proved absence of a first attempt allows a fresh review. A persisted
         // attempt or uncertain write never resets the provider claim.

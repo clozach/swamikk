@@ -11,6 +11,15 @@ import type {
 export interface InternalRefundRequest {
     domain: mongoose.Types.ObjectId;
     requestId: string;
+    attemptId?: string;
+    priorAttempts?: Array<{
+        attemptId: string;
+        quote: PurchaseRefundQuote;
+        refund: InternalRefundRequest["refund"];
+        decision?: InternalRefundRequest["decision"];
+        access: InternalRefundRequest["access"];
+        completedAt: Date;
+    }>;
     invoiceId: string;
     membershipId: string;
     membershipSessionId: string;
@@ -30,7 +39,12 @@ export interface InternalRefundRequest {
     quoteExpiresAt?: Date;
     classEvidence?: { cohortId: string; classStart: Date; revision: number };
     accessDecision: RefundAccessDecision;
-    access: "unchanged" | "pending" | "resolved";
+    access:
+        | "unchanged"
+        | "pending"
+        | "resolved"
+        | "ended-booking-review"
+        | "review-required";
     refund:
         | { kind: "not-started" }
         | { kind: "claimed"; firstAttemptAt: Date }
@@ -62,6 +76,8 @@ const schema = new mongoose.Schema<InternalRefundRequest>(
     {
         domain: { type: mongoose.Schema.Types.ObjectId, required: true },
         requestId: { type: String, required: true, unique: true },
+        attemptId: String,
+        priorAttempts: { type: mongoose.Schema.Types.Mixed, default: [] },
         invoiceId: { type: String, required: true },
         membershipId: { type: String, required: true },
         membershipSessionId: { type: String, required: true },
@@ -77,7 +93,13 @@ const schema = new mongoose.Schema<InternalRefundRequest>(
         accessDecision: { type: String, required: true },
         access: {
             type: String,
-            enum: ["unchanged", "pending", "resolved"],
+            enum: [
+                "unchanged",
+                "pending",
+                "resolved",
+                "ended-booking-review",
+                "review-required",
+            ],
             required: true,
         },
         refund: { type: mongoose.Schema.Types.Mixed, required: true },

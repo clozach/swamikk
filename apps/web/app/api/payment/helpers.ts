@@ -10,6 +10,10 @@ import MembershipModel from "@models/Membership";
 import mongoose from "mongoose";
 import { completeClassBooking } from "@/services/class-checkout/activation";
 import { withAccountWrite } from "../../../../../packages/common-logic/src/account-lifecycle/gate";
+import {
+    withPurchaseAccessWrite,
+    purchaseAccessEnded,
+} from "../../../../../packages/common-logic/src/purchase-access/gate";
 
 export async function activateMembership(
     domain: Domain & { _id: mongoose.Types.ObjectId },
@@ -22,7 +26,32 @@ export async function activateMembership(
             userId: membership.userId,
             purpose: "payment-activation",
         },
-        () => applyMembershipActivation(domain, membership, paymentPlan),
+        async () => {
+            if (membership.entityType !== Constants.MembershipEntityType.COURSE)
+                return applyMembershipActivation(
+                    domain,
+                    membership,
+                    paymentPlan,
+                );
+            const key = {
+                domainId: String(domain._id),
+                userId: membership.userId,
+                courseId: membership.entityId,
+                membershipId: membership.membershipId,
+                membershipSessionId: membership.sessionId,
+            };
+            if (await purchaseAccessEnded(key)) return;
+            try {
+                return await withPurchaseAccessWrite(key, () =>
+                    applyMembershipActivation(domain, membership, paymentPlan),
+                );
+            } catch (error) {
+                // A delayed paid callback still settles its original payment audit,
+                // but can never resurrect an already refunded access grant.
+                if (await purchaseAccessEnded(key)) return;
+                throw error;
+            }
+        },
     );
 }
 
