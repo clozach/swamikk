@@ -23,6 +23,8 @@ export interface ContextualFeedback {
     state: "open" | "closed";
     /** Operational delivery details are returned to administrators only. */
     notification?: FeedbackNotification;
+    /** Restricted-review operational status; administrators only. */
+    review?: import("./feedback-review").FeedbackReviewStatus;
     createdAt: string;
     updatedAt: string;
 }

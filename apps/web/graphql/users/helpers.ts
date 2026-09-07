@@ -8,6 +8,7 @@ import { revokeMemberMimicForUser } from "@/services/member-mimic/cleanup";
 
 import UserModel from "@models/User";
 import { deleteUserFeedback } from "@/services/content-changes/personal-data";
+import { deleteUserFeedbackReviewGrants } from "@/services/feedback-review/cleanup";
 import { deleteUserRefundDrafts } from "@/services/refund-requests/cleanup";
 import { requireAccountErasureReady } from "../../../../packages/common-logic/src/account-lifecycle/gate";
 import mongoose from "mongoose";
@@ -262,6 +263,10 @@ export async function cleanupPersonalData(
     });
     await Promise.all([
         deleteUserFeedback(String(ctx.subdomain._id), userToDelete.userId),
+        deleteUserFeedbackReviewGrants(
+            String(ctx.subdomain._id),
+            userToDelete.userId,
+        ),
         deleteUserRefundDrafts(String(ctx.subdomain._id), userToDelete.userId),
         EmailDeliveryModel.deleteMany({
             domain: ctx.subdomain._id,

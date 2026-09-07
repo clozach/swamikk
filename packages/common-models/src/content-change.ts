@@ -84,6 +84,7 @@ export type ContentChangeVersion =
     | PageCreationVersion
     | PagePublicationVersion;
 interface ChangeMetadata {
+    provenance?: import("./feedback-review").FeedbackReviewProvenance;
     id: string;
     feedbackId?: string;
     reversesChangeId?: string;

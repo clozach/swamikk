@@ -105,3 +105,14 @@ export * from "./page-content-change";
 export * from "./stripe-lifecycle";
 export * from "./stripe-refunds";
 export * from "./purchase-removal";
+
+export type {
+    FeedbackReviewScope,
+    FeedbackReviewProvenance,
+    FeedbackReviewContext,
+    FeedbackReviewResult,
+    FeedbackReviewLease,
+    FeedbackReviewIntent,
+    FeedbackReviewState,
+    FeedbackReviewStatus,
+} from "./feedback-review";

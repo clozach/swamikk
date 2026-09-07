@@ -7,6 +7,7 @@ export interface InternalFeedback
     createdAt: Date;
     updatedAt: Date;
     expiresAt?: Date;
+    automaticReview?: import("@courselit/common-models").FeedbackReviewState;
     notificationReview?: { action: string; by: string; at: string };
 }
 
@@ -20,6 +21,7 @@ export const FeedbackSchema = new mongoose.Schema<InternalFeedback>(
         photoMediaIds: { type: [String], default: [] },
         state: { type: String, enum: ["open", "closed"], required: true },
         notification: { type: mongoose.Schema.Types.Mixed },
+        automaticReview: { type: mongoose.Schema.Types.Mixed },
         notificationReview: { type: mongoose.Schema.Types.Mixed },
         expiresAt: Date,
     },
@@ -55,3 +57,9 @@ export const FeedbackRateLimitSchema =
     });
 FeedbackRateLimitSchema.index({ key: 1 }, { unique: true });
 FeedbackRateLimitSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
+FeedbackSchema.index({
+    domain: 1,
+    "automaticReview.kind": 1,
+    "automaticReview.leaseUntil": 1,
+});

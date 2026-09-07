@@ -43,6 +43,7 @@ export const ContentChangeSchema = new mongoose.Schema<InternalContentChange>(
         id: { type: String, required: true },
         target: { type: mongoose.Schema.Types.Mixed, required: true },
         feedbackId: String,
+        provenance: { type: mongoose.Schema.Types.Mixed },
         reversesChangeId: String,
         version: { type: Number, required: true, min: 1 },
         summary: { type: String, required: true, maxlength: 2000 },

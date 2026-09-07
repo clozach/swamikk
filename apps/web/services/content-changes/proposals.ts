@@ -47,6 +47,7 @@ export function changeView(record: InternalContentChange): ContentChange {
         id: record.id,
         target: record.target,
         feedbackId: record.feedbackId,
+        provenance: record.provenance,
         reversesChangeId: record.reversesChangeId,
         state: record.state,
         history: record.history,

@@ -31,6 +31,27 @@ export function feedbackView(
         ...(admin && record.notification
             ? { notification: record.notification }
             : {}),
+        ...(admin && record.automaticReview
+            ? {
+                  review: {
+                      generation: record.automaticReview.generation,
+                      kind: record.automaticReview.kind,
+                      grantId: record.automaticReview.grantId,
+                      lastFailure: record.automaticReview.lastFailure,
+                      ...("intent" in record.automaticReview
+                          ? {
+                                outcome:
+                                    record.automaticReview.intent.result.kind,
+                                summary:
+                                    record.automaticReview.intent.result
+                                        .summary,
+                                proposalId:
+                                    record.automaticReview.intent.proposal?.id,
+                            }
+                          : {}),
+                  },
+              }
+            : {}),
         createdAt: record.createdAt.toISOString(),
         updatedAt: record.updatedAt.toISOString(),
     };

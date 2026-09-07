@@ -30,12 +30,12 @@ export async function editableLesson(lessonId: string, ctx: GQLContext) {
     }
 }
 
-export async function prepareVersion(
+export async function prepareLessonSnapshotVersion(
     input: LessonContentChangeInput,
     version: number,
-    ctx: GQLContext,
+    lesson: Awaited<ReturnType<typeof editableLesson>>,
+    preparedBy: string,
 ): Promise<LessonContentChangeVersion> {
-    const lesson = await editableLesson(input.target.lessonId, ctx);
     requireCondition(
         lesson.type === Constants.LessonType.TEXT &&
             lesson.content &&
@@ -84,7 +84,21 @@ export async function prepareVersion(
         baseline,
         preview,
         previewHash,
-        preparedBy: ctx.user.userId,
+        preparedBy,
         preparedAt: new Date().toISOString(),
     };
+}
+
+/** Existing administrator entry point retains native lesson authorization. */
+export async function prepareVersion(
+    input: LessonContentChangeInput,
+    version: number,
+    ctx: GQLContext,
+): Promise<LessonContentChangeVersion> {
+    return prepareLessonSnapshotVersion(
+        input,
+        version,
+        await editableLesson(input.target.lessonId, ctx),
+        ctx.user.userId,
+    );
 }

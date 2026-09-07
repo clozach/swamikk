@@ -25,3 +25,20 @@ test("the assembled API includes feedback delivery, cancellation and read-only r
     assert.ok(paths["/api/publication-observations"].post);
     assert.ok(paths["/api/account-closure"].delete);
 });
+
+test("reviewer authority stays separate from administrator session routes", () => {
+    const { paths, components } = buildOpenApiRoutes();
+    assert.equal(components.securitySchemes.feedbackReviewer.scheme, "bearer");
+    for (const operation of ["claim", "context", "result"]) {
+        assert.deepEqual(
+            paths[`/api/feedback-review/${operation}`].post.security,
+            [{ feedbackReviewer: [] }],
+        );
+    }
+    assert.deepEqual(paths["/api/feedback-review/grants"].post.security, [
+        { CourseLitSession: [] },
+    ]);
+    assert.deepEqual(paths["/api/feedback-review/grants/{id}"].post.security, [
+        { CourseLitSession: [] },
+    ]);
+});

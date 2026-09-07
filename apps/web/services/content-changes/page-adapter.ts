@@ -98,13 +98,16 @@ export async function pageRenderFingerprint(
         }),
     };
 }
-export async function preparePageVersion(
+export async function preparePageSnapshotVersion(
     input: PageWidgetChangeInput,
     version: number,
-    ctx: GQLContext,
-    options: { recovery?: boolean; media?: PageMediaDependencies } = {},
+    page: EditablePage,
+    preparedBy: string,
+    readRendering: () => Promise<
+        Awaited<ReturnType<typeof pageRenderFingerprint>>
+    >,
+    options: { recovery?: boolean; resolveImage?: () => Promise<unknown> } = {},
 ): Promise<PageWidgetChangeVersion> {
-    const page = await editablePage(input.target.pageId, ctx);
     const widget = selectedPageWidget(page, input.target.widgetId);
     const before = pageWidgetSnapshot(widget, input.target.field);
     const draft = page.draftLayout?.length
@@ -123,13 +126,7 @@ export async function preparePageVersion(
         );
     const image =
         input.patch.kind === "image"
-            ? await resolvePageImage(
-                  input.patch.mediaId,
-                  input.patch.alt,
-                  widget,
-                  ctx,
-                  options.media || pageMediaDependencies,
-              )
+            ? await options.resolveImage?.()
             : undefined;
     const afterWidget = patchPageWidget(
         widget,
@@ -139,7 +136,7 @@ export async function preparePageVersion(
         !!options.recovery,
     );
     const after = pageWidgetSnapshot(afterWidget, input.target.field);
-    const rendering = await pageRenderFingerprint(page, widget.widgetId, ctx);
+    const rendering = await readRendering();
     const baseline: PageWidgetChangeVersion["baseline"] = {
         kind: "page-widget",
         documentId: String(
@@ -171,7 +168,37 @@ export async function preparePageVersion(
             baseline,
             preview,
         }),
-        preparedBy: ctx.user.userId,
+        preparedBy,
         preparedAt: new Date().toISOString(),
     };
+}
+
+/** Existing administrator entry point retains authorization and native media handling. */
+export async function preparePageVersion(
+    input: PageWidgetChangeInput,
+    version: number,
+    ctx: GQLContext,
+    options: { recovery?: boolean; media?: PageMediaDependencies } = {},
+): Promise<PageWidgetChangeVersion> {
+    const page = await editablePage(input.target.pageId, ctx);
+    return preparePageSnapshotVersion(
+        input,
+        version,
+        page,
+        ctx.user.userId,
+        () => pageRenderFingerprint(page, input.target.widgetId, ctx),
+        {
+            recovery: options.recovery,
+            resolveImage: async () =>
+                input.patch.kind === "image"
+                    ? resolvePageImage(
+                          input.patch.mediaId,
+                          input.patch.alt,
+                          selectedPageWidget(page, input.target.widgetId),
+                          ctx,
+                          options.media || pageMediaDependencies,
+                      )
+                    : undefined,
+        },
+    );
 }
