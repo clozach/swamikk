@@ -211,6 +211,7 @@ const subscriberType = new GraphQLObjectType({
         email: { type: new GraphQLNonNull(GraphQLString) },
         name: { type: GraphQLString },
         subscribedAt: { type: GraphQLString },
+        linkedMemberId: { type: GraphQLString },
     },
 });
 

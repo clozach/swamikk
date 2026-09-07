@@ -1,6 +1,7 @@
 "use server";
 
 import { setNewsletterConsent } from "@/services/newsletter/consent";
+import { linkedMemberIds } from "@/services/member-mimic/member-links";
 import { ensureMembershipAccess } from "@/services/member-access";
 import { withAccountWrite } from "../../../../packages/common-logic/src/account-lifecycle/gate";
 
@@ -406,12 +407,14 @@ export interface Subscriber {
     email: string;
     name?: string;
     subscribedAt?: string;
+    linkedMemberId: string | null;
 }
 
 // The Mongo read is injected so the resolver — its permission gate and its
 // row shaping — can be unit-tested without a database. Production passes the
 // real UserModel query below.
 interface GetSubscribersDeps {
+    linkedMemberIds: typeof linkedMemberIds;
     listSubscribers: (
         domain: mongoose.Types.ObjectId,
         page: number,
@@ -427,6 +430,7 @@ interface GetSubscribersDeps {
 }
 
 const defaultGetSubscribersDeps: GetSubscribersDeps = {
+    linkedMemberIds,
     listSubscribers: async (domain, page, limit) => {
         const rows = await UserModel.find(
             { domain, subscribedToUpdates: true },
@@ -461,11 +465,16 @@ export const getNewsletterSubscribers = async (
 
     // Scope to this tenant and to opted-in users only; newest signups first.
     const rows = await deps.listSubscribers(ctx.subdomain._id, page, limit);
+    const members = await deps.linkedMemberIds(
+        ctx.subdomain._id,
+        rows.map((row) => row.userId),
+    );
 
     return rows.map((row) => ({
         userId: row.userId,
         email: row.email,
         name: row.name,
+        linkedMemberId: members.has(row.userId) ? row.userId : null,
         // createdAt is the signup timestamp (UserSchema has timestamps: true);
         // for a newsletter signup that is when they subscribed.
         subscribedAt: row.createdAt

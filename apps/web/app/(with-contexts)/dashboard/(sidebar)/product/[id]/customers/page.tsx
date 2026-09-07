@@ -17,6 +17,8 @@ import { useParams } from "next/navigation";
 import { capitalize, FetchBuilder } from "@courselit/utils";
 import { AddressContext } from "@components/contexts";
 import DashboardContent from "@components/admin/dashboard-content";
+import MemberMimicLink from "@components/member-mimic/link";
+import { readMemberListReturn } from "@components/member-mimic/list-return";
 import {
     COURSE_CUSTOMERS_PAGE_HEADING,
     MANAGE_COURSES_PAGE_HEADING,
@@ -66,10 +68,18 @@ export default function CustomersPage() {
     const [members, setMembers] = useState<Member[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [submittedSearch, setSubmittedSearch] = useState("");
+    const [returnReady, setReturnReady] = useState(false);
     const [loading, setLoading] = useState(true);
     const address = useContext(AddressContext);
     const { product } = useProduct(productId);
     const { toast } = useToast();
+
+    useEffect(() => {
+        const restored = readMemberListReturn(window.location.search);
+        setSearchTerm(restored.search);
+        setSubmittedSearch(restored.search);
+        setReturnReady(true);
+    }, []);
 
     const breadcrumbs = [
         { label: MANAGE_COURSES_PAGE_HEADING, href: "/dashboard/products" },
@@ -168,10 +178,10 @@ export default function CustomersPage() {
     };
 
     useEffect(() => {
-        if (product) {
+        if (product && returnReady) {
             fetchStudents();
         }
-    }, [product, submittedSearch]);
+    }, [product, submittedSearch, returnReady]);
 
     const handleCopyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
@@ -335,8 +345,9 @@ export default function CustomersPage() {
                         : members.map((member: Member) => (
                               <TableRow key={member.user.email}>
                                   <TableCell className="font-medium">
-                                      <Link
-                                          href={`/dashboard/users/${member.user.userId}`}
+                                      <MemberMimicLink
+                                          userId={member.user.userId}
+                                          returnTo={`/dashboard/product/${encodeURIComponent(productId)}/customers?${new URLSearchParams({ search: submittedSearch })}`}
                                       >
                                           <div className="flex items-center space-x-2">
                                               <Avatar className="h-8 w-8">
@@ -381,7 +392,7 @@ export default function CustomersPage() {
                                                       member.user.email}
                                               </span>
                                           </div>
-                                      </Link>
+                                      </MemberMimicLink>
                                   </TableCell>
                                   {/* <TableCell>
                                       {member.status}

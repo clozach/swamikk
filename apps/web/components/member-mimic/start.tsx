@@ -4,8 +4,15 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { memberMimicUi as copy } from "@/config/strings";
 import { announceMemberMimicChange } from "./context";
+import { safeMimicReturnTo } from "@/services/member-mimic/constants";
 
-export default function StartMemberMimic({ userId }: { userId: string }) {
+export default function StartMemberMimic({
+    userId,
+    returnTo: requestedReturnTo,
+}: {
+    userId: string;
+    returnTo?: string;
+}) {
     const started = useRef(false);
     const [error, setError] = useState("");
 
@@ -15,11 +22,12 @@ export default function StartMemberMimic({ userId }: { userId: string }) {
             const referrer = document.referrer
                 ? new URL(document.referrer)
                 : null;
-            const returnTo =
-                referrer?.origin === window.location.origin &&
-                referrer.pathname === "/dashboard/users"
-                    ? referrer.pathname + referrer.search
-                    : "/dashboard/users";
+            const returnTo = safeMimicReturnTo(
+                requestedReturnTo ||
+                    (referrer?.origin === window.location.origin
+                        ? referrer.pathname + referrer.search
+                        : undefined),
+            );
             const response = await fetch("/api/member-mimic", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -62,7 +70,10 @@ export default function StartMemberMimic({ userId }: { userId: string }) {
             ) : (
                 <p className="my-4">{copy.opening}</p>
             )}
-            <Link className="mt-6 block underline" href="/dashboard/users">
+            <Link
+                className="mt-6 block underline"
+                href={safeMimicReturnTo(requestedReturnTo)}
+            >
                 {copy.returnToMembers}
             </Link>
         </main>

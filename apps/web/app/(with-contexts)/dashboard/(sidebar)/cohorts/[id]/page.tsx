@@ -1,6 +1,7 @@
 "use client";
 
 import DashboardContent from "@components/admin/dashboard-content";
+import MemberMimicLink from "@components/member-mimic/link";
 import AdminEmptyState from "@components/admin/empty-state";
 import { AddressContext, ProfileContext } from "@components/contexts";
 import { Course, UIConstants } from "@courselit/common-models";
@@ -818,8 +819,12 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
                                         <TableRow key={member.userId}>
                                             <TableCell className="py-2">
                                                 <div className="font-medium text-base">
-                                                    {member.name ||
-                                                        member.email}
+                                                    <MemberMimicLink
+                                                        userId={member.userId}
+                                                    >
+                                                        {member.name ||
+                                                            member.email}
+                                                    </MemberMimicLink>
                                                 </div>
                                                 <div className="text-xs text-muted-foreground">
                                                     {member.email}

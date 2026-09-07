@@ -1,6 +1,8 @@
 "use client";
 
 import DashboardContent from "@components/admin/dashboard-content";
+import MemberMimicLink from "@components/member-mimic/link";
+import { readMemberListReturn } from "@components/member-mimic/list-return";
 import { AddressContext, ProfileContext } from "@components/contexts";
 import {
     Table,
@@ -65,6 +67,7 @@ interface Subscriber {
     email: string;
     name?: string;
     subscribedAt?: string;
+    linkedMemberId?: string | null;
 }
 
 // Wrap every field so commas, quotes, and newlines in a name can't shift
@@ -86,8 +89,14 @@ export default function SubscribersView() {
     // on a full page. This flag only changes when a new page is fetched.
     const [hasMore, setHasMore] = useState(false);
     const [page, setPage] = useState(1);
+    const [returnReady, setReturnReady] = useState(false);
     const [target, setTarget] = useState<Subscriber | null>(null);
     const [isUnsubscribing, setIsUnsubscribing] = useState(false);
+
+    useEffect(() => {
+        setPage(readMemberListReturn(window.location.search).page);
+        setReturnReady(true);
+    }, []);
 
     const loadSubscribers = useCallback(async () => {
         setLoading(true);
@@ -98,6 +107,7 @@ export default function SubscribersView() {
                     email
                     name
                     subscribedAt
+                    linkedMemberId
                 }
             }
         `;
@@ -131,13 +141,14 @@ export default function SubscribersView() {
 
     useEffect(() => {
         if (
+            returnReady &&
             checkPermission(profile?.permissions ?? [], [
                 permissions.manageUsers,
             ])
         ) {
             loadSubscribers();
         }
-    }, [loadSubscribers, profile?.permissions]);
+    }, [loadSubscribers, profile?.permissions, returnReady]);
 
     const handleExportCsv = useCallback(() => {
         const header = [
@@ -304,7 +315,12 @@ export default function SubscribersView() {
                             subscribers.map((subscriber) => (
                                 <TableRow key={subscriber.userId}>
                                     <TableCell className="font-medium">
-                                        {subscriber.email}
+                                        <MemberMimicLink
+                                            userId={subscriber.linkedMemberId}
+                                            returnTo={`/dashboard/subscribers?page=${page}`}
+                                        >
+                                            {subscriber.email}
+                                        </MemberMimicLink>
                                     </TableCell>
                                     <TableCell>
                                         {subscriber.name ? (

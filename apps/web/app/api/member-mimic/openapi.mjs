@@ -97,7 +97,7 @@ export const memberMimicApiOpenApi = {
                                 type: "string",
                                 maxLength: 1024,
                                 description:
-                                    "Only /dashboard/users plus its filter query is accepted.",
+                                    "Only the same-site Users, Subscribers, Transactions, cohort roster, and product Customers/Transactions paths plus their query are accepted; invalid values fall back to /dashboard/users.",
                             },
                         },
                     }),

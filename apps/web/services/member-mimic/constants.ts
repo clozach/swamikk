@@ -32,7 +32,15 @@ export function safeMimicReturnTo(value?: string): string {
         const url = new URL(value, "https://member-mimic.invalid");
         if (
             url.origin === "https://member-mimic.invalid" &&
-            url.pathname === "/dashboard/users"
+            (url.pathname === "/dashboard/users" ||
+                url.pathname === "/dashboard/subscribers" ||
+                url.pathname === "/dashboard/transactions" ||
+                /^\/dashboard\/cohorts\/[A-Za-z0-9_-]{1,128}$/.test(
+                    url.pathname,
+                ) ||
+                /^\/dashboard\/product\/[A-Za-z0-9_-]{1,128}\/(customers|transactions)$/.test(
+                    url.pathname,
+                ))
         )
             return url.pathname + url.search;
     } catch {

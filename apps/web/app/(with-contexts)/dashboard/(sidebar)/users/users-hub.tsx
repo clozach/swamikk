@@ -1,6 +1,8 @@
 "use client";
 
 import DashboardContent from "@components/admin/dashboard-content";
+import MemberMimicLink from "@components/member-mimic/link";
+import { readMemberListReturn } from "@components/member-mimic/list-return";
 import LoadingScreen from "@components/admin/loading-screen";
 import FilterContainer from "@components/admin/users/filter-container";
 import { AddressContext, ProfileContext } from "@components/contexts";
@@ -24,7 +26,6 @@ import {
     AvatarFallback,
     AvatarImage,
     Badge,
-    Link,
     TableBody,
     useToast,
     Skeleton,
@@ -57,9 +58,18 @@ export default function UsersHub() {
     const [filtersAggregator, setFiltersAggregator] =
         useState<UserFilterAggregator>("or");
     const [count, setCount] = useState(0);
+    const [returnReady, setReturnReady] = useState(false);
     const { toast } = useToast();
 
     const { profile } = useContext(ProfileContext);
+
+    useEffect(() => {
+        const restored = readMemberListReturn(window.location.search);
+        setPage(restored.page);
+        setFilters(restored.filter.filters);
+        setFiltersAggregator(restored.filter.aggregator);
+        setReturnReady(true);
+    }, []);
 
     const loadUsers = useCallback(async () => {
         setLoading(true);
@@ -132,16 +142,27 @@ export default function UsersHub() {
     }, [address.backend, page, rowsPerPage, filters, filtersAggregator]);
 
     useEffect(() => {
-        if (checkPermission(profile?.permissions!, [permissions.manageUsers])) {
+        if (
+            returnReady &&
+            checkPermission(profile?.permissions!, [permissions.manageUsers])
+        ) {
             loadUsers();
         }
-    }, [loadUsers]);
+    }, [loadUsers, returnReady]);
 
-    const onFilterChange = useCallback(({ filters, aggregator, segmentId }) => {
-        setFilters(filters);
-        setFiltersAggregator(aggregator);
-        setPage(1);
-    }, []);
+    const onFilterChange = useCallback(
+        ({ filters: nextFilters, aggregator, segmentId }) => {
+            if (
+                JSON.stringify(filters) === JSON.stringify(nextFilters) &&
+                filtersAggregator === aggregator
+            )
+                return;
+            setFilters(nextFilters);
+            setFiltersAggregator(aggregator);
+            setPage(1);
+        },
+        [filters, filtersAggregator],
+    );
 
     if (!profile) {
         return <LoadingScreen />;
@@ -159,7 +180,12 @@ export default function UsersHub() {
             </div>
             <div className="w-full mt-4 space-y-8">
                 <div className="mb-4">
-                    <FilterContainer onChange={onFilterChange} />
+                    {returnReady && (
+                        <FilterContainer
+                            onChange={onFilterChange}
+                            filter={{ filters, aggregator: filtersAggregator }}
+                        />
+                    )}
                 </div>
                 <Table>
                     <TableHeader>
@@ -243,15 +269,20 @@ export default function UsersHub() {
                                                   </AvatarFallback>
                                               </Avatar>
                                               <div>
-                                                  <Link
-                                                      href={`/dashboard/users/${user.userId}`}
+                                                  <MemberMimicLink
+                                                      userId={
+                                                          user.active
+                                                              ? user.userId
+                                                              : null
+                                                      }
+                                                      returnTo={`/dashboard/users?${new URLSearchParams({ page: String(page), filters: JSON.stringify({ filters, aggregator: filtersAggregator }) })}`}
                                                   >
                                                       <span className="font-medium text-base">
                                                           {user.name
                                                               ? user.name
                                                               : user.email}
                                                       </span>
-                                                  </Link>
+                                                  </MemberMimicLink>
                                                   <div className="text-xs text-muted-foreground">
                                                       {user.email}
                                                   </div>
