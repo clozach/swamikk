@@ -13,7 +13,10 @@ import StripePayment from "@/payments-new/stripe-payment";
 import { getPaymentMethod } from "@/payments-new";
 import { POST } from "../route";
 import { readMemberReceipt } from "@/services/member-receipts/read";
-import { readMemberRefundRequests } from "@/services/refund-requests/read";
+import {
+    readMemberRefundRequests,
+    readOperatorRefundRequests,
+} from "@/services/refund-requests/read";
 import { accountClosureReview } from "@/services/account-closure/review";
 import { withObservedRefund } from "@/payments-new/stripe-lifecycle/refund-projection";
 
@@ -454,6 +457,33 @@ it("projects an exact existing refund status without approving policy-pending su
     expect(result.products[0].refundSummary).toMatchObject({
         refundedAmount: 5,
     });
+    const operatorCtx = {
+        ...ctx,
+        user: { ...user.toObject(), permissions: ["setting:manage"] },
+    };
+    const operatorView = await readOperatorRefundRequests(operatorCtx);
+    expect(operatorView.requests[0]).toMatchObject({
+        state: "submitted",
+        consequences: { accessDecision: "policy-pending" },
+        refundSummary: {
+            kind: "observed",
+            currency: "nzd",
+            refundedAmount: 5,
+            refunds: [{ status: "succeeded", amount: 5 }],
+        },
+    });
+    expect(JSON.stringify(operatorView.requests[0].refundSummary)).not.toMatch(
+        /ch_native|re_one|pi_native|cus_/,
+    );
+    await expect(readOperatorRefundRequests(ctx)).rejects.toMatchObject({
+        code: "forbidden",
+    });
+    await expect(
+        readOperatorRefundRequests({
+            ...operatorCtx,
+            memberMimic: { sessionId: "mimic" },
+        }),
+    ).rejects.toMatchObject({ code: "forbidden" });
     expect(
         (await accountClosureReview(user, ctx)).blockers.map(
             (item) => item.kind,
@@ -576,6 +606,13 @@ it.each([
         const view = (await readMemberRefundRequests(ctx)).products[0];
         expect(view.request!.refund).toMatchObject({ status: newer });
         expect(view.refundSummary).toMatchObject({
+            refunds: [{ status: newer }],
+        });
+        const operatorView = await readOperatorRefundRequests({
+            ...ctx,
+            user: { ...user.toObject(), permissions: ["setting:manage"] },
+        });
+        expect(operatorView.requests[0].refundSummary).toMatchObject({
             refunds: [{ status: newer }],
         });
         expect(

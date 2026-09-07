@@ -27,6 +27,7 @@ export interface RefundConsequencesView {
     explanation: string;
 }
 export interface RefundRequestView {
+    refundSummary?: MemberRefundSummary;
     requestId: string;
     invoiceId: string;
     productName: string;

@@ -69,7 +69,8 @@ export const billingCopy = {
         "Access is held at the cancellation request while the result is checked. No new drops are being added.",
     accessEnded:
         "Renewal has stopped. Your retained content is available in My content; archive access and future drops have ended.",
-    refundNotStarted: "Refund processing has not started.",
+    refundNotStarted:
+        "Refund processing for this cancellation has not started.",
     refundProcessing: "Your refund is being checked.",
     refundUncertain:
         "The refund result is not confirmed yet. We will check the existing request before attempting anything again.",
@@ -81,7 +82,10 @@ export const billingCopy = {
         "The refund did not complete. Your membership cancellation remains in place; please ask for help with the refund.",
     refundAction: "The refund needs additional attention. Please ask for help.",
     noRefundUnpaid: "No refund is due because this month was not paid.",
-    noRefundAlready: "This month’s paid balance has already been refunded.",
+    refundCanceled:
+        "The payment provider canceled this refund. Please ask for help with the payment.",
+    noRefundAlready:
+        "No additional refund was needed when this cancellation was checked.",
     farewellTitle: "Thank you for practising with us",
     farewell:
         "Thank you for the time you have shared here. You are welcome to return to any practices retained in My content.",

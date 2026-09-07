@@ -48,7 +48,9 @@ export function RefundStatus({ value }: { value: BillingRefundView }) {
                       ? copy.refundPending
                       : value.status === "requires_action"
                         ? copy.refundAction
-                        : copy.refundFailed;
+                        : value.status === "canceled"
+                          ? copy.refundCanceled
+                          : copy.refundFailed;
             break;
     }
     return (

@@ -17,6 +17,7 @@ import { CancellationReview } from "../review";
 import { RefundStatus } from "../consequences";
 import { billingCopy as copy } from "../copy";
 import { money } from "../format";
+import { refundSummaryCopy } from "@/components/refund-summary/copy";
 
 let mockMimic: MemberMimicView = { kind: "inactive" };
 jest.mock("@/components/member-mimic/context", () => ({
@@ -107,6 +108,45 @@ beforeEach(() => {
     fetchMock.mockReset();
     global.fetch = fetchMock;
     mockMimic = { kind: "inactive" };
+});
+test("billing refresh shows an external refund separately from the original payment and active membership", async () => {
+    const member = membership();
+    member.invoices[0].refundSummary = {
+        kind: "observed",
+        currency: "nzd",
+        refundedAmount: 4.25,
+        refunds: [{ status: "succeeded", amount: 4.25 }],
+        observedAt: "2026-09-07T10:00:00Z",
+    };
+    fetchMock.mockResolvedValueOnce(response(view(member, true)));
+    render(<MemberBilling />);
+    await screen.findByText(refundSummaryCopy.states.succeeded);
+    expect(screen.getByText("Active")).toBeInTheDocument();
+    expect(screen.getByText("Paid")).toBeInTheDocument();
+    expect(screen.getByText(/NZD\s11\.00/)).toBeInTheDocument();
+    expect(screen.getAllByText(/NZD\s4\.25/)).toHaveLength(2);
+    const refreshed = {
+        ...member,
+        invoices: member.invoices.map((invoice) => ({ ...invoice })),
+    };
+    refreshed.invoices[0].refundSummary = {
+        kind: "observed",
+        currency: "nzd",
+        refundedAmount: 0,
+        refunds: [{ status: "requires_action", amount: 4.25 }],
+        observedAt: "2026-09-07T11:00:00Z",
+    };
+    fetchMock.mockResolvedValueOnce(response(view(refreshed, true)));
+    fireEvent.click(
+        screen.getByRole("button", { name: refundSummaryCopy.refresh }),
+    );
+    await screen.findByText(refundSummaryCopy.states.requires_action);
+    expect(
+        screen.queryByText(refundSummaryCopy.states.succeeded),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("Active")).toBeInTheDocument();
+    expect(screen.getByText(/NZD\s11\.00/)).toBeInTheDocument();
+    expect(fetchMock.mock.calls.every(([, init]) => !init.method)).toBe(true);
 });
 afterEach(() => {
     cleanup();
@@ -301,7 +341,16 @@ test.each(["failed", "canceled"] as const)(
                 value={{ kind: "refund", status, amount: 800, currency: "nzd" }}
             />,
         );
-        expect(screen.getByText(copy.refundFailed)).toBeInTheDocument();
+        expect(
+            screen.getByText(
+                status === "canceled" ? copy.refundCanceled : copy.refundFailed,
+            ),
+        ).toBeInTheDocument();
+        expect(
+            screen.queryByText(
+                status === "canceled" ? copy.refundFailed : copy.refundCanceled,
+            ),
+        ).not.toBeInTheDocument();
         expect(
             screen.queryByText(copy.refundSucceeded),
         ).not.toBeInTheDocument();

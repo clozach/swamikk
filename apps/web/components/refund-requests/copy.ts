@@ -54,7 +54,7 @@ export function requestStatus(state: RefundRequestView["state"]) {
         approved: "Approved",
         declined: "Request declined",
         processing: "Checking refund",
-        complete: "Refund complete",
+        complete: "Request completed",
         "review-required": "Review needed",
     }[state];
 }
@@ -71,11 +71,12 @@ export function refundStatus(refund: RefundRequestView["refund"]) {
                 "The payment provider needs further action before the refund can finish.",
         }[refund.status];
     return {
-        "not-started": "No refund has been sent.",
+        "not-started": "No refund has been sent through this request.",
         uncertain:
             "The refund result is not yet known. Check the existing request; do not submit another one.",
         processing: "The existing refund is being checked.",
-        "already-refunded": "The full payment was already refunded.",
+        "already-refunded":
+            "No additional refund was needed when this request was checked.",
         "review-required":
             "The payment needs a reviewer before the refund can proceed.",
     }[refund.kind];

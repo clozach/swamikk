@@ -4,6 +4,8 @@ import {
     withObservedRefund,
 } from "@/payments-new/stripe-lifecycle/refund-projection";
 import RefundLedger from "@/models/StripeChargeRefunds";
+import { withNativeRefundEvidence } from "@/payments-new/stripe-lifecycle/refund-native";
+import BillingCancellation from "@/models/BillingCancellation";
 import type GQLContext from "@/models/GQLContext";
 import { Constants } from "@courselit/common-models";
 import {
@@ -104,16 +106,32 @@ export async function readOperatorRefundRequests(
         .sort({ submittedAt: 1 })
         .limit(100)
         .lean();
-    const evidence = await RefundLedger.find({
+    const evidenceScope = {
         domain: ctx.subdomain._id,
         userId: { $in: records.map((item) => item.userId) },
-    }).lean();
+    };
+    const [evidence, cancellations, nativeRequests] = await Promise.all([
+        RefundLedger.find(evidenceScope).lean(),
+        BillingCancellation.find(evidenceScope).lean(),
+        RefundRequest.find(evidenceScope).lean(),
+    ]);
+    const native = [...cancellations, ...nativeRequests];
+    const currentEvidence = evidence.map((item) =>
+        withNativeRefundEvidence(item, native),
+    );
     return {
-        requests: records.map((record) =>
-            refundRequestView(withObservedRefund(record, evidence), {
+        requests: records.map((record) => ({
+            ...refundRequestView(withObservedRefund(record, currentEvidence), {
                 operator: true,
             }),
-        ),
+            refundSummary: memberRefundSummary(
+                currentEvidence.find(
+                    (item) =>
+                        item.invoiceId === record.invoiceId &&
+                        item.userId === record.userId,
+                ),
+            ),
+        })),
     };
 }
 export async function refundBookingChoices(ctx: GQLContext, invoiceId: string) {

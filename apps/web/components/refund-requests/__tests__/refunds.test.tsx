@@ -5,7 +5,7 @@ import {
     render,
     screen,
 } from "@testing-library/react";
-import type { MemberMimicView } from "@courselit/common-models";
+import { UIConstants, type MemberMimicView } from "@courselit/common-models";
 import type {
     RefundRequestView,
     MemberRefundRequestsView,
@@ -15,6 +15,9 @@ import { RequestCard } from "../request-card";
 import { OperatorActions } from "../operator-actions";
 import { refundCopy as copy, refundStatus } from "../copy";
 import { money } from "@/components/member-billing/format";
+import { refundSummaryCopy } from "@/components/refund-summary/copy";
+import OperatorRefunds from "../operator";
+import { ProfileContext } from "@/components/contexts";
 let mockMimic: MemberMimicView = { kind: "inactive" };
 jest.mock("@/components/member-mimic/context", () => ({
     useMemberMimic: () => mockMimic,
@@ -281,6 +284,116 @@ test("operator approval requires an explanation and a current consequence review
         reviewHash: "reviewed-hash",
         explanation: "Verified amount and consequence",
     });
+});
+test("member requests show external money history while the policy decision remains pending", async () => {
+    const saved = request({ state: "submitted", canSubmit: false });
+    const payload = view(saved, true);
+    payload.products[0].refundSummary = {
+        kind: "observed",
+        currency: "nzd",
+        refundedAmount: 12.5,
+        refunds: [{ status: "succeeded", amount: 12.5 }],
+        observedAt: "2026-09-07T10:00:00Z",
+    };
+    fetchMock.mockResolvedValueOnce(response(payload));
+    render(<MemberRefunds />);
+    await screen.findByText(refundSummaryCopy.states.succeeded);
+    expect(screen.getByText(copy.pendingPolicy)).toBeInTheDocument();
+    expect(screen.getByText("Waiting for review · Al")).toBeInTheDocument();
+    expect(
+        screen.getByText("No refund has been sent through this request."),
+    ).toBeInTheDocument();
+    expect(
+        screen.getByText(refundSummaryCopy.alreadyAtReview),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(/NZD\s12\.50/)).toHaveLength(2);
+    expect(screen.getByText(/NZD\s50\.00/)).toBeInTheDocument();
+    expect(
+        screen.queryByRole("button", { name: copy.approve }),
+    ).not.toBeInTheDocument();
+    expect(fetchMock.mock.calls.every(([, init]) => !init.method)).toBe(true);
+});
+test("a completed request does not call a later failed payment refund complete", () => {
+    render(
+        <RequestCard
+            request={request({
+                state: "complete",
+                refund: { kind: "refund", status: "failed" },
+                refundSummary: {
+                    kind: "observed",
+                    currency: "nzd",
+                    refundedAmount: 0,
+                    refunds: [{ status: "failed", amount: 42 }],
+                    observedAt: "2026-09-07T10:00:00Z",
+                },
+            })}
+        />,
+    );
+    expect(screen.getByText("Request completed")).toBeInTheDocument();
+    expect(
+        screen.getByText(refundSummaryCopy.states.failed),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Refund complete")).not.toBeInTheDocument();
+});
+test("operator review refreshes the safe money summary after a command without approving a pending policy", async () => {
+    const first = request({
+        state: "submitted",
+        canSubmit: false,
+        refundSummary: {
+            kind: "observed",
+            currency: "nzd",
+            refundedAmount: 0,
+            refunds: [{ status: "pending", amount: 42 }],
+            observedAt: "2026-09-07T10:00:00Z",
+        },
+    });
+    fetchMock.mockResolvedValueOnce(response({ requests: [first] }));
+    render(
+        <ProfileContext.Provider
+            value={
+                {
+                    profile: {
+                        userId: "operator",
+                        permissions: [UIConstants.permissions.manageSettings],
+                    },
+                } as any
+            }
+        >
+            <OperatorRefunds />
+        </ProfileContext.Provider>,
+    );
+    await screen.findByText(refundSummaryCopy.states.pending);
+    const result = request({ state: "submitted", canSubmit: false });
+    fetchMock.mockResolvedValueOnce(response(result));
+    fetchMock.mockResolvedValueOnce(
+        response({
+            requests: [
+                {
+                    ...result,
+                    refundSummary: {
+                        kind: "observed",
+                        currency: "nzd",
+                        refundedAmount: 42,
+                        refunds: [{ status: "succeeded", amount: 42 }],
+                        observedAt: "2026-09-07T11:00:00Z",
+                    },
+                },
+            ],
+        }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: copy.paymentReview }));
+    await screen.findByText(refundSummaryCopy.states.succeeded);
+    expect(
+        screen.queryByText(refundSummaryCopy.states.pending),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText(copy.pendingPolicy)).toBeInTheDocument();
+    expect(screen.getByText("Waiting for review · Al")).toBeInTheDocument();
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({
+        action: "review",
+        requestId: "request",
+    });
+    expect(fetchMock.mock.calls[2][0]).toBe("/api/refund-requests/review");
+    expect(fetchMock.mock.calls[2][1].method).toBeUndefined();
 });
 test("booking selection requires explicit receipt evidence and does not select or invent a date", async () => {
     const command = jest.fn().mockResolvedValue(true);

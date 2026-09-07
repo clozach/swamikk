@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Fragment } from "react";
+import RefundSummary from "@/components/refund-summary";
 import { Button } from "@/components/ui/button";
 import type { BillingMembershipView } from "@/services/member-billing/types";
 import { billingCopy as copy } from "./copy";
@@ -96,41 +98,54 @@ export function MembershipCard({
                             </thead>
                             <tbody>
                                 {membership.invoices.map((invoice) => (
-                                    <tr
-                                        key={invoice.invoiceId}
-                                        className="border-b last:border-0"
-                                    >
-                                        <td className="py-3 pr-4">
-                                            {date(invoice.paidAt)}
-                                        </td>
-                                        <td className="py-3 pr-4">
-                                            <span className="whitespace-nowrap">
-                                                {money(
-                                                    invoice.amount,
-                                                    invoice.currency,
-                                                )}
-                                            </span>
-                                            {invoice.mode !== "live" && (
-                                                <span className="mt-1 block text-xs text-muted-foreground">
-                                                    {invoice.mode === "test"
-                                                        ? copy.test
-                                                        : copy.modeUnknown}
+                                    <Fragment key={invoice.invoiceId}>
+                                        <tr className="border-b last:border-0">
+                                            <td className="py-3 pr-4">
+                                                {date(invoice.paidAt)}
+                                            </td>
+                                            <td className="py-3 pr-4">
+                                                <span className="whitespace-nowrap">
+                                                    {money(
+                                                        invoice.amount,
+                                                        invoice.currency,
+                                                    )}
                                                 </span>
-                                            )}
-                                        </td>
-                                        <td className="py-3">
-                                            {statusLabel(invoice.status)}
-                                            {invoice.receipt.kind ===
-                                                "available" && (
-                                                <Link
-                                                    href={invoice.receipt.href}
-                                                    className="ml-3 inline-flex min-h-11 items-center underline underline-offset-4"
-                                                >
-                                                    {copy.receipt}
-                                                </Link>
-                                            )}
-                                        </td>
-                                    </tr>
+                                                {invoice.mode !== "live" && (
+                                                    <span className="mt-1 block text-xs text-muted-foreground">
+                                                        {invoice.mode === "test"
+                                                            ? copy.test
+                                                            : copy.modeUnknown}
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className="py-3">
+                                                {statusLabel(invoice.status)}
+                                                {invoice.receipt.kind ===
+                                                    "available" && (
+                                                    <Link
+                                                        href={
+                                                            invoice.receipt.href
+                                                        }
+                                                        className="ml-3 inline-flex min-h-11 items-center underline underline-offset-4"
+                                                    >
+                                                        {copy.receipt}
+                                                    </Link>
+                                                )}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td
+                                                colSpan={3}
+                                                className="pb-4 pt-1"
+                                            >
+                                                <RefundSummary
+                                                    summary={
+                                                        invoice.refundSummary
+                                                    }
+                                                />
+                                            </td>
+                                        </tr>
+                                    </Fragment>
                                 ))}
                             </tbody>
                         </table>

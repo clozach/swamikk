@@ -6,6 +6,7 @@ import { useMemberMimic } from "@/components/member-mimic/context";
 import type { MemberReceipt } from "@/services/member-receipts/types";
 import { money, date } from "@/components/member-billing/format";
 import { receiptCopy as copy } from "./copy";
+import RefundSummary from "@/components/refund-summary";
 
 type State =
     | { kind: "loading" }
@@ -75,12 +76,24 @@ function ReceiptForIdentity({ invoiceId }: { invoiceId: string }) {
                 </div>
             )}
             {state.kind === "ready" && (
-                <ReceiptDetails receipt={state.receipt} />
+                <ReceiptDetails
+                    receipt={state.receipt}
+                    onRefresh={() => {
+                        setState({ kind: "loading" });
+                        setRevision((n) => n + 1);
+                    }}
+                />
             )}
         </main>
     );
 }
-function ReceiptDetails({ receipt }: { receipt: MemberReceipt }) {
+function ReceiptDetails({
+    receipt,
+    onRefresh,
+}: {
+    receipt: MemberReceipt;
+    onRefresh: () => void;
+}) {
     return (
         <article className="space-y-7 rounded-2xl border p-6 sm:p-9">
             <header className="space-y-3">
@@ -139,6 +152,7 @@ function ReceiptDetails({ receipt }: { receipt: MemberReceipt }) {
             <p className="text-sm leading-relaxed text-muted-foreground">
                 {copy.proof}
             </p>
+            <RefundSummary summary={receipt.refundSummary} />
             <div className="flex flex-wrap items-center gap-5 pt-3 print:hidden">
                 <Button
                     variant="outline"
@@ -146,6 +160,13 @@ function ReceiptDetails({ receipt }: { receipt: MemberReceipt }) {
                     onClick={() => window.print()}
                 >
                     {copy.print}
+                </Button>
+                <Button
+                    variant="outline"
+                    className="min-h-11"
+                    onClick={onRefresh}
+                >
+                    {copy.refresh}
                 </Button>
                 <Link
                     href="/p/contact"

@@ -8,6 +8,7 @@ import {
 import MemberReceiptPage from "..";
 import { receiptCopy as copy } from "../copy";
 import type { MemberReceipt } from "@/services/member-receipts/types";
+import { refundSummaryCopy } from "@/components/refund-summary/copy";
 const fetchMock = jest.fn();
 const originalFetch = global.fetch;
 const receipt: MemberReceipt = {
@@ -94,4 +95,46 @@ it("failed access shows recovery without an old receipt body", async () => {
     await screen.findByRole("alert");
     expect(screen.getByText(copy.unavailable)).toBeInTheDocument();
     expect(screen.queryByText("Members Library")).not.toBeInTheDocument();
+});
+it("refreshes external refund status in Mimic with read-only requests and keeps the original paid amount", async () => {
+    const evidence = {
+        kind: "observed",
+        currency: "nzd",
+        refundedAmount: 0,
+        refunds: [{ status: "pending", amount: 4.25 }],
+        observedAt: "2026-09-07T10:00:00Z",
+    };
+    fetchMock.mockResolvedValueOnce(
+        response({ ...receipt, readOnly: true, refundSummary: evidence }),
+    );
+    render(<MemberReceiptPage invoiceId="receipt-1" />);
+    await screen.findByText(refundSummaryCopy.states.pending);
+    expect(screen.getByText(/NZD\s11\.00/)).toBeInTheDocument();
+    expect(screen.getByText(/NZD\s4\.25/)).toBeInTheDocument();
+    fetchMock.mockResolvedValueOnce(
+        response({
+            ...receipt,
+            readOnly: true,
+            refundSummary: {
+                ...evidence,
+                refunds: [{ status: "failed", amount: 4.25 }],
+                observedAt: "2026-09-07T11:00:00Z",
+            },
+        }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: copy.refresh }));
+    await screen.findByText(refundSummaryCopy.states.failed);
+    expect(
+        screen.queryByText(refundSummaryCopy.states.pending),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText(/NZD\s11\.00/)).toBeInTheDocument();
+    expect(
+        document.querySelector('time[datetime="2026-09-07T11:00:00Z"]'),
+    ).not.toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(
+        fetchMock.mock.calls.every(
+            ([, init]) => !init.method && init.cache === "no-store",
+        ),
+    ).toBe(true);
 });

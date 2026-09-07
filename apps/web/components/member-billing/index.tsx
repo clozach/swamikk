@@ -7,6 +7,7 @@ import { MembershipCard } from "./membership-card";
 import { CancellationReview } from "./review";
 import { ClosingGift } from "./closing-gift";
 import { useBilling } from "./use-billing";
+import { refundSummaryCopy } from "@/components/refund-summary/copy";
 
 export default function MemberBilling() {
     const mimic = useMemberMimic();
@@ -66,6 +67,15 @@ function BillingForIdentity({ mimicReadOnly }: { mimicReadOnly: boolean }) {
                         {copy.refundLink}
                     </Link>
                 </nav>
+                {state.kind === "ready" && (
+                    <Button
+                        variant="outline"
+                        disabled={!!busy}
+                        onClick={() => refresh()}
+                    >
+                        {refundSummaryCopy.refresh}
+                    </Button>
+                )}
             </header>
             {readOnly && (
                 <p className="rounded-xl border p-4 text-sm">{copy.readOnly}</p>

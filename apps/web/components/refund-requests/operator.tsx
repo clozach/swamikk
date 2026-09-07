@@ -52,13 +52,16 @@ function OperatorForIdentity() {
                     ? {
                           requests: current.requests.map((request) =>
                               request.requestId === result.requestId
-                                  ? result
+                                  ? {
+                                        ...result,
+                                        refundSummary: request.refundSummary,
+                                    }
                                   : request,
                           ),
                       }
                     : current,
             );
-        else api.refresh();
+        api.refresh();
         return true;
     }
     return (
@@ -89,7 +92,7 @@ function OperatorForIdentity() {
                 >
                     <OperatorActions
                         request={request}
-                        busy={api.busy}
+                        busy={api.busy || api.loading}
                         command={command}
                     />
                 </RequestCard>

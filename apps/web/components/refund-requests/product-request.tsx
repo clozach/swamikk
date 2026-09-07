@@ -8,6 +8,7 @@ import type {
 } from "@/services/refund-requests/types";
 import { RequestCard } from "./request-card";
 import { refundCopy as copy } from "./copy";
+import RefundSummary from "@/components/refund-summary";
 export function ProductRequest({
     product,
     readOnly,
@@ -83,7 +84,10 @@ export function ProductRequest({
         ) : null;
     if (request)
         return (
-            <RequestCard request={request}>
+            <RequestCard
+                request={request}
+                refundSummary={product.refundSummary}
+            >
                 {editor}
                 {!readOnly && request.canReconcile && (
                     <Button
@@ -113,6 +117,7 @@ export function ProductRequest({
                       ? "Test payment"
                       : "Live payment"}
             </p>
+            <RefundSummary summary={product.refundSummary} />
             <Link
                 href={product.receiptHref}
                 className="inline-flex min-h-11 items-center text-sm underline"

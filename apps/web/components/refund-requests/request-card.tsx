@@ -1,4 +1,7 @@
 import type { ReactNode } from "react";
+import type { MemberRefundSummary } from "@courselit/common-models";
+import RefundSummary from "@/components/refund-summary";
+import { refundSummaryCopy } from "@/components/refund-summary/copy";
 import Link from "next/link";
 import type { RefundRequestView } from "@/services/refund-requests/types";
 import { money } from "@/components/member-billing/format";
@@ -13,10 +16,12 @@ export function RequestCard({
     request,
     children,
     showReceipt = true,
+    refundSummary = request.refundSummary,
 }: {
     request: RefundRequestView;
     children?: ReactNode;
     showReceipt?: boolean;
+    refundSummary?: MemberRefundSummary;
 }) {
     const quote = request.quote;
     return (
@@ -48,7 +53,7 @@ export function RequestCard({
                             ? "Test payment"
                             : "Live payment"}
                     </dd>
-                    <dt>Already refunded</dt>
+                    <dt>{refundSummaryCopy.alreadyAtReview}</dt>
                     <dd>
                         {money(
                             quote.alreadyRefundedAmount,
@@ -64,6 +69,12 @@ export function RequestCard({
             ) : (
                 <p>{copy.quoteUnavailable}</p>
             )}
+            {quote && refundSummary?.kind === "observed" && (
+                <p className="text-xs text-muted-foreground">
+                    {refundSummaryCopy.reviewAmounts}
+                </p>
+            )}
+            <RefundSummary summary={refundSummary} />
             {request.consequences.classStart && (
                 <p className="text-sm">
                     Verified class start:{" "}
