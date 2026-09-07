@@ -1,3 +1,4 @@
+import type { PageCreationReceipt } from "./page-creation";
 import { Media } from "./media";
 import type { Blog, Community, Product, Site } from "./page-type";
 import WidgetInstance from "./widget-instance";
@@ -10,6 +11,8 @@ export default interface Page {
     draftLayout?: WidgetInstance[];
     deleteable: boolean;
     deleted: boolean;
+    draftOnly?: boolean;
+    creationReceipt?: PageCreationReceipt;
     entityId?: string;
     pageData?: Record<string, unknown>;
     title?: string;

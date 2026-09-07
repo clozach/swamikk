@@ -1,3 +1,6 @@
+import { expectedPageIdentity } from "./identity";
+import { checkDraftPublication } from "./draft-publication";
+import { pageWriteFilter } from "@/services/content-changes/page-guard";
 import { nativePageBaseline, guardedNativePageSave } from "./guarded-save";
 import {
     SITE_FOOTER_WIDGET,
@@ -36,10 +39,12 @@ export async function getPage({
     id,
     ctx,
     justWidgets = false,
+    documentId,
 }: {
     id?: string;
     ctx: GQLContext;
     justWidgets?: boolean;
+    documentId?: string;
 }) {
     await initSharedWidgets(ctx);
     if (!id) {
@@ -63,7 +68,9 @@ export async function getPage({
         const page = await PageModel.findOne(
             {
                 pageId: id,
+                ...expectedPageIdentity(documentId),
                 domain: ctx.subdomain._id,
+                deleted: { $ne: true },
             },
             {
                 pageId: 1,
@@ -75,6 +82,7 @@ export async function getPage({
                 robotsAllowed: 1,
                 type: 1,
                 entityId: 1,
+                draftOnly: 1,
                 draftLayout: 1,
                 draftTitle: 1,
                 draftDescription: 1,
@@ -89,7 +97,10 @@ export async function getPage({
         const page = await PageModel.findOne(
             {
                 pageId: id,
+                ...expectedPageIdentity(documentId),
+                draftOnly: { $ne: true },
                 domain: ctx.subdomain._id,
+                deleted: { $ne: true },
             },
             {
                 pageId: 1,
@@ -134,6 +145,7 @@ export async function getPage({
 export const updatePage = async ({
     context: ctx,
     pageId,
+    documentId,
     layout: inputLayout,
     title,
     description,
@@ -142,6 +154,7 @@ export const updatePage = async ({
 }: {
     context: GQLContext;
     pageId: string;
+    documentId?: string;
     layout?: string;
     title?: string;
     description?: string;
@@ -154,7 +167,9 @@ export const updatePage = async ({
     }
     const page: Page | null = await PageModel.findOne({
         pageId,
+        ...expectedPageIdentity(documentId),
         domain: ctx.subdomain._id,
+        deleted: { $ne: true },
     });
 
     if (!page) {
@@ -246,6 +261,7 @@ export const updatePage = async ({
 export const publish = async (
     pageId: string,
     ctx: GQLContext,
+    documentId?: string,
 ): Promise<Partial<Page> | null> => {
     checkIfAuthenticated(ctx);
     if (!checkPermission(ctx.user.permissions, [permissions.manageSite])) {
@@ -253,13 +269,18 @@ export const publish = async (
     }
     const page: Page | null = await PageModel.findOne({
         pageId,
+        ...expectedPageIdentity(documentId),
         domain: ctx.subdomain._id,
+        deleted: { $ne: true },
     });
 
     if (!page) {
         return null;
     }
     const baseline = nativePageBaseline(page);
+    const firstPublication = page.draftOnly === true;
+    if (firstPublication) await checkDraftPublication(ctx);
+    if (firstPublication) page.draftOnly = false;
 
     // 1. Identify all media currently in PUBLISHED state (to be potentially deleted)
     const currentPublishedMedia = extractMediaIDs(
@@ -294,7 +315,10 @@ export const publish = async (
         page.description = page.draftDescription;
         // page.draftDescription = undefined;
     }
-    if (page.draftRobotsAllowed) {
+    if (
+        page.draftRobotsAllowed ||
+        (firstPublication && typeof page.draftRobotsAllowed === "boolean")
+    ) {
         page.robotsAllowed = page.draftRobotsAllowed;
         // page.draftRobotsAllowed = undefined;
     }
@@ -304,19 +328,21 @@ export const publish = async (
         page.socialImage = page.draftSocialImage;
     }
 
-    if (ctx.subdomain.themeId) {
-        await publishTheme(ctx.subdomain.themeId, ctx);
-    }
+    if (!firstPublication) {
+        if (ctx.subdomain.themeId) {
+            await publishTheme(ctx.subdomain.themeId, ctx);
+        }
 
-    await DomainModel.findOneAndUpdate(
-        { _id: ctx.subdomain._id },
-        {
-            $set: {
-                typefaces: ctx.subdomain.draftTypefaces,
-                sharedWidgets: ctx.subdomain.draftSharedWidgets,
+        await DomainModel.findOneAndUpdate(
+            { _id: ctx.subdomain._id },
+            {
+                $set: {
+                    typefaces: ctx.subdomain.draftTypefaces,
+                    sharedWidgets: ctx.subdomain.draftSharedWidgets,
+                },
             },
-        },
-    );
+        );
+    }
     // The request-scoped domain cache would otherwise keep serving the
     // pre-publish shared widgets (header/footer settings) for up to a minute —
     // or indefinitely while requests keep re-caching the stale copy.
@@ -344,6 +370,7 @@ export const getPages = async (
 
     const filter: Record<string, unknown> = {
         domain: ctx.subdomain._id,
+        deleted: { $ne: true },
     };
 
     if (type) {
@@ -356,6 +383,7 @@ export const getPages = async (
         type: 1,
         entityId: 1,
         deleteable: 1,
+        draftOnly: 1,
     });
 
     return pages;
@@ -560,6 +588,7 @@ export const deletePageInternal = async (ctx: GQLContext, id: string) => {
     const page = (await PageModel.findOne({
         domain: ctx.subdomain._id,
         pageId: id,
+        deleted: { $ne: true },
     }).lean()) as unknown as Page;
 
     if (!page) {
@@ -582,6 +611,39 @@ export const deletePageInternal = async (ctx: GQLContext, id: string) => {
         await deleteMedia(mediaId, ctx.subdomain._id);
     }
 
+    if (page.creationReceipt) {
+        const documentId = String(
+            (page as Page & { _id?: unknown })._id || page.id,
+        );
+        const erased = await PageModel.updateOne(
+            { ...pageWriteFilter(page), deleteable: true },
+            {
+                $set: {
+                    pageId: `removed-${documentId}`,
+                    name: "Removed page",
+                    deleted: true,
+                    draftOnly: true,
+                    deleteable: false,
+                    layout: [],
+                    draftLayout: [],
+                    robotsAllowed: false,
+                },
+                $unset: {
+                    title: 1,
+                    draftTitle: 1,
+                    description: 1,
+                    draftDescription: 1,
+                    socialImage: 1,
+                    draftSocialImage: 1,
+                    draftRobotsAllowed: 1,
+                },
+                $inc: { __v: 1 },
+            },
+        );
+        if (!erased.modifiedCount)
+            throw new Error("The page changed. Refresh before deleting it.");
+        return;
+    }
     await PageModel.deleteOne({
         domain: ctx.subdomain._id,
         deleteable: true,
@@ -593,10 +655,12 @@ export const deleteBlock = async ({
     context: ctx,
     pageId,
     blockId,
+    documentId,
 }: {
     context: GQLContext;
     pageId: string;
     blockId: string;
+    documentId?: string;
 }) => {
     checkIfAuthenticated(ctx);
     if (!checkPermission(ctx.user.permissions, [permissions.manageSite])) {
@@ -604,7 +668,9 @@ export const deleteBlock = async ({
     }
     const page: Page | null = await PageModel.findOne({
         pageId,
+        ...expectedPageIdentity(documentId),
         domain: ctx.subdomain._id,
+        deleted: { $ne: true },
     });
 
     if (!page) {

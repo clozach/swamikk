@@ -2,6 +2,7 @@
 
 import { useContext, useEffect, useState } from "react";
 import Link from "next/link";
+import PageCreationForm from "./page-creation-form";
 import { checkPermission } from "@courselit/utils";
 import { UIConstants } from "@courselit/common-models";
 import { ProfileContext } from "@components/contexts";
@@ -58,7 +59,8 @@ export default function ContentOverview() {
         };
     }, [allowed, page, retry, fetcher]);
     if (!profile) return <p className="p-8">{copy.loading}</p>;
-    if (!allowed) return <p className="p-8">{copy.accessDenied}</p>;
+    if (!allowed && !profile.permissions?.includes("site:manage"))
+        return <p className="p-8">{copy.accessDenied}</p>;
     return (
         <main
             className="mx-auto max-w-6xl p-4 md:p-8 pb-28"
@@ -69,7 +71,10 @@ export default function ContentOverview() {
             <p className="text-muted-foreground mb-8 max-w-2xl">
                 {copy.contentGuide}
             </p>
-            {state.kind === "loading" && <p role="status">{copy.loading}</p>}
+            <PageCreationForm />
+            {allowed && state.kind === "loading" && (
+                <p role="status">{copy.loading}</p>
+            )}
             {state.kind === "error" && (
                 <div role="alert">
                     <p>{copy.loadFailed}</p>

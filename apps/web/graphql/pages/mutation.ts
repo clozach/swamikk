@@ -19,6 +19,7 @@ const mutations = {
         type: types.page,
         args: {
             pageId: { type: new GraphQLNonNull(GraphQLString) },
+            documentId: { type: GraphQLString },
             layout: { type: GraphQLString },
             title: { type: GraphQLString },
             description: { type: GraphQLString },
@@ -29,6 +30,7 @@ const mutations = {
             _: any,
             {
                 pageId,
+                documentId,
                 layout,
                 title,
                 description,
@@ -37,6 +39,7 @@ const mutations = {
             }: {
                 context: GQLContext;
                 pageId: string;
+                documentId?: string;
                 layout?: string;
                 title?: string;
                 description?: string;
@@ -48,6 +51,7 @@ const mutations = {
             updatePage({
                 context,
                 pageId,
+                documentId,
                 layout,
                 title,
                 description,
@@ -59,12 +63,13 @@ const mutations = {
         type: types.page,
         args: {
             pageId: { type: new GraphQLNonNull(GraphQLString) },
+            documentId: { type: GraphQLString },
         },
         resolve: async (
             _: any,
-            { pageId }: { pageId: string },
+            { pageId, documentId }: { pageId: string; documentId?: string },
             context: GQLContext,
-        ) => publish(pageId, context),
+        ) => publish(pageId, context, documentId),
     },
     createPage: {
         type: types.page,
@@ -99,13 +104,18 @@ const mutations = {
         type: types.page,
         args: {
             pageId: { type: new GraphQLNonNull(GraphQLString) },
+            documentId: { type: GraphQLString },
             blockId: { type: new GraphQLNonNull(GraphQLString) },
         },
         resolve: async (
             _: any,
-            { pageId, blockId }: { pageId: string; blockId: string },
+            {
+                pageId,
+                blockId,
+                documentId,
+            }: { pageId: string; blockId: string; documentId?: string },
             context: GQLContext,
-        ) => deleteBlock({ context, pageId, blockId }),
+        ) => deleteBlock({ context, pageId, blockId, documentId }),
     },
 };
 

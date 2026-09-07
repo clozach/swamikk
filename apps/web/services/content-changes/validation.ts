@@ -78,7 +78,33 @@ export const pageWidgetPatchSchema = z.discriminatedUnion("kind", [
         })
         .strict(),
 ]);
+export const pageCreationPatchSchema = z
+    .object({
+        kind: z.literal("page-create"),
+        title: z.string().trim().min(1).max(240),
+        content,
+        intent: z.string().trim().min(1).max(4000),
+        materials: z.string().max(20000),
+    })
+    .strict();
+export const pageCreationInputSchema = z
+    .object({
+        target: z
+            .object({
+                kind: z.literal("page-create"),
+                pageId: z
+                    .string()
+                    .min(1)
+                    .max(128)
+                    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+            })
+            .strict(),
+        patch: pageCreationPatchSchema,
+        summary: z.string().trim().min(1).max(2000),
+    })
+    .strict();
 export const contentChangeInputSchema = z.union([
+    pageCreationInputSchema,
     z
         .object({
             feedbackId: id.optional(),
@@ -104,7 +130,11 @@ export const contentChangeActionSchema = z.discriminatedUnion("action", [
         .object({
             action: z.literal("revise"),
             version: z.number().int().positive(),
-            patch: z.union([lessonPatchSchema, pageWidgetPatchSchema]),
+            patch: z.union([
+                lessonPatchSchema,
+                pageWidgetPatchSchema,
+                pageCreationPatchSchema,
+            ]),
             summary: z.string().trim().min(1).max(2000),
         })
         .strict(),

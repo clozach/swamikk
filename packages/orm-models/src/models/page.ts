@@ -53,6 +53,8 @@ export const PageSchema = new mongoose.Schema<InternalPage>(
         draftSocialImage: MediaSchema,
         draftRobotsAllowed: Boolean,
         deleted: { type: Boolean, default: false },
+        draftOnly: { type: Boolean },
+        creationReceipt: { type: mongoose.Schema.Types.Mixed },
         contentChangeReceipt: { type: mongoose.Schema.Types.Mixed },
     },
     {

@@ -170,6 +170,7 @@ export async function getPageResponse(
 
     return {
         pageId: page.pageId,
+        draftOnly: page.draftOnly,
         name: page.name,
         type: page.type,
         entityId: page.entityId,

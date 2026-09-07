@@ -1,4 +1,8 @@
 import {
+    pageCreationInput,
+    pageCreationPatch,
+} from "./page-creation-openapi.mjs";
+import {
     pageWidgetInput,
     pageWidgetPatch,
     pageWidgetPaths,
@@ -33,7 +37,7 @@ const previewHash = { type: "string", pattern: "^[a-f0-9]{64}$" };
 const change = {
     type: "object",
     description:
-        "ContentChange from @courselit/common-models: id, target, version, summary, patch, baseline {revision,fingerprint,snapshot,published}; page-widget baselines also retain immutable documentId, renderFingerprint, theme/typefaces and draft consequence, with frozen widget renderSettings in both preview snapshots, preview {before,after}, previewHash, preparedBy/At, history, approvals, state, timestamps. state is discriminated by kind; applying/uncertain/applied include operationId and approval; applied includes appliedAt/appliedRevision.",
+        "ContentChange from @courselit/common-models: id, target, version, summary, patch, baseline {revision,fingerprint,snapshot,published}; page-widget baselines also retain immutable documentId, renderFingerprint, theme/typefaces and draft consequence, with frozen widget renderSettings in both preview snapshots, preview {before,after}, previewHash, preparedBy/At, history, approvals, state, timestamps. page-create retains prompt/materials, frozen native text layout, exact title/path, immutable result documentId and appearance fingerprint; approval creates only a hidden native draft. Creation result identities remain erased tombstones after cancellation/deletion. Separate publication refuses pending shared/theme/font drafts. state is discriminated by kind; applying/uncertain/applied include operationId and approval; applied includes appliedAt/appliedRevision.",
     properties: {
         id: { type: "string" },
         version,
@@ -103,7 +107,8 @@ export const contentChangesApiOpenApi = {
             post: {
                 tags: ["Content Changes"],
                 operationId: "prepareContentChange",
-                summary: "Prepare a native lesson or page-field change",
+                summary:
+                    "Prepare a native lesson, page-field change or new unpublished text page",
                 security: session,
                 requestBody: {
                     required: true,
@@ -142,6 +147,7 @@ export const contentChangesApiOpenApi = {
                                 },
                             },
                             pageWidgetInput,
+                            pageCreationInput,
                         ],
                     }),
                 },
@@ -205,7 +211,13 @@ export const contentChangesApiOpenApi = {
                                 "revise",
                                 {
                                     version,
-                                    patch: { oneOf: [patch, pageWidgetPatch] },
+                                    patch: {
+                                        oneOf: [
+                                            patch,
+                                            pageWidgetPatch,
+                                            pageCreationPatch,
+                                        ],
+                                    },
                                     summary: {
                                         type: "string",
                                         minLength: 1,

@@ -1,3 +1,8 @@
+import { isPageCreationRecord } from "./page-creation-types";
+import {
+    approvePageCreation,
+    reconcilePageCreation,
+} from "./page-creation-application";
 import { randomUUID } from "crypto";
 import type {
     ContentChange,
@@ -25,6 +30,7 @@ export async function reconcileChange(
     ctx: GQLContext,
 ): Promise<ContentChange> {
     const record = await getChange(id, ctx);
+    if (isPageCreationRecord(record)) return reconcilePageCreation(record, ctx);
     if (isPageRecord(record)) return reconcilePageChange(record, ctx);
     const state = record.state;
     if (state.kind !== "applying" && state.kind !== "uncertain")
@@ -113,6 +119,8 @@ export async function approveChange(
     ctx: GQLContext,
 ): Promise<ContentChange> {
     const record = await getChange(id, ctx);
+    if (isPageCreationRecord(record))
+        return approvePageCreation(record, version, previewHash, ctx);
     if (isPageRecord(record))
         return approvePageChange(record, version, previewHash, ctx);
     requireCondition(

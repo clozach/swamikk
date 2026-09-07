@@ -17,6 +17,7 @@ export const pageMutableFields = [
     "entityId",
     "creatorId",
     "deleted",
+    "draftOnly",
     "deleteable",
 ] as const;
 export const pageRevision = (page: EditablePage) => page.__v || 0;

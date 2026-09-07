@@ -1,4 +1,5 @@
 import type {
+    ContentChange,
     LessonContentChange,
     PageWidgetContentChange,
 } from "@courselit/common-models";
@@ -20,9 +21,15 @@ export type InternalPageContentChange = Omit<
     "createdAt" | "updatedAt"
 > &
     InternalContentChangeFields;
+export type InternalPageCreationChange = Omit<
+    Extract<ContentChange, { target: { kind: "page-create" } }>,
+    "createdAt" | "updatedAt"
+> &
+    InternalContentChangeFields;
 export type InternalContentChange =
     | InternalLessonContentChange
-    | InternalPageContentChange;
+    | InternalPageContentChange
+    | InternalPageCreationChange;
 
 export const ContentChangeSchema = new mongoose.Schema<InternalContentChange>(
     {

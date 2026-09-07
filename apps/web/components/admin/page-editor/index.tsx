@@ -62,6 +62,7 @@ const DEBOUNCE_TIME = 500;
 
 interface PageEditorProps {
     id: string;
+    documentId?: string;
     address: Address;
     profile: Profile;
     siteInfo: SiteInfo;
@@ -80,6 +81,7 @@ type LeftPaneContent =
 
 export default function PageEditor({
     id,
+    documentId,
     address,
     profile,
     redirectTo,
@@ -195,7 +197,7 @@ export default function PageEditor({
     const onPublish = async () => {
         const mutation = `
             mutation {
-                page: publish(pageId: "${id}") {
+                page: publish(pageId: "${id}"${documentId ? `, documentId: ${JSON.stringify(documentId)}` : ""}) {
                     pageId,
                     name,
                     type,
@@ -237,7 +239,7 @@ export default function PageEditor({
     const loadPage = async () => {
         const query = `
         query {
-            page: getPage(id: "${id}") {
+            page: getPage(id: "${id}"${documentId ? `, documentId: ${JSON.stringify(documentId)}` : ""}) {
                 pageId,
                 name,
                 type,
@@ -379,6 +381,7 @@ export default function PageEditor({
         const mutation = `
             mutation updatePage(
                 $pageId: String!,
+                $documentId: String,
                 $layout: String,
                 $title: String,
                 $description: String,
@@ -387,6 +390,7 @@ export default function PageEditor({
             ) {
                 page: updatePage(
                     pageId: $pageId,
+                    documentId: $documentId,
                     layout: $layout,
                     title: $title,
                     description: $description,
@@ -433,6 +437,7 @@ export default function PageEditor({
             query: mutation,
             variables: {
                 pageId,
+                documentId,
                 layout: JSON.stringify(layout),
                 title,
                 description,
@@ -461,8 +466,8 @@ export default function PageEditor({
 
     const deleteWidget = async (widgetId: string) => {
         const mutation = `
-            mutation ($pageId: String!, $blockId: String!) {
-                page: deleteBlock(pageId: $pageId, blockId: $blockId) {
+            mutation ($pageId: String!, $blockId: String!, $documentId: String) {
+                page: deleteBlock(pageId: $pageId, blockId: $blockId, documentId: $documentId) {
                     pageId,
                     draftLayout,
                 }
@@ -472,7 +477,11 @@ export default function PageEditor({
             const fetch = fetcher
                 .setPayload({
                     query: mutation,
-                    variables: { pageId: page.pageId!, blockId: widgetId },
+                    variables: {
+                        pageId: page.pageId!,
+                        blockId: widgetId,
+                        documentId,
+                    },
                 })
                 .build();
             const response = await fetch.exec();

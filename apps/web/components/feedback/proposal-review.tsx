@@ -1,3 +1,5 @@
+import { isPageCreation } from "@/services/content-changes/page-creation-types";
+import PageCreationPreview from "./page-creation-preview";
 import { useContext, useState } from "react";
 import Link from "next/link";
 import { TextRenderer } from "@courselit/page-blocks";
@@ -80,7 +82,9 @@ export default function ProposalReview({
                     {change.summary}
                 </h1>
             </div>
-            {isPageWidgetChange(change) ? (
+            {isPageCreation(change) ? (
+                <PageCreationPreview change={change} />
+            ) : isPageWidgetChange(change) ? (
                 <PageProposalPreview change={change} />
             ) : (
                 <>
@@ -146,7 +150,9 @@ export default function ProposalReview({
                                 })
                             }
                         >
-                            {copy.approve}
+                            {isPageCreation(change)
+                                ? "Approve creation of unpublished page"
+                                : copy.approve}
                         </Button>
                         <Button
                             className="min-h-11"
@@ -173,7 +179,7 @@ export default function ProposalReview({
                         {copy.recover}
                     </Button>
                 )}
-                {change.state.kind === "applied" && (
+                {change.state.kind === "applied" && !isPageCreation(change) && (
                     <Button
                         className="min-h-11"
                         variant="outline"

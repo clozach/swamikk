@@ -1,3 +1,8 @@
+import type {
+    PageCreationInput,
+    PageCreationTarget,
+    PageCreationVersion,
+} from "./page-creation";
 import type { TextEditorContent } from "./text-editor-content";
 import type {
     PageWidgetTarget,
@@ -21,7 +26,8 @@ export interface LessonContentChangeInput {
 }
 export type ContentChangeInput =
     | LessonContentChangeInput
-    | PageWidgetChangeInput;
+    | PageWidgetChangeInput
+    | PageCreationInput;
 export interface LessonTextSnapshot {
     title: string;
     content: TextEditorContent;
@@ -70,7 +76,8 @@ export interface LessonContentChangeVersion {
 }
 export type ContentChangeVersion =
     | LessonContentChangeVersion
-    | PageWidgetChangeVersion;
+    | PageWidgetChangeVersion
+    | PageCreationVersion;
 interface ChangeMetadata {
     id: string;
     feedbackId?: string;
@@ -91,7 +98,15 @@ export interface PageWidgetContentChange
         ChangeMetadata {
     target: PageWidgetTarget;
 }
-export type ContentChange = LessonContentChange | PageWidgetContentChange;
+export interface PageCreationChange
+    extends PageCreationVersion,
+        ChangeMetadata {
+    target: PageCreationTarget;
+}
+export type ContentChange =
+    | LessonContentChange
+    | PageWidgetContentChange
+    | PageCreationChange;
 export const isPageWidgetChange = (
     change: ContentChange,
 ): change is PageWidgetContentChange => change.target.kind === "page-widget";
@@ -99,7 +114,7 @@ export type ContentChangeAction =
     | {
           action: "revise";
           version: number;
-          patch: LessonTextPatch | PageWidgetPatch;
+          patch: LessonTextPatch | PageWidgetPatch | PageCreationInput["patch"];
           summary: string;
       }
     | { action: "approve"; version: number; previewHash: string }

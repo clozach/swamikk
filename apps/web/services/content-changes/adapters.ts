@@ -1,3 +1,5 @@
+import { preparePageCreation } from "./page-creation-adapter";
+import type { PageCreationInput } from "./page-creation-types";
 import type {
     ContentChangeInput,
     ContentChangeVersion,
@@ -23,7 +25,7 @@ export async function editableChangeTarget(
     record: Pick<InternalContentChange, "target">,
     ctx: GQLContext,
 ) {
-    return record.target.kind === "page-widget"
+    return record.target.kind !== "lesson"
         ? requirePageEditor(ctx)
         : editableLesson(record.target.lessonId, ctx);
 }
@@ -32,6 +34,8 @@ export async function prepareTargetVersion(
     version: number,
     ctx: GQLContext,
 ): Promise<ContentChangeVersion> {
+    if (input.target.kind === "page-create")
+        return preparePageCreation(input as PageCreationInput, version, ctx);
     return input.target.kind === "page-widget"
         ? preparePageVersion(input as PageWidgetChangeInput, version, ctx)
         : prepareVersion(input as LessonContentChangeInput, version, ctx);

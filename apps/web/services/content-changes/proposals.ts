@@ -1,11 +1,12 @@
+import { requirePageEditor } from "./page-adapter";
+import { withAccountWrite } from "../../../../packages/common-logic/src/account-lifecycle/gate";
+import { isPageCreationRecord } from "./page-creation-types";
 import { randomUUID } from "crypto";
 import { cursorFilter } from "./pagination";
 import type {
     ContentChange,
     ContentChangeInput,
     ContentChangeVersion,
-    LessonTextPatch,
-    PageWidgetPatch,
 } from "@courselit/common-models";
 import type { InternalContentChange } from "@courselit/orm-models";
 import type GQLContext from "@/models/GQLContext";
@@ -78,12 +79,12 @@ export async function listChanges(
     return records.map(changeView);
 }
 
-export async function createChange(
+async function createChangeInternal(
     raw: ContentChangeInput,
     ctx: GQLContext,
 ): Promise<ContentChange> {
     const input = contentChangeInputSchema.parse(raw);
-    if (input.feedbackId) {
+    if ("feedbackId" in input && input.feedbackId) {
         requireFeedbackAdmin(ctx);
         const feedback = await FeedbackModel.findOne({
             domain: ctx.subdomain._id,
@@ -103,7 +104,7 @@ export async function createChange(
         domain: ctx.subdomain._id,
         id: randomUUID(),
         target: input.target,
-        feedbackId: input.feedbackId,
+        feedbackId: "feedbackId" in input ? input.feedbackId : undefined,
         ...proposed,
         state: { kind: "proposed" },
         history: [],
@@ -114,7 +115,7 @@ export async function createChange(
 export async function reviseChange(
     id: string,
     version: number,
-    patch: LessonTextPatch | PageWidgetPatch,
+    patch: ContentChangeInput["patch"],
     summary: string,
     ctx: GQLContext,
 ): Promise<ContentChange> {
@@ -135,7 +136,7 @@ export async function reviseChange(
     const next = await prepareTargetVersion(
         contentChangeInputSchema.parse({
             target: record.target,
-            feedbackId: record.feedbackId,
+            ...(record.feedbackId ? { feedbackId: record.feedbackId } : {}),
             patch,
             summary,
         }),
@@ -222,6 +223,12 @@ export async function prepareRevert(
         });
         return changeView(record);
     }
+    requireCondition(
+        !isPageCreationRecord(original),
+        "unsupported_action",
+        "A created draft is a separate page. Review it in the native page editor; deletion and publication are separate actions.",
+        409,
+    );
     const lesson = await editableLesson(original.target.lessonId, ctx);
     requireCondition(
         lessonRevision(lesson) === original.state.appliedRevision &&
@@ -254,4 +261,22 @@ export async function prepareRevert(
         history: [],
     });
     return changeView(record);
+}
+
+export async function createChange(
+    raw: ContentChangeInput,
+    ctx: GQLContext,
+): Promise<ContentChange> {
+    if (raw?.target?.kind === "page-create") {
+        requirePageEditor(ctx);
+        return withAccountWrite(
+            {
+                domainId: String(ctx.subdomain._id),
+                userId: ctx.user?.userId,
+                purpose: "page-creation-proposal",
+            },
+            () => createChangeInternal(raw, ctx),
+        );
+    }
+    return createChangeInternal(raw, ctx);
 }

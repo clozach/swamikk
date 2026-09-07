@@ -18,6 +18,7 @@ const page = new GraphQLObjectType({
         type: { type: new GraphQLNonNull(GraphQLString) },
         entityId: { type: GraphQLString },
         layout: { type: new GraphQLList(GraphQLJSONObject) },
+        draftOnly: { type: GraphQLBoolean },
         draftLayout: { type: new GraphQLList(GraphQLJSONObject) },
         pageData: { type: GraphQLJSONObject },
         deleteable: { type: new GraphQLNonNull(GraphQLBoolean) },

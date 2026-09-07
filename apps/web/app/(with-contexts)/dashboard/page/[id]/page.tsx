@@ -44,6 +44,8 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
 
     return (
         <PageEditor
+            key={`${id}:${searchParams?.get("documentId") || ""}`}
+            documentId={searchParams?.get("documentId") ?? undefined}
             id={id as string}
             address={address}
             siteInfo={siteInfo}

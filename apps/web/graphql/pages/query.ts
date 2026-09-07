@@ -27,15 +27,20 @@ const queries = {
             id: {
                 type: GraphQLString,
             },
+            documentId: { type: GraphQLString },
             justWidgets: {
                 type: GraphQLBoolean,
             },
         },
         resolve: (
             _: any,
-            { id, justWidgets }: { id: string; justWidgets: boolean },
+            {
+                id,
+                justWidgets,
+                documentId,
+            }: { id: string; justWidgets: boolean; documentId?: string },
             ctx: GQLContext,
-        ) => getPage({ id, ctx, justWidgets }),
+        ) => getPage({ id, ctx, justWidgets, documentId }),
     },
     getPages: {
         type: new GraphQLList(types.page),

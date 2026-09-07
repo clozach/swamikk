@@ -284,6 +284,8 @@ describe("Persisted feedback and approved lesson changes", () => {
         expect(result.approvals).toHaveLength(1);
         const live = await LessonModel.findOne({ lessonId: lesson.lessonId });
         expect(live.__v).toBe(1);
+        if (proposed.target.kind !== "lesson" || !("after" in proposed.preview))
+            throw new Error("Expected lesson proposal");
         expect(live.content).toEqual(
             (proposed.preview.after as { content: unknown }).content,
         );
@@ -355,8 +357,14 @@ describe("Persisted feedback and approved lesson changes", () => {
                 { id: lesson.lessonId, title: "Delayed content" } as any,
                 ctx,
                 {
-                    revision: proposed.baseline.revision,
-                    fingerprint: proposed.baseline.fingerprint,
+                    revision:
+                        "revision" in proposed.baseline
+                            ? proposed.baseline.revision
+                            : -1,
+                    fingerprint:
+                        "fingerprint" in proposed.baseline
+                            ? proposed.baseline.fingerprint
+                            : "",
                     operationId,
                 },
             ),
