@@ -253,7 +253,7 @@ export const LessonViewer = ({
                             </Header1>
                         </header>
                         <Text1 theme={theme.theme} className="mb-4">
-                            {error}.
+                            {error}
                         </Text1>
                         {!isMimic &&
                             error === "You are not enrolled in the course" && (
