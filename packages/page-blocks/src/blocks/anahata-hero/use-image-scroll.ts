@@ -74,7 +74,7 @@ export function useImageScroll(refs: ImageScrollRefs, enabled: boolean): void {
                 `${1 / pose.scale}`,
             );
             frame.style.setProperty(
-                "--image-credit-right",
+                "--image-credit-left",
                 `${pose.insetX + 12 / pose.scale}px`,
             );
             frame.style.setProperty(

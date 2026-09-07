@@ -7,7 +7,10 @@
 .kk-feedback-corner > button {
     position: absolute;
     right: max(16px, env(safe-area-inset-right));
-    bottom: max(16px, env(safe-area-inset-bottom));
+    bottom: calc(
+        var(--kk-mobile-pay-bar-height, 0px) +
+            max(16px, env(safe-area-inset-bottom))
+    );
     pointer-events: auto;
 }
 .kk-feedback-toggle {
@@ -59,7 +62,10 @@
     position: fixed;
     z-index: 47;
     right: 16px;
-    bottom: 76px;
+    bottom: calc(
+        var(--kk-mobile-pay-bar-height, 0px) +
+            max(16px, env(safe-area-inset-bottom)) + 60px
+    );
     max-width: min(340px, calc(100vw - 32px));
     padding: 12px;
     border-radius: 12px;

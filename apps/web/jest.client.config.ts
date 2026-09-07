@@ -27,6 +27,8 @@ const config = {
     //     '!**/setupTests.ts',
     // ],
     moduleNameMapper: {
+        "^@courselit/components-library/dialogs$":
+            "<rootDir>/../../packages/components-library/src/dialogs.ts",
         // Ensure a single React instance is used in tests to avoid
         // "A React Element from an older version of React was rendered" errors
         "^react$": "<rootDir>/node_modules/react",

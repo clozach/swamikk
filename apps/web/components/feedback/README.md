@@ -50,3 +50,20 @@ After a clean app rollout, inspect the following without submitting a comment:
 
 Automated visual-viewport events and reduced-height browser captures are not a
 claim of an actual iOS keyboard run; record device/browser evidence separately.
+
+## Nested modal focus
+
+Web Dialog, AlertDialog and Sheet use the library's dedicated `dialogs` export.
+This keeps their Radix focus manager identical to the one used by the built
+private upload dialog. Matching version numbers alone did not do that: the
+workspace resolved different peer-qualified focus-manager modules, and the outer
+composer took focus back from the upload caption. The first-run popup uses the
+same AlertDialog context with its existing unstyled Cancel appearance.
+
+The failure was reproduced on native app `159701ba`. An isolated browser bundle
+using the actual built `FileUploadAlertDialog` reproduces it with all three old
+web wrappers and verifies caption typing, Cancel focus return and preservation
+of an unsent draft with the shared wrappers. That fixture selects no file and
+makes no network request. A clean deployment still needs step 4 above before
+claiming the native app fix. The page-primitives Sheet already resolves the
+library's focus manager and remains unchanged.

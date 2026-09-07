@@ -3,13 +3,13 @@
 import {
     AlertDialog,
     AlertDialogAction,
+    UnstyledAlertDialogCancel as AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@components/ui/alert-dialog";
-import { AlertDialogCancel } from "@radix-ui/react-alert-dialog";
 import Link from "next/link";
 import { useState } from "react";
 

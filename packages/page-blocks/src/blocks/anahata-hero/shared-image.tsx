@@ -44,8 +44,8 @@ export const sharedImageCss = `
 }
 .anahata-hero__wordmark { opacity: calc(1 - var(--image-progress, 0)); }
 .anahata-hero__credit {
-    right: var(--image-credit-right, 12px); bottom: var(--image-credit-bottom, 8px);
-    transform: scale(var(--image-inverse-scale, 1)); transform-origin: bottom right;
+    left: var(--image-credit-left, 12px); bottom: var(--image-credit-bottom, 8px);
+    transform: scale(var(--image-inverse-scale, 1)); transform-origin: bottom left;
 }
 ${staticImageCss}
 @media (prefers-reduced-motion: reduce) {

@@ -12,7 +12,6 @@ import Settings, {
     SocialPlatform,
 } from "./settings";
 import {
-    BACK_TO_TOP_OFFSET,
     BACK_TO_TOP_SIZE,
     COLUMN_GAP,
     COLUMN_TITLE_SIZE,
@@ -350,9 +349,9 @@ function ContactColumnView({
 }
 
 /**
- * Fixed, bottom-right. It is anchored to the viewport corner with a
- * fixed margin rather than positioned from a measured anchor, so it can
- * never spill off-screen or widen the page on any viewport.
+ * Fixed beside the 44px help control, with 12px between their targets.
+ * Checkout reserves its visible paybar height so neither corner action
+ * covers the purchase button. Both remain below modal dialogs.
  */
 function BackToTopControl({
     label,
@@ -392,9 +391,9 @@ function BackToTopControl({
             aria-hidden={!visible}
             tabIndex={visible ? 0 : -1}
             className={cn(
-                "fixed bottom-0 right-0 z-[998] box-content flex items-center justify-center rounded-full border-0",
+                "fixed z-40 box-content flex items-center justify-center rounded-full border-0",
                 "bg-white text-[#545454] shadow-md",
-                "transition-all duration-200 ease-in-out",
+                "transition-[opacity,background-color,color,box-shadow] duration-200 ease-in-out",
                 /* White-on-saffron was 2.14:1 (fails AA); cocoa-on-saffron is
                    7.24:1. Active moves to rust, where white is 7.43:1. */
                 "hover:bg-[#ff9900] hover:text-[#312110]",
@@ -405,10 +404,10 @@ function BackToTopControl({
                     : "pointer-events-none invisible opacity-0",
             )}
             style={{
-                minWidth: `${BACK_TO_TOP_SIZE}px`,
-                minHeight: `${BACK_TO_TOP_SIZE}px`,
-                marginRight: `${BACK_TO_TOP_OFFSET}px`,
-                marginBottom: `${BACK_TO_TOP_OFFSET}px`,
+                minWidth: `${Math.max(44, BACK_TO_TOP_SIZE)}px`,
+                minHeight: `${Math.max(44, BACK_TO_TOP_SIZE)}px`,
+                right: "calc(max(16px, env(safe-area-inset-right)) + 44px + 12px)",
+                bottom: "calc(var(--kk-mobile-pay-bar-height, 0px) + max(16px, env(safe-area-inset-bottom)))",
                 fontSize: "16px",
             }}
         >

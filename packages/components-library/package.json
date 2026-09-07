@@ -12,10 +12,22 @@
     "homepage": "https://github.com/codelitdev/courselit#readme",
     "license": "MIT",
     "types": "dist/index.d.ts",
+    "typesVersions": {
+        "*": {
+            "dialogs": [
+                "dist/dialogs.d.ts"
+            ]
+        }
+    },
     "exports": {
         ".": "./dist",
         "./styles.css": "./dist/index.css",
-        "./icons": "./dist/icons.mjs"
+        "./icons": "./dist/icons.mjs",
+        "./dialogs": {
+            "types": "./dist/dialogs.d.ts",
+            "import": "./dist/dialogs.mjs",
+            "default": "./dist/dialogs.mjs"
+        }
     },
     "publishConfig": {
         "access": "public"

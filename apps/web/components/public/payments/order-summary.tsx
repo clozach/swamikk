@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect, useRef } from "react";
 import {
     Button,
     PageCard,
@@ -21,6 +22,14 @@ import {
 } from "@/components/ui/tooltip";
 
 const { PaymentPlanType: paymentPlanType } = Constants;
+const mobilePayBarProperty = "--kk-mobile-pay-bar-height";
+const mobilePayBarOwners = new WeakMap<
+    HTMLElement,
+    {
+        heights: Map<object, number>;
+        lastValue: string;
+    }
+>();
 
 /**
  * The Complete Purchase submit button, wrapped so that WHEN IT IS DISABLED a
@@ -264,11 +273,76 @@ export function MobilePayBar({
     isSubmitting,
     submitBlockedReason,
 }: MobilePayBarProps) {
+    const barRef = useRef<HTMLDivElement | null>(null);
+    useEffect(() => {
+        const bar = barRef.current;
+        const root = document.documentElement;
+        // Overlapping route mounts share the tallest visible bar. Compare
+        // our last write before updating, so an external owner is preserved.
+        const existing = mobilePayBarOwners.get(root);
+        if (
+            !bar ||
+            (!existing && root.style.getPropertyValue(mobilePayBarProperty))
+        )
+            return;
+        const reservation = existing || {
+            heights: new Map<object, number>(),
+            lastValue: "",
+        };
+        const owner = {};
+        mobilePayBarOwners.set(root, reservation);
+        const publish = () => {
+            if (
+                mobilePayBarOwners.get(root) !== reservation ||
+                root.style.getPropertyValue(mobilePayBarProperty) !==
+                    reservation.lastValue
+            )
+                return;
+            const height = Array.from(reservation.heights.values()).reduce(
+                (max, value) => Math.max(max, value),
+                0,
+            );
+            reservation.lastValue = height > 0 ? `${height}px` : "";
+            if (reservation.lastValue)
+                root.style.setProperty(
+                    mobilePayBarProperty,
+                    reservation.lastValue,
+                );
+            else root.style.removeProperty(mobilePayBarProperty);
+        };
+        const measure = () => {
+            reservation.heights.set(
+                owner,
+                Math.ceil(bar.getBoundingClientRect().height),
+            );
+            publish();
+        };
+        measure();
+        const observer =
+            typeof ResizeObserver === "undefined"
+                ? null
+                : new ResizeObserver(measure);
+        observer?.observe(bar);
+        window.addEventListener("resize", measure);
+        return () => {
+            observer?.disconnect();
+            window.removeEventListener("resize", measure);
+            reservation.heights.delete(owner);
+            publish();
+            if (
+                !reservation.heights.size &&
+                mobilePayBarOwners.get(root) === reservation
+            )
+                mobilePayBarOwners.delete(root);
+        };
+    }, []);
     const plan = selectedPlan || paymentPlans[0] || null;
     const price = getPlanPrice(plan as PaymentPlan);
 
     return (
         <div
+            ref={barRef}
+            data-kk-mobile-pay-bar
             className="fixed bottom-0 inset-x-0 z-40 md:hidden bg-card text-card-foreground border-t border-border shadow-[0_-4px_16px_rgba(0,0,0,0.12)] px-4 py-3 flex items-center gap-4"
             style={{
                 paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))",
