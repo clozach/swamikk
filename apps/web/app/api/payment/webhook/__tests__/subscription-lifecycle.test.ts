@@ -917,3 +917,26 @@ it("preserves the native included ID and registers it before insertion, then ref
         "The provider subscription has ended.",
     );
 });
+
+it("requires review of an old publication opened during membership on immediate confirmation", async () => {
+    await Lesson.deleteMany({ domain: domainId, lessonId: { $ne: "archive" } });
+    await Course.updateOne(
+        { domain: domainId },
+        {
+            $set: {
+                "groups.0.drip.status": false,
+                updatedAt: new Date("2026-02-05"),
+            },
+        },
+        { timestamps: false },
+    );
+    const result = await prepareRetention({
+        ...key(),
+        operationId: "current-ambiguous",
+        cutoff,
+    });
+    expect(result.snapshot).toMatchObject({
+        retainedLessonIds: [],
+        unknownReleaseCount: 1,
+    });
+});

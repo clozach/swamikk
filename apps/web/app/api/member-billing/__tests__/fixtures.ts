@@ -100,6 +100,22 @@ export async function fixture() {
             },
         })),
     );
+    // This fixture represents an archive already open before membership began.
+    await Course.updateOne(
+        { domain: domain._id, courseId: "course" },
+        { $set: { updatedAt: new Date(now.getTime() - 40 * day) } },
+        { timestamps: false },
+    );
+    await Lesson.updateOne(
+        { domain: domain._id, lessonId: "archive" },
+        { $set: { updatedAt: new Date(now.getTime() - 40 * day) } },
+        { timestamps: false },
+    );
+    await Lesson.updateOne(
+        { domain: domain._id, lessonId: "drop" },
+        { $set: { updatedAt: new Date(now.getTime() - 5 * day) } },
+        { timestamps: false },
+    );
     const key = {
         domainId: String(domain._id),
         userId: user.userId,

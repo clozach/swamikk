@@ -71,16 +71,19 @@ export async function snapshotRetention(
                 snapshot.unknownReleaseCount++;
                 continue;
             }
-            if (
-                publication &&
-                start &&
-                publication < start &&
-                !releasedAt &&
-                (courseContextBy >= start || lessonContextBy >= start)
-            ) {
-                snapshot.unknownReleaseCount++;
-                continue;
-            }
+        }
+        // Even at immediate confirmation, an in-period context edit cannot prove
+        // when an older publication became available without a recorded release.
+        if (
+            publication &&
+            start &&
+            publication < start &&
+            !releasedAt &&
+            ((courseContextBy && courseContextBy >= start) ||
+                (lessonContextBy && lessonContextBy >= start))
+        ) {
+            snapshot.unknownReleaseCount++;
+            continue;
         }
         snapshot.visibleLessonIds.push(lesson.lessonId);
         if (!publication) {
