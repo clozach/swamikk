@@ -38,7 +38,8 @@ type SidebarContext = {
     openMobile: boolean;
     setOpenMobile: (open: boolean) => void;
     isMobile: boolean;
-    toggleSidebar: () => void;
+    toggleSidebar: (opener?: HTMLElement) => void;
+    restoreMobileFocus: () => void;
 };
 
 const SidebarContext = React.createContext<SidebarContext | null>(null);
@@ -74,6 +75,10 @@ const SidebarProvider = React.forwardRef<
     ) => {
         const isMobile = useIsMobile();
         const [openMobile, setOpenMobile] = React.useState(false);
+        const mobileFocusOrigin = React.useRef<{
+            element: HTMLElement;
+            href: string;
+        } | null>(null);
 
         // This is the internal state of the sidebar.
         // We use openProp and setOpenProp for control from outside the component.
@@ -96,11 +101,35 @@ const SidebarProvider = React.forwardRef<
         );
 
         // Helper to toggle the sidebar.
-        const toggleSidebar = React.useCallback(() => {
-            return isMobile
-                ? setOpenMobile((open) => !open)
-                : setOpen((open) => !open);
-        }, [isMobile, setOpen, setOpenMobile]);
+        const toggleSidebar = React.useCallback(
+            (opener?: HTMLElement) => {
+                if (!isMobile) return setOpen((open) => !open);
+                if (!openMobile) {
+                    const element = opener ?? document.activeElement;
+                    mobileFocusOrigin.current =
+                        element instanceof HTMLElement
+                            ? { element, href: window.location.href }
+                            : null;
+                }
+                setOpenMobile(!openMobile);
+            },
+            [isMobile, openMobile, setOpen],
+        );
+
+        const restoreMobileFocus = React.useCallback(() => {
+            const origin = mobileFocusOrigin.current;
+            mobileFocusOrigin.current = null;
+            // This controlled Sheet has no Radix Trigger. Return to the actual
+            // opener on dismissal, but let navigation own destination focus.
+            if (
+                !origin ||
+                origin.href !== window.location.href ||
+                !origin.element.isConnected ||
+                origin.element.matches(':disabled, [aria-disabled="true"]')
+            )
+                return;
+            origin.element.focus({ preventScroll: true });
+        }, []);
 
         // Adds a keyboard shortcut to toggle the sidebar.
         React.useEffect(() => {
@@ -131,6 +160,7 @@ const SidebarProvider = React.forwardRef<
                 openMobile,
                 setOpenMobile,
                 toggleSidebar,
+                restoreMobileFocus,
             }),
             [
                 state,
@@ -140,6 +170,7 @@ const SidebarProvider = React.forwardRef<
                 openMobile,
                 setOpenMobile,
                 toggleSidebar,
+                restoreMobileFocus,
             ],
         );
 
@@ -189,7 +220,13 @@ const Sidebar = React.forwardRef<
         },
         ref,
     ) => {
-        const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
+        const {
+            isMobile,
+            state,
+            openMobile,
+            setOpenMobile,
+            restoreMobileFocus,
+        } = useSidebar();
 
         if (collapsible === "none") {
             return (
@@ -223,6 +260,10 @@ const Sidebar = React.forwardRef<
                             } as React.CSSProperties
                         }
                         side={side}
+                        onCloseAutoFocus={(event) => {
+                            event.preventDefault();
+                            restoreMobileFocus();
+                        }}
                     >
                         <SheetTitle className="sr-only">
                             Navigation menu
@@ -300,7 +341,7 @@ const SidebarTrigger = React.forwardRef<
             className={cn("h-7 w-7", className)}
             onClick={(event) => {
                 onClick?.(event);
-                toggleSidebar();
+                if (!event.defaultPrevented) toggleSidebar(event.currentTarget);
             }}
             {...props}
         >
@@ -323,7 +364,7 @@ const SidebarRail = React.forwardRef<
             data-sidebar="rail"
             aria-label="Toggle Sidebar"
             tabIndex={-1}
-            onClick={toggleSidebar}
+            onClick={(event) => toggleSidebar(event.currentTarget)}
             title="Toggle Sidebar"
             className={cn(
                 "absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] hover:after:bg-sidebar-border group-data-[side=left]:-right-4 group-data-[side=right]:left-0 sm:flex",

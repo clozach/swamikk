@@ -130,6 +130,7 @@ test.each([Releases, Changes, RefundReview])(
         expect(dialog).toContainElement(document.activeElement as HTMLElement);
         await user.keyboard("{Escape}");
         await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+        await waitFor(() => expect(toggle).toHaveFocus());
         // The same trigger remains usable after the Sheet closes.
         fireEvent.click(toggle);
         expect(screen.getByRole("dialog")).toBeInTheDocument();
