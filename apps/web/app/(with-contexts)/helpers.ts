@@ -1,4 +1,5 @@
 import { FetchBuilder } from "@courselit/utils";
+import { defaultState } from "@components/default-state";
 
 export const getUserProfile = async (address: string) => {
     const query = `
@@ -42,5 +43,5 @@ export const getUserProfile = async (address: string) => {
               ...response.profile,
               fetched: true,
           }
-        : undefined;
+        : { ...defaultState.profile, fetched: true };
 };

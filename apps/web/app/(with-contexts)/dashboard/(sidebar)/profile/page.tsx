@@ -8,6 +8,7 @@ import { billingCopy } from "@/components/member-billing/copy";
 import { useMemberMimic } from "@components/member-mimic/context";
 import DashboardContent from "@components/admin/dashboard-content";
 import { AddressContext, ProfileContext } from "@components/contexts";
+import { defaultState } from "@components/default-state";
 import { Media, Profile } from "@courselit/common-models";
 import {
     Avatar,
@@ -51,6 +52,7 @@ const breadcrumbs = [{ label: PROFILE_PAGE_HEADER, href: "#" }];
 
 export default function Page() {
     const [accountClosed, setAccountClosed] = useState(false);
+    const closureHeadingRef = useRef<HTMLHeadingElement>(null);
     const isMimic = useMemberMimic().kind !== "inactive";
     const [bio, setBio] = useState("");
     const [name, setName] = useState("");
@@ -70,6 +72,10 @@ export default function Page() {
 
     const { profile, setProfile } = useContext(ProfileContext);
     const address = useContext(AddressContext);
+
+    useEffect(() => {
+        if (accountClosed) closureHeadingRef.current?.focus();
+    }, [accountClosed]);
 
     useEffect(() => {
         const getUser = async function (userId: string) {
@@ -302,18 +308,29 @@ export default function Page() {
 
     if (accountClosed)
         return (
-            <DashboardContent breadcrumbs={breadcrumbs}>
-                <h1 className="text-3xl font-semibold">
+            <section
+                aria-labelledby="account-closed-heading"
+                className="mx-auto w-full max-w-2xl p-6 sm:p-10"
+            >
+                <h1
+                    id="account-closed-heading"
+                    ref={closureHeadingRef}
+                    tabIndex={-1}
+                    className="text-3xl font-semibold"
+                >
                     Your account is closed
                 </h1>
                 <p className="my-6">
                     Your private account data has been removed. Financial and
                     recovery records are retained as described in your review.
                 </p>
-                <Link href="/" className="underline">
+                <Link
+                    href="/"
+                    className="inline-flex min-h-11 items-center underline"
+                >
                     Return home
                 </Link>
-            </DashboardContent>
+            </section>
         );
 
     return (
@@ -443,7 +460,7 @@ export default function Page() {
                     userId={profile.userId}
                     onClosed={() => {
                         setAccountClosed(true);
-                        setProfile(null);
+                        setProfile({ ...defaultState.profile, fetched: true });
                     }}
                 />
             )}
