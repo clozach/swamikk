@@ -385,7 +385,7 @@ export const MY_CONTENT_HEADER = "My content";
 export const MY_CONTENT_PRODUCTS_TAB = "Products";
 export const MY_CONTENT_FEED_TAB = "Feed";
 export const MY_CONTENT_EMPTY_PRODUCTS =
-    "You haven't enrolled in any products yet.";
+    "You have no content available right now.";
 export const MY_CONTENT_EMPTY_COMMUNITIES =
     "You haven't joined any communities yet.";
 export const MY_CONTENT_BROWSE_PRODUCTS = "Browse products";

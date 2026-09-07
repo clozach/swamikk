@@ -7,7 +7,7 @@ import { Subheader1, Text2, Button } from "@courselit/page-primitives";
 import { ThemeContext } from "@components/contexts";
 
 /**
- * "You haven't enrolled in any products yet" — a MEMBER's empty shelf.
+ * A member's empty available-content shelf, including after access ends.
  *
  * This deliberately does not reuse components/admin/empty-state. That one is
  * built for an admin staring at a list they are expected to fill: a dashed
