@@ -1,5 +1,11 @@
 import React from "react";
-import { Image, Link, Skeleton } from "@courselit/components-library";
+import {
+    Image,
+    Link,
+    Skeleton,
+    MediaPlayer,
+} from "@courselit/components-library";
+import { Media, mediaPlayerUi, catalogMediaUi } from "@courselit/common-models";
 import { Badge, PageCardHeader, Subheader1 } from "@courselit/page-primitives";
 import { PageCardContent } from "@courselit/page-primitives";
 import { PageCard, PageCardImage } from "@courselit/page-primitives";
@@ -12,6 +18,8 @@ export function ProductCard({
     href,
     image,
     badgeChildren,
+    productType,
+    previewAudio,
 }: {
     title: string;
     user: {
@@ -22,14 +30,15 @@ export function ProductCard({
     href: string;
     image: string;
     badgeChildren?: any;
+    productType?: string;
+    previewAudio?: Media;
 }) {
     return (
-        <Link href={href} className="flex">
-            <PageCard
-                isLink={true}
-                className="flex flex-col overflow-hidden w-full"
-                theme={theme}
-            >
+        <PageCard
+            className="flex flex-col overflow-hidden w-full"
+            theme={theme}
+        >
+            <Link href={href} className="flex flex-col grow">
                 <PageCardImage
                     src={image}
                     alt={title}
@@ -37,6 +46,11 @@ export function ProductCard({
                     theme={theme}
                 />
                 <PageCardContent theme={theme} className="flex flex-col grow">
+                    {productType && (
+                        <p className="text-xs font-medium mb-2">
+                            {productType}
+                        </p>
+                    )}
                     <PageCardHeader theme={theme} className="grow">
                         {title}
                     </PageCardHeader>
@@ -44,7 +58,7 @@ export function ProductCard({
                         <div className="flex items-center gap-2">
                             <Image
                                 src={user?.thumbnail}
-                                alt={user?.name || "User Avatar"}
+                                alt={user?.name || ""}
                                 width="w-8"
                                 height="h-8"
                                 className="rounded-full"
@@ -57,8 +71,22 @@ export function ProductCard({
                         )}
                     </div>
                 </PageCardContent>
-            </PageCard>
-        </Link>
+            </Link>
+            {previewAudio?.file && (
+                <div className="px-4 pb-4">
+                    <p className="text-xs font-medium mb-2">
+                        {catalogMediaUi.preview}
+                    </p>
+                    <MediaPlayer
+                        kind="audio"
+                        compact
+                        src={previewAudio.file}
+                        title={`${catalogMediaUi.preview}: ${title}`}
+                        labels={mediaPlayerUi}
+                    />
+                </div>
+            )}
+        </PageCard>
     );
 }
 

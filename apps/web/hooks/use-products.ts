@@ -28,6 +28,7 @@ export function useProducts(
                     }
                     pageId
                     type
+                    previewAudio { mediaId file mimeType access }
                     published
                     paymentPlans {
                         planId

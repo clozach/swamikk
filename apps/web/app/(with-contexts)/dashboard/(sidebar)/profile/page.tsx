@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemberMimic } from "@components/member-mimic/context";
 import DashboardContent from "@components/admin/dashboard-content";
 import { AddressContext, ProfileContext } from "@components/contexts";
 import { Media, Profile } from "@courselit/common-models";
@@ -45,6 +46,7 @@ import { Button } from "@components/ui/button";
 const breadcrumbs = [{ label: PROFILE_PAGE_HEADER, href: "#" }];
 
 export default function Page() {
+    const isMimic = useMemberMimic().kind !== "inactive";
     const [bio, setBio] = useState("");
     const [name, setName] = useState("");
     // const [user, setUser] =
@@ -116,6 +118,7 @@ export default function Page() {
     }, [profile, address.backend]);
 
     const updateProfilePic = async (media?: Media) => {
+        if (isMimic) return;
         const mutation = `
           mutation ($id: ID!, $avatar: MediaInput) {
             user: updateUser(userData: {
@@ -166,6 +169,7 @@ export default function Page() {
 
     const saveDetails = async (e: FormEvent) => {
         e.preventDefault();
+        if (isMimic) return;
 
         setIsSaving(true);
         const mutation = `
@@ -239,6 +243,7 @@ export default function Page() {
     };
 
     const saveEmailPreference = async function (state: boolean) {
+        if (isMimic) return;
         setSubscribedToUpdates(state);
         const mutation = `
           mutation ($id: ID!, $subscribedToUpdates: Boolean) {
@@ -295,32 +300,34 @@ export default function Page() {
                                 {name?.trim()?.charAt(0)?.toUpperCase() || ""}
                             </AvatarFallback>
                         </Avatar>
-                        <MediaSelector
-                            title=""
-                            profile={profile as Profile}
-                            address={address}
-                            mediaId={avatar?.mediaId}
-                            src={avatar?.thumbnail || ""}
-                            srcTitle={avatar?.originalFileName || ""}
-                            onSelection={(media?: Media) => {
-                                if (media) {
-                                    updateProfilePic(media);
-                                }
-                            }}
-                            onRemove={() => {
-                                updateProfilePic();
-                            }}
-                            access="public"
-                            strings={{
-                                buttonCaption:
-                                    MEDIA_SELECTOR_UPLOAD_BTN_CAPTION,
-                                removeButtonCaption:
-                                    MEDIA_SELECTOR_REMOVE_BTN_CAPTION,
-                            }}
-                            type="user"
-                            hidePreview={true}
-                            mimeTypesToShow={MIMETYPE_IMAGE}
-                        />
+                        {!isMimic && (
+                            <MediaSelector
+                                title=""
+                                profile={profile as Profile}
+                                address={address}
+                                mediaId={avatar?.mediaId}
+                                src={avatar?.thumbnail || ""}
+                                srcTitle={avatar?.originalFileName || ""}
+                                onSelection={(media?: Media) => {
+                                    if (media) {
+                                        updateProfilePic(media);
+                                    }
+                                }}
+                                onRemove={() => {
+                                    updateProfilePic();
+                                }}
+                                access="public"
+                                strings={{
+                                    buttonCaption:
+                                        MEDIA_SELECTOR_UPLOAD_BTN_CAPTION,
+                                    removeButtonCaption:
+                                        MEDIA_SELECTOR_REMOVE_BTN_CAPTION,
+                                }}
+                                type="user"
+                                hidePreview={true}
+                                mimeTypesToShow={MIMETYPE_IMAGE}
+                            />
+                        )}
                     </CardContent>
                 </Card>
                 <Card className="w-full lg:w-4/6">
@@ -329,7 +336,7 @@ export default function Page() {
                             <CardTitle>{PROFILE_SECTION_DETAILS}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <FieldSet>
+                            <FieldSet disabled={isMimic}>
                                 <FieldGroup>
                                     <Field>
                                         <FieldLabel htmlFor="profile-email">
@@ -370,14 +377,16 @@ export default function Page() {
                                     </Field>
                                 </FieldGroup>
                             </FieldSet>
-                            <div className="flex justify-end">
-                                <Button
-                                    type="submit"
-                                    disabled={isSaveDisabled || isSaving}
-                                >
-                                    {isSaving ? BUTTON_SAVING : BUTTON_SAVE}
-                                </Button>
-                            </div>
+                            {!isMimic && (
+                                <div className="flex justify-end">
+                                    <Button
+                                        type="submit"
+                                        disabled={isSaveDisabled || isSaving}
+                                    >
+                                        {isSaving ? BUTTON_SAVING : BUTTON_SAVE}
+                                    </Button>
+                                </div>
+                            )}
                         </CardContent>
                     </form>
                 </Card>
@@ -387,7 +396,7 @@ export default function Page() {
                     <CardTitle>{PROFILE_EMAIL_PREFERENCES}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <FieldSet>
+                    <FieldSet disabled={isMimic}>
                         <FieldLegend className="sr-only" variant="label">
                             {PROFILE_EMAIL_PREFERENCES}
                         </FieldLegend>
@@ -404,6 +413,7 @@ export default function Page() {
                                     </FieldLabel>
                                 </FieldContent>
                                 <Checkbox
+                                    disabled={isMimic}
                                     checked={subscribedToUpdates}
                                     onChange={(
                                         value: boolean | "indeterminate",

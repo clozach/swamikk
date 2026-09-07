@@ -17,6 +17,7 @@ import {
 import { useGraphQLFetch } from "@/hooks/use-graphql-fetch";
 import { Save, Loader2 } from "lucide-react";
 import { Editor, emptyDoc as TextEditorEmptyDoc } from "@courselit/text-editor";
+import { PreviewAudioSettings } from "@/components/admin/preview-audio-settings";
 
 const MUTATION_UPDATE_BASIC_DETAILS = `
     mutation UpdateBasicDetails($courseId: String!, $title: String!, $description: String!, $slug: String) {
@@ -173,6 +174,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
                 </Button>
             </form>
             <Separator />
+            <PreviewAudioSettings courseId={product.courseId} />
         </div>
     );
 }

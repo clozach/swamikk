@@ -227,8 +227,9 @@ export const feedbackUi = {
         "No proposals yet. Your development agent can prepare a lesson text change from a saved comment.",
     loadFailed: "This view could not be loaded. Refresh to try again.",
     accessDenied: "This view is available to site administrators.",
-    before: "Current version",
-    after: "Proposed version",
+    before: "Before this change",
+    after: "Reviewed version",
+    undoSummary: "Restore “{title}” to its earlier text.",
     consequences: "What this changes",
     approve: "Approve this version",
     reject: "Keep current version",
@@ -308,3 +309,4 @@ export const memberMimicUi = {
     noChanges:
         "Exit Mimic before changing account details or sending anything.",
 };
+export { mediaPlayerUi, catalogMediaUi } from "@courselit/common-models";

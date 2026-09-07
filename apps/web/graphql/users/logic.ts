@@ -75,6 +75,11 @@ export const getUser = async (
     userId: string | null = null,
     ctx: GQLContext,
 ) => {
+    if (ctx.memberMimic) {
+        if (userId && userId !== ctx.memberMimic.subjectUserId)
+            throw new Error(responses.action_not_allowed);
+        return ctx.user;
+    }
     let user: any = ctx.user;
 
     if (userId) {
@@ -787,6 +792,34 @@ export const getUserContent = async (
     userId?: string,
 ): Promise<any> => {
     checkIfAuthenticated(ctx);
+
+    if (ctx.memberMimic) {
+        if (userId && userId !== ctx.memberMimic.subjectUserId)
+            throw new Error(responses.action_not_allowed);
+        const content = await getUserContentInternal(ctx, ctx.user as any);
+        const published = await CourseModel.find({
+            domain: ctx.subdomain._id,
+            published: true,
+            courseId: {
+                $in: ctx.user.purchases.map((purchase) => purchase.courseId),
+            },
+        }).select("courseId");
+        const allowed = new Set(published.map((course) => course.courseId));
+        return content
+            .filter(
+                (item: any) =>
+                    item.entityType === Constants.MembershipEntityType.COURSE &&
+                    allowed.has(item.entity.id),
+            )
+            .map((item: any) => ({
+                ...item,
+                entity: {
+                    ...item.entity,
+                    completedLessonsCount: null,
+                    certificateId: null,
+                },
+            }));
+    }
 
     let id = ctx.user.userId;
     if (userId) {

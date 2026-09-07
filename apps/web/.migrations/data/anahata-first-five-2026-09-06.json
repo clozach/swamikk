@@ -1,0 +1,2544 @@
+{
+    "capturedAt": "2026-09-07T03:24:06.817Z",
+    "source": "https://www.anahata-retreat.org.nz/wp-json/wp/v2/posts?per_page=5&_embed=1",
+    "order": "WordPress published posts, date descending (current public blog order)",
+    "status": "Prepared for admin-reviewed demo import; no runtime write has occurred.",
+    "posts": [
+        {
+            "position": 1,
+            "wordpressId": 14802,
+            "title": "Roasted Vegetable Salad",
+            "slug": "roasted-vegetable-salad",
+            "publishedAt": "2026-04-20T14:52:33",
+            "modifiedAt": "2026-08-24T13:11:53",
+            "sourceUrl": "https://www.anahata-retreat.org.nz/2026/04/roasted-vegetable-salad",
+            "author": "marwen",
+            "featuredImageUrl": "https://www.anahata-retreat.org.nz/wp-content/uploads/2026/04/images-4.jpg",
+            "rawHtml": "<p data-path-to-node=\"3\"><b data-path-to-node=\"3\" data-index-in-node=\"0\">Essential Benefits</b></p>\n<ul data-path-to-node=\"4\">\n<li>\n<p data-path-to-node=\"4,0,0\"><b data-path-to-node=\"4,0,0\" data-index-in-node=\"0\">Immune Support:</b> High in vitamins A and C from pumpkin and kumara to help fight off seasonal cold-weather illness.</p>\n</li>\n<li>\n<p data-path-to-node=\"4,1,0\"><b data-path-to-node=\"4,1,0\" data-index-in-node=\"0\">Sustained Winter Energy:</b> Packed with complex carbohydrates that break down slowly, keeping you full and warm longer.</p>\n</li>\n<li>\n<p data-path-to-node=\"4,2,0\"><b data-path-to-node=\"4,2,0\" data-index-in-node=\"0\">Gut Health &amp; Digestion:</b> Rich in dietary fiber from root vegetables and seeds to support healthy digestion.</p>\n</li>\n<li>\n<p data-path-to-node=\"4,3,0\"><b data-path-to-node=\"4,3,0\" data-index-in-node=\"0\">Heart-Healthy Fats:</b> Olive oil, pumpkin seeds, and walnuts provide plant-based omega-3s and healthy fats for cardiovascular wellness.</p>\n</li>\n</ul>\n<p data-path-to-node=\"6\"><b data-path-to-node=\"6\" data-index-in-node=\"0\">Ingredients</b></p>\n<ul data-path-to-node=\"7\">\n<li>\n<p data-path-to-node=\"7,0,0\"><b data-path-to-node=\"7,0,0\" data-index-in-node=\"0\">Vegetables:</b> 2 cups pumpkin (cubed), 1 medium kumara (cubed), 2 small beetroot (peeled and wedged), 1 red onion (wedged), 2 tbsp olive oil, salt &amp; pepper.</p>\n</li>\n<li>\n<p data-path-to-node=\"7,1,0\"><b data-path-to-node=\"7,1,0\" data-index-in-node=\"0\">Greens:</b> 3 cups fresh baby spinach or rocket.</p>\n</li>\n<li>\n<p data-path-to-node=\"7,2,0\"><b data-path-to-node=\"7,2,0\" data-index-in-node=\"0\">Toppings:</b> 1/4 cup pumpkin seeds (peps) or toasted walnuts.</p>\n</li>\n<li>\n<p data-path-to-node=\"7,3,0\"><b data-path-to-node=\"7,3,0\" data-index-in-node=\"0\">Dressing:</b> 2 tbsp olive oil, 1 tbsp pure maple syrup, 1 tbsp grain mustard, 1 tbsp lemon juice.</p>\n</li>\n</ul>\n<p data-path-to-node=\"9\"><b data-path-to-node=\"9\" data-index-in-node=\"0\">Instructions</b></p>\n<ol start=\"1\" data-path-to-node=\"10\">\n<li>\n<p data-path-to-node=\"10,0,0\"><b data-path-to-node=\"10,0,0\" data-index-in-node=\"0\">Roast the Veggies:</b> Preheat oven to 200°C (400°F). Toss pumpkin, kumara, beetroot, and red onion with 2 tbsp olive oil, salt, and pepper. Spread on a baking tray and roast for 30–35 minutes until tender and golden.</p>\n</li>\n<li>\n<p data-path-to-node=\"10,1,0\"><b data-path-to-node=\"10,1,0\" data-index-in-node=\"0\">Make the Dressing:</b> Whisk olive oil, maple syrup, grain mustard, and lemon juice in a small bowl until smooth.</p>\n</li>\n<li>\n<p data-path-to-node=\"10,2,0\"><b data-path-to-node=\"10,2,0\" data-index-in-node=\"0\">Assemble Warm:</b> Arrange baby spinach or rocket on a large platter. Pile the hot roasted vegetables directly over the greens so they wilt slightly.</p>\n</li>\n<li>\n<p data-path-to-node=\"10,3,0\"><b data-path-to-node=\"10,3,0\" data-index-in-node=\"0\">Garnish &amp; Serve:</b> Drizzle the maple-mustard dressing over top and finish with toasted pumpkin seeds or walnuts. Serve warm.</p>\n</li>\n</ol>\n<pre>Warm winter roast veggie salad. <span class=\"ng-star-inserted\">Source: <a href=\"https://www.occasionallyeggs.com/warm-moroccan-roasted-vegetable-salad-vegan/\">Occasionally Eggs</a>.</span><b data-path-to-node=\"3\" data-index-in-node=\"0\"></b></pre>\n",
+            "rawHtmlSha256": "aef717e05098e0d572ea2d39e2f0d9cdfd74aa11ef209ad217e0be7976c2332e",
+            "description": {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "bold"
+                                    }
+                                ],
+                                "text": "Essential Benefits"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "bulletList",
+                        "content": [
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Immune Support:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " High in vitamins A and C from pumpkin and kumara to help fight off seasonal cold-weather illness."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Sustained Winter Energy:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " Packed with complex carbohydrates that break down slowly, keeping you full and warm longer."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Gut Health & Digestion:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " Rich in dietary fiber from root vegetables and seeds to support healthy digestion."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Heart-Healthy Fats:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " Olive oil, pumpkin seeds, and walnuts provide plant-based omega-3s and healthy fats for cardiovascular wellness."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "bold"
+                                    }
+                                ],
+                                "text": "Ingredients"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "bulletList",
+                        "content": [
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Vegetables:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " 2 cups pumpkin (cubed), 1 medium kumara (cubed), 2 small beetroot (peeled and wedged), 1 red onion (wedged), 2 tbsp olive oil, salt & pepper."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Greens:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " 3 cups fresh baby spinach or rocket."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Toppings:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " 1/4 cup pumpkin seeds (peps) or toasted walnuts."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Dressing:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " 2 tbsp olive oil, 1 tbsp pure maple syrup, 1 tbsp grain mustard, 1 tbsp lemon juice."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "bold"
+                                    }
+                                ],
+                                "text": "Instructions"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "orderedList",
+                        "attrs": {
+                            "start": 1,
+                            "type": null
+                        },
+                        "content": [
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Roast the Veggies:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " Preheat oven to 200°C (400°F). Toss pumpkin, kumara, beetroot, and red onion with 2 tbsp olive oil, salt, and pepper. Spread on a baking tray and roast for 30–35 minutes until tender and golden."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Make the Dressing:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " Whisk olive oil, maple syrup, grain mustard, and lemon juice in a small bowl until smooth."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Assemble Warm:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " Arrange baby spinach or rocket on a large platter. Pile the hot roasted vegetables directly over the greens so they wilt slightly."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Garnish & Serve:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " Drizzle the maple-mustard dressing over top and finish with toasted pumpkin seeds or walnuts. Serve warm."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "type": "codeBlock",
+                        "attrs": {
+                            "language": null
+                        },
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Warm winter roast veggie salad. Source: Occasionally Eggs."
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Originally published by Anahata Yoga Retreat. "
+                            },
+                            {
+                                "type": "text",
+                                "text": "Read the original article",
+                                "marks": [
+                                    {
+                                        "type": "link",
+                                        "attrs": {
+                                            "href": "https://www.anahata-retreat.org.nz/2026/04/roasted-vegetable-salad",
+                                            "target": "_blank",
+                                            "rel": "noopener noreferrer"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "position": 2,
+            "wordpressId": 14794,
+            "title": "Navigating the Change: A Guide to Embracing Menopause",
+            "slug": "navigating-the-change-a-guide-to-embracing-menopause",
+            "publishedAt": "2026-04-20T14:25:39",
+            "modifiedAt": "2026-04-20T14:44:44",
+            "sourceUrl": "https://www.anahata-retreat.org.nz/2026/04/navigating-the-change-a-guide-to-embracing-menopause",
+            "author": "marwen",
+            "featuredImageUrl": "https://www.anahata-retreat.org.nz/wp-content/uploads/2026/04/menopuase-1.png",
+            "rawHtml": "<p data-path-to-node=\"1\">Menopause is often discussed in hushed tones or framed purely as a list of symptoms to &#8220;survive.&#8221; However, in many cultures and modern wellness circles, it is increasingly recognized as a <b data-path-to-node=\"1\" data-index-in-node=\"188\">&#8220;Second Spring&#8221;</b>—a powerful transition into a new phase of life characterized by wisdom, liberation, and deeper self-awareness.</p>\n<p data-path-to-node=\"2\">Understanding the physiological shifts and emotional landscapes of menopause is the first step toward navigating it with grace.</p>\n<div class=\"container\">\n<div id=\"model-response-message-contentr_ba3e7b10e8cf1c80\" class=\"markdown markdown-main-panel enable-updated-hr-color\" dir=\"ltr\">\n<h3 data-path-to-node=\"4\">Understanding the Transition</h3>\n<p data-path-to-node=\"5\">Menopause isn&#8217;t a single event, but a gradual hormonal shift. It is clinically defined as the point when a woman has gone <b data-path-to-node=\"5\" data-index-in-node=\"122\">12 consecutive months</b> without a menstrual period. This transition typically occurs in three stages:</p>\n<ol start=\"1\" data-path-to-node=\"6\">\n<li>\n<p data-path-to-node=\"6,0,0\"><b data-path-to-node=\"6,0,0\" data-index-in-node=\"0\">Perimenopause:</b> The &#8220;lead-up&#8221; where estrogen levels fluctuate, leading to irregular cycles and early symptoms like mood swings or sleep disturbances.</p>\n</li>\n<li>\n<p data-path-to-node=\"6,1,0\"><b data-path-to-node=\"6,1,0\" data-index-in-node=\"0\">Menopause:</b> The official milestone reached after one year of no periods.</p>\n</li>\n<li>\n<p data-path-to-node=\"6,2,0\"><b data-path-to-node=\"6,2,0\" data-index-in-node=\"0\">Postmenopause:</b> The years following menopause, where symptoms often settle, but focus shifts toward long-term bone and heart health.</p>\n</li>\n</ol>\n<h3 data-path-to-node=\"7\">Common Symptoms &amp; Holistic Management</h3>\n<p data-path-to-node=\"8\">While every woman’s journey is unique, common experiences include:</p>\n<ul data-path-to-node=\"9\">\n<li>\n<p data-path-to-node=\"9,0,0\"><b data-path-to-node=\"9,0,0\" data-index-in-node=\"0\">Hot Flashes &amp; Night Sweats:</b> Sudden waves of heat caused by the hypothalamus reacting to declining estrogen.</p>\n</li>\n<li>\n<p data-path-to-node=\"9,1,0\"><b data-path-to-node=\"9,1,0\" data-index-in-node=\"0\">Emotional Fluctuations:</b> Anxiety, irritability, or &#8220;brain fog&#8221; resulting from hormonal shifts.</p>\n</li>\n<li>\n<p data-path-to-node=\"9,2,0\"><b data-path-to-node=\"9,2,0\" data-index-in-node=\"0\">Physical Changes:</b> Changes in skin elasticity, metabolism, and bone density.</p>\n</li>\n</ul>\n<p data-path-to-node=\"10\"><b data-path-to-node=\"10\" data-index-in-node=\"0\">Holistic Strategies for Balance:</b></p>\n<ul data-path-to-node=\"11\">\n<li>\n<p data-path-to-node=\"11,0,0\"><b data-path-to-node=\"11,0,0\" data-index-in-node=\"0\">Nutrition:</b> Prioritizing calcium, Vitamin D, and phytoestrogens (like flaxseeds and soy).</p>\n</li>\n<li>\n<p data-path-to-node=\"11,1,0\"><b data-path-to-node=\"11,1,0\" data-index-in-node=\"0\">Movement:</b> Incorporating strength training to protect bone density and yoga to manage stress.</p>\n</li>\n<li>\n<p data-path-to-node=\"11,2,0\"><b data-path-to-node=\"11,2,0\" data-index-in-node=\"0\">Mindfulness:</b> Utilizing breathwork and meditation to regulate the nervous system during &#8220;fight or flight&#8221; moments like hot flashes.</p>\n</li>\n</ul>\n<hr data-path-to-node=\"12\" />\n<h3 data-path-to-node=\"13\">Featured Opportunity: Deepen Your Journey</h3>\n<p data-path-to-node=\"14\">If you are looking for a structured, supportive environment to navigate these changes, we highly recommend a dedicated path for self-discovery and hormonal harmony.</p>\n<p data-path-to-node=\"14\"><b style=\"color: #222222;font-size: 18.005px\" data-path-to-node=\"15,0\" data-index-in-node=\"0\">Featured Course: <a href=\"https://www.anahata-retreat.org.nz/event/embracing-menopause-5-week-online-course\">Embracing Menopause… 5-Week Online Course</a></b></p>\n<p data-path-to-node=\"14\"><img decoding=\"async\" loading=\"lazy\" class=\"wp-image-14662 alignleft\" src=\"https://www.anahata-retreat.org.nz/wp-content/uploads/2026/03/Onlien-Menopause-Website-Dimension.png\" alt=\"online menopause\" width=\"320\" height=\"268\" srcset=\"https://www.anahata-retreat.org.nz/wp-content/uploads/2026/03/Onlien-Menopause-Website-Dimension.png 940w, https://www.anahata-retreat.org.nz/wp-content/uploads/2026/03/Onlien-Menopause-Website-Dimension-768x644.png 768w, https://www.anahata-retreat.org.nz/wp-content/uploads/2026/03/Onlien-Menopause-Website-Dimension-300x251.png 300w, https://www.anahata-retreat.org.nz/wp-content/uploads/2026/03/Onlien-Menopause-Website-Dimension-600x503.png 600w\" sizes=\"(max-width: 320px) 100vw, 320px\" /></p>\n<p>Discover new ways to relate to and navigate this chapter of your womanhood. Empower your unique journey by deepening your understanding of what is moving within you at this time through this interactive, educational, and nourishing online workshop series with experienced New Zealand health and wellbeing practitioners.</p>\n<ul data-path-to-node=\"15,2\">\n<li>\n<p data-path-to-node=\"15,2,0,0\"><strong>Session 1:</strong> The Thresholds of Menopause: The journey from cocoon to rebirth</p>\n</li>\n<li>\n<p data-path-to-node=\"15,2,1,0\"><strong>Session 2:</strong> Hormones during Perimenopause/Menopause</p>\n</li>\n<li>\n<p data-path-to-node=\"15,2,2,0\"><strong>Session 3: </strong>The Nervous System Toolkit: Yogic Support for Regulation, Sleep and Vitality</p>\n</li>\n<li><strong>Session 4: </strong>Hormonal balance and the gut-brain-connection</li>\n<li><strong>Session 5: </strong>Menopause and the Emotional Body / Discovery into the transition of who you are becoming</li>\n</ul>\n<p data-path-to-node=\"15,3\"><em>Reclaim your vitality and connect with a community of women on the same path.</em></p>\n<hr data-path-to-node=\"16\" />\n<h3 data-path-to-node=\"17\">The Power of Community</h3>\n<p data-path-to-node=\"18\">The psychological impact of menopause can be significant, often coinciding with other life shifts like &#8220;empty nesting&#8221; or career transitions. Isolation can make symptoms feel more intense. Sharing experiences in a safe space—whether through a local circle or an online course—reminds us that this is not a decline, but a <b data-path-to-node=\"18\" data-index-in-node=\"321\">redesign</b>.</p>\n<p data-path-to-node=\"19\">By shifting the narrative from &#8220;the end&#8221; to &#8220;the beginning,&#8221; we can approach menopause with curiosity rather than dread. It is a time to prune what no longer serves us and nourish the seeds of who we are becoming.</p>\n<p data-path-to-node=\"20\">How have you been feeling lately regarding your energy levels or sleep patterns as you navigate this transition?</p>\n</div>\n</div>\n",
+            "rawHtmlSha256": "ff0c4d0979ebe6775b2b6d4a8292b79b4bd8b5037b9bf95f89666558ca3f4dce",
+            "description": {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Menopause is often discussed in hushed tones or framed purely as a list of symptoms to “survive.” However, in many cultures and modern wellness circles, it is increasingly recognized as a "
+                            },
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "bold"
+                                    }
+                                ],
+                                "text": "“Second Spring”"
+                            },
+                            {
+                                "type": "text",
+                                "text": "—a powerful transition into a new phase of life characterized by wisdom, liberation, and deeper self-awareness."
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Understanding the physiological shifts and emotional landscapes of menopause is the first step toward navigating it with grace."
+                            }
+                        ]
+                    },
+                    {
+                        "type": "heading",
+                        "attrs": {
+                            "level": 3
+                        },
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Understanding the Transition"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Menopause isn’t a single event, but a gradual hormonal shift. It is clinically defined as the point when a woman has gone "
+                            },
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "bold"
+                                    }
+                                ],
+                                "text": "12 consecutive months"
+                            },
+                            {
+                                "type": "text",
+                                "text": " without a menstrual period. This transition typically occurs in three stages:"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "orderedList",
+                        "attrs": {
+                            "start": 1,
+                            "type": null
+                        },
+                        "content": [
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Perimenopause:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " The “lead-up” where estrogen levels fluctuate, leading to irregular cycles and early symptoms like mood swings or sleep disturbances."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Menopause:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " The official milestone reached after one year of no periods."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Postmenopause:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " The years following menopause, where symptoms often settle, but focus shifts toward long-term bone and heart health."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "type": "heading",
+                        "attrs": {
+                            "level": 3
+                        },
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Common Symptoms & Holistic Management"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "While every woman’s journey is unique, common experiences include:"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "bulletList",
+                        "content": [
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Hot Flashes & Night Sweats:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " Sudden waves of heat caused by the hypothalamus reacting to declining estrogen."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Emotional Fluctuations:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " Anxiety, irritability, or “brain fog” resulting from hormonal shifts."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Physical Changes:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " Changes in skin elasticity, metabolism, and bone density."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "bold"
+                                    }
+                                ],
+                                "text": "Holistic Strategies for Balance:"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "bulletList",
+                        "content": [
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Nutrition:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " Prioritizing calcium, Vitamin D, and phytoestrogens (like flaxseeds and soy)."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Movement:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " Incorporating strength training to protect bone density and yoga to manage stress."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Mindfulness:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " Utilizing breathwork and meditation to regulate the nervous system during “fight or flight” moments like hot flashes."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "type": "horizontalRule"
+                    },
+                    {
+                        "type": "heading",
+                        "attrs": {
+                            "level": 3
+                        },
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Featured Opportunity: Deepen Your Journey"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "If you are looking for a structured, supportive environment to navigate these changes, we highly recommend a dedicated path for self-discovery and hormonal harmony."
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "bold"
+                                    }
+                                ],
+                                "text": "Featured Course: "
+                            },
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "link",
+                                        "attrs": {
+                                            "href": "https://www.anahata-retreat.org.nz/event/embracing-menopause-5-week-online-course",
+                                            "target": "_blank",
+                                            "rel": "noopener noreferrer nofollow",
+                                            "class": null
+                                        }
+                                    },
+                                    {
+                                        "type": "bold"
+                                    }
+                                ],
+                                "text": "Embracing Menopause… 5-Week Online Course"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph"
+                    },
+                    {
+                        "type": "image",
+                        "attrs": {
+                            "src": "https://www.anahata-retreat.org.nz/wp-content/uploads/2026/03/Onlien-Menopause-Website-Dimension.png",
+                            "alt": "online menopause",
+                            "title": null,
+                            "width": 320,
+                            "height": 268
+                        }
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Discover new ways to relate to and navigate this chapter of your womanhood. Empower your unique journey by deepening your understanding of what is moving within you at this time through this interactive, educational, and nourishing online workshop series with experienced New Zealand health and wellbeing practitioners."
+                            }
+                        ]
+                    },
+                    {
+                        "type": "bulletList",
+                        "content": [
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Session 1:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " The Thresholds of Menopause: The journey from cocoon to rebirth"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Session 2:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " Hormones during Perimenopause/Menopause"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Session 3: "
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": "The Nervous System Toolkit: Yogic Support for Regulation, Sleep and Vitality"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Session 4: "
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": "Hormonal balance and the gut-brain-connection"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Session 5: "
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": "Menopause and the Emotional Body / Discovery into the transition of who you are becoming"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "italic"
+                                    }
+                                ],
+                                "text": "Reclaim your vitality and connect with a community of women on the same path."
+                            }
+                        ]
+                    },
+                    {
+                        "type": "horizontalRule"
+                    },
+                    {
+                        "type": "heading",
+                        "attrs": {
+                            "level": 3
+                        },
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "The Power of Community"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "The psychological impact of menopause can be significant, often coinciding with other life shifts like “empty nesting” or career transitions. Isolation can make symptoms feel more intense. Sharing experiences in a safe space—whether through a local circle or an online course—reminds us that this is not a decline, but a "
+                            },
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "bold"
+                                    }
+                                ],
+                                "text": "redesign"
+                            },
+                            {
+                                "type": "text",
+                                "text": "."
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "By shifting the narrative from “the end” to “the beginning,” we can approach menopause with curiosity rather than dread. It is a time to prune what no longer serves us and nourish the seeds of who we are becoming."
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "How have you been feeling lately regarding your energy levels or sleep patterns as you navigate this transition?"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Originally published by Anahata Yoga Retreat. "
+                            },
+                            {
+                                "type": "text",
+                                "text": "Read the original article",
+                                "marks": [
+                                    {
+                                        "type": "link",
+                                        "attrs": {
+                                            "href": "https://www.anahata-retreat.org.nz/2026/04/navigating-the-change-a-guide-to-embracing-menopause",
+                                            "target": "_blank",
+                                            "rel": "noopener noreferrer"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "position": 3,
+            "wordpressId": 14556,
+            "title": "The “Autumn Anchor” Tonic",
+            "slug": "the-autumn-anchor-tonic",
+            "publishedAt": "2026-03-12T21:05:54",
+            "modifiedAt": "2026-03-12T21:05:54",
+            "sourceUrl": "https://www.anahata-retreat.org.nz/2026/03/the-autumn-anchor-tonic",
+            "author": "marwen",
+            "featuredImageUrl": "https://www.anahata-retreat.org.nz/wp-content/uploads/2026/03/Gemini_Generated_Image_b93ox8b93ox8b93o.png",
+            "rawHtml": "<p data-path-to-node=\"4\"><i data-path-to-node=\"4\" data-index-in-node=\"0\">Serves: 1 | Prep time: 2 mins | Steep time: 3 mins</i></p>\n<h4 data-path-to-node=\"5\"><b data-path-to-node=\"5\" data-index-in-node=\"0\">The Ingredients</b></h4>\n<ul data-path-to-node=\"6\">\n<li>\n<p data-path-to-node=\"6,0,0\"><b data-path-to-node=\"6,0,0\" data-index-in-node=\"0\">The Base:</b> 250ml Oat milk or Coconut milk (creamy fats help stabilize blood sugar).</p>\n</li>\n<li>\n<p data-path-to-node=\"6,1,0\"><b data-path-to-node=\"6,1,0\" data-index-in-node=\"0\">The Golden Mix:</b> ½ tsp Ground Turmeric + a crack of black pepper (essential to activate the curcumin).</p>\n</li>\n<li>\n<p data-path-to-node=\"6,2,0\"><b data-path-to-node=\"6,2,0\" data-index-in-node=\"0\">The NZ Sweetener:</b> 1 tsp High-UMF Manuka Honey (stir in <i data-path-to-node=\"6,2,0\" data-index-in-node=\"55\">after</i> heating to preserve enzymes).</p>\n</li>\n<li>\n<p data-path-to-node=\"6,3,0\"><b data-path-to-node=\"6,3,0\" data-index-in-node=\"0\">The Nervous System Booster:</b> ½ tsp Ashwagandha powder (optional, but highly recommended for stress).</p>\n</li>\n<li>\n<p data-path-to-node=\"6,4,0\"><b data-path-to-node=\"6,4,0\" data-index-in-node=\"0\">The Warmth:</b> ¼ tsp Ground Cinnamon + a tiny pinch of ground Ginger.</p>\n</li>\n<li>\n<p data-path-to-node=\"6,5,0\"><b data-path-to-node=\"6,5,0\" data-index-in-node=\"0\">The Ritual:</b> A dried rosebud or a dusting of nutmeg on top.</p>\n</li>\n</ul>\n<hr data-path-to-node=\"7\" />\n<h4 data-path-to-node=\"8\"><b data-path-to-node=\"8\" data-index-in-node=\"0\">The Method</b></h4>\n<ol start=\"1\" data-path-to-node=\"9\">\n<li>\n<p data-path-to-node=\"9,0,0\"><b data-path-to-node=\"9,0,0\" data-index-in-node=\"0\">Gently Heat:</b> Place your milk in a small saucepan over medium-low heat. You want it steaming, but <b data-path-to-node=\"9,0,0\" data-index-in-node=\"97\">not</b> boiling. <span class=\"math-inline\" data-math=\"70°C\" data-index-in-node=\"110\">$70°C$</span> is the sweet spot.</p>\n</li>\n<li>\n<p data-path-to-node=\"9,1,0\"><b data-path-to-node=\"9,1,0\" data-index-in-node=\"0\">Whisk the Spices:</b> Add the turmeric, cinnamon, ginger, and ashwagandha. Use a handheld milk frother or a small whisk to create a thick, golden foam.</p>\n</li>\n<li>\n<p data-path-to-node=\"9,2,0\"><b data-path-to-node=\"9,2,0\" data-index-in-node=\"0\">The Black Pepper Secret:</b> Don&#8217;t skip the tiny pinch of black pepper! It increases the absorption of turmeric by up to <b data-path-to-node=\"9,2,0\" data-index-in-node=\"117\">2,000%</b>.</p>\n</li>\n<li>\n<p data-path-to-node=\"9,3,0\"><b data-path-to-node=\"9,3,0\" data-index-in-node=\"0\">Cool &amp; Sweeten:</b> Remove from heat. Let it sit for 60 seconds before stirring in your Manuka honey. <i data-path-to-node=\"9,3,0\" data-index-in-node=\"98\">Pro-tip: High heat can kill the unique medicinal properties of Manuka.</i></p>\n</li>\n<li>\n<p data-path-to-node=\"9,4,0\"><b data-path-to-node=\"9,4,0\" data-index-in-node=\"0\">Sip Mindfully:</b> Pour into your favorite heavy ceramic mug. Hold it with both hands, feel the warmth, and take three deep &#8220;belly breaths&#8221; before your first sip.</p>\n</li>\n</ol>\n<hr data-path-to-node=\"10\" />\n<h3 data-path-to-node=\"11\"><b data-path-to-node=\"11\" data-index-in-node=\"0\">Why it’s an &#8220;April Reset&#8221; in a Cup:</b></h3>\n<ul data-path-to-node=\"12\">\n<li>\n<p data-path-to-node=\"12,0,0\"><b data-path-to-node=\"12,0,0\" data-index-in-node=\"0\">The Warmth:</b> In NZ, April is when we start losing the light. Warm liquids signal to the hypothalamus that the body is safe and cared for.</p>\n</li>\n<li>\n<p data-path-to-node=\"12,1,0\"><b data-path-to-node=\"12,1,0\" data-index-in-node=\"0\">Ashwagandha:</b> It works directly on the HPA axis (your stress response system) to dampen the &#8220;noise&#8221; of a busy day.</p>\n</li>\n<li>\n<p data-path-to-node=\"12,2,0\"><b data-path-to-node=\"12,2,0\" data-index-in-node=\"0\">Magnesium &amp; Fats:</b> If using oat or nut milk, you&#8217;re getting a gentle dose of minerals that help the muscles physically relax before bed or a Yoga Nidra session.</p>\n</li>\n</ul>\n",
+            "rawHtmlSha256": "03283bec5ecfd01208267f905bc20598eb0b408b7181fc2140bc5ddf0998ec7a",
+            "description": {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "italic"
+                                    }
+                                ],
+                                "text": "Serves: 1 | Prep time: 2 mins | Steep time: 3 mins"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "heading",
+                        "attrs": {
+                            "level": 4
+                        },
+                        "content": [
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "bold"
+                                    }
+                                ],
+                                "text": "The Ingredients"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "bulletList",
+                        "content": [
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "The Base:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " 250ml Oat milk or Coconut milk (creamy fats help stabilize blood sugar)."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "The Golden Mix:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " ½ tsp Ground Turmeric + a crack of black pepper (essential to activate the curcumin)."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "The NZ Sweetener:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " 1 tsp High-UMF Manuka Honey (stir in "
+                                            },
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "italic"
+                                                    }
+                                                ],
+                                                "text": "after"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " heating to preserve enzymes)."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "The Nervous System Booster:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " ½ tsp Ashwagandha powder (optional, but highly recommended for stress)."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "The Warmth:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " ¼ tsp Ground Cinnamon + a tiny pinch of ground Ginger."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "The Ritual:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " A dried rosebud or a dusting of nutmeg on top."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "type": "horizontalRule"
+                    },
+                    {
+                        "type": "heading",
+                        "attrs": {
+                            "level": 4
+                        },
+                        "content": [
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "bold"
+                                    }
+                                ],
+                                "text": "The Method"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "orderedList",
+                        "attrs": {
+                            "start": 1,
+                            "type": null
+                        },
+                        "content": [
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Gently Heat:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " Place your milk in a small saucepan over medium-low heat. You want it steaming, but "
+                                            },
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "not"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " boiling. $70°C$ is the sweet spot."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Whisk the Spices:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " Add the turmeric, cinnamon, ginger, and ashwagandha. Use a handheld milk frother or a small whisk to create a thick, golden foam."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "The Black Pepper Secret:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " Don’t skip the tiny pinch of black pepper! It increases the absorption of turmeric by up to "
+                                            },
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "2,000%"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": "."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Cool & Sweeten:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " Remove from heat. Let it sit for 60 seconds before stirring in your Manuka honey. "
+                                            },
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "italic"
+                                                    }
+                                                ],
+                                                "text": "Pro-tip: High heat can kill the unique medicinal properties of Manuka."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Sip Mindfully:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " Pour into your favorite heavy ceramic mug. Hold it with both hands, feel the warmth, and take three deep “belly breaths” before your first sip."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "type": "horizontalRule"
+                    },
+                    {
+                        "type": "heading",
+                        "attrs": {
+                            "level": 3
+                        },
+                        "content": [
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "bold"
+                                    }
+                                ],
+                                "text": "Why it’s an “April Reset” in a Cup:"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "bulletList",
+                        "content": [
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "The Warmth:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " In NZ, April is when we start losing the light. Warm liquids signal to the hypothalamus that the body is safe and cared for."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Ashwagandha:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " It works directly on the HPA axis (your stress response system) to dampen the “noise” of a busy day."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Magnesium & Fats:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " If using oat or nut milk, you’re getting a gentle dose of minerals that help the muscles physically relax before bed or a Yoga Nidra session."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Originally published by Anahata Yoga Retreat. "
+                            },
+                            {
+                                "type": "text",
+                                "text": "Read the original article",
+                                "marks": [
+                                    {
+                                        "type": "link",
+                                        "attrs": {
+                                            "href": "https://www.anahata-retreat.org.nz/2026/03/the-autumn-anchor-tonic",
+                                            "target": "_blank",
+                                            "rel": "noopener noreferrer"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "position": 4,
+            "wordpressId": 14550,
+            "title": "Beyond the Stretch: Why a Nervous System Reset is the Ultimate Life Cleaning",
+            "slug": "beyond-the-stretch-why-an-april-nervous-system-reset-is-the-ultimate-spring-cleaning",
+            "publishedAt": "2026-03-12T20:58:47",
+            "modifiedAt": "2026-03-13T13:42:53",
+            "sourceUrl": "https://www.anahata-retreat.org.nz/2026/03/beyond-the-stretch-why-an-april-nervous-system-reset-is-the-ultimate-spring-cleaning",
+            "author": "marwen",
+            "featuredImageUrl": "https://www.anahata-retreat.org.nz/wp-content/uploads/2026/03/Gemini_Generated_Image_dapb07dapb07dapb.png",
+            "rawHtml": "<p data-path-to-node=\"4\">We spend a lot of time &#8220;cleaning&#8221; the external markers of our lives. We declutter our desks, inbox zero our emails, and occasionally scrub the baseboards. But what about the internal wiring that allows you to actually <i data-path-to-node=\"4\" data-index-in-node=\"218\">enjoy</i> those clean spaces?</p>\n<p data-path-to-node=\"5\">Regardless of the season outside, many of us are living in a state of being <b data-path-to-node=\"5\" data-index-in-node=\"76\">over-coupled.</b> Our nervous systems are vibrating at a frequency that feels less like &#8220;energy&#8221; and more like &#8220;anxiety.&#8221;</p>\n<p data-path-to-node=\"6\">If you’ve been feeling “tired but wired,” or find yourself snapping at small inconveniences, it isn’t a personality flaw. It’s a physiological signal. Your nervous system is asking for a reset.</p>\n<h3 data-path-to-node=\"7\">The Invisible Engine: Your Nervous System</h3>\n<p data-path-to-node=\"8\">Your nervous system is the command center for how you experience the world. It operates primarily in two modes:</p>\n<ul data-path-to-node=\"9\">\n<li>\n<p data-path-to-node=\"9,0,0\"><b data-path-to-node=\"9,0,0\" data-index-in-node=\"0\">Sympathetic (Fight or Flight):</b> High alertness, increased heart rate, and a focus on survival.</p>\n</li>\n<li>\n<p data-path-to-node=\"9,1,0\"><b data-path-to-node=\"9,1,0\" data-index-in-node=\"0\">Parasympathetic (Rest and Digest):</b> Repair, recovery, and deep connection.</p>\n</li>\n</ul>\n<p data-path-to-node=\"10\">In our modern world, we often get “stuck” in the sympathetic lane. We aren’t running from tigers anymore; we’re running from notifications, deadlines, and the pressure to be &#8220;on&#8221; 24/7. This chronic state of high alert leads to inflammation, digestive issues, and emotional burnout.</p>\n<h3 data-path-to-node=\"11\">Yoga: Moving the Needle from “Frazzled” to “Flow”</h3>\n<p><img decoding=\"async\" loading=\"lazy\" class=\"size-medium wp-image-14552 aligncenter\" src=\"https://www.anahata-retreat.org.nz/wp-content/uploads/2026/03/Polyvagal-Theory-Ruby-Jo-Walker-small-300x300.jpg\" alt=\"\" width=\"300\" height=\"300\" srcset=\"https://www.anahata-retreat.org.nz/wp-content/uploads/2026/03/Polyvagal-Theory-Ruby-Jo-Walker-small-300x300.jpg 300w, https://www.anahata-retreat.org.nz/wp-content/uploads/2026/03/Polyvagal-Theory-Ruby-Jo-Walker-small-150x150.jpg 150w, https://www.anahata-retreat.org.nz/wp-content/uploads/2026/03/Polyvagal-Theory-Ruby-Jo-Walker-small-100x100.jpg 100w\" sizes=\"(max-width: 300px) 100vw, 300px\" /></p>\n<p data-path-to-node=\"12\">Traditional yoga is often marketed as a way to get flexible, but its true magic lies in <b data-path-to-node=\"12\" data-index-in-node=\"88\">Polyvagal Theory.</b> By moving the body mindfully and coordinating breath with movement, we send a physical message to the brain that we are safe.</p>\n<p data-path-to-node=\"13\">In our <a href=\"https://anahatayogaretreat.thinkific.com/courses/april-2026-nervous-system-reset-course\"><b data-path-to-node=\"13\" data-index-in-node=\"7\">Nervous System Reset Course</b></a>, we move beyond the “workout.” We use specific, low-arousal movements to gently coax the body out of &#8220;Survival Mode&#8221; and back into a state of social engagement and play.</p>\n<h3 data-path-to-node=\"14\">The Secret Weapon: Yoga Nidra</h3>\n<p><img decoding=\"async\" loading=\"lazy\" class=\"alignleft wp-image-14551 size-medium\" style=\"color: #616161;font-size: 13px\" src=\"https://www.anahata-retreat.org.nz/wp-content/uploads/2026/03/Gemini_Generated_Image_dapb07dapb07dapb-300x300.png\" alt=\"april nervous system reset\" width=\"300\" height=\"300\" srcset=\"https://www.anahata-retreat.org.nz/wp-content/uploads/2026/03/Gemini_Generated_Image_dapb07dapb07dapb-300x300.png 300w, https://www.anahata-retreat.org.nz/wp-content/uploads/2026/03/Gemini_Generated_Image_dapb07dapb07dapb-150x150.png 150w, https://www.anahata-retreat.org.nz/wp-content/uploads/2026/03/Gemini_Generated_Image_dapb07dapb07dapb-100x100.png 100w\" sizes=\"(max-width: 300px) 100vw, 300px\" />If yoga is the “reset,” <b data-path-to-node=\"15\" data-index-in-node=\"24\">Yoga Nidra</b> is the “system restore.”</p>\n<p data-path-to-node=\"16\">Often called “Psychic Sleep,” Yoga Nidra is a guided meditation that leads you into the space between wakefulness and sleep. In this state, your brain waves shift from the active <span class=\"math-inline\" data-math=\"Beta\" data-index-in-node=\"179\">Beta</span> waves to the deeply restorative <span class=\"math-inline\" data-math=\"Alpha\" data-index-in-node=\"216\">Alpha</span> and <span class=\"math-inline\" data-math=\"Theta\" data-index-in-node=\"226\">Theta</span> states.</p>\n<p data-path-to-node=\"17\"><b data-path-to-node=\"17\" data-index-in-node=\"0\">Why it’s essential for a total reset:</b></p>\n<ul data-path-to-node=\"18\">\n<li>\n<p data-path-to-node=\"18,0,0\"><b data-path-to-node=\"18,0,0\" data-index-in-node=\"0\">Efficiency:</b> It is said that one 45-minute session of Yoga Nidra can be as restorative as several hours of deep sleep.</p>\n</li>\n<li>\n<p data-path-to-node=\"18,1,0\"><b data-path-to-node=\"18,1,0\" data-index-in-node=\"0\">Subconscious Rewiring:</b> It allows you to set a <i data-path-to-node=\"18,1,0\" data-index-in-node=\"46\">Sankalpa</i> (an intention) at a level where your nervous system can actually integrate it, free from the “noise” of the conscious mind.</p>\n</li>\n<li>\n<p data-path-to-node=\"18,2,0\"><b data-path-to-node=\"18,2,0\" data-index-in-node=\"0\">Vagal Tone:</b> It directly stimulates the Vagus Nerve—the “superhighway” of your parasympathetic system—lowering cortisol almost instantly.</p>\n</li>\n</ul>\n<h3 data-path-to-node=\"19\">Sample the Calm: The Yoga Buffet</h3>\n<p data-path-to-node=\"20\">We know that “one size fits all” doesn’t work for healing. That’s why we’ve introduced the <a href=\"https://events.humanitix.com/copy-of-yoga-buffet-energize-with-breath\"><b data-path-to-node=\"20\" data-index-in-node=\"91\">Yoga Buffet</b></a>.</p>\n<p data-path-to-node=\"21\">Just as your body craves different nutrients, your nervous system craves different inputs. Some days you need the gentle vibration of chanting; other days you need the heavy-blanket stillness of Yoga Nidra or the rhythmic flow of a somatic reset. The Buffet allows you to “sample” these modalities to see what resonates with your unique biology today.</p>\n<h3 data-path-to-node=\"22\">Your Invitation to Re-Emerge</h3>\n<p data-path-to-node=\"23\">You don&#8217;t need a change in the weather to justify a change in your well-being. Nature doesn’t hurry, yet everything is accomplished. By prioritizing your nervous system through yoga and Nidra, you aren’t just “relaxing”—you are building the resilience needed to bloom sustainably, year-round.</p>\n<p data-path-to-node=\"24\"><b data-path-to-node=\"24\" data-index-in-node=\"0\">Are you ready to shift from “surviving” to “sensing”?</b></p>\n",
+            "rawHtmlSha256": "24937052537bcaf11bdcbe919d7e3cdacf2179616e2652449b2fdb856f5e60b8",
+            "description": {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "We spend a lot of time “cleaning” the external markers of our lives. We declutter our desks, inbox zero our emails, and occasionally scrub the baseboards. But what about the internal wiring that allows you to actually "
+                            },
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "italic"
+                                    }
+                                ],
+                                "text": "enjoy"
+                            },
+                            {
+                                "type": "text",
+                                "text": " those clean spaces?"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Regardless of the season outside, many of us are living in a state of being "
+                            },
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "bold"
+                                    }
+                                ],
+                                "text": "over-coupled."
+                            },
+                            {
+                                "type": "text",
+                                "text": " Our nervous systems are vibrating at a frequency that feels less like “energy” and more like “anxiety.”"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "If you’ve been feeling “tired but wired,” or find yourself snapping at small inconveniences, it isn’t a personality flaw. It’s a physiological signal. Your nervous system is asking for a reset."
+                            }
+                        ]
+                    },
+                    {
+                        "type": "heading",
+                        "attrs": {
+                            "level": 3
+                        },
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "The Invisible Engine: Your Nervous System"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Your nervous system is the command center for how you experience the world. It operates primarily in two modes:"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "bulletList",
+                        "content": [
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Sympathetic (Fight or Flight):"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " High alertness, increased heart rate, and a focus on survival."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Parasympathetic (Rest and Digest):"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " Repair, recovery, and deep connection."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "In our modern world, we often get “stuck” in the sympathetic lane. We aren’t running from tigers anymore; we’re running from notifications, deadlines, and the pressure to be “on” 24/7. This chronic state of high alert leads to inflammation, digestive issues, and emotional burnout."
+                            }
+                        ]
+                    },
+                    {
+                        "type": "heading",
+                        "attrs": {
+                            "level": 3
+                        },
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Yoga: Moving the Needle from “Frazzled” to “Flow”"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph"
+                    },
+                    {
+                        "type": "image",
+                        "attrs": {
+                            "src": "https://www.anahata-retreat.org.nz/wp-content/uploads/2026/03/Polyvagal-Theory-Ruby-Jo-Walker-small-300x300.jpg",
+                            "alt": "",
+                            "title": null,
+                            "width": 300,
+                            "height": 300
+                        }
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Traditional yoga is often marketed as a way to get flexible, but its true magic lies in "
+                            },
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "bold"
+                                    }
+                                ],
+                                "text": "Polyvagal Theory."
+                            },
+                            {
+                                "type": "text",
+                                "text": " By moving the body mindfully and coordinating breath with movement, we send a physical message to the brain that we are safe."
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "In our "
+                            },
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "link",
+                                        "attrs": {
+                                            "href": "https://anahatayogaretreat.thinkific.com/courses/april-2026-nervous-system-reset-course",
+                                            "target": "_blank",
+                                            "rel": "noopener noreferrer nofollow",
+                                            "class": null
+                                        }
+                                    },
+                                    {
+                                        "type": "bold"
+                                    }
+                                ],
+                                "text": "Nervous System Reset Course"
+                            },
+                            {
+                                "type": "text",
+                                "text": ", we move beyond the “workout.” We use specific, low-arousal movements to gently coax the body out of “Survival Mode” and back into a state of social engagement and play."
+                            }
+                        ]
+                    },
+                    {
+                        "type": "heading",
+                        "attrs": {
+                            "level": 3
+                        },
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "The Secret Weapon: Yoga Nidra"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph"
+                    },
+                    {
+                        "type": "image",
+                        "attrs": {
+                            "src": "https://www.anahata-retreat.org.nz/wp-content/uploads/2026/03/Gemini_Generated_Image_dapb07dapb07dapb-300x300.png",
+                            "alt": "april nervous system reset",
+                            "title": null,
+                            "width": 300,
+                            "height": 300
+                        }
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "If yoga is the “reset,” "
+                            },
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "bold"
+                                    }
+                                ],
+                                "text": "Yoga Nidra"
+                            },
+                            {
+                                "type": "text",
+                                "text": " is the “system restore.”"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Often called “Psychic Sleep,” Yoga Nidra is a guided meditation that leads you into the space between wakefulness and sleep. In this state, your brain waves shift from the active Beta waves to the deeply restorative Alpha and Theta states."
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "bold"
+                                    }
+                                ],
+                                "text": "Why it’s essential for a total reset:"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "bulletList",
+                        "content": [
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Efficiency:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " It is said that one 45-minute session of Yoga Nidra can be as restorative as several hours of deep sleep."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Subconscious Rewiring:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " It allows you to set a "
+                                            },
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "italic"
+                                                    }
+                                                ],
+                                                "text": "Sankalpa"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " (an intention) at a level where your nervous system can actually integrate it, free from the “noise” of the conscious mind."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Vagal Tone:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " It directly stimulates the Vagus Nerve—the “superhighway” of your parasympathetic system—lowering cortisol almost instantly."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "type": "heading",
+                        "attrs": {
+                            "level": 3
+                        },
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Sample the Calm: The Yoga Buffet"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "We know that “one size fits all” doesn’t work for healing. That’s why we’ve introduced the "
+                            },
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "link",
+                                        "attrs": {
+                                            "href": "https://events.humanitix.com/copy-of-yoga-buffet-energize-with-breath",
+                                            "target": "_blank",
+                                            "rel": "noopener noreferrer nofollow",
+                                            "class": null
+                                        }
+                                    },
+                                    {
+                                        "type": "bold"
+                                    }
+                                ],
+                                "text": "Yoga Buffet"
+                            },
+                            {
+                                "type": "text",
+                                "text": "."
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Just as your body craves different nutrients, your nervous system craves different inputs. Some days you need the gentle vibration of chanting; other days you need the heavy-blanket stillness of Yoga Nidra or the rhythmic flow of a somatic reset. The Buffet allows you to “sample” these modalities to see what resonates with your unique biology today."
+                            }
+                        ]
+                    },
+                    {
+                        "type": "heading",
+                        "attrs": {
+                            "level": 3
+                        },
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Your Invitation to Re-Emerge"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "You don’t need a change in the weather to justify a change in your well-being. Nature doesn’t hurry, yet everything is accomplished. By prioritizing your nervous system through yoga and Nidra, you aren’t just “relaxing”—you are building the resilience needed to bloom sustainably, year-round."
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "bold"
+                                    }
+                                ],
+                                "text": "Are you ready to shift from “surviving” to “sensing”?"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Originally published by Anahata Yoga Retreat. "
+                            },
+                            {
+                                "type": "text",
+                                "text": "Read the original article",
+                                "marks": [
+                                    {
+                                        "type": "link",
+                                        "attrs": {
+                                            "href": "https://www.anahata-retreat.org.nz/2026/03/beyond-the-stretch-why-an-april-nervous-system-reset-is-the-ultimate-spring-cleaning",
+                                            "target": "_blank",
+                                            "rel": "noopener noreferrer"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "position": 5,
+            "wordpressId": 14443,
+            "title": "The “Kiwi Yogi” Nourish Bowl",
+            "slug": "the-kiwi-yogi-nourish-bowl",
+            "publishedAt": "2026-02-18T16:08:26",
+            "modifiedAt": "2026-02-20T14:19:09",
+            "sourceUrl": "https://www.anahata-retreat.org.nz/2026/02/the-kiwi-yogi-nourish-bowl",
+            "author": "marwen",
+            "featuredImageUrl": "https://www.anahata-retreat.org.nz/wp-content/uploads/2026/02/Gemini_Generated_Image_3ia6sg3ia6sg3ia6.png",
+            "rawHtml": "<p style=\"text-align: center\"><em>Kiwi Yogi. A balanced, plant-based meal perfect for grounding after a flow.</em></p>\n<p>&nbsp;</p>\n<h2><strong>Ingredients</strong></h2>\n<h3>The Base &amp; Roasted Goods:</h3>\n<ul>\n<li>1 large Golden Kumara: Peeled and cubed (grounding and rich in Beta-carotene).</li>\n<li>1 can (400g) Chickpeas: Rinsed and patted dry.</li>\n<li>1 tsp Ground Turmeric &amp; 1 tsp Cumin: For anti-inflammatory benefits.</li>\n<li>1 tbsp Cold-pressed Extra Virgin Olive Oil (or Avocado oil).</li>\n<li>1 cup Millet or Quinoa: Cooked according to package instructions.</li>\n</ul>\n<h3>The Fresh Layers:</h3>\n<ul>\n<li>1 handful Baby Spinach or Kale: Massaged with a little lemon.</li>\n<li>½ Avocado: Sliced (healthy fats for joint lubrication).</li>\n<li>Small handful of Pumpkin Seeds: Lightly toasted.</li>\n</ul>\n<p><strong>Optional: A sprinkle of NZ Seaweed flakes (Karengo) for trace minerals.</strong></p>\n<h3>Creamy Miso-Tahini Dressing:</h3>\n<ul>\n<li>2 tbsp Tahini</li>\n<li>1 tbsp White Miso Paste (fermented goodness for the gut)</li>\n<li>Juice of ½ Lemon</li>\n<li>1-2 tbsp Warm Water (to thin)</li>\n</ul>\n<h2><strong>Instructions</strong></h2>\n<ol>\n<li>Roast the Roots: Preheat your oven to 200°C. On a baking tray, toss the kumara and chickpeas with the oil, turmeric, cumin, and a pinch of sea salt. Roast for 25–30 minutes until the kumara is tender and the chickpeas are slightly crispy.</li>\n<li>Prep the Grains: While the veggies roast, simmer your millet or quinoa. Millet is particularly prized in yoga diets as it is alkaline and easy on the digestion.</li>\n<li>Whisk the Dressing: In a small jar or bowl, whisk the tahini, miso, and lemon juice. Add warm water one tablespoon at a time until you reach a drizzling consistency.</li>\n<li>Assemble: Start with a base of cooked grains. Add a generous heap of the roasted kumara and chickpeas. Tuck in your greens and avocado.</li>\n<li>Finish: Drizzle the miso-tahini dressing over the top and garnish with toasted pumpkin seeds and seaweed flakes.</li>\n</ol>\n<h3 style=\"text-align: center\"><strong>Why this works for your practice:</strong></h3>\n<p><img decoding=\"async\" loading=\"lazy\" class=\"aligncenter wp-image-14445 size-large\" src=\"https://www.anahata-retreat.org.nz/wp-content/uploads/2026/02/vitaly-gariev-N2S9dLxFjBQ-unsplash-1024x576.jpg\" alt=\"\" width=\"980\" height=\"551\" srcset=\"https://www.anahata-retreat.org.nz/wp-content/uploads/2026/02/vitaly-gariev-N2S9dLxFjBQ-unsplash-1024x576.jpg 1024w, https://www.anahata-retreat.org.nz/wp-content/uploads/2026/02/vitaly-gariev-N2S9dLxFjBQ-unsplash-768x432.jpg 768w, https://www.anahata-retreat.org.nz/wp-content/uploads/2026/02/vitaly-gariev-N2S9dLxFjBQ-unsplash-1536x864.jpg 1536w, https://www.anahata-retreat.org.nz/wp-content/uploads/2026/02/vitaly-gariev-N2S9dLxFjBQ-unsplash-300x169.jpg 300w, https://www.anahata-retreat.org.nz/wp-content/uploads/2026/02/vitaly-gariev-N2S9dLxFjBQ-unsplash-600x338.jpg 600w, https://www.anahata-retreat.org.nz/wp-content/uploads/2026/02/vitaly-gariev-N2S9dLxFjBQ-unsplash.jpg 1920w\" sizes=\"(max-width: 980px) 100vw, 980px\" /></p>\n<ul>\n<li><strong>Digestion:</strong> The ingredients are fiber-rich but cooked/prepared in a way that won&#8217;t leave you feeling &#8220;heavy&#8221; or bloated.</li>\n<li><strong>Ahimsa (Non-violence):</strong> This recipe is naturally vegan, aligning with the yogic principle of compassion toward all living beings.</li>\n<li><strong>Local Vitality:</strong> Using NZ-grown Kumara and local greens ensures you are eating Prana-rich (life force) food that hasn&#8217;t traveled halfway across the world.</li>\n</ul>\n",
+            "rawHtmlSha256": "4aa0542932eab6c3f6ab75e7377d33df6400f311d50e1f58cdbaca7c19feab6f",
+            "description": {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "italic"
+                                    }
+                                ],
+                                "text": "Kiwi Yogi. A balanced, plant-based meal perfect for grounding after a flow."
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": " "
+                            }
+                        ]
+                    },
+                    {
+                        "type": "heading",
+                        "attrs": {
+                            "level": 2
+                        },
+                        "content": [
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "bold"
+                                    }
+                                ],
+                                "text": "Ingredients"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "heading",
+                        "attrs": {
+                            "level": 3
+                        },
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "The Base & Roasted Goods:"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "bulletList",
+                        "content": [
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "text": "1 large Golden Kumara: Peeled and cubed (grounding and rich in Beta-carotene)."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "text": "1 can (400g) Chickpeas: Rinsed and patted dry."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "text": "1 tsp Ground Turmeric & 1 tsp Cumin: For anti-inflammatory benefits."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "text": "1 tbsp Cold-pressed Extra Virgin Olive Oil (or Avocado oil)."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "text": "1 cup Millet or Quinoa: Cooked according to package instructions."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "type": "heading",
+                        "attrs": {
+                            "level": 3
+                        },
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "The Fresh Layers:"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "bulletList",
+                        "content": [
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "text": "1 handful Baby Spinach or Kale: Massaged with a little lemon."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "text": "½ Avocado: Sliced (healthy fats for joint lubrication)."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "text": "Small handful of Pumpkin Seeds: Lightly toasted."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "bold"
+                                    }
+                                ],
+                                "text": "Optional: A sprinkle of NZ Seaweed flakes (Karengo) for trace minerals."
+                            }
+                        ]
+                    },
+                    {
+                        "type": "heading",
+                        "attrs": {
+                            "level": 3
+                        },
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Creamy Miso-Tahini Dressing:"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "bulletList",
+                        "content": [
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "text": "2 tbsp Tahini"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "text": "1 tbsp White Miso Paste (fermented goodness for the gut)"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "text": "Juice of ½ Lemon"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "text": "1-2 tbsp Warm Water (to thin)"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "type": "heading",
+                        "attrs": {
+                            "level": 2
+                        },
+                        "content": [
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "bold"
+                                    }
+                                ],
+                                "text": "Instructions"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "orderedList",
+                        "attrs": {
+                            "start": 1,
+                            "type": null
+                        },
+                        "content": [
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "text": "Roast the Roots: Preheat your oven to 200°C. On a baking tray, toss the kumara and chickpeas with the oil, turmeric, cumin, and a pinch of sea salt. Roast for 25–30 minutes until the kumara is tender and the chickpeas are slightly crispy."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "text": "Prep the Grains: While the veggies roast, simmer your millet or quinoa. Millet is particularly prized in yoga diets as it is alkaline and easy on the digestion."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "text": "Whisk the Dressing: In a small jar or bowl, whisk the tahini, miso, and lemon juice. Add warm water one tablespoon at a time until you reach a drizzling consistency."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "text": "Assemble: Start with a base of cooked grains. Add a generous heap of the roasted kumara and chickpeas. Tuck in your greens and avocado."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "text": "Finish: Drizzle the miso-tahini dressing over the top and garnish with toasted pumpkin seeds and seaweed flakes."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "type": "heading",
+                        "attrs": {
+                            "level": 3
+                        },
+                        "content": [
+                            {
+                                "type": "text",
+                                "marks": [
+                                    {
+                                        "type": "bold"
+                                    }
+                                ],
+                                "text": "Why this works for your practice:"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph"
+                    },
+                    {
+                        "type": "image",
+                        "attrs": {
+                            "src": "https://www.anahata-retreat.org.nz/wp-content/uploads/2026/02/vitaly-gariev-N2S9dLxFjBQ-unsplash-1024x576.jpg",
+                            "alt": "",
+                            "title": null,
+                            "width": 980,
+                            "height": 551
+                        }
+                    },
+                    {
+                        "type": "bulletList",
+                        "content": [
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Digestion:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " The ingredients are fiber-rich but cooked/prepared in a way that won’t leave you feeling “heavy” or bloated."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Ahimsa (Non-violence):"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " This recipe is naturally vegan, aligning with the yogic principle of compassion toward all living beings."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "marks": [
+                                                    {
+                                                        "type": "bold"
+                                                    }
+                                                ],
+                                                "text": "Local Vitality:"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": " Using NZ-grown Kumara and local greens ensures you are eating Prana-rich (life force) food that hasn’t traveled halfway across the world."
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Originally published by Anahata Yoga Retreat. "
+                            },
+                            {
+                                "type": "text",
+                                "text": "Read the original article",
+                                "marks": [
+                                    {
+                                        "type": "link",
+                                        "attrs": {
+                                            "href": "https://www.anahata-retreat.org.nz/2026/02/the-kiwi-yogi-nourish-bowl",
+                                            "target": "_blank",
+                                            "rel": "noopener noreferrer"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}

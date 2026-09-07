@@ -5,6 +5,8 @@ import {
     CommunityPostSchema,
     CommunitySchema,
     CourseSchema,
+    FeedbackSchema,
+    ContentChangeSchema,
     DomainSchema,
     LessonSchema,
     PageSchema,
@@ -46,6 +48,20 @@ function getReferenceSources(): ReferenceSource[] {
             entityType: "course",
             idField: "courseId",
             labelField: "title",
+        },
+        {
+            model: getModel("ContextualFeedback", FeedbackSchema),
+            domainField: "domain",
+            entityType: "contextualFeedback",
+            idField: "id",
+            labelField: "text",
+        },
+        {
+            model: getModel("ContentChange", ContentChangeSchema),
+            domainField: "domain",
+            entityType: "contentChange",
+            idField: "id",
+            labelField: "summary",
         },
         {
             model: getModel("Lesson", LessonSchema),
@@ -136,6 +152,12 @@ export function collectMediaIdsFromValue(
     if (typeof record.mediaId === "string" && record.mediaId) {
         result.add(record.mediaId);
     }
+    if (Array.isArray(record.photoMediaIds)) {
+        for (const mediaId of record.photoMediaIds) {
+            if (typeof mediaId === "string" && mediaId.trim())
+                result.add(mediaId);
+        }
+    }
     for (const nested of Object.values(record)) {
         collectMediaIdsFromValue(nested, result);
     }
@@ -184,6 +206,10 @@ export function usageHref(
 ): string | undefined {
     const seg = (v: unknown): string | undefined => (v ? String(v) : undefined);
     switch (entityType) {
+        case "contextualFeedback":
+        case "contentChange":
+            // The admin hub owns these records; do not use submitted target URLs.
+            return "/dashboard/changes";
         case "course": {
             const id = seg(doc.courseId);
             return id ? `/dashboard/product/${id}` : undefined;
@@ -251,7 +277,7 @@ export async function collectMediaUsage(
                 title: String(document[source.labelField] ?? ""),
                 href: usageHref(source.entityType, document),
             };
-            for (const mediaId of mediaIds) {
+            for (const mediaId of Array.from(mediaIds)) {
                 const existing = usage.get(mediaId);
                 if (existing) {
                     existing.push(entry);

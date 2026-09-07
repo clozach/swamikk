@@ -49,9 +49,12 @@ export interface ProductPurchase {
 
 const isTestInvoice = (invoice: {
     paymentProcessorTransactionId?: string;
+    paymentMode?: "test" | "live";
 }): boolean =>
-    typeof invoice.paymentProcessorTransactionId === "string" &&
-    invoice.paymentProcessorTransactionId.startsWith(TEST_SESSION_PREFIX);
+    invoice.paymentMode === "test" ||
+    (invoice.paymentMode === undefined &&
+        typeof invoice.paymentProcessorTransactionId === "string" &&
+        invoice.paymentProcessorTransactionId.startsWith(TEST_SESSION_PREFIX));
 
 /**
  * List every purchase (invoiced sale) for a product, newest first. Gated on

@@ -1,0 +1,114 @@
+.kk-mimic-watermark {
+    position: fixed;
+    inset: 0;
+    z-index: 2147482000;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='310' height='210' viewBox='0 0 310 210'%3E%3Ctext x='25' y='145' transform='rotate(-28 155 105)' fill='%23e79c2e' fill-opacity='.14' font-family='Arial,sans-serif' font-size='42' font-weight='700' letter-spacing='5'%3EMIMIC%3C/text%3E%3C/svg%3E");
+    background-repeat: repeat;
+}
+.kk-mimic-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 2147483000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+    color: #3b2608;
+    background: #fff3d8;
+    border-bottom: 2px solid #dd942d;
+    font-size: 14px;
+    line-height: 1.4;
+    box-shadow: 0 2px 12px #00000018;
+}
+.kk-mimic-banner small {
+    display: block;
+    font-size: 12px;
+}
+.kk-mimic-banner button {
+    min-height: 44px;
+    padding: 8px 14px;
+    border: 1px solid #875b1e;
+    border-radius: 8px;
+    background: white;
+    color: #3b2608;
+    font-weight: 650;
+    flex-shrink: 0;
+}
+.kk-mimic-banner button:focus-visible {
+    outline: 3px solid #875b1e;
+    outline-offset: 3px;
+}
+.kk-mimic-banner button:disabled {
+    opacity: 0.65;
+}
+.kk-mimic-spacing {
+    padding-top: calc(76px + env(safe-area-inset-top));
+}
+.kk-mimic-notice {
+    position: fixed;
+    z-index: 2147483000;
+    top: calc(82px + env(safe-area-inset-top));
+    left: 16px;
+    right: 16px;
+    margin: 0;
+    padding: 12px 16px;
+    border-radius: 8px;
+    color: #3b2608;
+    background: #fff3d8;
+    border: 1px solid #dd942d;
+}
+.kk-mimic-block {
+    margin: 2rem auto;
+    max-width: 42rem;
+    padding: 2rem;
+    line-height: 1.6;
+}
+.kk-mimic-block h1 {
+    font-size: 1.5rem;
+    font-weight: 650;
+}
+.kk-mimic-block a {
+    display: inline-block;
+    margin-top: 1rem;
+    text-decoration: underline;
+}
+.kk-mimic-privacy {
+    position: fixed;
+    z-index: 2147482500;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 0;
+    padding: 8px 16px calc(8px + env(safe-area-inset-bottom));
+    pointer-events: none;
+    background: #fff3d8e8;
+    color: #593c16;
+    text-align: center;
+    font-size: 12px;
+}
+html[data-member-mimic-suspended="true"] .kk-mimic-content {
+    visibility: hidden;
+}
+@media (max-width: 520px) {
+    .kk-mimic-email {
+        display: none;
+    }
+    .kk-mimic-banner {
+        align-items: flex-start;
+    }
+    .kk-mimic-spacing {
+        padding-top: calc(92px + env(safe-area-inset-top));
+    }
+}
+@media print {
+    .kk-mimic-banner {
+        position: static;
+    }
+    .kk-mimic-spacing {
+        padding-top: 0;
+    }
+}

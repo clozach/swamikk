@@ -15,6 +15,7 @@ import { requireFeedbackAdmin } from "./http";
 import { contentChangeInputSchema, lessonPatchSchema } from "./validation";
 import { lessonRevision } from "./lesson-guard";
 import { stableJson } from "./stable";
+import { feedbackUi } from "@/config/strings";
 
 export function versionView(
     record: ContentChangeVersion,
@@ -214,7 +215,10 @@ export async function prepareRevert(
         {
             target: original.target,
             patch,
-            summary: `Restore the lesson before change ${original.id}.`,
+            summary: feedbackUi.undoSummary.replace(
+                "{title}",
+                original.preview.before.title,
+            ),
         },
         1,
         ctx,

@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemberMimic } from "@components/member-mimic/context";
 import { useContext, useEffect, useState, use } from "react";
 import { isEnrolled } from "@ui-lib/utils";
 import { ArrowRight } from "@courselit/icons";
@@ -38,6 +39,7 @@ import DownloadProductContent from "./download-product-content";
 export default function ProductPage(props: {
     params: Promise<{ slug: string; id: string }>;
 }) {
+    const isMimic = useMemberMimic().kind !== "inactive";
     const params = use(props.params);
     const { id } = params;
     const [product, setProduct] = useState<any>(null);
@@ -101,7 +103,7 @@ export default function ProductPage(props: {
             <Header1 className="mb-8 text-foreground" theme={theme.theme}>
                 {product.title}
             </Header1>
-            {progress?.certificateId && (
+            {!isMimic && progress?.certificateId && (
                 <Link
                     href={`/accomplishment/${progress.certificateId}`}
                     className="mb-4"
@@ -112,7 +114,7 @@ export default function ProductPage(props: {
                     </Button>
                 </Link>
             )}
-            {!enrolled && !isPreview && (
+            {!isMimic && !enrolled && !isPreview && (
                 <div>
                     <div className="flex justify-between items-center">
                         <div className="font-medium flex items-center">

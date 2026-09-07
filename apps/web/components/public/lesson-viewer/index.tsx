@@ -1,5 +1,6 @@
+import { memberMimicUi, mediaPlayerUi } from "@/config/strings";
 import React, { useContext, useEffect, useState } from "react";
-import { useMediaTeardown } from "@components/public/use-media-teardown";
+import { useMemberMimic } from "@components/member-mimic/context";
 import { FetchBuilder } from "@courselit/utils";
 import {
     LESSON_TYPE_VIDEO,
@@ -22,7 +23,12 @@ import {
     TOAST_TITLE_ERROR,
     NOT_ENROLLED_HEADER,
 } from "@/ui-config/strings";
-import { Link, Skeleton, useToast } from "@courselit/components-library";
+import {
+    Link,
+    Skeleton,
+    useToast,
+    MediaPlayer,
+} from "@courselit/components-library";
 import { TextRenderer } from "@courselit/page-blocks";
 import {
     Constants,
@@ -85,6 +91,7 @@ export const LessonViewer = ({
     productId,
     path = "/course",
 }: LessonViewerProps) => {
+    const isMimic = useMemberMimic().kind !== "inactive";
     const [lesson, setLesson] = useState<Lesson>();
     const [courseTitle, setCourseTitle] = useState<string>("");
     const [isPreview, setIsPreview] = useState(false);
@@ -92,18 +99,15 @@ export const LessonViewer = ({
     const searchParams = useSearchParams();
     const viewerSessionParams = getCourseViewerSessionParams(searchParams);
     const [loading, setLoading] = useState(false);
-    const exitPath = getCourseViewerReturnPath(viewerSessionParams.returnTo);
+    const exitPath = isMimic
+        ? "/dashboard/my-content/products"
+        : getCourseViewerReturnPath(viewerSessionParams.returnTo);
     const { toast } = useToast();
     const { theme } = useContext(ThemeContext);
     const viewerProfile = profile?.userId ? (profile as Profile) : undefined;
     const isViewerEnrolled = Boolean(
         lesson && viewerProfile && isEnrolled(lesson.courseId, viewerProfile),
     );
-
-    // Stop lesson video/audio when it's torn down — switching lessons (the
-    // element is keyed on lessonId), navigating away, or Safari's back-forward
-    // cache. Shared with the lean download viewer via useMediaTeardown.
-    const setMediaRef = useMediaTeardown();
 
     const isCompleted =
         lesson && viewerProfile?.purchases
@@ -180,7 +184,7 @@ export const LessonViewer = ({
     };
 
     const markAsCompleted = async () => {
-        if (!lesson) return;
+        if (!lesson || isMimic) return;
         const query = `
         mutation {
             result: markLessonCompleted(id: "${lesson.lessonId}")
@@ -251,15 +255,16 @@ export const LessonViewer = ({
                         <Text1 theme={theme.theme} className="mb-4">
                             {error}.
                         </Text1>
-                        {error === "You are not enrolled in the course" && (
-                            <Link
-                                href={`/checkout?type=${Constants.MembershipEntityType.COURSE}&id=${productId}`}
-                            >
-                                <Button theme={theme.theme}>
-                                    {ENROLL_BUTTON_TEXT}
-                                </Button>
-                            </Link>
-                        )}
+                        {!isMimic &&
+                            error === "You are not enrolled in the course" && (
+                                <Link
+                                    href={`/checkout?type=${Constants.MembershipEntityType.COURSE}&id=${productId}`}
+                                >
+                                    <Button theme={theme.theme}>
+                                        {ENROLL_BUTTON_TEXT}
+                                    </Button>
+                                </Link>
+                            )}
                     </div>
                 )}
                 {lesson && !error && (
@@ -291,23 +296,16 @@ export const LessonViewer = ({
                             LESSON_TYPE_VIDEO,
                         ) === lesson.type && (
                             <div>
-                                <video
-                                    ref={setMediaRef}
-                                    controls
-                                    controlsList="nodownload"
-                                    onContextMenu={(e) => e.preventDefault()}
+                                <MediaPlayer
                                     key={lesson.lessonId}
-                                    className="w-full rounded mb-2"
-                                >
-                                    <source
-                                        src={
-                                            lesson.media &&
-                                            (lesson.media.file as string)
-                                        }
-                                        type="video/mp4"
-                                    />
-                                    Your browser does not support the video tag.
-                                </video>
+                                    kind="video"
+                                    src={lesson.media?.file || ""}
+                                    title={lesson.title}
+                                    labels={mediaPlayerUi}
+                                    presentation={
+                                        isMimic ? "inline-only" : "responsive"
+                                    }
+                                />
                                 <Caption
                                     text={
                                         lesson.media?.caption ??
@@ -321,21 +319,13 @@ export const LessonViewer = ({
                             LESSON_TYPE_AUDIO,
                         ) === lesson.type && (
                             <div>
-                                <audio
-                                    ref={setMediaRef}
-                                    controls
-                                    controlsList="nodownload"
-                                    onContextMenu={(e) => e.preventDefault()}
-                                >
-                                    <source
-                                        src={
-                                            lesson.media &&
-                                            (lesson.media.file as string)
-                                        }
-                                        type="audio/mpeg"
-                                    />
-                                    Your browser does not support the video tag.
-                                </audio>
+                                <MediaPlayer
+                                    key={lesson.lessonId}
+                                    kind="audio"
+                                    src={lesson.media?.file || ""}
+                                    title={lesson.title}
+                                    labels={mediaPlayerUi}
+                                />
                                 <Caption
                                     text={
                                         lesson.media?.caption ??
@@ -383,9 +373,10 @@ export const LessonViewer = ({
                                     </WidgetErrorBoundary>
                                 </div>
                             )}
-                        {String.prototype.toUpperCase.call(
-                            LESSON_TYPE_EMBED,
-                        ) === lesson.type &&
+                        {!isMimic &&
+                            String.prototype.toUpperCase.call(
+                                LESSON_TYPE_EMBED,
+                            ) === lesson.type &&
                             lesson.content && (
                                 <LessonEmbedViewer
                                     content={
@@ -395,8 +386,10 @@ export const LessonViewer = ({
                                     }
                                 />
                             )}
-                        {String.prototype.toUpperCase.call(LESSON_TYPE_QUIZ) ===
-                            lesson.type &&
+                        {!isMimic &&
+                            String.prototype.toUpperCase.call(
+                                LESSON_TYPE_QUIZ,
+                            ) === lesson.type &&
                             lesson.content && (
                                 <QuizViewer
                                     lessonId={lesson.lessonId}
@@ -419,9 +412,10 @@ export const LessonViewer = ({
                                     </Link>
                                 </div>
                             )}
-                        {String.prototype.toUpperCase.call(
-                            LESSON_TYPE_SCORM,
-                        ) === lesson.type &&
+                        {!isMimic &&
+                            String.prototype.toUpperCase.call(
+                                LESSON_TYPE_SCORM,
+                            ) === lesson.type &&
                             lesson.content && (
                                 <ScormViewer
                                     lessonId={lesson.lessonId}
@@ -434,7 +428,19 @@ export const LessonViewer = ({
                                     }
                                 />
                             )}
-                        {isViewerEnrolled && !isPreview && (
+                        {isMimic &&
+                            [
+                                LESSON_TYPE_EMBED,
+                                LESSON_TYPE_QUIZ,
+                                LESSON_TYPE_SCORM,
+                            ].some(
+                                (type) => type.toUpperCase() === lesson.type,
+                            ) && (
+                                <p className="text-sm text-muted-foreground">
+                                    {memberMimicUi.privateActivity}
+                                </p>
+                            )}
+                        {!isMimic && isViewerEnrolled && !isPreview && (
                             <div className="mt-8 flex flex-col gap-4">
                                 <div className="flex justify-start">
                                     {isCompleted ? (

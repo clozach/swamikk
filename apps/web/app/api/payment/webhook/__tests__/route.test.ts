@@ -28,11 +28,14 @@ const stripe = new Stripe("sk_test_dummy");
 
 const eventPayload = JSON.stringify({
     id: "evt_123",
+    livemode: false,
     type: "checkout.session.completed",
     data: {
         object: {
             id: "cs_123",
             payment_status: "paid",
+            amount_total: 9999,
+            currency: "usd",
             metadata: {
                 membershipId: "membership-123",
                 invoiceId: "invoice-123",
@@ -93,8 +96,17 @@ describe("Payment Webhook Route (Stripe)", () => {
 
         (Invoice.findOne as jest.Mock).mockResolvedValue({
             invoiceId: "invoice-123",
+            membershipId: "membership-123",
+            membershipSessionId: "session-123",
+            paymentProcessor: "stripe",
+            currencyISOCode: "usd",
             status: Constants.InvoiceStatus.PENDING,
             save: jest.fn().mockResolvedValue(undefined),
+        });
+
+        (Invoice.findOneAndUpdate as jest.Mock).mockResolvedValue({
+            invoiceId: "invoice-123",
+            status: Constants.InvoiceStatus.PAID,
         });
 
         (activateMembership as jest.Mock).mockResolvedValue(undefined);
@@ -172,15 +184,19 @@ describe("Payment Webhook Route (Stripe)", () => {
             );
         });
 
-        it("accepts an unsigned event for backward compatibility and logs a warning", async () => {
+        it("fails closed when the signing secret is missing and logs the configuration problem", async () => {
             const warnSpy = jest
                 .spyOn(console, "warn")
                 .mockImplementation(() => undefined);
 
             const response = await POST(makeRequest({ signature: null }));
 
-            expect(await response.json()).toEqual({ message: "success" });
-            expect(activateMembership).toHaveBeenCalled();
+            expect(response.status).toBe(503);
+            expect(await response.json()).toEqual({
+                message: "Payment not verified",
+            });
+            expect(activateMembership).not.toHaveBeenCalled();
+            expect(Invoice.findOneAndUpdate).not.toHaveBeenCalled();
             expect(warnSpy).toHaveBeenCalledWith(
                 expect.anything(),
                 expect.stringContaining("webhook secret is not configured"),

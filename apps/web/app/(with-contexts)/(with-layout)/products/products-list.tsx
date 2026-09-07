@@ -2,15 +2,19 @@
 
 import { useMemo, useContext } from "react";
 import { PaginationControls } from "@components/public/pagination";
-import { Constants, Course, SiteInfo } from "@courselit/common-models";
+import { Constants, Course } from "@courselit/common-models";
 import { useProducts } from "@/hooks/use-products";
 import { BookOpen } from "lucide-react";
 import { EmptyState } from "./empty-state";
-import { ProductCard, ProductCardSkeleton } from "@courselit/page-blocks";
+import {
+    ProductCard,
+    ProductCardSkeleton,
+    catalogProductKind,
+    catalogProductPrice,
+} from "@courselit/page-blocks";
 import { SiteInfoContext } from "@components/contexts";
-import { getPlanPrice, truncate } from "@ui-lib/utils";
+import { truncate } from "@ui-lib/utils";
 import { Button, Subheader1 } from "@courselit/page-primitives";
-import { getSymbolFromCurrency } from "@courselit/components-library";
 import { ThemeStyle } from "@courselit/page-models";
 const ITEMS_PER_PAGE = 9;
 
@@ -77,7 +81,12 @@ export function ProductsList({
                                   "/placeholder-image.svg"
                               }
                               href={`/p/${product.pageId}`}
-                              badgeChildren={getBadgeText(product, siteinfo)}
+                              badgeChildren={catalogProductPrice(
+                                  product,
+                                  siteinfo.currencyISOCode || "USD",
+                              )}
+                              productType={catalogProductKind(product)}
+                              previewAudio={product.previewAudio}
                               theme={theme}
                           />
                       ))}
@@ -88,32 +97,5 @@ export function ProductsList({
                 onPageChange={onPageChange}
             />
         </div>
-    );
-}
-
-function getBadgeText(course: Course, siteinfo: SiteInfo) {
-    const defaultPlan =
-        course.paymentPlans?.find(
-            (plan) => plan.planId === course.defaultPaymentPlan,
-        ) ?? course.paymentPlans?.[0];
-
-    if (!defaultPlan) {
-        const amount = course.cost ?? 0;
-        return (
-            <>
-                {getSymbolFromCurrency(siteinfo.currencyISOCode || "USD")}
-                <span>{amount.toFixed(2)}</span>
-            </>
-        );
-    }
-
-    const { amount, period } = getPlanPrice(defaultPlan);
-
-    return (
-        <>
-            {getSymbolFromCurrency(siteinfo.currencyISOCode || "USD")}
-            <span>{amount.toFixed(2)}</span>
-            <span className="ml-1">{period}</span>
-        </>
     );
 }

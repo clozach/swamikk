@@ -2,9 +2,24 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getBackendAddress } from "@/app/actions";
 import { auth } from "./auth";
 import { COURSE_VIEWER_CURRENT_URL_HEADER } from "./lib/course-viewer-session-params";
+import {
+    hasMemberMimicCookie,
+    MEMBER_MIMIC_PATH_HEADER,
+} from "./services/member-mimic/constants";
 
 export async function proxy(request: NextRequest) {
     const requestHeaders = request.headers;
+    requestHeaders.set(
+        MEMBER_MIMIC_PATH_HEADER,
+        `${request.nextUrl.pathname}${request.nextUrl.search}`,
+    );
+    // Static framework assets carry the marker too, but do not render a member view.
+    if (
+        request.nextUrl.pathname.startsWith("/_next/") &&
+        ["GET", "HEAD"].includes(request.method)
+    ) {
+        return NextResponse.next({ request: { headers: requestHeaders } });
+    }
     const forwardedProto = request.headers.get("x-forwarded-proto");
 
     if (!forwardedProto && request.nextUrl.protocol) {
@@ -46,6 +61,47 @@ export async function proxy(request: NextRequest) {
         );
         if (resp.ssoTrustedDomain) {
             requestHeaders.set("ssoTrustedDomain", resp.ssoTrustedDomain);
+        }
+
+        if (
+            hasMemberMimicCookie(requestHeaders) &&
+            !["GET", "HEAD"].includes(request.method) &&
+            !request.nextUrl.pathname.startsWith("/api/")
+        ) {
+            return Response.json(
+                {
+                    error: {
+                        code: "mimic_read_only",
+                        message: "Exit Member Mimic before making changes.",
+                    },
+                },
+                { status: 403, headers: { "Cache-Control": "no-store" } },
+            );
+        }
+        if (
+            hasMemberMimicCookie(requestHeaders) &&
+            request.nextUrl.pathname.startsWith("/api/")
+        ) {
+            const path = request.nextUrl.pathname;
+            const read = request.method === "GET" || request.method === "HEAD";
+            const permitted =
+                path === "/api/member-mimic" ||
+                (path === "/api/graph" && request.method === "POST") ||
+                (read &&
+                    ((path.startsWith("/api/media/") &&
+                        path !== "/api/media/presigned") ||
+                        path === "/api/config"));
+            if (!permitted)
+                return Response.json(
+                    {
+                        error: {
+                            code: "mimic_read_only",
+                            message:
+                                "Exit Member Mimic before using this action or private information.",
+                        },
+                    },
+                    { status: 403, headers: { "Cache-Control": "no-store" } },
+                );
         }
 
         if (request.nextUrl.pathname === "/favicon.ico") {
@@ -113,5 +169,10 @@ export const config = {
         "/healthy",
         "/course/:path*",
         "/dashboard/:path*",
+        { source: "/:path*", has: [{ type: "header", key: "next-action" }] },
+        {
+            source: "/:path*",
+            has: [{ type: "cookie", key: "courselit.member-mimic" }],
+        },
     ],
 };

@@ -1,3 +1,6 @@
+import { hasMemberMimicCookie } from "@/services/member-mimic/constants";
+import { resolveMemberReadContext } from "@/services/member-mimic/context";
+import { requestContext } from "@/services/content-changes/http";
 import { NextRequest, NextResponse } from "next/server";
 import { getMedia } from "@/services/medialit";
 import { Constants, type Media } from "@courselit/common-models";
@@ -49,6 +52,7 @@ async function streamAsAttachment(media: Media): Promise<NextResponse> {
     }
 
     const headers = new Headers();
+    headers.set("Cache-Control", "private, no-store");
     headers.set(
         "Content-Type",
         response.headers.get("Content-Type") ||
@@ -83,6 +87,13 @@ export async function GET(
     }
 
     try {
+        const mimicContext = hasMemberMimicCookie(request.headers)
+            ? await resolveMemberReadContext(
+                  request.headers,
+                  await requestContext(request),
+              )
+            : null;
+        if (mimicContext?.kind === "expired") return mediaNotFound();
         // A nonexistent mediaId must be indistinguishable from a denied one,
         // and the medialit client throws on unknown ids — resolve to the
         // same uniform 404 instead of letting it surface as a 500.
@@ -113,11 +124,14 @@ export async function GET(
             return mediaNotFound();
         }
 
-        const user = await UserModel.findOne({
-            email: session.user.email,
-            domain: domain._id,
-            active: true,
-        });
+        const user =
+            mimicContext?.kind === "mimic"
+                ? mimicContext.context.user
+                : await UserModel.findOne({
+                      email: session.user.email,
+                      domain: domain._id,
+                      active: true,
+                  });
         if (!user) {
             return mediaNotFound();
         }

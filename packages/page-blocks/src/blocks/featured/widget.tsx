@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { Course, SiteInfo, WidgetProps } from "@courselit/common-models";
-import {
-    SkeletonCard,
-    getSymbolFromCurrency,
-} from "@courselit/components-library";
+import { Course, WidgetProps } from "@courselit/common-models";
+import { SkeletonCard } from "@courselit/components-library";
 import { TextRenderer } from "../../components";
-import { FetchBuilder, getPlanPrice } from "@courselit/utils";
+import { FetchBuilder } from "@courselit/utils";
 import Settings from "./settings";
 import { Header1, Subheader1, Section } from "@courselit/page-primitives";
-import { ProductCard } from "../../components";
+import {
+    ProductCard,
+    catalogProductKind,
+    catalogProductPrice,
+} from "../../components";
 import { ThemeStyle } from "@courselit/page-models";
 
 export default function Widget({
@@ -52,6 +53,7 @@ export default function Widget({
                     }
                     pageId
                     type
+                    previewAudio { mediaId file mimeType access }
                     paymentPlans {
                         planId
                         name
@@ -146,9 +148,11 @@ export default function Widget({
                                     }
                                     theme={overiddenTheme}
                                     href={`/p/${course.pageId}`}
-                                    badgeChildren={getBadgeText(
+                                    productType={catalogProductKind(course)}
+                                    previewAudio={course.previewAudio}
+                                    badgeChildren={catalogProductPrice(
                                         course,
-                                        state.siteinfo,
+                                        state.siteinfo.currencyISOCode || "USD",
                                     )}
                                 />
                             ))}
@@ -157,20 +161,5 @@ export default function Widget({
                 </div>
             </div>
         </Section>
-    );
-}
-
-function getBadgeText(course: Course, siteinfo: SiteInfo) {
-    const defaultPlan = course.paymentPlans?.filter(
-        (plan) => plan.planId === course.defaultPaymentPlan,
-    )[0];
-    const { amount, period } = getPlanPrice(defaultPlan);
-
-    return (
-        <>
-            {getSymbolFromCurrency(siteinfo.currencyISOCode || "USD")}
-            <span>{amount.toFixed(2)}</span>
-            <span className="ml-1">{period}</span>
-        </>
     );
 }

@@ -10,6 +10,17 @@ import { defaultState } from "@components/default-state";
 import { decode } from "base-64";
 import { ServerConfig, SiteInfo } from "@courselit/common-models";
 import constants from "@config/constants";
+import MemberMimicProvider from "@components/member-mimic/provider";
+import { HideDuringMimic } from "@components/member-mimic/context";
+import { requestContext } from "@/services/content-changes/http";
+import { resolveMemberReadContext } from "@/services/member-mimic/context";
+import {
+    hasMemberMimicCookie,
+    isMemberMimicPath,
+    MEMBER_MIMIC_PATH_HEADER,
+} from "@/services/member-mimic/constants";
+import { NextRequest } from "next/server";
+import type { MemberMimicView } from "@courselit/common-models";
 
 export default async function Layout({
     children,
@@ -22,6 +33,21 @@ export default async function Layout({
     });
 
     const siteSetup = await getFullSiteSetup(address);
+    const requestHeaders = await headers();
+    let mimicView: MemberMimicView = { kind: "inactive" };
+    if (hasMemberMimicCookie(requestHeaders)) {
+        try {
+            const req = new NextRequest(address, { headers: requestHeaders });
+            mimicView = (
+                await resolveMemberReadContext(
+                    requestHeaders,
+                    await requestContext(req),
+                )
+            ).view;
+        } catch {
+            mimicView = { kind: "expired", returnTo: "/dashboard/users" };
+        }
+    }
     const config: ServerConfig = {
         turnstileSiteKey: process.env.TURNSTILE_SITE_KEY || "",
         queueServer: process.env.QUEUE_SERVER || "",
@@ -38,9 +64,19 @@ export default async function Layout({
             session={session}
             features={siteSetup?.features || defaultState.features}
         >
-            {children}
-            <MediaDebugOverlay />
-            <ContextualFeedback />
+            <MemberMimicProvider initialView={mimicView}>
+                {mimicView.kind === "inactive" ||
+                (mimicView.kind === "active" &&
+                    isMemberMimicPath(
+                        requestHeaders.get(MEMBER_MIMIC_PATH_HEADER) || "",
+                    ))
+                    ? children
+                    : null}
+                <HideDuringMimic>
+                    <MediaDebugOverlay />
+                    <ContextualFeedback />
+                </HideDuringMimic>
+            </MemberMimicProvider>
         </LayoutWithContext>
     );
 }

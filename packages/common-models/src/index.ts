@@ -86,3 +86,6 @@ export * from "./cohort";
 export type { ScormContent } from "./scorm-content";
 export * from "./feedback";
 export * from "./content-change";
+export * from "./media-player";
+export * from "./media-player-copy";
+export * from "./member-mimic";

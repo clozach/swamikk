@@ -1,3 +1,6 @@
+"use client";
+
+import { useMemberMimic } from "@components/member-mimic/context";
 import { ProgressBar } from "./progress-bar";
 import type { ContentItem } from "./content";
 import {
@@ -18,6 +21,7 @@ interface ContentCardProps {
 
 export function MyContentCard({ item }: ContentCardProps) {
     const { entity, entityType } = item;
+    const isMimic = useMemberMimic().kind !== "inactive";
     const progress =
         entity.totalLessons && entity.completedLessonsCount
             ? (entity.completedLessonsCount / entity.totalLessons) * 100
@@ -49,7 +53,7 @@ export function MyContentCard({ item }: ContentCardProps) {
                             )}
                             {capitalize(entity.type)}
                         </Badge>
-                        {entity.certificateId && (
+                        {!isMimic && entity.certificateId && (
                             <p className="flex items-center text-sm text-muted-foreground">
                                 <BadgeCheck className="h-4 w-4 mr-1" />
                                 Certificate
@@ -59,7 +63,8 @@ export function MyContentCard({ item }: ContentCardProps) {
                 ) : (
                     ""
                 )}
-                {entityType.toLowerCase() === Constants.CourseType.COURSE &&
+                {!isMimic &&
+                entityType.toLowerCase() === Constants.CourseType.COURSE &&
                 entity.type === Constants.CourseType.COURSE &&
                 entity.totalLessons ? (
                     <div className="space-y-2 mt-4">

@@ -22,6 +22,8 @@ export interface Course {
     costType: ProductPriceType;
     creatorId: string;
     featuredImage: Media;
+    /** An explicitly selected public audio sample, separate from paid lessons. */
+    previewAudio?: Media;
     isBlog: boolean;
     tags: string[];
     type: CourseType;

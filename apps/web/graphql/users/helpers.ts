@@ -1,4 +1,5 @@
-"use server";
+import { revokeMemberMimicForUser } from "@/services/member-mimic/cleanup";
+("use server");
 
 import UserModel from "@models/User";
 import { deleteUserFeedback } from "@/services/content-changes/personal-data";
@@ -266,6 +267,10 @@ export async function cleanupPersonalData(
 ): Promise<void> {
     await Promise.all([
         deleteUserFeedback(String(ctx.subdomain._id), userToDelete.userId),
+        revokeMemberMimicForUser(
+            String(ctx.subdomain._id),
+            userToDelete.userId,
+        ),
         CohortModel.updateMany(
             {
                 domain: ctx.subdomain._id,

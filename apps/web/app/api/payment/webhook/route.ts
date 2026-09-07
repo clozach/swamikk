@@ -14,6 +14,8 @@ import { error } from "@/services/logger";
 import mongoose from "mongoose";
 import Payment from "@/payments-new/payment";
 import { activateMembership } from "../helpers";
+import StripePayment from "@/payments-new/stripe-payment";
+import { recordStripeInvoice } from "./stripe-invoice";
 
 export async function POST(req: NextRequest) {
     try {
@@ -42,21 +44,94 @@ export async function POST(req: NextRequest) {
                 headers: req.headers,
             }))
         ) {
-            return Response.json({ message: "Payment not verified" });
+            return Response.json(
+                { message: "Payment not verified" },
+                {
+                    status:
+                        paymentMethod instanceof StripePayment &&
+                        !paymentMethod.siteinfo.stripeWebhookSecret
+                            ? 503
+                            : 400,
+                },
+            );
         }
 
-        const metadata = paymentMethod.getMetadata(body);
+        let metadata = paymentMethod.getMetadata(body);
+        if (
+            paymentMethod instanceof StripePayment &&
+            body.type === "invoice.paid" &&
+            (!metadata.membershipId || !metadata.invoiceId)
+        ) {
+            const subscriptionId = paymentMethod.getSubscriptionId(body);
+            // Subscriptions created before subscription_data.metadata was added
+            // can still renew. Correlate only through a tenant-owned subscription
+            // and its current checkout session, never a supplied user ID.
+            const existing = subscriptionId
+                ? await MembershipModel.findOne({
+                      domain: domain._id,
+                      subscriptionId,
+                      subscriptionMethod: "stripe",
+                  })
+                : null;
+            const order = existing
+                ? await InvoiceModel.findOne({
+                      domain: domain._id,
+                      membershipId: existing.membershipId,
+                      membershipSessionId: existing.sessionId,
+                      paymentProcessor: "stripe",
+                  }).sort({ createdAt: 1 })
+                : null;
+            if (order)
+                metadata = {
+                    membershipId: existing.membershipId,
+                    invoiceId: order.invoiceId,
+                    currencyISOCode: order.currencyISOCode,
+                };
+        }
         const { membershipId, invoiceId, currencyISOCode } = metadata;
 
         const membership = await getMembership(domain._id, membershipId);
         if (!membership) {
-            return Response.json({ message: "Membership not found" });
+            return Response.json(
+                { message: "Membership not found" },
+                { status: 404 },
+            );
+        }
+        if (
+            paymentMethod instanceof StripePayment &&
+            body.type === "invoice.paid" &&
+            membership.subscriptionId &&
+            membership.subscriptionId !== paymentMethod.getSubscriptionId(body)
+        ) {
+            return Response.json(
+                { message: "Payment belongs to a different subscription" },
+                { status: 409 },
+            );
         }
 
         const paymentPlan = await getPaymentPlan(
             domain._id,
             membership.paymentPlanId!,
         );
+        if (paymentMethod instanceof StripePayment) {
+            await recordStripeInvoice(
+                body,
+                domain._id,
+                invoiceId as string,
+                membership,
+            );
+        } else {
+            await handleInvoice(
+                domain,
+                invoiceId,
+                membership,
+                paymentPlan,
+                paymentMethod,
+                currencyISOCode,
+                body,
+            );
+        }
+
         const subscriptionId = await handleSubscription(
             paymentPlan,
             paymentMethod,
@@ -64,15 +139,16 @@ export async function POST(req: NextRequest) {
             membership,
         );
 
-        await handleInvoice(
-            domain,
-            invoiceId,
-            membership,
-            paymentPlan,
-            paymentMethod,
-            currencyISOCode,
-            body,
-        );
+        if (
+            paymentMethod instanceof StripePayment &&
+            paymentPlan?.type === Constants.PaymentPlanType.SUBSCRIPTION &&
+            subscriptionId &&
+            !(await paymentMethod.validateSubscription(subscriptionId))
+        ) {
+            return Response.json({
+                message: "Payment recorded; subscription is no longer active",
+            });
+        }
 
         if (
             paymentPlan?.type === Constants.PaymentPlanType.EMI &&

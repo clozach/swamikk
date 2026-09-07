@@ -3179,3 +3179,82 @@ describe("updateDiscussionComment / updateDiscussionReply", () => {
         ).rejects.toThrow(responses.item_not_found);
     });
 });
+
+describe("Stripe payment mode in transaction history", () => {
+    it("labels renewal sandbox invoices without relying on a checkout-session prefix", async () => {
+        const InvoiceModel = (await import("@models/Invoice")).default;
+        const { getProductPurchases } = await import("../purchases");
+        const domain = await DomainModel.create({
+            name: id("payment-mode-domain"),
+            email: email("payment-mode"),
+        });
+        const courseId = id("payment-mode-course");
+        const userId = id("payment-mode-user");
+        await CourseModel.create({
+            domain: domain._id,
+            courseId,
+            title: "Test library",
+            creatorId: userId,
+            type: constants.course,
+            slug: "test-library",
+            cost: 0,
+            costType: constants.costFree,
+            privacy: CommonConstants.ProductAccessType.PUBLIC,
+        });
+        await MembershipModel.create({
+            domain: domain._id,
+            membershipId: id("payment-mode-member"),
+            userId,
+            entityId: courseId,
+            entityType: CommonConstants.MembershipEntityType.COURSE,
+            paymentPlanId: "plan",
+            sessionId: "session",
+            status: CommonConstants.MembershipStatus.ACTIVE,
+        });
+        for (const [suffix, transaction, mode] of [
+            ["renewal", "in_renewal_test", "test"],
+            ["live", "in_live", "live"],
+            ["historical", "cs_test_old", undefined],
+        ]) {
+            await InvoiceModel.create({
+                domain: domain._id,
+                invoiceId: id(`payment-mode-${suffix}`),
+                membershipId: id("payment-mode-member"),
+                membershipSessionId: "session",
+                amount: 11,
+                currencyISOCode: "NZD",
+                paymentProcessor: "stripe",
+                paymentProcessorTransactionId: transaction,
+                paymentMode: mode,
+                status: CommonConstants.InvoiceStatus.PAID,
+            });
+        }
+        const rows = await getProductPurchases({
+            courseId,
+            ctx: {
+                subdomain: domain,
+                user: {
+                    userId,
+                    permissions: [constants.permissions.manageAnyCourse],
+                },
+                address: "",
+            } as any,
+        });
+        expect(
+            rows.find((row) => row.invoiceId === id("payment-mode-renewal"))
+                ?.isTest,
+        ).toBe(true);
+        expect(
+            rows.find((row) => row.invoiceId === id("payment-mode-live"))
+                ?.isTest,
+        ).toBe(false);
+        expect(
+            rows.find((row) => row.invoiceId === id("payment-mode-historical"))
+                ?.isTest,
+        ).toBe(true);
+        await InvoiceModel.deleteMany({ domain: domain._id });
+        await MembershipModel.deleteMany({ domain: domain._id });
+        await CourseModel.deleteMany({ domain: domain._id });
+        await domain.deleteOne();
+    });
+});

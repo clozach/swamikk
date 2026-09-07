@@ -13,6 +13,7 @@ export interface Invoice {
     paymentProcessor: string;
     paymentProcessorTransactionId?: string;
     paymentProcessorEntityId?: string;
+    paymentMode?: "test" | "live";
     currencyISOCode: string;
     createdAt?: Date;
     updatedAt?: Date;

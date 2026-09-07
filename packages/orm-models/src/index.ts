@@ -42,3 +42,4 @@ export * from "./models/cohort";
 export * from "./product-discussion-cleanup";
 export * from "./models/feedback";
 export * from "./models/content-change";
+export * from "./models/member-mimic";

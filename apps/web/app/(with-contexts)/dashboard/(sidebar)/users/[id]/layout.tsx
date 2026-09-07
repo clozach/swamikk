@@ -1,4 +1,4 @@
-import { PAGE_HEADER_EDIT_USER } from "@ui-config/strings";
+import { memberMimicUi } from "@/config/strings";
 import type { Metadata, ResolvingMetadata } from "next";
 import { ReactNode } from "react";
 
@@ -7,7 +7,7 @@ export async function generateMetadata(
     parent: ResolvingMetadata,
 ): Promise<Metadata> {
     return {
-        title: `${PAGE_HEADER_EDIT_USER} | ${(await parent)?.title?.absolute}`,
+        title: `${memberMimicUi.title} | ${(await parent)?.title?.absolute}`,
     };
 }
 

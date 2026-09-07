@@ -51,6 +51,7 @@ export const CourseSchema = new mongoose.Schema<InternalCourse>(
         lessons: [String],
         description: String,
         featuredImage: MediaSchema,
+        previewAudio: MediaSchema,
         groups: [
             {
                 name: { type: String, required: true },

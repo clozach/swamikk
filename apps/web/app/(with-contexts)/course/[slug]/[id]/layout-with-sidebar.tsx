@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemberMimic } from "@components/member-mimic/context";
 import { usePrivatePalette } from "@/lib/use-private-palette";
 import { cn } from "@/lib/shadcn-utils";
 
@@ -117,12 +118,15 @@ export default function ProductPage({
     product: CourseFrontend;
     children: React.ReactNode;
 }) {
+    const isMimic = useMemberMimic().kind !== "inactive";
     const { profile } = useContext(ProfileContext);
     const privatePalette = usePrivatePalette();
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const viewerSessionParams = getCourseViewerSessionParams(searchParams);
-    const exitPath = getCourseViewerReturnPath(viewerSessionParams.returnTo);
+    const exitPath = isMimic
+        ? "/dashboard/my-content/products"
+        : getCourseViewerReturnPath(viewerSessionParams.returnTo);
     const isDiscussionOpen = searchParams?.get("discussion") === "open";
     const router = useRouter();
     const address = useContext(AddressContext);
@@ -134,7 +138,8 @@ export default function ProductPage({
         isLessonPage && pathSegments[3] !== "discussions";
     const viewerProfile = profile?.userId ? (profile as Profile) : undefined;
     const canUseDiscussions = Boolean(
-        viewerProfile &&
+        !isMimic &&
+            viewerProfile &&
             product.discussions &&
             (product.isPreview || isEnrolled(product.courseId, viewerProfile)),
     );
@@ -300,6 +305,7 @@ export function AppSidebar({
     profile: Partial<Profile>;
     viewerSessionParams?: ReturnType<typeof getCourseViewerSessionParams>;
 } & React.ComponentProps<typeof Sidebar>) {
+    const isMimic = useMemberMimic().kind !== "inactive";
     const siteinfo = useContext(SiteInfoContext);
     const pathname = usePathname();
     const sideBarItems = generateSideBarItems(
@@ -307,6 +313,7 @@ export function AppSidebar({
         profile,
         pathname,
         viewerSessionParams,
+        isMimic,
     );
     const { theme } = useContext(ThemeContext);
 
@@ -529,6 +536,7 @@ export function generateSideBarItems(
     profile: Partial<Profile>,
     pathname: string,
     viewerSessionParams?: ReturnType<typeof getCourseViewerSessionParams>,
+    isMimic = false,
 ): SidebarItem[] {
     if (!course) return [];
 
@@ -546,6 +554,7 @@ export function generateSideBarItems(
     ];
 
     if (
+        !isMimic &&
         course.discussions &&
         profile?.userId &&
         (course.isPreview || isEnrolled(course.courseId, profile as Profile))
@@ -597,11 +606,11 @@ export function generateSideBarItems(
                         <Lock />
                     ) : undefined;
                 } else if (isEnrolled(course.courseId, profile as Profile)) {
-                    lessonStatusIcon = isLessonCompleted({
-                        courseId: course.courseId,
-                        lessonId: lesson.lessonId,
-                        profile: profile as Profile,
-                    }) ? (
+                    lessonStatusIcon = isMimic ? undefined : isLessonCompleted({
+                          courseId: course.courseId,
+                          lessonId: lesson.lessonId,
+                          profile: profile as Profile,
+                      }) ? (
                         <CheckCircled />
                     ) : (
                         <Circle />

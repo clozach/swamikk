@@ -24,6 +24,7 @@ const config: Config = {
         "@models/(.*)": "<rootDir>/models/$1",
         "@/auth": "<rootDir>/auth.ts",
         "@/ba-multitenant-adapter": "<rootDir>/ba-multitenant-adapter",
+        "^@/payments-new/(.*)$": "<rootDir>/payments-new/$1",
         "@/payments-new": "<rootDir>/payments-new",
         "@/graphql/(.*)": "<rootDir>/graphql/$1",
         "@/config/(.*)": "<rootDir>/config/$1",

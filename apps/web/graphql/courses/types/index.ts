@@ -25,6 +25,7 @@ const { course, download, blog, costPaid, costEmail, costFree } = constants;
 import sequenceTypes from "../../mails/types";
 import { getPlans } from "@/graphql/paymentplans/logic";
 import GQLContext from "@/models/GQLContext";
+import { resolvePreviewAudio } from "../preview-audio";
 
 const courseStatusType = new GraphQLEnumType({
     name: "CoursePrivacyType",
@@ -162,6 +163,11 @@ const courseType = new GraphQLObjectType({
             type: mediaTypes.mediaType,
             resolve: (course, _, context, __) => getMedia(course.featuredImage),
         },
+        previewAudio: {
+            type: mediaTypes.mediaType,
+            resolve: (course, _, context) =>
+                resolvePreviewAudio(course, context),
+        },
         groups: { type: new GraphQLList(courseGroupType) },
         pageId: { type: GraphQLString },
         firstLesson: { type: GraphQLString },
@@ -202,6 +208,7 @@ const courseUpdateInput = new GraphQLInputObjectType({
         tags: { type: new GraphQLList(GraphQLString) },
         description: { type: GraphQLString },
         featuredImage: { type: mediaTypes.mediaInputType },
+        previewAudioMediaId: { type: GraphQLString },
         leadMagnet: { type: GraphQLBoolean },
         certificate: { type: GraphQLBoolean },
         discussions: { type: GraphQLBoolean },

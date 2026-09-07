@@ -4,6 +4,7 @@
 
 import { deleteUser } from "../logic";
 import UserModel from "@models/User";
+import { MemberMimicModel } from "@/services/member-mimic/model";
 import { FeedbackModel } from "@/services/content-changes/models";
 import CourseModel from "@models/Course";
 import PageModel from "@models/Page";
@@ -132,6 +133,7 @@ describe("deleteUser - Comprehensive Test Suite", () => {
     afterEach(async () => {
         // Clean up all collections - only this test's data
         await Promise.all([
+            MemberMimicModel.deleteMany({ domain: testDomain._id }),
             FeedbackModel.deleteMany({ domain: testDomain._id }),
             UserModel.deleteMany({ domain: testDomain._id }),
             CourseModel.deleteMany({ domain: testDomain._id }),
@@ -182,6 +184,39 @@ describe("deleteUser - Comprehensive Test Suite", () => {
     // ============================================
 
     describe("Security & Validation", () => {
+        it("revokes member views involving the deleted account and retains unrelated audit records", async () => {
+            const now = new Date();
+            const makeRecord = (id: string, subjectUserId: string) => ({
+                domain: testDomain._id,
+                id: duId(id),
+                tokenHash: duId(id),
+                actorSessionHash: duId(id),
+                activeSessionKey: duId(id),
+                actorUserId: adminUser.userId,
+                subjectUserId,
+                returnTo: "/dashboard/users",
+                state: { kind: "active" },
+                createdAt: now,
+                expiresAt: new Date(now.getTime() + 60_000),
+                deleteAfter: new Date(now.getTime() + 86_400_000),
+            });
+            await MemberMimicModel.create([
+                makeRecord("target-view", targetUser.userId),
+                makeRecord("other-view", DU_OTHER_USER_ID),
+            ]);
+            await deleteUser(targetUser.userId, mockCtx);
+            const revoked = await MemberMimicModel.findOne({
+                id: duId("target-view"),
+            });
+            expect(revoked?.state.kind).toBe("revoked");
+            expect(revoked?.activeSessionKey).toBeUndefined();
+            expect(revoked?.actorUserId).toBe(adminUser.userId);
+            expect(
+                (await MemberMimicModel.findOne({ id: duId("other-view") }))
+                    ?.state.kind,
+            ).toBe("active");
+        });
+
         it("removes the deleted member's private feedback and preserves other members' comments", async () => {
             await FeedbackModel.create([
                 {

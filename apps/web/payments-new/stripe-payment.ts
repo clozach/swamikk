@@ -9,6 +9,7 @@ import {
     UIConstants,
 } from "@courselit/common-models";
 import { getUnitAmount } from "./helpers";
+import { toStripeAmount } from "./stripe-currency";
 
 const {
     payment_invalid_settings: paymentInvalidSettings,
@@ -42,7 +43,10 @@ export default class StripePayment implements Payment {
     }
 
     async initiate({ metadata, paymentPlan, product, origin }: InitiateProps) {
-        const unit_amount = getUnitAmount(paymentPlan) * 100;
+        const unit_amount = toStripeAmount(
+            getUnitAmount(paymentPlan),
+            this.siteinfo.currencyISOCode!,
+        );
         const sessionPayload: any = {
             payment_method_types: ["card"],
             line_items: [
@@ -68,6 +72,11 @@ export default class StripePayment implements Payment {
             metadata,
             allow_promotion_codes: true,
         };
+        if (sessionPayload.mode === "subscription") {
+            // Checkout metadata stays on the session unless explicitly copied
+            // to the subscription. Renewal invoices need this correlation.
+            sessionPayload.subscription_data = { metadata };
+        }
         const session =
             await this.stripe.checkout.sessions.create(sessionPayload);
 
@@ -112,8 +121,9 @@ export default class StripePayment implements Payment {
             }
         } else {
             await warn(
-                "Stripe webhook secret is not configured; skipping webhook signature verification. Set it in Settings > Payment to reject forged webhook events.",
+                "Stripe webhook secret is not configured; rejecting the webhook without changing payment or membership data.",
             );
+            return false;
         }
         if (
             event.type === "checkout.session.completed" &&
@@ -139,9 +149,12 @@ export default class StripePayment implements Payment {
         if (event.type === "checkout.session.completed") {
             metadata = (event.data.object as any).metadata;
         } else {
-            metadata = (event.data.object as any).subscription_details.metadata;
+            const invoice = event.data.object as any;
+            metadata =
+                invoice.parent?.subscription_details?.metadata ??
+                invoice.subscription_details?.metadata;
         }
-        return metadata;
+        return metadata || {};
     }
 
     getName() {
@@ -163,7 +176,13 @@ export default class StripePayment implements Payment {
     }
 
     getSubscriptionId(event: Stripe.Event): string {
-        return (event.data.object as any).subscription;
+        const object = event.data.object as any;
+        const subscription =
+            object.subscription ??
+            object.parent?.subscription_details?.subscription;
+        return typeof subscription === "string"
+            ? subscription
+            : subscription?.id;
     }
 
     async validateSubscription(subscriptionId: string) {

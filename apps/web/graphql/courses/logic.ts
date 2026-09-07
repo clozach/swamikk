@@ -1,3 +1,4 @@
+import { projectMimicCourse } from "@/services/member-mimic/course";
 /**
  * Business logic for managing courses.
  */
@@ -33,6 +34,7 @@ import {
 } from "@courselit/common-models";
 import { deleteAllLessons } from "../lessons/logic";
 import { deleteMedia, sealMedia } from "@/services/medialit";
+import { preparePreviewAudio } from "./preview-audio";
 import PageModel from "@/models/Page";
 import { getPrevNextCursor } from "../lessons/helpers";
 import { checkPermission, extractMediaIDs } from "@courselit/utils";
@@ -173,12 +175,14 @@ export const getCourse = async (
     }
 
     if (course.published) {
-        const formattedCourse = await formatCourse(
+        let formattedCourse = await formatCourse(
             course.courseId,
             ctx,
             false,
             false,
         );
+        if (ctx.memberMimic)
+            formattedCourse = await projectMimicCourse(formattedCourse, ctx);
         return asGuest
             ? { ...formattedCourse, __forcePublishedLessons: true }
             : formattedCourse;
@@ -216,10 +220,19 @@ export const createCourse = async (
 };
 
 export const updateCourse = async (
-    courseData: Partial<InternalCourse & { id: string }>,
+    courseData: Partial<
+        InternalCourse & { id: string; previewAudioMediaId: string | null }
+    >,
     ctx: GQLContext,
 ) => {
     let course = await getCourseOrThrow(undefined, ctx, courseData.id);
+    const changesPreview = Object.prototype.hasOwnProperty.call(
+        courseData,
+        "previewAudioMediaId",
+    );
+    const previewAudio = changesPreview
+        ? await preparePreviewAudio(courseData.previewAudioMediaId, ctx)
+        : undefined;
 
     if (
         typeof courseData.title === "string" &&
@@ -246,7 +259,12 @@ export const updateCourse = async (
     }
 
     for (const key of Object.keys(courseData)) {
-        if (key === "id" || key === "slug") {
+        if (
+            key === "id" ||
+            key === "slug" ||
+            key === "previewAudioMediaId" ||
+            key === "previewAudio"
+        ) {
             continue;
         }
 
@@ -265,6 +283,7 @@ export const updateCourse = async (
     }
 
     course = await validateCourse(course, ctx);
+    if (changesPreview) course.previewAudio = previewAudio;
     if (Object.prototype.hasOwnProperty.call(courseData, "description")) {
         for (const mediaId of mediaIdsMarkedForDeletion) {
             await deleteMedia(mediaId, ctx.subdomain._id);

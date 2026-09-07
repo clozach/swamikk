@@ -6,6 +6,10 @@ import User from "@models/User";
 import { auth } from "@/auth";
 import { als } from "@/async-local-storage";
 import { getCachedDomain } from "@/lib/domain-cache";
+import { hasMemberMimicCookie } from "@/services/member-mimic/constants";
+import { resolveMemberReadContext } from "@/services/member-mimic/context";
+import { prepareMimicQuery } from "@/services/member-mimic/graphql";
+import { readBoundedJson } from "@/services/content-changes/http";
 
 async function updateLastActive(user: any) {
     const dateNow = new Date();
@@ -28,10 +32,20 @@ export async function POST(req: NextRequest) {
         );
     }
 
-    const [domain, session, body] = await Promise.all([
+    let body: unknown;
+    try {
+        body = hasMemberMimicCookie(req.headers)
+            ? await readBoundedJson(req, 64_000)
+            : await req.json();
+    } catch {
+        return Response.json(
+            { errors: [{ message: "A bounded JSON query is required." }] },
+            { status: 400, headers: { "Cache-Control": "no-store" } },
+        );
+    }
+    const [domain, session] = await Promise.all([
         getCachedDomain(domainName),
         auth.api.getSession({ headers: req.headers }),
-        req.json(),
     ]);
 
     if (!domain) {
@@ -41,7 +55,11 @@ export async function POST(req: NextRequest) {
         );
     }
 
-    if (!body.hasOwnProperty("query")) {
+    if (
+        !body ||
+        typeof body !== "object" ||
+        !Object.prototype.hasOwnProperty.call(body, "query")
+    ) {
         return Response.json({ error: "Query is missing" }, { status: 400 });
     }
 
@@ -58,26 +76,66 @@ export async function POST(req: NextRequest) {
             active: true,
         });
 
-        if (user) {
+        if (user && !hasMemberMimicCookie(req.headers)) {
             updateLastActive(user);
         }
     }
 
     let query, variables;
-    if (typeof body.query === "string") {
-        query = body.query;
-        variables = body.variables;
+    const input = body as any;
+    if (typeof input.query === "string") {
+        query = input.query;
+        variables = input.variables;
+    } else if (input.query && typeof input.query === "object") {
+        query = input.query.query;
+        variables = input.query.variables;
     } else {
-        query = body.query.query;
-        variables = body.query.variables;
+        return Response.json(
+            { errors: [{ message: "Query is missing." }] },
+            { status: 400 },
+        );
     }
     const hostname = req.headers.get("host") || "";
     const protocol = req.headers.get("x-forwarded-proto") || "http";
-    const contextValue = {
+    let contextValue = {
         user,
         subdomain: domain,
         address: getAddress(hostname, protocol),
     };
+    if (hasMemberMimicCookie(req.headers)) {
+        try {
+            const resolved = await resolveMemberReadContext(
+                req.headers,
+                contextValue,
+            );
+            if (resolved.kind === "expired")
+                return Response.json(
+                    {
+                        errors: [
+                            {
+                                message:
+                                    "This member view has ended. Exit Mimic to continue.",
+                            },
+                        ],
+                    },
+                    { status: 403, headers: { "Cache-Control": "no-store" } },
+                );
+            contextValue = resolved.context;
+            query = prepareMimicQuery(query);
+        } catch {
+            return Response.json(
+                {
+                    errors: [
+                        {
+                            message:
+                                "This action or information is unavailable in read-only Member Mimic. Exit Mimic to continue.",
+                        },
+                    ],
+                },
+                { status: 403, headers: { "Cache-Control": "no-store" } },
+            );
+        }
+    }
     const response = await graphql({
         schema,
         source: query,
@@ -85,5 +143,7 @@ export async function POST(req: NextRequest) {
         contextValue,
         variableValues: variables,
     });
-    return Response.json(response);
+    return Response.json(response, {
+        headers: { "Cache-Control": "no-store" },
+    });
 }

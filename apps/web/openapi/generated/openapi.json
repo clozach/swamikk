@@ -39,6 +39,22 @@
         {
             "name": "Media Uploads",
             "description": "Generate MediaLit signatures for direct media uploads."
+        },
+        {
+            "name": "Contextual Feedback",
+            "description": "Private site feedback. Session identity supplies attribution; API keys are not accepted."
+        },
+        {
+            "name": "Content Changes",
+            "description": "Session-authenticated versioned proposals. Creating/revising is draft-only. Agent output is data; a separate approval is required to apply."
+        },
+        {
+            "name": "Member Mimic",
+            "description": "Short-lived, read-only member view with distinct administrator and member identities."
+        },
+        {
+            "name": "Payment callbacks",
+            "description": "Payment-provider callbacks, not browser actions."
         }
     ],
     "paths": {
@@ -2071,6 +2087,1905 @@
                     }
                 }
             }
+        },
+        "/api/feedback/{id}/photos/{mediaId}": {
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "mediaId",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "get": {
+                "tags": ["Contextual Feedback"],
+                "operationId": "viewFeedbackPhoto",
+                "summary": "View a private feedback attachment as an administrator",
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Image streamed with private no-store caching; attachment and tenant ownership are checked.",
+                        "content": {
+                            "image/*": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input."
+                    },
+                    "403": {
+                        "description": "Permission or same-origin check failed."
+                    },
+                    "404": {
+                        "description": "Target or feedback is unavailable."
+                    },
+                    "413": {
+                        "description": "Body exceeds 20,000 bytes (1,024 for state changes)."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded."
+                    },
+                    "503": {
+                        "description": "Unavailable; refresh status before retrying."
+                    }
+                }
+            }
+        },
+        "/api/feedback": {
+            "post": {
+                "tags": ["Contextual Feedback"],
+                "operationId": "submitContextualFeedback",
+                "summary": "Submit feedback without changing site content",
+                "security": [],
+                "description": "Public/member text; photo media IDs only for site/course administrators and the same tenant image library. Six submissions per minute per account/client. Unknown properties, including actor/user IDs, are rejected.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["text", "target"],
+                                "properties": {
+                                    "text": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 4000
+                                    },
+                                    "target": {
+                                        "oneOf": [
+                                            {
+                                                "type": "object",
+                                                "additionalProperties": false,
+                                                "required": [
+                                                    "kind",
+                                                    "lessonId",
+                                                    "field"
+                                                ],
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": ["lesson"]
+                                                    },
+                                                    "lessonId": {
+                                                        "type": "string",
+                                                        "maxLength": 128
+                                                    },
+                                                    "field": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "title",
+                                                            "content"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "type": "object",
+                                                "additionalProperties": false,
+                                                "required": [
+                                                    "kind",
+                                                    "path",
+                                                    "componentId"
+                                                ],
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": ["page"]
+                                                    },
+                                                    "path": {
+                                                        "type": "string",
+                                                        "maxLength": 512,
+                                                        "description": "Same-site path without query or fragment; excludes /api/."
+                                                    },
+                                                    "componentId": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 512,
+                                                        "description": "Display locator only. Never evaluated."
+                                                    },
+                                                    "label": {
+                                                        "type": "string",
+                                                        "maxLength": 160
+                                                    }
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    "photoMediaIds": {
+                                        "type": "array",
+                                        "maxItems": 4,
+                                        "items": {
+                                            "type": "string",
+                                            "maxLength": 128
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Stored feedback; no content applied or message sent.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "feedback": {
+                                            "type": "object",
+                                            "required": [
+                                                "id",
+                                                "text",
+                                                "target",
+                                                "actor",
+                                                "photoMediaIds",
+                                                "state",
+                                                "createdAt",
+                                                "updatedAt"
+                                            ],
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "text": {
+                                                    "type": "string"
+                                                },
+                                                "target": {
+                                                    "oneOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "additionalProperties": false,
+                                                            "required": [
+                                                                "kind",
+                                                                "lessonId",
+                                                                "field"
+                                                            ],
+                                                            "properties": {
+                                                                "kind": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "lesson"
+                                                                    ]
+                                                                },
+                                                                "lessonId": {
+                                                                    "type": "string",
+                                                                    "maxLength": 128
+                                                                },
+                                                                "field": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "title",
+                                                                        "content"
+                                                                    ]
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "additionalProperties": false,
+                                                            "required": [
+                                                                "kind",
+                                                                "path",
+                                                                "componentId"
+                                                            ],
+                                                            "properties": {
+                                                                "kind": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "page"
+                                                                    ]
+                                                                },
+                                                                "path": {
+                                                                    "type": "string",
+                                                                    "maxLength": 512,
+                                                                    "description": "Same-site path without query or fragment; excludes /api/."
+                                                                },
+                                                                "componentId": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 512,
+                                                                    "description": "Display locator only. Never evaluated."
+                                                                },
+                                                                "label": {
+                                                                    "type": "string",
+                                                                    "maxLength": 160
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                "actor": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "visitor",
+                                                                "member",
+                                                                "admin"
+                                                            ]
+                                                        },
+                                                        "userId": {
+                                                            "type": "string"
+                                                        }
+                                                    }
+                                                },
+                                                "photoMediaIds": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "state": {
+                                                    "type": "string",
+                                                    "enum": ["open", "closed"]
+                                                },
+                                                "createdAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updatedAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            }
+                                        },
+                                        "prompt": {
+                                            "type": "string",
+                                            "description": "Only returned to a feedback administrator."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input."
+                    },
+                    "403": {
+                        "description": "Permission or same-origin check failed."
+                    },
+                    "404": {
+                        "description": "Target or feedback is unavailable."
+                    },
+                    "413": {
+                        "description": "Body exceeds 20,000 bytes (1,024 for state changes)."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded."
+                    },
+                    "503": {
+                        "description": "Unavailable; refresh status before retrying."
+                    }
+                }
+            },
+            "get": {
+                "tags": ["Contextual Feedback"],
+                "operationId": "listContextualFeedback",
+                "summary": "List the newest 50 permitted feedback records",
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "description": "Administrators see site feedback; members see only their own. Visitors cannot list records.",
+                "responses": {
+                    "200": {
+                        "description": "Private feedback list.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "feedback": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "required": [
+                                                    "id",
+                                                    "text",
+                                                    "target",
+                                                    "actor",
+                                                    "photoMediaIds",
+                                                    "state",
+                                                    "createdAt",
+                                                    "updatedAt"
+                                                ],
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "text": {
+                                                        "type": "string"
+                                                    },
+                                                    "target": {
+                                                        "oneOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "additionalProperties": false,
+                                                                "required": [
+                                                                    "kind",
+                                                                    "lessonId",
+                                                                    "field"
+                                                                ],
+                                                                "properties": {
+                                                                    "kind": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "lesson"
+                                                                        ]
+                                                                    },
+                                                                    "lessonId": {
+                                                                        "type": "string",
+                                                                        "maxLength": 128
+                                                                    },
+                                                                    "field": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "title",
+                                                                            "content"
+                                                                        ]
+                                                                    }
+                                                                }
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "additionalProperties": false,
+                                                                "required": [
+                                                                    "kind",
+                                                                    "path",
+                                                                    "componentId"
+                                                                ],
+                                                                "properties": {
+                                                                    "kind": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "page"
+                                                                        ]
+                                                                    },
+                                                                    "path": {
+                                                                        "type": "string",
+                                                                        "maxLength": 512,
+                                                                        "description": "Same-site path without query or fragment; excludes /api/."
+                                                                    },
+                                                                    "componentId": {
+                                                                        "type": "string",
+                                                                        "minLength": 1,
+                                                                        "maxLength": 512,
+                                                                        "description": "Display locator only. Never evaluated."
+                                                                    },
+                                                                    "label": {
+                                                                        "type": "string",
+                                                                        "maxLength": 160
+                                                                    }
+                                                                }
+                                                            }
+                                                        ]
+                                                    },
+                                                    "actor": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "kind": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "visitor",
+                                                                    "member",
+                                                                    "admin"
+                                                                ]
+                                                            },
+                                                            "userId": {
+                                                                "type": "string"
+                                                            }
+                                                        }
+                                                    },
+                                                    "photoMediaIds": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "state": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "open",
+                                                            "closed"
+                                                        ]
+                                                    },
+                                                    "createdAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updatedAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input."
+                    },
+                    "403": {
+                        "description": "Permission or same-origin check failed."
+                    },
+                    "404": {
+                        "description": "Target or feedback is unavailable."
+                    },
+                    "413": {
+                        "description": "Body exceeds 20,000 bytes (1,024 for state changes)."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded."
+                    },
+                    "503": {
+                        "description": "Unavailable; refresh status before retrying."
+                    }
+                }
+            }
+        },
+        "/api/feedback/{id}": {
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "get": {
+                "tags": ["Contextual Feedback"],
+                "operationId": "getContextualFeedback",
+                "summary": "Read feedback and an admin-only preparation prompt",
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Permitted record.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "feedback": {
+                                            "type": "object",
+                                            "required": [
+                                                "id",
+                                                "text",
+                                                "target",
+                                                "actor",
+                                                "photoMediaIds",
+                                                "state",
+                                                "createdAt",
+                                                "updatedAt"
+                                            ],
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "text": {
+                                                    "type": "string"
+                                                },
+                                                "target": {
+                                                    "oneOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "additionalProperties": false,
+                                                            "required": [
+                                                                "kind",
+                                                                "lessonId",
+                                                                "field"
+                                                            ],
+                                                            "properties": {
+                                                                "kind": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "lesson"
+                                                                    ]
+                                                                },
+                                                                "lessonId": {
+                                                                    "type": "string",
+                                                                    "maxLength": 128
+                                                                },
+                                                                "field": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "title",
+                                                                        "content"
+                                                                    ]
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "additionalProperties": false,
+                                                            "required": [
+                                                                "kind",
+                                                                "path",
+                                                                "componentId"
+                                                            ],
+                                                            "properties": {
+                                                                "kind": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "page"
+                                                                    ]
+                                                                },
+                                                                "path": {
+                                                                    "type": "string",
+                                                                    "maxLength": 512,
+                                                                    "description": "Same-site path without query or fragment; excludes /api/."
+                                                                },
+                                                                "componentId": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 512,
+                                                                    "description": "Display locator only. Never evaluated."
+                                                                },
+                                                                "label": {
+                                                                    "type": "string",
+                                                                    "maxLength": 160
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                "actor": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "visitor",
+                                                                "member",
+                                                                "admin"
+                                                            ]
+                                                        },
+                                                        "userId": {
+                                                            "type": "string"
+                                                        }
+                                                    }
+                                                },
+                                                "photoMediaIds": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "state": {
+                                                    "type": "string",
+                                                    "enum": ["open", "closed"]
+                                                },
+                                                "createdAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updatedAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            }
+                                        },
+                                        "prompt": {
+                                            "type": "string",
+                                            "description": "Only returned to a feedback administrator."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input."
+                    },
+                    "403": {
+                        "description": "Permission or same-origin check failed."
+                    },
+                    "404": {
+                        "description": "Target or feedback is unavailable."
+                    },
+                    "413": {
+                        "description": "Body exceeds 20,000 bytes (1,024 for state changes)."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded."
+                    },
+                    "503": {
+                        "description": "Unavailable; refresh status before retrying."
+                    }
+                }
+            },
+            "post": {
+                "tags": ["Contextual Feedback"],
+                "operationId": "setContextualFeedbackState",
+                "summary": "Close or reopen feedback as an administrator",
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["action"],
+                                "properties": {
+                                    "action": {
+                                        "type": "string",
+                                        "enum": ["close", "reopen"]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated. Closing schedules deletion after 90 days; reopening clears expiry.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "feedback": {
+                                            "type": "object",
+                                            "required": [
+                                                "id",
+                                                "text",
+                                                "target",
+                                                "actor",
+                                                "photoMediaIds",
+                                                "state",
+                                                "createdAt",
+                                                "updatedAt"
+                                            ],
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "text": {
+                                                    "type": "string"
+                                                },
+                                                "target": {
+                                                    "oneOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "additionalProperties": false,
+                                                            "required": [
+                                                                "kind",
+                                                                "lessonId",
+                                                                "field"
+                                                            ],
+                                                            "properties": {
+                                                                "kind": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "lesson"
+                                                                    ]
+                                                                },
+                                                                "lessonId": {
+                                                                    "type": "string",
+                                                                    "maxLength": 128
+                                                                },
+                                                                "field": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "title",
+                                                                        "content"
+                                                                    ]
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "additionalProperties": false,
+                                                            "required": [
+                                                                "kind",
+                                                                "path",
+                                                                "componentId"
+                                                            ],
+                                                            "properties": {
+                                                                "kind": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "page"
+                                                                    ]
+                                                                },
+                                                                "path": {
+                                                                    "type": "string",
+                                                                    "maxLength": 512,
+                                                                    "description": "Same-site path without query or fragment; excludes /api/."
+                                                                },
+                                                                "componentId": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 512,
+                                                                    "description": "Display locator only. Never evaluated."
+                                                                },
+                                                                "label": {
+                                                                    "type": "string",
+                                                                    "maxLength": 160
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                "actor": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "visitor",
+                                                                "member",
+                                                                "admin"
+                                                            ]
+                                                        },
+                                                        "userId": {
+                                                            "type": "string"
+                                                        }
+                                                    }
+                                                },
+                                                "photoMediaIds": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "state": {
+                                                    "type": "string",
+                                                    "enum": ["open", "closed"]
+                                                },
+                                                "createdAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updatedAt": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            }
+                                        },
+                                        "prompt": {
+                                            "type": "string",
+                                            "description": "Only returned to a feedback administrator."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input."
+                    },
+                    "403": {
+                        "description": "Permission or same-origin check failed."
+                    },
+                    "404": {
+                        "description": "Target or feedback is unavailable."
+                    },
+                    "413": {
+                        "description": "Body exceeds 20,000 bytes (1,024 for state changes)."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded."
+                    },
+                    "503": {
+                        "description": "Unavailable; refresh status before retrying."
+                    }
+                }
+            },
+            "delete": {
+                "tags": ["Contextual Feedback"],
+                "operationId": "deleteContextualFeedback",
+                "summary": "Remove own feedback or remove feedback as an administrator",
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted. Referenced media library assets are retained.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "deleted": {
+                                            "type": "boolean"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input."
+                    },
+                    "403": {
+                        "description": "Permission or same-origin check failed."
+                    },
+                    "404": {
+                        "description": "Target or feedback is unavailable."
+                    },
+                    "413": {
+                        "description": "Body exceeds 20,000 bytes (1,024 for state changes)."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded."
+                    },
+                    "503": {
+                        "description": "Unavailable; refresh status before retrying."
+                    }
+                }
+            }
+        },
+        "/api/content-changes": {
+            "post": {
+                "tags": ["Content Changes"],
+                "operationId": "prepareContentChange",
+                "summary": "Capture baseline and prepare a text lesson change",
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["target", "patch", "summary"],
+                                "properties": {
+                                    "feedbackId": {
+                                        "type": "string",
+                                        "maxLength": 128
+                                    },
+                                    "target": {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": ["kind", "lessonId"],
+                                        "properties": {
+                                            "kind": {
+                                                "type": "string",
+                                                "enum": ["lesson"]
+                                            },
+                                            "lessonId": {
+                                                "type": "string",
+                                                "maxLength": 128
+                                            }
+                                        }
+                                    },
+                                    "patch": {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "minProperties": 1,
+                                        "properties": {
+                                            "title": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 240
+                                            },
+                                            "content": {
+                                                "type": "object",
+                                                "additionalProperties": false,
+                                                "required": ["type", "content"],
+                                                "properties": {
+                                                    "type": {
+                                                        "type": "string",
+                                                        "enum": ["doc"]
+                                                    },
+                                                    "content": {
+                                                        "type": "array",
+                                                        "maxItems": 1000,
+                                                        "items": {
+                                                            "type": "object"
+                                                        }
+                                                    }
+                                                },
+                                                "description": "Safe ProseMirror text structure. Existing opaque/media nodes must be retained unchanged; new HTML/media is rejected."
+                                            }
+                                        }
+                                    },
+                                    "summary": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 2000
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Current proposal/result. Inspect state.kind; HTTP success alone does not mean applied.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "change": {
+                                            "type": "object",
+                                            "description": "ContentChange from @courselit/common-models: id, target, version, summary, patch, baseline {revision,fingerprint,snapshot,courseId,published}, preview {before,after}, previewHash, preparedBy/At, history, approvals, state, timestamps. state is discriminated by kind; applying/uncertain/applied include operationId and approval; applied includes appliedAt/appliedRevision.",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "version": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "previewHash": {
+                                                    "type": "string",
+                                                    "pattern": "^[a-f0-9]{64}$"
+                                                },
+                                                "state": {
+                                                    "type": "object",
+                                                    "required": ["kind"],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "proposed",
+                                                                "applying",
+                                                                "applied",
+                                                                "stale",
+                                                                "failed",
+                                                                "uncertain",
+                                                                "rejected"
+                                                            ]
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Draft captured; lesson is unchanged.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "change": {
+                                            "type": "object",
+                                            "description": "ContentChange from @courselit/common-models: id, target, version, summary, patch, baseline {revision,fingerprint,snapshot,courseId,published}, preview {before,after}, previewHash, preparedBy/At, history, approvals, state, timestamps. state is discriminated by kind; applying/uncertain/applied include operationId and approval; applied includes appliedAt/appliedRevision.",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "version": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "previewHash": {
+                                                    "type": "string",
+                                                    "pattern": "^[a-f0-9]{64}$"
+                                                },
+                                                "state": {
+                                                    "type": "object",
+                                                    "required": ["kind"],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "proposed",
+                                                                "applying",
+                                                                "applied",
+                                                                "stale",
+                                                                "failed",
+                                                                "uncertain",
+                                                                "rejected"
+                                                            ]
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid/unsupported proposal."
+                    },
+                    "403": {
+                        "description": "Sign-in, editing permission, or same-origin check failed."
+                    },
+                    "404": {
+                        "description": "Proposal/target unavailable or not permitted."
+                    },
+                    "409": {
+                        "description": "Stale approval, unsettled target operation, or unsupported recovery/removal."
+                    },
+                    "413": {
+                        "description": "Body exceeds 131,072 bytes."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded."
+                    },
+                    "503": {
+                        "description": "Unavailable; fetch/reconcile the existing proposal before retrying."
+                    }
+                }
+            },
+            "get": {
+                "tags": ["Content Changes"],
+                "operationId": "listContentChanges",
+                "summary": "List newest 50 site proposals as an administrator",
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Proposals, newest first.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "changes": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "description": "ContentChange from @courselit/common-models: id, target, version, summary, patch, baseline {revision,fingerprint,snapshot,courseId,published}, preview {before,after}, previewHash, preparedBy/At, history, approvals, state, timestamps. state is discriminated by kind; applying/uncertain/applied include operationId and approval; applied includes appliedAt/appliedRevision.",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "version": {
+                                                        "type": "integer",
+                                                        "minimum": 1
+                                                    },
+                                                    "previewHash": {
+                                                        "type": "string",
+                                                        "pattern": "^[a-f0-9]{64}$"
+                                                    },
+                                                    "state": {
+                                                        "type": "object",
+                                                        "required": ["kind"],
+                                                        "properties": {
+                                                            "kind": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "proposed",
+                                                                    "applying",
+                                                                    "applied",
+                                                                    "stale",
+                                                                    "failed",
+                                                                    "uncertain",
+                                                                    "rejected"
+                                                                ]
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid/unsupported proposal."
+                    },
+                    "403": {
+                        "description": "Sign-in, editing permission, or same-origin check failed."
+                    },
+                    "404": {
+                        "description": "Proposal/target unavailable or not permitted."
+                    },
+                    "409": {
+                        "description": "Stale approval, unsettled target operation, or unsupported recovery/removal."
+                    },
+                    "413": {
+                        "description": "Body exceeds 131,072 bytes."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded."
+                    },
+                    "503": {
+                        "description": "Unavailable; fetch/reconcile the existing proposal before retrying."
+                    }
+                }
+            }
+        },
+        "/api/content-changes/{id}": {
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "get": {
+                "tags": ["Content Changes"],
+                "operationId": "getContentChange",
+                "summary": "Read exact preview and current application state",
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Current proposal/result. Inspect state.kind; HTTP success alone does not mean applied.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "change": {
+                                            "type": "object",
+                                            "description": "ContentChange from @courselit/common-models: id, target, version, summary, patch, baseline {revision,fingerprint,snapshot,courseId,published}, preview {before,after}, previewHash, preparedBy/At, history, approvals, state, timestamps. state is discriminated by kind; applying/uncertain/applied include operationId and approval; applied includes appliedAt/appliedRevision.",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "version": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "previewHash": {
+                                                    "type": "string",
+                                                    "pattern": "^[a-f0-9]{64}$"
+                                                },
+                                                "state": {
+                                                    "type": "object",
+                                                    "required": ["kind"],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "proposed",
+                                                                "applying",
+                                                                "applied",
+                                                                "stale",
+                                                                "failed",
+                                                                "uncertain",
+                                                                "rejected"
+                                                            ]
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid/unsupported proposal."
+                    },
+                    "403": {
+                        "description": "Sign-in, editing permission, or same-origin check failed."
+                    },
+                    "404": {
+                        "description": "Proposal/target unavailable or not permitted."
+                    },
+                    "409": {
+                        "description": "Stale approval, unsettled target operation, or unsupported recovery/removal."
+                    },
+                    "413": {
+                        "description": "Body exceeds 131,072 bytes."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded."
+                    },
+                    "503": {
+                        "description": "Unavailable; fetch/reconcile the existing proposal before retrying."
+                    }
+                }
+            },
+            "post": {
+                "tags": ["Content Changes"],
+                "operationId": "actOnContentChange",
+                "summary": "Revise, approve/apply, reject, reconcile, or prepare recovery",
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "description": "Approve must echo the displayed version and previewHash. Duplicate approval never applies twice. Reconcile reads the atomic receipt or fences an interrupted write without changing content. Revert only prepares a separate reverse proposal requiring its own approval; later lesson edits prevent automatic recovery.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "oneOf": [
+                                    {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": [
+                                            "action",
+                                            "version",
+                                            "patch",
+                                            "summary"
+                                        ],
+                                        "properties": {
+                                            "action": {
+                                                "type": "string",
+                                                "enum": ["revise"]
+                                            },
+                                            "version": {
+                                                "type": "integer",
+                                                "minimum": 1
+                                            },
+                                            "patch": {
+                                                "type": "object",
+                                                "additionalProperties": false,
+                                                "minProperties": 1,
+                                                "properties": {
+                                                    "title": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 240
+                                                    },
+                                                    "content": {
+                                                        "type": "object",
+                                                        "additionalProperties": false,
+                                                        "required": [
+                                                            "type",
+                                                            "content"
+                                                        ],
+                                                        "properties": {
+                                                            "type": {
+                                                                "type": "string",
+                                                                "enum": ["doc"]
+                                                            },
+                                                            "content": {
+                                                                "type": "array",
+                                                                "maxItems": 1000,
+                                                                "items": {
+                                                                    "type": "object"
+                                                                }
+                                                            }
+                                                        },
+                                                        "description": "Safe ProseMirror text structure. Existing opaque/media nodes must be retained unchanged; new HTML/media is rejected."
+                                                    }
+                                                }
+                                            },
+                                            "summary": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 2000
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": [
+                                            "action",
+                                            "version",
+                                            "previewHash"
+                                        ],
+                                        "properties": {
+                                            "action": {
+                                                "type": "string",
+                                                "enum": ["approve"]
+                                            },
+                                            "version": {
+                                                "type": "integer",
+                                                "minimum": 1
+                                            },
+                                            "previewHash": {
+                                                "type": "string",
+                                                "pattern": "^[a-f0-9]{64}$"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": ["action", "version"],
+                                        "properties": {
+                                            "action": {
+                                                "type": "string",
+                                                "enum": ["reject"]
+                                            },
+                                            "version": {
+                                                "type": "integer",
+                                                "minimum": 1
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": ["action"],
+                                        "properties": {
+                                            "action": {
+                                                "type": "string",
+                                                "enum": ["reconcile"]
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": ["action", "version"],
+                                        "properties": {
+                                            "action": {
+                                                "type": "string",
+                                                "enum": ["revert"]
+                                            },
+                                            "version": {
+                                                "type": "integer",
+                                                "minimum": 1
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Current proposal/result. Inspect state.kind; HTTP success alone does not mean applied.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "change": {
+                                            "type": "object",
+                                            "description": "ContentChange from @courselit/common-models: id, target, version, summary, patch, baseline {revision,fingerprint,snapshot,courseId,published}, preview {before,after}, previewHash, preparedBy/At, history, approvals, state, timestamps. state is discriminated by kind; applying/uncertain/applied include operationId and approval; applied includes appliedAt/appliedRevision.",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "version": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "previewHash": {
+                                                    "type": "string",
+                                                    "pattern": "^[a-f0-9]{64}$"
+                                                },
+                                                "state": {
+                                                    "type": "object",
+                                                    "required": ["kind"],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "proposed",
+                                                                "applying",
+                                                                "applied",
+                                                                "stale",
+                                                                "failed",
+                                                                "uncertain",
+                                                                "rejected"
+                                                            ]
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid/unsupported proposal."
+                    },
+                    "403": {
+                        "description": "Sign-in, editing permission, or same-origin check failed."
+                    },
+                    "404": {
+                        "description": "Proposal/target unavailable or not permitted."
+                    },
+                    "409": {
+                        "description": "Stale approval, unsettled target operation, or unsupported recovery/removal."
+                    },
+                    "413": {
+                        "description": "Body exceeds 131,072 bytes."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded."
+                    },
+                    "503": {
+                        "description": "Unavailable; fetch/reconcile the existing proposal before retrying."
+                    }
+                }
+            },
+            "delete": {
+                "tags": ["Content Changes"],
+                "operationId": "deleteUnappliedContentChange",
+                "summary": "Remove an unapplied settled proposal as an administrator",
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "description": "Applied snapshots and unresolved operations are retained for audit/recovery.",
+                "responses": {
+                    "200": {
+                        "description": "Removed.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "deleted": {
+                                            "type": "boolean"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid/unsupported proposal."
+                    },
+                    "403": {
+                        "description": "Sign-in, editing permission, or same-origin check failed."
+                    },
+                    "404": {
+                        "description": "Proposal/target unavailable or not permitted."
+                    },
+                    "409": {
+                        "description": "Stale approval, unsettled target operation, or unsupported recovery/removal."
+                    },
+                    "413": {
+                        "description": "Body exceeds 131,072 bytes."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded."
+                    },
+                    "503": {
+                        "description": "Unavailable; fetch/reconcile the existing proposal before retrying."
+                    }
+                }
+            }
+        },
+        "/api/member-mimic": {
+            "get": {
+                "tags": ["Member Mimic"],
+                "operationId": "getMemberMimic",
+                "summary": "Verify the current member view",
+                "description": "Rechecks tenant, actor session, permission, subject and expiry. Invalid markers return expired, never administrator fallback.",
+                "responses": {
+                    "200": {
+                        "description": "Current view; token is never returned.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "mimic": {
+                                            "oneOf": [
+                                                {
+                                                    "type": "object",
+                                                    "required": ["kind"],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": ["inactive"]
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "kind",
+                                                        "returnTo"
+                                                    ],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": ["expired"]
+                                                        },
+                                                        "returnTo": {
+                                                            "type": "string"
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "kind",
+                                                        "actor",
+                                                        "subject",
+                                                        "expiresAt",
+                                                        "returnTo"
+                                                    ],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": ["active"]
+                                                        },
+                                                        "actor": {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "userId",
+                                                                "name",
+                                                                "email"
+                                                            ],
+                                                            "properties": {
+                                                                "userId": {
+                                                                    "type": "string"
+                                                                },
+                                                                "name": {
+                                                                    "type": "string"
+                                                                },
+                                                                "email": {
+                                                                    "type": "string",
+                                                                    "format": "email"
+                                                                }
+                                                            }
+                                                        },
+                                                        "subject": {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "userId",
+                                                                "name",
+                                                                "email"
+                                                            ],
+                                                            "properties": {
+                                                                "userId": {
+                                                                    "type": "string"
+                                                                },
+                                                                "name": {
+                                                                    "type": "string"
+                                                                },
+                                                                "email": {
+                                                                    "type": "string",
+                                                                    "format": "email"
+                                                                }
+                                                            }
+                                                        },
+                                                        "expiresAt": {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        },
+                                                        "returnTo": {
+                                                            "type": "string"
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid or oversized JSON."
+                    },
+                    "403": {
+                        "description": "Use this site's Origin and an authorized administrator session."
+                    },
+                    "404": {
+                        "description": "Site or member is unavailable."
+                    },
+                    "429": {
+                        "description": "Too many starts; retry after the window."
+                    },
+                    "503": {
+                        "description": "Status is unavailable; no success is assumed."
+                    }
+                }
+            },
+            "post": {
+                "tags": ["Member Mimic"],
+                "operationId": "startMemberMimic",
+                "summary": "Open the member's normal read-only profile",
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "description": "Requires user:manage and same-origin JSON. Sets an HttpOnly SameSite Strict cookie and revokes the prior view in the same actor session. Authority expires after 15 minutes; the marker remains for explicit Exit. The body is limited to 2 KB; starts to 12/minute.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["userId"],
+                                "properties": {
+                                    "userId": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 128,
+                                        "pattern": "^[a-zA-Z0-9_-]+$"
+                                    },
+                                    "returnTo": {
+                                        "type": "string",
+                                        "maxLength": 1024,
+                                        "description": "Only /dashboard/users plus its filter query is accepted."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "View created and cookie set.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "mimic": {
+                                            "oneOf": [
+                                                {
+                                                    "type": "object",
+                                                    "required": ["kind"],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": ["inactive"]
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "kind",
+                                                        "returnTo"
+                                                    ],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": ["expired"]
+                                                        },
+                                                        "returnTo": {
+                                                            "type": "string"
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "kind",
+                                                        "actor",
+                                                        "subject",
+                                                        "expiresAt",
+                                                        "returnTo"
+                                                    ],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": ["active"]
+                                                        },
+                                                        "actor": {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "userId",
+                                                                "name",
+                                                                "email"
+                                                            ],
+                                                            "properties": {
+                                                                "userId": {
+                                                                    "type": "string"
+                                                                },
+                                                                "name": {
+                                                                    "type": "string"
+                                                                },
+                                                                "email": {
+                                                                    "type": "string",
+                                                                    "format": "email"
+                                                                }
+                                                            }
+                                                        },
+                                                        "subject": {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "userId",
+                                                                "name",
+                                                                "email"
+                                                            ],
+                                                            "properties": {
+                                                                "userId": {
+                                                                    "type": "string"
+                                                                },
+                                                                "name": {
+                                                                    "type": "string"
+                                                                },
+                                                                "email": {
+                                                                    "type": "string",
+                                                                    "format": "email"
+                                                                }
+                                                            }
+                                                        },
+                                                        "expiresAt": {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        },
+                                                        "returnTo": {
+                                                            "type": "string"
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "redirectTo": {
+                                            "type": "string",
+                                            "enum": ["/dashboard/profile"]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid or oversized JSON."
+                    },
+                    "403": {
+                        "description": "Use this site's Origin and an authorized administrator session."
+                    },
+                    "404": {
+                        "description": "Site or member is unavailable."
+                    },
+                    "429": {
+                        "description": "Too many starts; retry after the window."
+                    },
+                    "503": {
+                        "description": "Status is unavailable; no success is assumed."
+                    }
+                }
+            },
+            "delete": {
+                "tags": ["Member Mimic"],
+                "operationId": "exitMemberMimic",
+                "summary": "Revoke and leave the member view",
+                "description": "Requires this site's Origin and application/json. Clears even an expired or malformed marker; does not require a still-active member-view authority.",
+                "responses": {
+                    "200": {
+                        "description": "Server authority revoked and browser cookie cleared.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "redirectTo": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid or oversized JSON."
+                    },
+                    "403": {
+                        "description": "Use this site's Origin and an authorized administrator session."
+                    },
+                    "404": {
+                        "description": "Site or member is unavailable."
+                    },
+                    "429": {
+                        "description": "Too many starts; retry after the window."
+                    },
+                    "503": {
+                        "description": "Status is unavailable; no success is assumed."
+                    }
+                }
+            }
+        },
+        "/api/payment/webhook": {
+            "post": {
+                "tags": ["Payment callbacks"],
+                "summary": "Reconcile a signed payment notification",
+                "description": "Stripe requires a configured signing secret and validates the unmodified request body. Completed paid checkouts and paid renewals settle one tenant-scoped invoice per provider object. Old and current Stripe invoice metadata shapes are accepted. Cancellation/refund notifications are not yet handled by this route.",
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "Stripe-Signature",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Required when Stripe is the configured provider."
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Payment recorded and membership reconciled, or recorded without activating an inactive subscription."
+                    },
+                    "400": {
+                        "description": "Invalid signature, unpaid/unsupported notification, malformed data or unsuccessful reconciliation; no success acknowledged."
+                    },
+                    "404": {
+                        "description": "Tenant or matching membership not found."
+                    },
+                    "409": {
+                        "description": "Notification belongs to a different subscription."
+                    },
+                    "503": {
+                        "description": "Stripe signing secret is missing; no payment data changed."
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -3042,6 +4957,12 @@
         },
         "parameters": {},
         "securitySchemes": {
+            "CourseLitSession": {
+                "type": "apiKey",
+                "in": "cookie",
+                "name": "courselit.session_token",
+                "description": "Existing CourseLit browser session (secure cookie may have __Secure- prefix). Writes require same-origin Origin and application/json."
+            },
             "ApiKeyAuth": {
                 "type": "apiKey",
                 "in": "header",

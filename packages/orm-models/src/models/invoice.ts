@@ -25,6 +25,7 @@ export const InvoiceSchema = new mongoose.Schema<InternalInvoice>(
         },
         paymentProcessor: { type: String, required: true },
         paymentProcessorEntityId: { type: String },
+        paymentMode: { type: String, enum: ["test", "live"] },
         paymentProcessorTransactionId: { type: String },
         currencyISOCode: { type: String, required: true },
     },
