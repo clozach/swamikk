@@ -23,6 +23,7 @@ export default function NextThemeSwitcher({
                     onClick={() => setTheme(isDark ? "light" : "dark")}
                     variant={variant}
                     size="icon"
+                    aria-label={BTN_TOGGLE_THEME}
                 >
                     {isDark ? (
                         <Sun className="w-4 h-4" />

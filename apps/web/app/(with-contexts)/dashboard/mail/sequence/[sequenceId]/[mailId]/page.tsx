@@ -11,7 +11,10 @@ import {
 } from "@/components/ui/tooltip";
 import { LogOut } from "lucide-react";
 import Link from "next/link";
-import { EMAIL_EDITOR_EMAIL_EDIT_HEADER } from "@ui-config/strings";
+import {
+    BTN_EXIT_COURSE,
+    EMAIL_EDITOR_EMAIL_EDIT_HEADER,
+} from "@ui-config/strings";
 
 export default function EmailEditorPage(props: {
     params: Promise<{
@@ -52,14 +55,21 @@ const EditorLayout = ({
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Link href={redirectTo}>
-                                        <Button2 variant="outline" size="icon">
+                                    <Button2
+                                        variant="outline"
+                                        size="icon"
+                                        asChild
+                                    >
+                                        <Link
+                                            href={redirectTo}
+                                            aria-label={BTN_EXIT_COURSE}
+                                        >
                                             <LogOut className="h-4 w-4" />
-                                        </Button2>
-                                    </Link>
+                                        </Link>
+                                    </Button2>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                    <p>Exit</p>
+                                    <p>{BTN_EXIT_COURSE}</p>
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>

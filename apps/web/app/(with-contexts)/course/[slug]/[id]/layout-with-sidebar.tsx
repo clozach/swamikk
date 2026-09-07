@@ -203,9 +203,12 @@ export default function ProductPage({
                         )}
                         <NextThemeSwitcher variant="ghost" />
                         <Tooltip>
-                            <TooltipTrigger>
+                            <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" asChild>
-                                    <Link href={exitPath}>
+                                    <Link
+                                        href={exitPath}
+                                        aria-label={BTN_EXIT_COURSE_TOOLTIP}
+                                    >
                                         <LogOutIcon />
                                     </Link>
                                 </Button>

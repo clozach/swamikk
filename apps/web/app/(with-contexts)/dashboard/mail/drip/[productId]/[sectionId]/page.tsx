@@ -14,6 +14,7 @@ import useProduct from "@/hooks/use-product";
 import { AddressContext } from "@components/contexts";
 import { useContext, useMemo, use } from "react";
 import { truncate } from "@ui-lib/utils";
+import { BTN_EXIT_COURSE } from "@ui-config/strings";
 
 export default function DripEmailEditorPage(props: {
     params: Promise<{
@@ -72,14 +73,21 @@ const EditorLayout = ({
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Link href={redirectTo}>
-                                        <Button2 variant="outline" size="icon">
+                                    <Button2
+                                        variant="outline"
+                                        size="icon"
+                                        asChild
+                                    >
+                                        <Link
+                                            href={redirectTo}
+                                            aria-label={BTN_EXIT_COURSE}
+                                        >
                                             <LogOut className="h-4 w-4" />
-                                        </Button2>
-                                    </Link>
+                                        </Link>
+                                    </Button2>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                    <p>Exit</p>
+                                    <p>{BTN_EXIT_COURSE}</p>
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>

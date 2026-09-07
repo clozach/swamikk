@@ -690,11 +690,7 @@ export default function PageEditor({
                                     </Tooltip>
                                 </TooltipProvider> */}
                                 <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <NextThemeSwitcher />
-                                        </TooltipTrigger>
-                                    </Tooltip>
+                                    <NextThemeSwitcher />
                                 </TooltipProvider>
                                 <TooltipProvider>
                                     <Tooltip>
@@ -705,6 +701,9 @@ export default function PageEditor({
                                                 }
                                                 variant="outline"
                                                 size="icon"
+                                                aria-label={
+                                                    EDIT_PAGE_BUTTON_THEME
+                                                }
                                             >
                                                 <Palette className="h-4 w-4" />
                                             </Button2>
@@ -723,6 +722,9 @@ export default function PageEditor({
                                                 }
                                                 variant="outline"
                                                 size="icon"
+                                                aria-label={
+                                                    EDIT_PAGE_BUTTON_SEO
+                                                }
                                             >
                                                 <Earth className="h-4 w-4" />
                                             </Button2>
@@ -752,17 +754,21 @@ export default function PageEditor({
                                 <TooltipProvider>
                                     <Tooltip>
                                         <TooltipTrigger asChild>
-                                            <a
-                                                href={`/p/${page.pageId}`}
-                                                target="_blank"
+                                            <Button2
+                                                variant="outline"
+                                                size="icon"
+                                                asChild
                                             >
-                                                <Button2
-                                                    variant="outline"
-                                                    size="icon"
+                                                <a
+                                                    href={`/p/${page.pageId}`}
+                                                    target="_blank"
+                                                    aria-label={
+                                                        EDIT_PAGE_BUTTON_VIEW
+                                                    }
                                                 >
                                                     <Eye className="h-4 w-4" />
-                                                </Button2>
-                                            </a>
+                                                </a>
+                                            </Button2>
                                         </TooltipTrigger>
                                         <TooltipContent>
                                             <p>{EDIT_PAGE_BUTTON_VIEW}</p>
@@ -772,21 +778,25 @@ export default function PageEditor({
                                 <TooltipProvider>
                                     <Tooltip>
                                         <TooltipTrigger asChild>
-                                            <Link
-                                                href={
-                                                    redirectTo ||
-                                                    (page.type === "product"
-                                                        ? `/dashboard/product/${page.entityId}`
-                                                        : `/dashboard/products`)
-                                                }
+                                            <Button2
+                                                variant="outline"
+                                                size="icon"
+                                                asChild
                                             >
-                                                <Button2
-                                                    variant="outline"
-                                                    size="icon"
+                                                <Link
+                                                    href={
+                                                        redirectTo ||
+                                                        (page.type === "product"
+                                                            ? `/dashboard/product/${page.entityId}`
+                                                            : `/dashboard/products`)
+                                                    }
+                                                    aria-label={
+                                                        EDIT_PAGE_BUTTON_DONE
+                                                    }
                                                 >
                                                     <LogOut className="h-4 w-4" />
-                                                </Button2>
-                                            </Link>
+                                                </Link>
+                                            </Button2>
                                         </TooltipTrigger>
                                         <TooltipContent>
                                             <p>{EDIT_PAGE_BUTTON_DONE}</p>

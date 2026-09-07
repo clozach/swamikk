@@ -18,6 +18,7 @@ const Header = ({ onMenuClick, siteinfo }: HeaderProps) => {
                     className="px-2 md:!hidden"
                     variant="soft"
                     onClick={onMenuClick}
+                    aria-label="Open menu"
                 >
                     <Menu />
                 </IconButton>
