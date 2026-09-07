@@ -3,6 +3,7 @@ import {
     Quiz,
     TextEditorContent,
     ScormContent,
+    LessonContentChangeReceipt,
 } from "@courselit/common-models";
 import { generateUniqueId } from "@courselit/utils";
 import mongoose from "mongoose";
@@ -32,25 +33,42 @@ export interface Lesson {
     requiresEnrollment: boolean;
     published: boolean;
     groupId: string;
+    __v?: number;
+    contentChangeReceipt?: LessonContentChangeReceipt;
 }
 
-const LessonSchema = new mongoose.Schema<Lesson>({
-    domain: { type: mongoose.Schema.Types.ObjectId, required: true },
-    lessonId: { type: String, required: true, default: generateUniqueId },
-    title: { type: String, required: true },
-    type: {
-        type: String,
-        required: true,
-        enum: [text, video, audio, pdf, quiz, file, embed, scorm],
+const LessonSchema = new mongoose.Schema<Lesson>(
+    {
+        domain: { type: mongoose.Schema.Types.ObjectId, required: true },
+        lessonId: { type: String, required: true, default: generateUniqueId },
+        title: { type: String, required: true },
+        type: {
+            type: String,
+            required: true,
+            enum: [text, video, audio, pdf, quiz, file, embed, scorm],
+        },
+        content: { type: mongoose.Schema.Types.Mixed, default: {} },
+        media: MediaSchema,
+        downloadable: { type: Boolean, default: false },
+        creatorId: { type: String, required: true },
+        courseId: { type: String, required: true },
+        requiresEnrollment: { type: Boolean, default: true },
+        published: { type: Boolean, required: true, default: false },
+        groupId: { type: String, required: true },
+        contentChangeReceipt: {
+            type: new mongoose.Schema(
+                {
+                    outcome: { type: String, enum: ["applied", "cancelled"] },
+                    operationId: String,
+                    revision: Number,
+                    appliedAt: String,
+                },
+                { _id: false },
+            ),
+            default: undefined,
+        },
     },
-    content: { type: mongoose.Schema.Types.Mixed, default: {} },
-    media: MediaSchema,
-    downloadable: { type: Boolean, default: false },
-    creatorId: { type: String, required: true },
-    courseId: { type: String, required: true },
-    requiresEnrollment: { type: Boolean, default: true },
-    published: { type: Boolean, required: true, default: false },
-    groupId: { type: String, required: true },
-});
+    { optimisticConcurrency: true },
+);
 
 export default mongoose.models.Lesson || mongoose.model("Lesson", LessonSchema);

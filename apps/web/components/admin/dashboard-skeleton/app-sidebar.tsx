@@ -2,7 +2,6 @@
 
 import {
     Box,
-    Globe,
     Images,
     LibraryBig,
     LifeBuoy,
@@ -12,7 +11,7 @@ import {
     Receipt,
     Settings,
     Target,
-    Text,
+    Wrench,
     Users,
 } from "lucide-react";
 
@@ -39,11 +38,9 @@ import {
     GET_SET_UP,
     MY_CONTENT_HEADER,
     SEQUENCES,
-    SIDEBAR_MENU_BLOGS,
     SIDEBAR_MENU_COHORTS,
     SIDEBAR_MENU_MAILS,
     SIDEBAR_MENU_MEDIA,
-    SIDEBAR_MENU_PAGES,
     SIDEBAR_MENU_SETTINGS,
     SIDEBAR_MENU_SUBSCRIBERS,
     SIDEBAR_MENU_USERS,
@@ -60,7 +57,11 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { ComponentProps, useContext, useEffect, useState } from "react";
 import { CircularProgress } from "@components/circular-progress";
 import { hasPermissionToAccessSetupChecklist } from "@/lib/utils";
-import { ADMIN_PERMISSIONS } from "@ui-config/constants";
+import {
+    ADMIN_PERMISSIONS,
+    FEEDBACK_ADMIN_PERMISSIONS,
+} from "@ui-config/constants";
+import { feedbackUi as feedbackCopy } from "@config/strings";
 import { getSetupChecklist } from "@/app/(with-contexts)/dashboard/(sidebar)/action";
 const { permissions } = UIConstants;
 
@@ -204,12 +205,10 @@ function getSidebarItems({
             isActive: path === "/dashboard/transactions",
         });
         contentItems.push({
-            title: "Products",
-            url: "/dashboard/products",
+            title: feedbackCopy.organize,
+            url: "/dashboard/content",
             icon: Box,
-            isActive:
-                path === "/dashboard/products" ||
-                path?.startsWith("/dashboard/product"),
+            isActive: path === "/dashboard/content",
             items: [],
         });
     }
@@ -223,25 +222,12 @@ function getSidebarItems({
             items: [],
         });
     }
-    if (checkPermission(profile.permissions!, [permissions.publishCourse])) {
+    if (checkPermission(profile.permissions!, FEEDBACK_ADMIN_PERMISSIONS)) {
         contentItems.push({
-            title: SIDEBAR_MENU_BLOGS,
-            url: "/dashboard/blogs",
-            icon: Text,
-            isActive:
-                path === "/dashboard/blogs" ||
-                path?.startsWith("/dashboard/blog"),
-            items: [],
-        });
-    }
-    if (profile.permissions!.includes(permissions.manageSite)) {
-        contentItems.push({
-            title: SIDEBAR_MENU_PAGES,
-            url: "/dashboard/pages",
-            icon: Globe,
-            isActive:
-                path === "/dashboard/pages" ||
-                path?.startsWith("/dashboard/page"),
+            title: feedbackCopy.review,
+            url: "/dashboard/changes",
+            icon: MessageCircleHeart,
+            isActive: path === "/dashboard/changes",
             items: [],
         });
     }
@@ -412,6 +398,12 @@ function getSidebarItems({
                 isActive: path === "/dashboard/get-set-up",
             });
         }
+        navSecondaryItems.push({
+            title: feedbackCopy.legacy,
+            url: "/dashboard/legacy-builder",
+            icon: <Wrench />,
+            isActive: path === "/dashboard/legacy-builder",
+        });
         navSecondaryItems.push({
             title: "Support",
             url: "/dashboard/support",

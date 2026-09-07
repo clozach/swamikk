@@ -1,8 +1,16 @@
 import { userApiOpenApi } from "../app/api/user/openapi.mjs";
 import { productsApiOpenApi } from "../app/api/products/openapi.mjs";
 import { mediaApiOpenApi } from "../app/api/media/openapi.mjs";
+import { feedbackApiOpenApi } from "../app/api/feedback/openapi.mjs";
+import { contentChangesApiOpenApi } from "../app/api/content-changes/openapi.mjs";
 
-const routeSpecs = [userApiOpenApi, productsApiOpenApi, mediaApiOpenApi];
+const routeSpecs = [
+    userApiOpenApi,
+    productsApiOpenApi,
+    mediaApiOpenApi,
+    feedbackApiOpenApi,
+    contentChangesApiOpenApi,
+];
 
 function mergeOpenApiFragments(fragments) {
     return fragments.reduce(

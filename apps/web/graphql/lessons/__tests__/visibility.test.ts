@@ -10,9 +10,14 @@ import {
     getAllLessons,
     getLessonDetails,
     markLessonCompleted,
+    updateLesson,
 } from "../logic";
 import { responses } from "@/config/strings";
 import { sealMedia } from "@/services/medialit";
+import {
+    lessonFingerprint,
+    lessonRevision,
+} from "@/services/content-changes/lesson-guard";
 
 jest.mock("@/services/medialit", () => ({
     deleteMedia: jest.fn(),
@@ -622,5 +627,80 @@ describe("Lesson visibility and progress", () => {
                 studentCtx,
             ),
         ).rejects.toThrow(responses.drip_not_released);
+    });
+
+    it("guards approved writes against a native document saved from an older revision", async () => {
+        const target = await LessonModel.create({
+            domain: testDomain._id,
+            lessonId: id("guarded-save"),
+            title: "Before",
+            type: "text",
+            content: { type: "doc", content: [] },
+            creatorId: ownerManager.userId,
+            courseId: course.courseId,
+            groupId,
+            published: true,
+        });
+        const oldDocument = await LessonModel.findOne({
+            lessonId: target.lessonId,
+        });
+        const result = await updateLesson(
+            { id: target.lessonId, title: "Approved" } as any,
+            manageAnyAdminCtx,
+            {
+                revision: lessonRevision(target),
+                fingerprint: lessonFingerprint(target),
+                operationId: id("guarded-operation"),
+            },
+        );
+        expect(result.contentChangeReceipt?.operationId).toBe(
+            id("guarded-operation"),
+        );
+        expect(result.__v).toBe(1);
+        oldDocument.title = "Old editor save";
+        await expect(oldDocument.save()).rejects.toMatchObject({
+            name: "VersionError",
+        });
+        expect(
+            (await LessonModel.findOne({ lessonId: target.lessonId })).title,
+        ).toBe("Approved");
+    });
+
+    it("rejects an unversioned concurrent write between validation and native persistence", async () => {
+        const target = await LessonModel.create({
+            domain: testDomain._id,
+            lessonId: id("guarded-race"),
+            title: "Before",
+            type: "text",
+            content: { type: "doc", content: [] },
+            creatorId: ownerManager.userId,
+            courseId: course.courseId,
+            groupId,
+            published: true,
+        });
+        const original = LessonModel.findOneAndUpdate.bind(LessonModel);
+        const save = jest
+            .spyOn(LessonModel, "findOneAndUpdate")
+            .mockImplementationOnce((async (...args: any[]) => {
+                await LessonModel.updateOne(
+                    { lessonId: target.lessonId },
+                    { $set: { title: "Concurrent edit" } },
+                );
+                return original(...args);
+            }) as any);
+        try {
+            await expect(
+                updateLesson(
+                    { id: target.lessonId, title: "My edit" } as any,
+                    manageAnyAdminCtx,
+                ),
+            ).rejects.toMatchObject({ code: "stale" });
+            expect(
+                (await LessonModel.findOne({ lessonId: target.lessonId }))
+                    .title,
+            ).toBe("Concurrent edit");
+        } finally {
+            save.mockRestore();
+        }
     });
 });

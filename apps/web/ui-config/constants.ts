@@ -65,3 +65,9 @@ export const ADMIN_PERMISSIONS = [
     UIConstants.permissions.manageCommunity,
     UIConstants.permissions.manageSettings,
 ];
+
+// Whole-site private feedback is narrower than general dashboard access.
+export const FEEDBACK_ADMIN_PERMISSIONS = [
+    UIConstants.permissions.manageSite,
+    UIConstants.permissions.manageAnyCourse,
+];

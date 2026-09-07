@@ -172,6 +172,97 @@ export const responses = {
         "A repeating coupon needs the number of months it repeats for",
 };
 
+export const feedbackUi = {
+    open: "Comment on this page",
+    close: "Close",
+    select: "Choose a part of the page",
+    selectHelp:
+        "Hold Ctrl or ⌘ and click a component. On touch or keyboard, choose from the page below. Your selection stays put when you scroll.",
+    page: "Whole page",
+    comment: "Add a comment",
+    commentLabel: "What would you like us to know?",
+    privacy:
+        "Comments go privately to the support team. Please leave out passwords, payment details and sensitive health information.",
+    send: "Send comment",
+    sending: "Sending…",
+    sent: "Comment received. Thank you — the support team can now review it.",
+    photo: "Attach a photo (admin)",
+    copy: "Copy page prompt",
+    copied: "Page feedback copied. Paste it into your development chat.",
+    noComments: "There are no saved comments for this page yet.",
+    copyFailed:
+        "Clipboard access was unavailable. The prompt is ready below for you to select and copy.",
+    failed: "We could not save this comment. Your draft is still here; please try again.",
+    draftKept: "Draft kept in this tab until you send or clear it.",
+    clear: "Clear draft",
+    chooseAgain: "Choose another component",
+    review: "Comments & changes",
+    inbox: "Comments",
+    proposals: "Proposed changes",
+    reload: "Refresh",
+    build: "Build anything",
+    organize: "Organize content",
+    contentGuide:
+        "See what is available, open a product as a member sees it, and request changes in context.",
+    products: "Products",
+    title: "Title",
+    status: "Status",
+    members: "Members",
+    published: "Published",
+    unpublished: "Draft",
+    preview: "Open preview",
+    contentEmpty:
+        "No products yet. Ask your development agent to prepare the first one from your material.",
+    previous: "Previous",
+    next: "Next",
+    guide: "Hold Ctrl or ⌘. Add comments for the model. Copy the page prompt. Paste it into your development chat.",
+    approvalGuide:
+        "Ask the model to prepare a proposal. Review its effects here before you approve it. Failed attempts keep their drafts and offer recovery.",
+    legacy: "Legacy builder",
+    legacyDescription:
+        "Optional CourseLit authoring tools. The comment and approval workflow works independently of this fallback.",
+    loading: "Loading…",
+    emptyInbox: "No comments yet. Use the ? button on any page to leave one.",
+    emptyProposals:
+        "No proposals yet. Your development agent can prepare a lesson text change from a saved comment.",
+    loadFailed: "This view could not be loaded. Refresh to try again.",
+    accessDenied: "This view is available to site administrators.",
+    before: "Current version",
+    after: "Proposed version",
+    consequences: "What this changes",
+    approve: "Approve this version",
+    reject: "Keep current version",
+    recover: "Check and recover",
+    undo: "Prepare undo for review",
+    applied: "Approved and applied",
+    proposed: "Ready for review",
+    rejected: "Not applied",
+    stale: "Content changed — prepare a fresh proposal",
+    failedState: "Attempt failed — draft retained",
+    applying: "Application in progress",
+    uncertain: "Check the result before continuing",
+    version: "Version",
+    reason: "Request",
+    textScope:
+        "This proposal changes lesson text only. Prices, access rules, release dates and emails stay as they are.",
+    publishedEffect:
+        "People who can open this published lesson will see the new text after approval.",
+    draftEffect:
+        "This lesson belongs to an unpublished product. Applying this text does not publish the product.",
+    undoLimit:
+        "Undo creates another proposal for review. It cannot retract something already viewed or emailed.",
+    exactApproval:
+        "Approval applies only to the version shown. If the lesson changes first, a fresh review is required.",
+    return: "Back to all changes",
+    closeComment: "Mark handled",
+    reopenComment: "Reopen",
+    savedPrompt: "Development prompt",
+    photoCount: "Admin photo attachments",
+    actionFailed:
+        "The action did not finish. Refresh to check its result before trying again.",
+    previousVersions: "Previous proposals retained",
+};
+
 export const internal = {
     error_unrecognised_payment_method: "Unrecognized payment method",
     error_payment_method_not_implemented: "Not yet implemented",
@@ -186,4 +277,34 @@ export const internal = {
     default_email_sequence_subject: "First email",
     default_email_sequence_name: "Untitled Sequence",
     joining_reason_creator: "Joined as creator",
+};
+
+export const memberMimicUi = {
+    title: "Member Mimic",
+    opening: "Opening this member's profile…",
+    openFailed: "The member view could not be opened.",
+    retry: "Try again",
+    returnToMembers: "Back to members",
+    viewing: "Viewing as",
+    readOnly: "Read-only member view",
+    privacy:
+        "Personal practice history, private messages and drafts are hidden.",
+    exit: "Exit Mimic",
+    exiting: "Returning to your admin view…",
+    exitFailed:
+        "The member view could not be closed. Try again; changes remain disabled.",
+    expired: "This member view has ended",
+    expiredHelp:
+        "Exit to return to your admin account. Member information stays hidden until you start a new view.",
+    verifying: "Checking this member view…",
+    outside: "This page is outside the member view",
+    outsideHelp:
+        "Exit Mimic to use admin tools, checkout, private activity or account actions.",
+    profile: "Member profile",
+    content: "My content",
+    privateProgress: "Personal practice history is hidden in Mimic.",
+    privateActivity:
+        "This activity contains personal learner data and is hidden in Mimic.",
+    noChanges:
+        "Exit Mimic before changing account details or sending anything.",
 };

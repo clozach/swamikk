@@ -40,3 +40,5 @@ export * from "./models/product-discussion";
 export * from "./models/rate-limit-event";
 export * from "./models/cohort";
 export * from "./product-discussion-cleanup";
+export * from "./models/feedback";
+export * from "./models/content-change";

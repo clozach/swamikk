@@ -103,14 +103,16 @@ const EditableWidget = ({
     }
 
     return (
-        <WidgetByName
-            name={item.name}
-            settings={item.settings || {}}
-            pageData={pageData}
-            id={item.widgetId}
-            state={state}
-            editing={false}
-        />
+        <div data-feedback-id={item.widgetId} data-feedback-label={item.name}>
+            <WidgetByName
+                name={item.name}
+                settings={item.settings || {}}
+                pageData={pageData}
+                id={item.widgetId}
+                state={state}
+                editing={false}
+            />
+        </div>
     );
 };
 

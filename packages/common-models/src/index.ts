@@ -84,3 +84,5 @@ export * from "./features";
 export * from "./product-discussion";
 export * from "./cohort";
 export type { ScormContent } from "./scorm-content";
+export * from "./feedback";
+export * from "./content-change";

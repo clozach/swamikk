@@ -26,6 +26,7 @@ import {
     Quiz,
     ScormContent,
     User,
+    LessonWriteGuard,
 } from "@courselit/common-models";
 import LessonEvaluation from "../../models/LessonEvaluation";
 import { checkPermission, extractMediaIDs } from "@courselit/utils";
@@ -39,6 +40,13 @@ import ActivityModel from "@/models/Activity";
 import UserModel from "../../models/User";
 import { replaceTempMediaWithSealedMediaInProseMirrorDoc } from "@/lib/replace-temp-media-with-sealed-media-in-prosemirror-doc";
 import { canManageCourseInContext } from "../courses/permissions";
+import {
+    lessonFingerprint,
+    lessonRevision,
+    lessonWriteFilter,
+} from "@/services/content-changes/lesson-guard";
+import { ContentChangeError } from "@/services/content-changes/errors";
+import { stableJson } from "@/services/content-changes/stable";
 
 const { permissions, quiz, scorm } = constants;
 
@@ -259,8 +267,24 @@ export const updateLesson = async (
         | "type"
     > & { id: string; lessonId: string },
     ctx: GQLContext,
+    guard?: LessonWriteGuard,
 ) => {
     let lesson = await getLessonOrThrow(lessonData.id, ctx);
+    if (
+        guard &&
+        (lessonRevision(lesson) !== guard.revision ||
+            lessonFingerprint(lesson) !== guard.fingerprint)
+    ) {
+        throw new ContentChangeError(
+            "stale",
+            "This lesson changed. Prepare a new preview before applying.",
+            409,
+        );
+    }
+    // All native edits share this atomic compare-and-swap, including the legacy editor.
+    // The full content/permission context also detects maintenance writes without __v.
+    const writeFilter = lessonWriteFilter(lesson);
+    const nextRevision = lessonRevision(lesson) + 1;
     lessonData.lessonId = lessonData.id;
     delete (lessonData as any).id;
 
@@ -324,11 +348,64 @@ export const updateLesson = async (
             lesson[key] = lessonData[key];
         }
     }
-    for (const mediaId of contentMediaIdsMarkedForDeletion) {
-        await deleteMedia(mediaId, ctx.subdomain._id);
+    if (
+        guard &&
+        contentUpdated &&
+        stableJson(lesson.content) !==
+            stableJson(JSON.parse(lessonData.content))
+    ) {
+        throw new ContentChangeError(
+            "preview_changed",
+            "Media processing changed the proposed content. Review it in the content editor before publishing.",
+            409,
+        );
     }
-
-    lesson = await (lesson as any).save();
+    const fields = [
+        "title",
+        "type",
+        "content",
+        "media",
+        "downloadable",
+        "requiresEnrollment",
+        "published",
+    ];
+    const updates = Object.fromEntries(
+        fields
+            .map((key) => [key, lesson[key]])
+            .filter(([, value]) => value !== undefined),
+    );
+    if (guard) {
+        updates.contentChangeReceipt = {
+            outcome: "applied",
+            operationId: guard.operationId,
+            revision: nextRevision,
+            appliedAt: new Date().toISOString(),
+        };
+    }
+    const savedLesson = await LessonModel.findOneAndUpdate(
+        writeFilter,
+        { $set: updates, $inc: { __v: 1 } },
+        { new: true, runValidators: true },
+    );
+    if (!savedLesson)
+        throw new ContentChangeError(
+            "stale",
+            "This lesson changed while saving. Refresh and review your changes.",
+            409,
+        );
+    lesson = savedLesson;
+    // Only schedule removal after a confirmed content write. A cleanup error must not
+    // misreport a committed lesson edit as failed; the reference-safe GC can retry.
+    for (const mediaId of contentMediaIdsMarkedForDeletion) {
+        try {
+            await deleteMedia(mediaId, ctx.subdomain._id);
+        } catch {
+            error("Could not schedule removed lesson media for cleanup", {
+                lessonId: lesson.lessonId,
+                mediaId,
+            });
+        }
+    }
     return lesson;
 };
 

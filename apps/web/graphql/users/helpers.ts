@@ -1,6 +1,7 @@
 "use server";
 
 import UserModel from "@models/User";
+import { deleteUserFeedback } from "@/services/content-changes/personal-data";
 import { responses, internal } from "@/config/strings";
 import constants from "@/config/constants";
 import GQLContext from "@/models/GQLContext";
@@ -264,6 +265,7 @@ export async function cleanupPersonalData(
     ctx: GQLContext,
 ): Promise<void> {
     await Promise.all([
+        deleteUserFeedback(String(ctx.subdomain._id), userToDelete.userId),
         CohortModel.updateMany(
             {
                 domain: ctx.subdomain._id,

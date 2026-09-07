@@ -4,6 +4,7 @@
 
 import { deleteUser } from "../logic";
 import UserModel from "@models/User";
+import { FeedbackModel } from "@/services/content-changes/models";
 import CourseModel from "@models/Course";
 import PageModel from "@models/Page";
 import EmailTemplateModel from "@models/EmailTemplate";
@@ -131,6 +132,7 @@ describe("deleteUser - Comprehensive Test Suite", () => {
     afterEach(async () => {
         // Clean up all collections - only this test's data
         await Promise.all([
+            FeedbackModel.deleteMany({ domain: testDomain._id }),
             UserModel.deleteMany({ domain: testDomain._id }),
             CourseModel.deleteMany({ domain: testDomain._id }),
             PageModel.deleteMany({ domain: testDomain._id }),
@@ -180,6 +182,39 @@ describe("deleteUser - Comprehensive Test Suite", () => {
     // ============================================
 
     describe("Security & Validation", () => {
+        it("removes the deleted member's private feedback and preserves other members' comments", async () => {
+            await FeedbackModel.create([
+                {
+                    domain: testDomain._id,
+                    id: duId("target-feedback"),
+                    text: "Personal request",
+                    actor: { kind: "member", userId: targetUser.userId },
+                    target: { kind: "page", path: "/", componentId: "page" },
+                    state: "open",
+                },
+                {
+                    domain: testDomain._id,
+                    id: duId("admin-feedback"),
+                    text: "Keep this request",
+                    actor: { kind: "admin", userId: adminUser.userId },
+                    target: { kind: "page", path: "/", componentId: "page" },
+                    state: "open",
+                },
+            ]);
+            await deleteUser(targetUser.userId, mockCtx);
+            expect(
+                await FeedbackModel.countDocuments({
+                    domain: testDomain._id,
+                    "actor.userId": targetUser.userId,
+                }),
+            ).toBe(0);
+            expect(
+                await FeedbackModel.countDocuments({
+                    domain: testDomain._id,
+                    "actor.userId": adminUser.userId,
+                }),
+            ).toBe(1);
+        });
         it("should require authentication", async () => {
             const unauthCtx = { ...mockCtx, user: null };
             await expect(

@@ -277,9 +277,15 @@ export const LessonViewer = ({
                                     <span>{courseTitle}</span>
                                 </NextLink>
                             )}
-                            <Header1 theme={theme.theme}>
-                                {lesson.title}
-                            </Header1>
+                            <div
+                                data-feedback-lesson={lesson.lessonId}
+                                data-feedback-field="title"
+                                data-feedback-label={lesson.title}
+                            >
+                                <Header1 theme={theme.theme}>
+                                    {lesson.title}
+                                </Header1>
+                            </div>
                         </header>
                         {String.prototype.toUpperCase.call(
                             LESSON_TYPE_VIDEO,
@@ -362,14 +368,20 @@ export const LessonViewer = ({
                         {String.prototype.toUpperCase.call(LESSON_TYPE_TEXT) ===
                             lesson.type &&
                             lesson.content && (
-                                <WidgetErrorBoundary widgetName="text-editor">
-                                    <TextRenderer
-                                        json={
-                                            lesson.content as TextEditorContent
-                                        }
-                                        theme={theme.theme}
-                                    />
-                                </WidgetErrorBoundary>
+                                <div
+                                    data-feedback-lesson={lesson.lessonId}
+                                    data-feedback-field="content"
+                                    data-feedback-label={lesson.title}
+                                >
+                                    <WidgetErrorBoundary widgetName="text-editor">
+                                        <TextRenderer
+                                            json={
+                                                lesson.content as TextEditorContent
+                                            }
+                                            theme={theme.theme}
+                                        />
+                                    </WidgetErrorBoundary>
+                                </div>
                             )}
                         {String.prototype.toUpperCase.call(
                             LESSON_TYPE_EMBED,
