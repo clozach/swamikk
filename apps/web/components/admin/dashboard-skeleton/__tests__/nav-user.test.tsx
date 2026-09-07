@@ -12,12 +12,16 @@ jest.mock("@courselit/components-library", () => ({
     ),
 }));
 
-function mount(profile: any, mimic: any = { kind: "inactive" }) {
+function mount(
+    profile: any,
+    mimic: any = { kind: "inactive" },
+    compactOnMobile = false,
+) {
     return render(
         <ProfileContext.Provider value={{ profile, setProfile: jest.fn() }}>
             <MemberMimicContext.Provider value={mimic}>
                 <SidebarProvider>
-                    <NavUser />
+                    <NavUser compactOnMobile={compactOnMobile} />
                 </SidebarProvider>
             </MemberMimicContext.Provider>
         </ProfileContext.Provider>,
@@ -61,6 +65,34 @@ test("does not expose the signed-in menu without a profile", () => {
     mount(null);
     expect(screen.queryByText(MY_CONTENT_HEADER)).not.toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
+});
+
+test("the compact member menu keeps a named keyboard trigger and account routes", async () => {
+    mount(
+        {
+            userId: "new-member",
+            email: "new-member@example.com",
+            permissions: [],
+        },
+        undefined,
+        true,
+    );
+    fireEvent.keyDown(
+        screen.getByRole("button", {
+            name: "Account menu for new-member@example.com",
+        }),
+        { key: "ArrowDown" },
+    );
+    expect(
+        await screen.findByRole("link", { name: "Profile" }),
+    ).toHaveAttribute("href", "/dashboard/profile");
+    expect(
+        screen.getByRole("link", { name: "Membership and receipts" }),
+    ).toHaveAttribute("href", "/dashboard/membership");
+    expect(screen.getByRole("link", { name: "Logout" })).toHaveAttribute(
+        "href",
+        "/logout",
+    );
 });
 
 test("Mimic retains member navigation without private notification or account sign-out links", async () => {

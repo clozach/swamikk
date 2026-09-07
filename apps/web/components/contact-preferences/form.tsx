@@ -112,7 +112,10 @@ export default function ContactPreferencesForm({
         >
             <p className="text-muted-foreground">{copy.intro}</p>
             {readOnly && <p>{copy.readOnly}</p>}
-            <fieldset disabled={readOnly || isSubmitting} className="space-y-5">
+            <fieldset
+                disabled={readOnly || isSubmitting}
+                className="min-w-0 space-y-5"
+            >
                 <div className="space-y-2">
                     <label
                         htmlFor="contact-method"

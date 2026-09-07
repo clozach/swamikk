@@ -8,6 +8,14 @@ const mockToast = jest.fn();
 const mockExec = jest.fn();
 const mockSetProfile = jest.fn();
 
+// Identity-provider behavior and private preferences have their own suites.
+// Keep this legacy profile-details test independent of the ESM auth client.
+jest.mock("@/lib/auth-client", () => ({ authClient: { signOut: jest.fn() } }));
+jest.mock("@/components/contact-preferences/panel", () => ({
+    __esModule: true,
+    default: () => null,
+}));
+
 jest.mock("@components/admin/dashboard-content", () => ({
     __esModule: true,
     default: ({ children }: { children: React.ReactNode }) => (

@@ -54,7 +54,7 @@ export default function DashboardContent({
     return (
         <>
             <header className="flex h-16 shrink-0 items-center gap-2">
-                <div className="flex items-center gap-2 px-4">
+                <div className="flex min-w-0 flex-1 items-center gap-2 px-4">
                     {isAdmin ? (
                         <>
                             <SidebarTrigger className="-ml-1" />
@@ -67,9 +67,9 @@ export default function DashboardContent({
                     {!isAdmin ? (
                         <Link
                             href="/"
-                            className="flex items-center gap-2 font-semibold"
+                            className="flex min-w-0 items-center gap-2 font-semibold"
                         >
-                            <div className="flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg">
+                            <div className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg">
                                 <Image
                                     borderRadius={1}
                                     // Eager, not the wrapper's lazy default: the
@@ -132,14 +132,14 @@ export default function DashboardContent({
                         </Breadcrumb>
                     )}
                 </div>
-                <div className="ml-auto flex items-center gap-2 px-3">
+                <div className="ml-auto flex shrink-0 items-center gap-2 px-3">
                     <NextThemeSwitcher variant="ghost" />
                     <HideDuringMimic>
                         <NotificationsViewer />
                     </HideDuringMimic>
                     {isAdmin ? null : (
-                        <div className="w-56">
-                            <NavUser />
+                        <div className="w-11 md:w-56">
+                            <NavUser compactOnMobile />
                         </div>
                     )}
                 </div>

@@ -39,17 +39,25 @@ import {
     MY_CONTENT_HEADER,
 } from "@ui-config/strings";
 
-export function NavUser() {
+export function NavUser({
+    compactOnMobile = false,
+}: {
+    compactOnMobile?: boolean;
+}) {
     const { isMobile } = useSidebar();
     const { profile: user } = useContext(ProfileContext);
     if (!user) {
         return null;
     }
-    const alias = user.name
-        ?.split(" ")
-        .slice(0, 2)
-        .map((x) => x[0]?.toUpperCase())
-        .join("");
+    const alias =
+        user.name
+            ?.trim()
+            ?.split(" ")
+            .slice(0, 2)
+            .map((x) => x[0]?.toUpperCase())
+            .join("") ||
+        user.email?.charAt(0).toUpperCase() ||
+        "M";
 
     return (
         <SidebarMenu>
@@ -58,7 +66,8 @@ export function NavUser() {
                     <DropdownMenuTrigger asChild>
                         <SidebarMenuButton
                             size="lg"
-                            className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                            aria-label={`Account menu for ${user.name || user.email || "member"}`}
+                            className={`data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground ${compactOnMobile ? "h-11 w-11 justify-center p-1.5 md:h-12 md:w-full md:justify-start md:p-2" : ""}`}
                         >
                             <Avatar className="h-8 w-8 rounded-full">
                                 <AvatarImage
@@ -69,7 +78,9 @@ export function NavUser() {
                                     {alias}
                                 </AvatarFallback>
                             </Avatar>
-                            <div className="grid flex-1 text-left text-sm leading-tight">
+                            <div
+                                className={`${compactOnMobile ? "hidden md:grid" : "grid"} min-w-0 flex-1 text-left text-sm leading-tight`}
+                            >
                                 <span className="truncate font-semibold">
                                     {user.name}
                                 </span>
@@ -77,7 +88,9 @@ export function NavUser() {
                                     {user.email}
                                 </span>
                             </div>
-                            <ChevronsUpDown className="ml-auto size-4" />
+                            <ChevronsUpDown
+                                className={`ml-auto size-4 ${compactOnMobile ? "hidden md:block" : ""}`}
+                            />
                         </SidebarMenuButton>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent

@@ -16,11 +16,11 @@ jest.mock("react", () => ({
 jest.mock("@courselit/utils", () => ({
     ...jest.requireActual("@courselit/utils"),
     FetchBuilder: class {
-        payload: unknown;
+        payload!: Parameters<typeof mockExecute>[0];
         setUrl() {
             return this;
         }
-        setPayload(payload: unknown) {
+        setPayload(payload: Parameters<typeof mockExecute>[0]) {
             this.payload = payload;
             return this;
         }
