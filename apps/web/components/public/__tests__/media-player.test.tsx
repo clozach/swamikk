@@ -288,3 +288,83 @@ it("keeps a rejected Play action recoverable and bounds seeking", async () => {
     fireEvent.click(screen.getByRole("button", { name: labels.forward }));
     expect(container.querySelector("video")!.currentTime).toBe(15);
 });
+
+function foregroundDialog(role: "dialog" | "alertdialog" = "dialog") {
+    const view = render(
+        <div role={role} aria-label="Foreground task" aria-modal="true">
+            <textarea
+                aria-label="Unsent comment"
+                defaultValue="Keep my draft"
+            />
+        </div>,
+    );
+    const dialog = screen.getByRole(role, { name: "Foreground task" });
+    jest.spyOn(dialog, "getClientRects").mockReturnValue([
+        dialog.getBoundingClientRect(),
+    ] as unknown as DOMRectList);
+    return { ...view, dialog };
+}
+
+it.each(["dialog", "alertdialog"] as const)(
+    "keeps a visible foreground %s and its draft in view during rotation",
+    async (role) => {
+        const { container } = video();
+        const media = container.querySelector("video")!;
+        await act(async () =>
+            fireEvent.click(screen.getByRole("button", { name: "Play" })),
+        );
+        media.currentTime = 53;
+        media.playbackRate = 1.25;
+        const foreground = foregroundDialog(role);
+        const draft = screen.getByRole("textbox", { name: "Unsent comment" });
+        draft.focus();
+        await rotate("landscape-primary");
+        expect(requestFullscreen).not.toHaveBeenCalled();
+        expect(draft).toHaveFocus();
+        expect(draft).toHaveValue("Keep my draft");
+        expect(media.paused).toBe(false);
+        expect(media.currentTime).toBe(53);
+        expect(media.playbackRate).toBe(1.25);
+        foreground.unmount();
+        expect(requestFullscreen).not.toHaveBeenCalled();
+        await act(async () =>
+            fireEvent.click(screen.getByRole("button", { name: "Fullscreen" })),
+        );
+        expect(requestFullscreen).toHaveBeenCalledTimes(1);
+    },
+);
+
+it("does not let hidden dialog markup block an ordinary orientation request", async () => {
+    video();
+    const { dialog } = foregroundDialog();
+    dialog.hidden = true;
+    await act(async () =>
+        fireEvent.click(screen.getByRole("button", { name: "Play" })),
+    );
+    await rotate("landscape-primary");
+    expect(requestFullscreen).toHaveBeenCalledTimes(1);
+});
+
+it("returns from a delayed automatic request if a foreground dialog opened meanwhile", async () => {
+    let finish: () => void = () => {};
+    requestFullscreen.mockImplementation(function (this: HTMLElement) {
+        const wrapper = this;
+        return new Promise<void>((resolve) => {
+            finish = () => {
+                fullscreen = wrapper;
+                document.dispatchEvent(new Event("fullscreenchange"));
+                resolve();
+            };
+        });
+    });
+    video();
+    await act(async () =>
+        fireEvent.click(screen.getByRole("button", { name: "Play" })),
+    );
+    await rotate("landscape-primary");
+    foregroundDialog();
+    await act(async () => finish());
+    expect(fullscreen).toBeNull();
+    expect(exitFullscreen).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("textbox")).toHaveValue("Keep my draft");
+});

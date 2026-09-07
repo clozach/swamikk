@@ -29,6 +29,7 @@ import { PageSelection, pageChoices, pageSelection } from "./targets";
 import { useSelection } from "./use-selection";
 import { FeedbackControlPlacement } from "./placement";
 import { getPagePrompt } from "./page-prompt";
+import { SelectionChoices } from "./selection-choices";
 import "./feedback.css";
 
 const PageWidgetEditor = dynamic(() => import("./page-widget-editor"));
@@ -271,28 +272,17 @@ function FeedbackSession({ path }: { path: string }) {
                             <DialogDescription>
                                 {copy.selectHelp}
                             </DialogDescription>
-                            <div className="grid gap-2">
-                                {panel.choices.map((selection, index) => (
-                                    <Button
-                                        key={index}
-                                        variant="outline"
-                                        className="min-h-11 h-auto justify-start whitespace-normal text-left"
-                                        onClick={() => {
-                                            setMode({
-                                                kind: "selected",
-                                                selection,
-                                            });
-                                            selection.element?.scrollIntoView({
-                                                behavior: "instant",
-                                                block: "center",
-                                            });
-                                            setPanel({ kind: "closed" });
-                                        }}
-                                    >
-                                        {selection.label}
-                                    </Button>
-                                ))}
-                            </div>
+                            <SelectionChoices
+                                choices={panel.choices}
+                                onSelect={(selection) => {
+                                    setMode({ kind: "selected", selection });
+                                    selection.element?.scrollIntoView({
+                                        behavior: "instant",
+                                        block: "center",
+                                    });
+                                    setPanel({ kind: "closed" });
+                                }}
+                            />
                         </>
                     )}
                     {panel.kind === "prompt" && (

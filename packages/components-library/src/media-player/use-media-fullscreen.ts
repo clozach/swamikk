@@ -9,6 +9,22 @@ function isLandscape() {
         : window.matchMedia("(orientation: landscape)").matches;
 }
 
+function hasForegroundDialog() {
+    return Array.from(
+        document.querySelectorAll<HTMLElement>(
+            'dialog[open], [role="dialog"], [role="alertdialog"], [aria-modal="true"]',
+        ),
+    ).some((element) => {
+        const style = getComputedStyle(element);
+        return (
+            !element.closest("[hidden]") &&
+            style.visibility !== "hidden" &&
+            style.display !== "none" &&
+            element.getClientRects().length > 0
+        );
+    });
+}
+
 export function useMediaFullscreen(
     mediaRef: RefObject<HTMLMediaElement | null>,
     allowed: boolean,
@@ -41,6 +57,7 @@ export function useMediaFullscreen(
                 !allowed ||
                 !wrapper ||
                 !video ||
+                (!manual && hasForegroundDialog()) ||
                 pending.current ||
                 document.fullscreenElement ||
                 video.webkitDisplayingFullscreen
@@ -56,7 +73,8 @@ export function useMediaFullscreen(
                     // An orientation request may settle after the phone has
                     // rotated back or the route has entered Member Mimic.
                     if (
-                        (!manual && !isLandscape()) ||
+                        (!manual &&
+                            (!isLandscape() || hasForegroundDialog())) ||
                         !allowedRef.current ||
                         !wrapper.isConnected
                     ) {
