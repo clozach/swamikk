@@ -1,3 +1,8 @@
+import { isPagePublicationRecord } from "./page-publication-types";
+import {
+    approvePagePublication,
+    reconcilePagePublication,
+} from "./page-publication-application";
 import { isPageCreationRecord } from "./page-creation-types";
 import {
     approvePageCreation,
@@ -30,6 +35,8 @@ export async function reconcileChange(
     ctx: GQLContext,
 ): Promise<ContentChange> {
     const record = await getChange(id, ctx);
+    if (isPagePublicationRecord(record))
+        return reconcilePagePublication(record, ctx);
     if (isPageCreationRecord(record)) return reconcilePageCreation(record, ctx);
     if (isPageRecord(record)) return reconcilePageChange(record, ctx);
     const state = record.state;
@@ -119,6 +126,8 @@ export async function approveChange(
     ctx: GQLContext,
 ): Promise<ContentChange> {
     const record = await getChange(id, ctx);
+    if (isPagePublicationRecord(record))
+        return approvePagePublication(record, version, previewHash, ctx);
     if (isPageCreationRecord(record))
         return approvePageCreation(record, version, previewHash, ctx);
     if (isPageRecord(record))

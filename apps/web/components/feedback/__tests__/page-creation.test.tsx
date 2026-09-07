@@ -179,7 +179,8 @@ test("creation review discloses exact body, route and separate publication then 
         ),
     );
 });
-test("successful creation opens only the retained native result identity and offers no generic text revert", () => {
+test("successful creation prepares a separate publication review without opening the builder or offering text undo", async () => {
+    (feedbackRequest as jest.Mock).mockResolvedValue({ change });
     render(
         <ProposalReview
             change={{ ...change, state: { kind: "applied" } } as ContentChange}
@@ -187,10 +188,14 @@ test("successful creation opens only the retained native result identity and off
         />,
     );
     expect(
-        screen.getByRole("link", { name: "Open native draft editor" }),
-    ).toHaveAttribute(
-        "href",
-        `/dashboard/page/welcome?documentId=${"a".repeat(24)}&redirectTo=/dashboard/changes/proposal`,
+        screen.queryByRole("link", { name: /draft editor/i }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Review publication" }));
+    await waitFor(() =>
+        expect(feedbackRequest).toHaveBeenCalledWith(
+            "/api/content-changes/proposal",
+            { action: "prepare-publication", version: 1 },
+        ),
     );
     expect(
         screen.queryByRole("button", { name: /revert|undo/i }),

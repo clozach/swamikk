@@ -1,3 +1,4 @@
+import { isPagePublicationRecord } from "./page-publication-types";
 import { requirePageEditor } from "./page-adapter";
 import { withAccountWrite } from "../../../../packages/common-logic/src/account-lifecycle/gate";
 import { isPageCreationRecord } from "./page-creation-types";
@@ -224,9 +225,9 @@ export async function prepareRevert(
         return changeView(record);
     }
     requireCondition(
-        !isPageCreationRecord(original),
+        !isPageCreationRecord(original) && !isPagePublicationRecord(original),
         "unsupported_action",
-        "A created draft is a separate page. Review it in the native page editor; deletion and publication are separate actions.",
+        "Page creation and publication have separate receipts. Generic text undo does not delete or unpublish a page.",
         409,
     );
     const lesson = await editableLesson(original.target.lessonId, ctx);

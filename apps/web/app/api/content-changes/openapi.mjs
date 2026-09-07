@@ -37,7 +37,7 @@ const previewHash = { type: "string", pattern: "^[a-f0-9]{64}$" };
 const change = {
     type: "object",
     description:
-        "ContentChange from @courselit/common-models: id, target, version, summary, patch, baseline {revision,fingerprint,snapshot,published}; page-widget baselines also retain immutable documentId, renderFingerprint, theme/typefaces and draft consequence, with frozen widget renderSettings in both preview snapshots, preview {before,after}, previewHash, preparedBy/At, history, approvals, state, timestamps. page-create retains prompt/materials, frozen native text layout, exact title/path, immutable result documentId and appearance fingerprint; approval creates only a hidden native draft. Creation result identities remain erased tombstones after cancellation/deletion. Separate publication refuses pending shared/theme/font drafts. state is discriminated by kind; applying/uncertain/applied include operationId and approval; applied includes appliedAt/appliedRevision.",
+        "ContentChange from @courselit/common-models: id, target, version, summary, patch, baseline {revision,fingerprint,snapshot,published}; page-widget baselines also retain immutable documentId, renderFingerprint, theme/typefaces and draft consequence, with frozen widget renderSettings in both preview snapshots, preview {before,after}, previewHash, preparedBy/At, history, approvals, state, timestamps. page-create retains prompt/materials, frozen native text layout, exact title/path, immutable result documentId and appearance fingerprint; approval creates only a hidden native draft. Creation result identities remain erased tombstones after cancellation/deletion. page-publish is prepared only from an applied creation or refreshed publication: it retains the current draft, immutable document ID/revision/fingerprint, appearance fingerprint and global draft flags. Separate explicit approval calls native publication and atomically records its receipt; pending shared/theme/font drafts block it. state is discriminated by kind; applying/uncertain/applied include operationId and approval; applied includes appliedAt/appliedRevision.",
     properties: {
         id: { type: "string" },
         version,
@@ -199,10 +199,10 @@ export const contentChangesApiOpenApi = {
                 tags: ["Content Changes"],
                 operationId: "actOnContentChange",
                 summary:
-                    "Revise, approve/apply, reject, reconcile, or prepare recovery",
+                    "Revise, approve/apply, reject, reconcile, or prepare recovery/publication",
                 security: session,
                 description:
-                    "Approve must echo the displayed version and previewHash. Duplicate approval never applies twice. Reconcile reads the atomic receipt or fences an interrupted write without changing content. Revert only prepares a separate reverse proposal requiring its own approval; later target edits prevent automatic recovery.",
+                    "Approve must echo the displayed version and previewHash. Duplicate approval never applies twice. Reconcile reads the atomic receipt or fences an interrupted write without changing content. Revert only prepares a separate reverse proposal requiring its own approval; later target edits prevent automatic recovery. prepare-publication on an applied page creation returns a separate deterministic publication review; on a settled publication it refreshes the current native draft as a new version. It never publishes. No raw page-publish target is accepted by the creation endpoint.",
                 requestBody: {
                     required: true,
                     ...json({
@@ -233,6 +233,9 @@ export const contentChangesApiOpenApi = {
                             action("reject", { version }, ["version"]),
                             action("reconcile"),
                             action("revert", { version }, ["version"]),
+                            action("prepare-publication", { version }, [
+                                "version",
+                            ]),
                         ],
                     }),
                 },

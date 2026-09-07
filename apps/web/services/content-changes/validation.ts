@@ -128,6 +128,12 @@ export const contentChangeInputSchema = z.union([
 export const contentChangeActionSchema = z.discriminatedUnion("action", [
     z
         .object({
+            action: z.literal("prepare-publication"),
+            version: z.number().int().positive(),
+        })
+        .strict(),
+    z
+        .object({
             action: z.literal("revise"),
             version: z.number().int().positive(),
             patch: z.union([

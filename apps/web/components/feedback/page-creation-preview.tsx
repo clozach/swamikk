@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { useContext, useId } from "react";
 import type {
     Profile,
@@ -46,8 +45,8 @@ export default function PageCreationPreview({
                     Address: <code>{change.preview.path}</code>
                 </p>
                 <p>
-                    Approval creates this exact text in the native page editor.
-                    The page stays hidden from visitors until a separate Publish
+                    Approval creates this exact text as a native page draft. The
+                    page stays hidden from visitors until a separate Publish
                     action. It uses the existing site header and footer.
                 </p>
                 <p>
@@ -101,14 +100,6 @@ export default function PageCreationPreview({
                     </style>
                 </div>
             </section>
-            {change.state.kind === "applied" && (
-                <Link
-                    className="inline-flex min-h-11 items-center underline"
-                    href={`/dashboard/page/${encodeURIComponent(change.target.pageId)}?documentId=${change.baseline.documentId}&redirectTo=/dashboard/changes/${encodeURIComponent(change.id)}`}
-                >
-                    Open native draft editor
-                </Link>
-            )}
         </div>
     );
 }

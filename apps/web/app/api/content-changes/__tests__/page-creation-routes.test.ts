@@ -253,3 +253,72 @@ test("native GraphQL transports the expected result identity to all editor opera
         JSON.stringify(await PageModel.findById(change.baseline.documentId)),
     ).toBe(before);
 });
+
+test("REST publication review needs a separate version/hash approval and cannot accept caller-authored publication content", async () => {
+    const creation = await propose();
+    const invoke = (id: string, body: unknown, headers = {}) =>
+        action(request(`/api/content-changes/${id}`, "POST", body, headers), {
+            params: Promise.resolve({ id }),
+        });
+    await invoke(creation.id, {
+        action: "approve",
+        version: 1,
+        previewHash: creation.previewHash,
+    });
+    expect(
+        (
+            await invoke(
+                creation.id,
+                { action: "prepare-publication", version: 1 },
+                { origin: "https://foreign.example" },
+            )
+        ).status,
+    ).toBe(403);
+    expect(
+        (
+            await invoke(
+                creation.id,
+                { action: "prepare-publication", version: 1 },
+                { cookie: "courselit.member-mimic=expired" },
+            )
+        ).status,
+    ).toBe(403);
+    expect(
+        (
+            await invoke(creation.id, {
+                action: "prepare-publication",
+                version: 1,
+                title: "Unreviewed title",
+            })
+        ).status,
+    ).toBe(400);
+    const prepared = await invoke(creation.id, {
+        action: "prepare-publication",
+        version: 1,
+    });
+    expect(prepared.status).toBe(200);
+    expect(prepared.headers.get("cache-control")).toBe("no-store");
+    const change = (await prepared.json()).change;
+    expect(change.target.kind).toBe("page-publish");
+    expect(
+        (await PageModel.findById(creation.baseline.documentId)).draftOnly,
+    ).toBe(true);
+    expect(
+        (
+            await invoke(change.id, {
+                action: "approve",
+                version: 1,
+                previewHash: "0".repeat(64),
+            })
+        ).status,
+    ).toBe(409);
+    const approved = await invoke(change.id, {
+        action: "approve",
+        version: 1,
+        previewHash: change.previewHash,
+    });
+    expect((await approved.json()).change.state.kind).toBe("applied");
+    expect(
+        (await PageModel.findById(creation.baseline.documentId)).draftOnly,
+    ).toBe(false);
+});

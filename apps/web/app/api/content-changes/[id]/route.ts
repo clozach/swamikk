@@ -1,3 +1,4 @@
+import { preparePublicationReview } from "@/services/content-changes/page-publication-adapter";
 import { assertNoMemberMimicMutation } from "@/services/member-mimic/context";
 import type { NextRequest } from "next/server";
 import type { ContentChangeRouteParams } from "@courselit/common-models";
@@ -50,6 +51,14 @@ export async function POST(
         );
         const { id } = await params;
         switch (body.action) {
+            case "prepare-publication":
+                return {
+                    change: await preparePublicationReview(
+                        id,
+                        body.version,
+                        ctx,
+                    ),
+                };
             case "approve":
                 return {
                     change: await approveChange(

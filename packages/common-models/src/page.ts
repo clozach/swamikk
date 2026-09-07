@@ -1,3 +1,4 @@
+import type { PagePublicationReceipt } from "./page-publication";
 import type { PageCreationReceipt } from "./page-creation";
 import { Media } from "./media";
 import type { Blog, Community, Product, Site } from "./page-type";
@@ -13,6 +14,7 @@ export default interface Page {
     deleted: boolean;
     draftOnly?: boolean;
     creationReceipt?: PageCreationReceipt;
+    publicationReceipt?: PagePublicationReceipt;
     entityId?: string;
     pageData?: Record<string, unknown>;
     title?: string;

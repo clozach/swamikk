@@ -1,3 +1,6 @@
+import { assertApprovedPublication } from "./approved-publication";
+import type { PagePublicationGuard } from "@/services/content-changes/page-publication-types";
+import { withAccountWrite } from "../../../../packages/common-logic/src/account-lifecycle/gate";
 import { expectedPageIdentity } from "./identity";
 import { checkDraftPublication } from "./draft-publication";
 import { pageWriteFilter } from "@/services/content-changes/page-guard";
@@ -258,10 +261,11 @@ export const updatePage = async ({
     return getPageResponse(savedPage, ctx);
 };
 
-export const publish = async (
+const publishNative = async (
     pageId: string,
     ctx: GQLContext,
     documentId?: string,
+    publicationGuard?: PagePublicationGuard,
 ): Promise<Partial<Page> | null> => {
     checkIfAuthenticated(ctx);
     if (!checkPermission(ctx.user.permissions, [permissions.manageSite])) {
@@ -278,6 +282,8 @@ export const publish = async (
         return null;
     }
     const baseline = nativePageBaseline(page);
+    if (publicationGuard)
+        await assertApprovedPublication(baseline, publicationGuard, ctx);
     const firstPublication = page.draftOnly === true;
     if (firstPublication) await checkDraftPublication(ctx);
     if (firstPublication) page.draftOnly = false;
@@ -350,9 +356,31 @@ export const publish = async (
     for (const mediaId of mediaToDelete) {
         await deleteMedia(mediaId, ctx.subdomain._id);
     }
-    const savedPage = await guardedNativePageSave(page, baseline);
+    const savedPage = await guardedNativePageSave(
+        page,
+        baseline,
+        publicationGuard?.receipt,
+    );
 
     return getPageResponse(savedPage, ctx);
+};
+
+export const publish = async (
+    pageId: string,
+    ctx: GQLContext,
+    documentId?: string,
+    guard?: PagePublicationGuard,
+): Promise<Partial<Page> | null> => {
+    if (guard)
+        return withAccountWrite(
+            {
+                domainId: String(ctx.subdomain._id),
+                userId: ctx.user?.userId,
+                purpose: "approved-page-publication",
+            },
+            () => publishNative(pageId, ctx, documentId, guard),
+        );
+    return publishNative(pageId, ctx, documentId);
 };
 
 export const getPages = async (

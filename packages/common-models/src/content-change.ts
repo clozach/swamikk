@@ -1,4 +1,8 @@
 import type {
+    PagePublicationTarget,
+    PagePublicationVersion,
+} from "./page-publication";
+import type {
     PageCreationInput,
     PageCreationTarget,
     PageCreationVersion,
@@ -77,7 +81,8 @@ export interface LessonContentChangeVersion {
 export type ContentChangeVersion =
     | LessonContentChangeVersion
     | PageWidgetChangeVersion
-    | PageCreationVersion;
+    | PageCreationVersion
+    | PagePublicationVersion;
 interface ChangeMetadata {
     id: string;
     feedbackId?: string;
@@ -103,10 +108,16 @@ export interface PageCreationChange
         ChangeMetadata {
     target: PageCreationTarget;
 }
+export interface PagePublicationChange
+    extends PagePublicationVersion,
+        ChangeMetadata {
+    target: PagePublicationTarget;
+}
 export type ContentChange =
     | LessonContentChange
     | PageWidgetContentChange
-    | PageCreationChange;
+    | PageCreationChange
+    | PagePublicationChange;
 export const isPageWidgetChange = (
     change: ContentChange,
 ): change is PageWidgetContentChange => change.target.kind === "page-widget";
@@ -120,7 +131,8 @@ export type ContentChangeAction =
     | { action: "approve"; version: number; previewHash: string }
     | { action: "reject"; version: number }
     | { action: "reconcile" }
-    | { action: "revert"; version: number };
+    | { action: "revert"; version: number }
+    | { action: "prepare-publication"; version: number };
 export interface ContentChangeRouteParams {
     params: Promise<{ id: string }>;
 }

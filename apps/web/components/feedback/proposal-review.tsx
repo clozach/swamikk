@@ -1,3 +1,8 @@
+import {
+    isPagePublication,
+    hasGlobalDrafts,
+} from "@/services/content-changes/page-publication-types";
+import PagePublicationPreview from "./page-publication-preview";
 import { isPageCreation } from "@/services/content-changes/page-creation-types";
 import PageCreationPreview from "./page-creation-preview";
 import { useContext, useState } from "react";
@@ -82,7 +87,9 @@ export default function ProposalReview({
                     {change.summary}
                 </h1>
             </div>
-            {isPageCreation(change) ? (
+            {isPagePublication(change) ? (
+                <PagePublicationPreview change={change} />
+            ) : isPageCreation(change) ? (
                 <PageCreationPreview change={change} />
             ) : isPageWidgetChange(change) ? (
                 <PageProposalPreview change={change} />
@@ -141,7 +148,13 @@ export default function ProposalReview({
                     <>
                         <Button
                             className="min-h-11"
-                            disabled={working}
+                            disabled={
+                                working ||
+                                (isPagePublication(change) &&
+                                    hasGlobalDrafts(
+                                        change.preview.globalDrafts,
+                                    ))
+                            }
                             onClick={() =>
                                 act({
                                     action: "approve",
@@ -150,9 +163,11 @@ export default function ProposalReview({
                                 })
                             }
                         >
-                            {isPageCreation(change)
-                                ? "Approve creation of unpublished page"
-                                : copy.approve}
+                            {isPagePublication(change)
+                                ? "Approve publication"
+                                : isPageCreation(change)
+                                  ? "Approve creation of unpublished page"
+                                  : copy.approve}
                         </Button>
                         <Button
                             className="min-h-11"
@@ -179,18 +194,44 @@ export default function ProposalReview({
                         {copy.recover}
                     </Button>
                 )}
-                {change.state.kind === "applied" && !isPageCreation(change) && (
+                {((isPageCreation(change) && change.state.kind === "applied") ||
+                    (isPagePublication(change) &&
+                        ["proposed", "stale", "failed", "rejected"].includes(
+                            change.state.kind,
+                        ))) && (
                     <Button
                         className="min-h-11"
                         variant="outline"
                         disabled={working}
                         onClick={() =>
-                            act({ action: "revert", version: change.version })
+                            act({
+                                action: "prepare-publication",
+                                version: change.version,
+                            })
                         }
                     >
-                        {copy.undo}
+                        {isPageCreation(change)
+                            ? "Review publication"
+                            : "Refresh publication review"}
                     </Button>
                 )}
+                {change.state.kind === "applied" &&
+                    !isPageCreation(change) &&
+                    !isPagePublication(change) && (
+                        <Button
+                            className="min-h-11"
+                            variant="outline"
+                            disabled={working}
+                            onClick={() =>
+                                act({
+                                    action: "revert",
+                                    version: change.version,
+                                })
+                            }
+                        >
+                            {copy.undo}
+                        </Button>
+                    )}
                 <Button
                     className="min-h-11"
                     variant="ghost"

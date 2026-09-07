@@ -15,6 +15,7 @@ export function nativePageBaseline(page: Page) {
 export async function guardedNativePageSave(
     page: Page,
     baseline: EditablePage,
+    publicationReceipt?: Page["publicationReceipt"],
 ) {
     const value = nativePageBaseline(page);
     const set = Object.fromEntries(
@@ -30,7 +31,10 @@ export async function guardedNativePageSave(
     const saved = await PageModel.findOneAndUpdate(
         pageWriteFilter(baseline),
         {
-            $set: set,
+            $set: {
+                ...set,
+                ...(publicationReceipt ? { publicationReceipt } : {}),
+            },
             ...(Object.keys(unset).length ? { $unset: unset } : {}),
             $inc: { __v: 1 },
         },

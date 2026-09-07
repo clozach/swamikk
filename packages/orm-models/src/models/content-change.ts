@@ -26,10 +26,16 @@ export type InternalPageCreationChange = Omit<
     "createdAt" | "updatedAt"
 > &
     InternalContentChangeFields;
+export type InternalPagePublicationChange = Omit<
+    Extract<ContentChange, { target: { kind: "page-publish" } }>,
+    "createdAt" | "updatedAt"
+> &
+    InternalContentChangeFields;
 export type InternalContentChange =
     | InternalLessonContentChange
     | InternalPageContentChange
-    | InternalPageCreationChange;
+    | InternalPageCreationChange
+    | InternalPagePublicationChange;
 
 export const ContentChangeSchema = new mongoose.Schema<InternalContentChange>(
     {

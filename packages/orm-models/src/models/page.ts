@@ -55,6 +55,7 @@ export const PageSchema = new mongoose.Schema<InternalPage>(
         deleted: { type: Boolean, default: false },
         draftOnly: { type: Boolean },
         creationReceipt: { type: mongoose.Schema.Types.Mixed },
+        publicationReceipt: { type: mongoose.Schema.Types.Mixed },
         contentChangeReceipt: { type: mongoose.Schema.Types.Mixed },
     },
     {
