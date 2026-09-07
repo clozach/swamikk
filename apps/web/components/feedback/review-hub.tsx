@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { feedbackRequest, allFeedbackPages } from "./api";
 import MailboxSettings from "./mailbox-settings";
 import MailboxStatus from "./mailbox-status";
+import FeedbackReviewStatus from "@/components/feedback-review-status";
 import ProposalReview, { changeStateLabel } from "./proposal-review";
 
 type HubState =
@@ -288,6 +289,9 @@ export default function ReviewHub() {
                                             <MailboxStatus
                                                 comment={comment}
                                                 onChanged={refresh}
+                                            />
+                                            <FeedbackReviewStatus
+                                                feedback={comment}
                                             />
                                             <div className="mt-4 flex flex-wrap gap-2">
                                                 <Button
