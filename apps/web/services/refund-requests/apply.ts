@@ -139,7 +139,13 @@ export async function applyRefundRequest(
                 { ...ownedClaim, "claim.expiresAt": { $gt: deps.now() } },
                 {
                     $set: {
-                        refund: { kind: "result", firstAttemptAt, result },
+                        refund: {
+                            kind: "result",
+                            firstAttemptAt,
+                            result,
+                            observationId: randomUUID(),
+                            observedAt: deps.now(),
+                        },
                     },
                     $inc: { revision: 1 },
                 },

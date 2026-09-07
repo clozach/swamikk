@@ -4,7 +4,7 @@ export default {
             summary:
                 "Read a native payment receipt without changing payments or access",
             description:
-                "Tenant and member ownership are checked through the native membership, including historical sessions. Member Mimic receives the approved subject's read-only view. No provider IDs, credentials, card data or external receipt URLs are exposed. A missing historical payment date stays unknown.",
+                "Refund summaries report separately observed money status without altering original paid receipt amounts or access. Tenant and member ownership are checked through the native membership, including historical sessions. Member Mimic receives the approved subject's read-only view. No provider IDs, credentials, card data or external receipt URLs are exposed. A missing historical payment date stays unknown.",
             parameters: [
                 {
                     name: "invoiceId",

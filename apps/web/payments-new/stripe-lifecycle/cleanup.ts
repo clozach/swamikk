@@ -1,3 +1,4 @@
+import Ledger from "@/models/StripeChargeRefunds";
 import Binding from "@/models/StripeSubscriptionBinding";
 import Receipt from "@/models/StripeWebhookReceipt";
 
@@ -6,5 +7,6 @@ export async function deleteTenantStripeLifecycle(
     domainId: string,
 ): Promise<void> {
     await Binding.deleteMany({ domain: domainId });
+    await Ledger.deleteMany({ domain: domainId });
     await Receipt.deleteMany({ domain: domainId });
 }

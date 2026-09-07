@@ -1,3 +1,9 @@
+import {
+    readUserRefundEvidence,
+    memberRefundSummary,
+    withObservedRefund,
+} from "@/payments-new/stripe-lifecycle/refund-projection";
+import RefundLedger from "@/models/StripeChargeRefunds";
 import type GQLContext from "@/models/GQLContext";
 import { Constants } from "@courselit/common-models";
 import {
@@ -41,6 +47,10 @@ export async function readMemberRefundRequests(
         ...(ctx.memberMimic ? { state: { $ne: "draft" } } : {}),
     }).lean();
     const products: MemberRefundRequestsView["products"] = [];
+    const refunds = await readUserRefundEvidence(
+        String(ctx.subdomain._id),
+        ctx.user.userId,
+    );
     for (const invoice of invoices) {
         const member = memberships.find(
             (item) => item.membershipId === invoice.membershipId,
@@ -59,6 +69,9 @@ export async function readMemberRefundRequests(
                 : null;
         products.push({
             invoiceId: invoice.invoiceId,
+            refundSummary: memberRefundSummary(
+                refunds.find((item) => item.invoiceId === invoice.invoiceId),
+            ),
             productName:
                 request?.productName ||
                 course?.title ||
@@ -67,7 +80,9 @@ export async function readMemberRefundRequests(
             currency: invoice.currencyISOCode,
             mode: invoice.paymentMode || "unknown",
             request: request
-                ? refundRequestView(request, { readOnly: !!ctx.memberMimic })
+                ? refundRequestView(withObservedRefund(request, refunds), {
+                      readOnly: !!ctx.memberMimic,
+                  })
                 : null,
             receiptHref: `/dashboard/receipts/${encodeURIComponent(invoice.invoiceId)}`,
         });
@@ -89,9 +104,15 @@ export async function readOperatorRefundRequests(
         .sort({ submittedAt: 1 })
         .limit(100)
         .lean();
+    const evidence = await RefundLedger.find({
+        domain: ctx.subdomain._id,
+        userId: { $in: records.map((item) => item.userId) },
+    }).lean();
     return {
         requests: records.map((record) =>
-            refundRequestView(record, { operator: true }),
+            refundRequestView(withObservedRefund(record, evidence), {
+                operator: true,
+            }),
         ),
     };
 }

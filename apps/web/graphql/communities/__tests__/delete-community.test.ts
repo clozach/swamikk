@@ -1,4 +1,4 @@
-import { deleteCommunity } from "../logic";
+import { deleteCommunity, cancelAndDeleteMemberships } from "../logic";
 import CommunityModel from "@models/Community";
 import CommunityPostModel from "@models/CommunityPost";
 import CommunityCommentModel from "@models/CommunityComment";
@@ -393,7 +393,7 @@ describe("deleteCommunity - Comprehensive Test Suite", () => {
             expect(memberships).toHaveLength(0);
         });
 
-        it("should cancel active subscriptions and delete invoices", async () => {
+        it("preserves subscription financial records before deleting a community", async () => {
             const { getPaymentMethodFromSettings } = require("@/payments-new");
             const mockCancel = jest.fn().mockResolvedValue(true);
             getPaymentMethodFromSettings.mockResolvedValue({
@@ -456,25 +456,31 @@ describe("deleteCommunity - Comprehensive Test Suite", () => {
                 status: Constants.InvoiceStatus.PAID,
             });
 
-            await deleteCommunity({ ctx: mockCtx, id: community.communityId });
-
-            // Verify subscription was cancelled
-            expect(mockCancel).toHaveBeenCalledWith("sub_stripe_456");
-
-            // Verify membership was deleted
-            const memberships = await MembershipModel.find({
-                domain: testDomain._id,
-                entityId: community.communityId,
-                entityType: Constants.MembershipEntityType.COMMUNITY,
-            });
-            expect(memberships).toHaveLength(0);
-
-            // Verify invoices were deleted
-            const invoices = await InvoiceModel.find({
-                domain: testDomain._id,
-                membershipId: membership.membershipId,
-            });
-            expect(invoices).toHaveLength(0);
+            await expect(
+                deleteCommunity({ ctx: mockCtx, id: community.communityId }),
+            ).rejects.toThrow("financial records");
+            await expect(
+                cancelAndDeleteMemberships([membership], mockCtx),
+            ).rejects.toThrow("financial records");
+            expect(mockCancel).not.toHaveBeenCalled();
+            expect(
+                await MembershipModel.exists({ _id: membership._id }),
+            ).toBeTruthy();
+            expect(
+                await InvoiceModel.exists({
+                    domain: testDomain._id,
+                    membershipId: membership.membershipId,
+                }),
+            ).toBeTruthy();
+            expect(
+                await CommunityModel.exists({ _id: community._id }),
+            ).toBeTruthy();
+            expect(
+                await PageModel.exists({
+                    domain: testDomain._id,
+                    pageId: community.pageId,
+                }),
+            ).toBeTruthy();
         });
 
         it("should delete all payment plans", async () => {

@@ -1,3 +1,4 @@
+import type { MemberRefundSummary } from "../../../../packages/common-models/src/stripe-refunds";
 /** Browser-safe M07/O10 DTOs. Quote amounts are Stripe minor currency units. */
 export type RefundRouting =
     | "purchase-review"
@@ -74,6 +75,7 @@ export interface RefundRequestView {
     receiptHref: string;
 }
 export interface RefundProductView {
+    refundSummary?: MemberRefundSummary;
     invoiceId: string;
     productName: string;
     amount: number;

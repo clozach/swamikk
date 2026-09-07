@@ -1,3 +1,7 @@
+import {
+    readUserRefundEvidence,
+    memberRefundSummary,
+} from "@/payments-new/stripe-lifecycle/refund-projection";
 import { Constants } from "@courselit/common-models";
 import type { Invoice } from "@courselit/common-models";
 import type GQLContext from "@/models/GQLContext";
@@ -59,7 +63,14 @@ export async function readMemberReceipt(
               })
                   .select("name")
                   .lean();
+    const refunds = await readUserRefundEvidence(
+        String(ctx.subdomain._id),
+        ctx.user.userId,
+    );
     return {
+        refundSummary: memberRefundSummary(
+            refunds.find((item) => item.invoiceId === invoice.invoiceId),
+        ),
         readOnly: !!ctx.memberMimic,
         invoiceId: invoice.invoiceId,
         siteName: ctx.subdomain.settings?.title || "Membership",

@@ -1,3 +1,4 @@
+import User from "@/models/User";
 import RefundRequest from "@/models/RefundRequest";
 import Booking from "@/models/RefundBookingEvidence";
 import Cohort from "@/models/Cohort";
@@ -329,9 +330,15 @@ it("a reviewed fixture policy exercises approval and uncertain recovery without 
     expect(api.refunds.create).toHaveBeenCalledTimes(1);
 });
 it("keeps cross-member, cross-tenant and Mimic requests out of mutation paths", async () => {
+    const other = await User.create({
+        domain: f.domain._id,
+        userId: "other",
+        email: "other@example.com",
+        active: true,
+    });
     await expect(
         prepareRefundRequest(
-            { ...f.ctx, user: { ...f.user.toObject(), userId: "other" } },
+            { ...f.ctx, user: other },
             { invoiceId, reason: "Other" },
             deps,
         ),
@@ -403,6 +410,10 @@ it("a durable claim with no known provider result is reconciled without ever cre
     expect(result.refund.kind).toBe("uncertain");
     expect(api.refunds.create).not.toHaveBeenCalled();
     expect((await RefundRequest.findOne().lean())?.refund.kind).toBe("result");
+    expect((await RefundRequest.findOne().lean())?.refund).toMatchObject({
+        observationId: expect.any(String),
+        observedAt: expect.any(Date),
+    });
 });
 it("recovers a provider-accepted refund after its database result was lost", async () => {
     (policy as any).approvedRefundAccessDecision = "preserve-access";

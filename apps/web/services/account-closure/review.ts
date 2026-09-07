@@ -1,3 +1,8 @@
+import {
+    readUserRefundEvidence,
+    withObservedRefund,
+    refundEvidenceNeedsAttention,
+} from "@/payments-new/stripe-lifecycle/refund-projection";
 import { createHash } from "crypto";
 import type GQLContext from "@/models/GQLContext";
 import type { InternalUser } from "@courselit/orm-models";
@@ -23,12 +28,25 @@ export async function accountClosureReview(
     ctx: GQLContext,
 ) {
     const scope = { domain: ctx.subdomain._id, userId: user.userId };
-    const [memberships, cancellations, refunds, lifecycle] = await Promise.all([
+    const [
+        memberships,
+        storedCancellations,
+        storedRefunds,
+        lifecycle,
+        refundEvidence,
+    ] = await Promise.all([
         MembershipModel.find(scope).lean(),
         BillingCancellation.find(scope).lean(),
         RefundRequest.find(scope).lean(),
         AccountLifecycleModel.findOne(scope).lean(),
+        readUserRefundEvidence(String(ctx.subdomain._id), user.userId),
     ]);
+    const cancellations = storedCancellations.map((record) =>
+        withObservedRefund(record, refundEvidence),
+    );
+    const refunds = storedRefunds.map((record) =>
+        withObservedRefund(record, refundEvidence),
+    );
     const blockers: ClosureBlocker[] = [];
     const externalEnds = new Set(
         (
@@ -112,6 +130,7 @@ export async function accountClosureReview(
             (refund.result.kind === "refund" &&
                 refund.result.status === "succeeded"));
     if (
+        refundEvidence.some(refundEvidenceNeedsAttention) ||
         cancellations.some(
             (item) =>
                 item.cancellation.kind !== "quoted" &&
@@ -136,6 +155,11 @@ export async function accountClosureReview(
             href: "/p/contact",
         });
     const facts = {
+        refundEvidence: refundEvidence.map((item) => [
+            item.chargeId,
+            item.revision,
+            item.claim?.id || null,
+        ]),
         pendingInvoices: pendingInvoices.map((item) => item.invoiceId),
         userId: user.userId,
         permissions: user.permissions,

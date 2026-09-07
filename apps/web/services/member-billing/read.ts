@@ -1,3 +1,8 @@
+import {
+    readUserRefundEvidence,
+    memberRefundSummary,
+    withObservedRefund,
+} from "@/payments-new/stripe-lifecycle/refund-projection";
 import { Constants, type Membership } from "@courselit/common-models";
 import type GQLContext from "@/models/GQLContext";
 import { MembershipModel, InvoiceModel } from "./models";
@@ -27,6 +32,10 @@ export async function readMemberBilling(
         .limit(100)
         .lean();
     const views: BillingMembershipView[] = [];
+    const refunds = await readUserRefundEvidence(
+        String(ctx.subdomain._id),
+        ctx.user.userId,
+    );
     for (const member of memberships) {
         const [plan, product, invoices, operation, targets] = await Promise.all(
             [
@@ -101,10 +110,18 @@ export async function readMemberBilling(
             consequences,
             cancellationEligibility: eligibility,
             cancellation: operation
-                ? cancellationView(operation, !!ctx.memberMimic)
+                ? cancellationView(
+                      withObservedRefund(operation, refunds),
+                      !!ctx.memberMimic,
+                  )
                 : null,
             invoices: invoices.map((invoice) => ({
                 invoiceId: invoice.invoiceId,
+                refundSummary: memberRefundSummary(
+                    refunds.find(
+                        (item) => item.invoiceId === invoice.invoiceId,
+                    ),
+                ),
                 amount: invoice.amount,
                 currency: invoice.currencyISOCode,
                 mode: invoice.paymentMode || "unknown",

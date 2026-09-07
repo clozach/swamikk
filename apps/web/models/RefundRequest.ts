@@ -36,6 +36,8 @@ export interface InternalRefundRequest {
         | { kind: "claimed"; firstAttemptAt: Date }
         | {
               kind: "result";
+              observationId?: string;
+              observedAt?: Date;
               firstAttemptAt?: Date;
               result: PurchaseRefundResult;
           };

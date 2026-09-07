@@ -1,4 +1,5 @@
 import type Stripe from "stripe";
+import { reconcileChargeRefunds, stripeRefundEventTypes } from "./refunds";
 import type StripePayment from "../stripe-payment";
 import type { InternalStripeSubscriptionBinding } from "@/models/StripeSubscriptionBinding";
 import { receiveStripeEvent, settleStripeEvent } from "./receipts";
@@ -18,7 +19,8 @@ export async function handleStripeEvent(
         "customer.subscription.updated",
         "customer.subscription.deleted",
     ].includes(event.type);
-    if (!subscriptionEvent && !payment.isPaymentEvent(event))
+    const refundEvent = stripeRefundEventTypes.includes(event.type);
+    if (!subscriptionEvent && !refundEvent && !payment.isPaymentEvent(event))
         return Response.json({ message: "Event ignored" });
     const expectedMode = payment.siteinfo.stripeKey?.startsWith("pk_test_")
         ? false
@@ -36,20 +38,22 @@ export async function handleStripeEvent(
         const subscriptionId = subscriptionEvent
             ? (event.data.object as Stripe.Subscription).id
             : payment.getSubscriptionId(event);
-        const response = subscriptionId
-            ? await reconcileSubscription(
-                  domainId,
-                  event,
-                  payment.stripe,
-                  subscriptionId,
-                  subscriptionEvent ? undefined : paid,
-                  subscriptionEvent
-                      ? undefined
-                      : (payment.getMetadata(event).invoiceId as
-                            | string
-                            | undefined),
-              )
-            : await paid();
+        const response = refundEvent
+            ? await reconcileChargeRefunds(domainId, event, payment.stripe)
+            : subscriptionId
+              ? await reconcileSubscription(
+                    domainId,
+                    event,
+                    payment.stripe,
+                    subscriptionId,
+                    subscriptionEvent ? undefined : paid,
+                    subscriptionEvent
+                        ? undefined
+                        : (payment.getMetadata(event).invoiceId as
+                              | string
+                              | undefined),
+                )
+              : await paid();
         if (!response.ok)
             throw new StripeLifecycleError(
                 "payment-processing-incomplete",
@@ -57,9 +61,11 @@ export async function handleStripeEvent(
             );
         await settleStripeEvent(domainId, event, {
             kind: "complete",
-            outcome: subscriptionEvent
-                ? "subscription-reconciled"
-                : "payment-reconciled",
+            outcome: refundEvent
+                ? "refund-reconciled"
+                : subscriptionEvent
+                  ? "subscription-reconciled"
+                  : "payment-reconciled",
         });
         return response;
     } catch (error) {

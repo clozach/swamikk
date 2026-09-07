@@ -1,3 +1,4 @@
+import { requireNoFinancialDeletion } from "@/payments-new/stripe-lifecycle/deletion";
 import {
     checkPermission,
     extractMediaIDs,
@@ -2136,6 +2137,18 @@ export async function deleteCommunity({
         throw new Error(responses.item_not_found);
     }
 
+    const financialMembers = await MembershipModel.find({
+        domain: ctx.subdomain._id,
+        entityId: community.communityId,
+        entityType: Constants.MembershipEntityType.COMMUNITY,
+    })
+        .select("membershipId")
+        .lean();
+    await requireNoFinancialDeletion(
+        String(ctx.subdomain._id),
+        financialMembers.map((member) => member.membershipId),
+    );
+
     await CommunityReportModel.deleteMany({
         domain: ctx.subdomain._id,
         communityId: community.communityId,
@@ -2312,6 +2325,10 @@ export async function cancelAndDeleteMemberships(
     memberships: InternalMembership[],
     ctx: GQLContext,
 ) {
+    await requireNoFinancialDeletion(
+        String(ctx.subdomain._id),
+        memberships.map((member) => member.membershipId),
+    );
     for (const membership of memberships) {
         // Cancel active subscriptions
         if (membership.subscriptionId) {

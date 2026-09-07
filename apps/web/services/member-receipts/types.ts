@@ -1,3 +1,4 @@
+import type { MemberRefundSummary } from "../../../../packages/common-models/src/stripe-refunds";
 export type ReceiptDate =
     | {
           kind: "recorded";
@@ -6,6 +7,7 @@ export type ReceiptDate =
       }
     | { kind: "unrecorded" };
 export interface MemberReceipt {
+    refundSummary?: MemberRefundSummary;
     readOnly: boolean;
     invoiceId: string;
     siteName: string;

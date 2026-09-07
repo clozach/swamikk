@@ -37,6 +37,14 @@ const courseFilters = new GraphQLEnumType({
     },
 });
 
+const purchaseRemovalType = new GraphQLObjectType({
+    name: "PurchaseRemoval",
+    fields: {
+        kind: { type: new GraphQLNonNull(GraphQLString) },
+        reason: { type: GraphQLString },
+    },
+});
+
 const productPurchaseType = new GraphQLObjectType({
     name: "ProductPurchase",
     fields: {
@@ -49,6 +57,7 @@ const productPurchaseType = new GraphQLObjectType({
         currencyISOCode: { type: GraphQLString },
         status: { type: GraphQLString },
         isTest: { type: GraphQLBoolean },
+        removal: { type: new GraphQLNonNull(purchaseRemovalType) },
         createdAt: { type: GraphQLString },
     },
 });
@@ -65,6 +74,7 @@ const purchaseWithProductType = new GraphQLObjectType({
         currencyISOCode: { type: GraphQLString },
         status: { type: GraphQLString },
         isTest: { type: GraphQLBoolean },
+        removal: { type: new GraphQLNonNull(purchaseRemovalType) },
         createdAt: { type: GraphQLString },
         courseId: { type: GraphQLString },
         productTitle: { type: GraphQLString },

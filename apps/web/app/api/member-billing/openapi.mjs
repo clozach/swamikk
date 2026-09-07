@@ -4,7 +4,7 @@ export default {
             summary:
                 "Read the signed-in member's billing and cancellation status",
             description:
-                "Tenant-scoped, read-only billing projection. Member Mimic receives the subject's safe view. No provider credentials or identifiers, payment mutations or access initialization occur.",
+                "Refund summaries report separately observed money status without altering original paid receipt amounts or access. Tenant-scoped, read-only billing projection. Member Mimic receives the subject's safe view. No provider credentials or identifiers, payment mutations or access initialization occur.",
             responses: {
                 200: {
                     description:

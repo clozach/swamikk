@@ -136,6 +136,11 @@ it("concurrent prepares and confirms produce one durable operation, cancellation
     });
     expect(f.api.subscriptions.cancel).toHaveBeenCalledTimes(1);
     expect(f.api.refunds.create).toHaveBeenCalledTimes(1);
+    expect((await BillingCancellation.findOne().lean())?.refund).toMatchObject({
+        kind: "result",
+        observationId: expect.any(String),
+        observedAt: expect.any(Date),
+    });
     expect((await Membership.findById(f.member._id)).status).toBe("expired");
     expect(
         await getLessonAccess({

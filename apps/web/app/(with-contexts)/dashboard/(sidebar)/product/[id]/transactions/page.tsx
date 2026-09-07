@@ -10,7 +10,10 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { X } from "lucide-react";
+import MemberMimicLink from "@components/member-mimic/link";
+import PurchaseRemovalControl from "@components/transactions/removal-control";
+import { purchaseRemovalUi } from "@/config/strings";
+import type { PurchaseRemoval } from "@courselit/common-models";
 import { useParams } from "next/navigation";
 import { FetchBuilder } from "@courselit/utils";
 import { AddressContext } from "@components/contexts";
@@ -40,6 +43,7 @@ interface Purchase {
     currencyISOCode: string | null;
     status: string;
     isTest: boolean;
+    removal: PurchaseRemoval;
     createdAt: string | null;
 }
 
@@ -84,6 +88,7 @@ export default function TransactionsPage() {
                     currencyISOCode
                     status
                     isTest
+                    removal { kind reason }
                     createdAt
                 }
             }
@@ -114,6 +119,7 @@ export default function TransactionsPage() {
     }, [product]);
 
     const handleDelete = async (purchase: Purchase) => {
+        if (purchase.removal?.kind !== "allowed") return;
         setDeleting(true);
         const mutation = `
             mutation DeleteTestPurchase($courseId: String!, $purchaseId: String!) {
@@ -164,10 +170,7 @@ export default function TransactionsPage() {
             <div className="flex flex-col gap-1">
                 <h1 className="text-3xl font-bold">Transactions</h1>
                 <p className="text-sm text-muted-foreground">
-                    Every purchase recorded for this product. Test-mode
-                    purchases can be removed with the red ✕ so they stop
-                    inflating your sales — live payments have no ✕ and are never
-                    deletable here.
+                    {purchaseRemovalUi.productHelp}
                 </p>
             </div>
 
@@ -208,17 +211,19 @@ export default function TransactionsPage() {
                         </TableRow>
                     ) : (
                         purchases.map((purchase) => (
-                            <TableRow key={purchase.purchaseId}>
+                            <TableRow key={purchase.invoiceId}>
                                 <TableCell>
                                     {formatDate(purchase.createdAt)}
                                 </TableCell>
                                 <TableCell className="font-medium">
-                                    {purchase.userEmail ||
-                                        purchase.userName || (
-                                            <span className="text-muted-foreground">
-                                                deleted user
-                                            </span>
-                                        )}
+                                    <MemberMimicLink userId={purchase.userId}>
+                                        {purchase.userEmail ||
+                                            purchase.userName || (
+                                                <span className="text-muted-foreground">
+                                                    deleted user
+                                                </span>
+                                            )}
+                                    </MemberMimicLink>
                                 </TableCell>
                                 <TableCell>{formatAmount(purchase)}</TableCell>
                                 <TableCell className="capitalize">
@@ -236,24 +241,12 @@ export default function TransactionsPage() {
                                     </Badge>
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    {purchase.isTest ? (
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                            aria-label="Remove test transaction"
-                                            title="Remove test transaction"
-                                            onClick={() =>
-                                                setConfirmTarget(purchase)
-                                            }
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    ) : (
-                                        <span className="text-muted-foreground">
-                                            —
-                                        </span>
-                                    )}
+                                    <PurchaseRemovalControl
+                                        removal={purchase.removal}
+                                        onRemove={() =>
+                                            setConfirmTarget(purchase)
+                                        }
+                                    />
                                 </TableCell>
                             </TableRow>
                         ))

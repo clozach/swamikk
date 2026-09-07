@@ -11,9 +11,15 @@
  *   - invoices                       the money record (carries the cs_test_/cs_live_ marker)
  *   - memberships                    the access grant
  *
- * The dashboard reassembles these into one row per purchase and can remove a
- * *test-mode* purchase (all three pieces) so testing cruft stops inflating sales.
+ * The dashboard reassembles these into one row per invoice. Only synthetic
+ * test records without financial evidence can be removed; provider history stays.
  */
+import {
+    requireNoFinancialDeletion,
+    protectedFinancialMemberships,
+    purchaseRemoval,
+} from "@/payments-new/stripe-lifecycle/deletion";
+import type { PurchaseRemoval } from "../../../../packages/common-models/src/purchase-removal";
 import GQLContext from "@/models/GQLContext";
 import { Constants } from "@courselit/common-models";
 import { responses } from "@/config/strings";
@@ -44,6 +50,7 @@ export interface ProductPurchase {
     currencyISOCode: string | null;
     status: string;
     isTest: boolean;
+    removal: PurchaseRemoval;
     createdAt: string | null; // ISO string; GraphQL layer types dates as strings
 }
 
@@ -90,10 +97,14 @@ export const getProductPurchases = async ({
         domain: ctx.subdomain._id,
         userId: { $in: buyerIds },
     })
-        .select("userId email name")
+        .select("userId email name active")
         .lean();
 
     const userById = new Map(users.map((u: any) => [u.userId, u]));
+    const protectedIds = await protectedFinancialMemberships(
+        String(ctx.subdomain._id),
+        membershipIds,
+    );
     const membershipById = new Map(
         memberships.map((m: any) => [m.membershipId, m]),
     );
@@ -105,13 +116,18 @@ export const getProductPurchases = async ({
             return {
                 purchaseId: invoice.membershipSessionId,
                 invoiceId: invoice.invoiceId,
-                userId: membership ? membership.userId : null,
+                userId: buyer?.active ? membership!.userId : null,
                 userEmail: buyer ? buyer.email : null,
                 userName: buyer ? buyer.name || null : null,
                 amount: invoice.amount,
                 currencyISOCode: invoice.currencyISOCode || null,
                 status: invoice.status,
                 isTest: isTestInvoice(invoice),
+                removal: purchaseRemoval(
+                    isTestInvoice(invoice),
+                    protectedIds.has(invoice.membershipId),
+                    membership?.sessionId === invoice.membershipSessionId,
+                ),
                 createdAt: invoice.createdAt
                     ? new Date(invoice.createdAt).toISOString()
                     : null,
@@ -186,10 +202,14 @@ export const getAllPurchases = async ({
         domain: ctx.subdomain._id,
         userId: { $in: buyerIds },
     })
-        .select("userId email name")
+        .select("userId email name active")
         .lean();
 
     const userById = new Map(users.map((u: any) => [u.userId, u]));
+    const protectedIds = await protectedFinancialMemberships(
+        String(ctx.subdomain._id),
+        membershipIds,
+    );
     const membershipById = new Map(
         memberships.map((m: any) => [m.membershipId, m]),
     );
@@ -202,13 +222,18 @@ export const getAllPurchases = async ({
             return {
                 purchaseId: invoice.membershipSessionId,
                 invoiceId: invoice.invoiceId,
-                userId: membership ? membership.userId : null,
+                userId: buyer?.active ? membership!.userId : null,
                 userEmail: buyer ? buyer.email : null,
                 userName: buyer ? buyer.name || null : null,
                 amount: invoice.amount,
                 currencyISOCode: invoice.currencyISOCode || null,
                 status: invoice.status,
                 isTest: isTestInvoice(invoice),
+                removal: purchaseRemoval(
+                    isTestInvoice(invoice),
+                    protectedIds.has(invoice.membershipId),
+                    membership?.sessionId === invoice.membershipSessionId,
+                ),
                 createdAt: invoice.createdAt
                     ? new Date(invoice.createdAt).toISOString()
                     : null,
@@ -221,10 +246,8 @@ export const getAllPurchases = async ({
 };
 
 /**
- * Remove a single TEST-mode purchase and all three of its scattered records
- * (activity + invoice + membership). By design this endpoint can ONLY delete
- * test-mode purchases: a live (cs_live_) financial record is not a representable
- * delete target here, so a real sale can never be destroyed through the UI.
+ * Remove a synthetic test purchase with no provider or refund history.
+ * Both the list and mutation check eligibility; provider test receipts stay.
  */
 export const deleteTestPurchase = async ({
     courseId,
@@ -271,6 +294,12 @@ export const deleteTestPurchase = async ({
         throw new Error(responses.item_not_found);
     }
 
+    await requireNoFinancialDeletion(String(ctx.subdomain._id), [
+        invoice.membershipId,
+    ]);
+    if (membership && membership.sessionId !== invoice.membershipSessionId)
+        throw new Error(responses.action_not_allowed);
+
     const buyerId =
         (membership && membership.userId) ||
         (purchasedActivity && purchasedActivity.userId) ||
@@ -282,8 +311,13 @@ export const deleteTestPurchase = async ({
     // Scoped to (buyer, product): a purchase whose buyer we can't resolve falls
     // back to just its own purchased activity.
     await Promise.all([
-        InvoiceModel.deleteOne({ _id: invoice._id }),
-        membership ? MembershipModel.deleteOne({ _id: membership._id }) : null,
+        InvoiceModel.deleteOne({ _id: invoice._id, status: invoice.status }),
+        membership
+            ? MembershipModel.deleteOne({
+                  _id: membership._id,
+                  sessionId: invoice.membershipSessionId,
+              })
+            : null,
         buyerId
             ? ActivityModel.deleteMany({
                   domain: ctx.subdomain._id,

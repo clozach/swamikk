@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import BillingCancellation, {
     type InternalBillingCancellation,
     type BillingRefundState,
@@ -73,6 +74,8 @@ export async function advanceBillingRefund(
         {
             refund: {
                 kind: "result",
+                observationId: randomUUID(),
+                observedAt: now(),
                 ...(firstAttemptAt ? { firstAttemptAt } : {}),
                 result,
             },

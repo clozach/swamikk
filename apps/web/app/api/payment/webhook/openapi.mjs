@@ -11,7 +11,7 @@ export const paymentWebhookOpenApi = {
                 tags: ["Payment callbacks"],
                 summary: "Reconcile a signed payment notification",
                 description:
-                    "Stripe verifies the unchanged UTF-8 body (maximum 1 MiB) with the tenant signing secret. Paid checkout/renewal and subscription.updated/deleted callbacks reconcile exact tenant, mode, provider and membership-session bindings. Actual subscription ending caps and freezes retained access; scheduled cancellation and attention states do not imply ending. Completed event IDs deduplicate; unsupported signed events are ignored. Refund callbacks are not processed by this subscription checkpoint.",
+                    "Stripe verifies the unchanged UTF-8 body (maximum 1 MiB) with the tenant signing secret. Paid checkout/renewal and subscription.updated/deleted callbacks reconcile exact tenant, mode, provider and membership-session bindings. Actual subscription ending caps and freezes retained access; scheduled cancellation and attention states do not imply ending. Completed event IDs deduplicate; unsupported signed events are ignored. Refund.created/updated/failed and charge.refunded callbacks record current refund status through an exact charge-to-native-invoice proof, without changing paid settlement, approving requests or changing access.",
                 security: [],
                 parameters: [
                     {

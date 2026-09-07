@@ -3411,3 +3411,153 @@ describe("native section writes respect the approved schedule revision", () => {
         },
     );
 });
+
+describe("financial purchase deletion boundary", () => {
+    it("keeps a paid test receipt available for delayed provider callbacks", async () => {
+        const Invoice = (await import("@models/Invoice")).default;
+        const { deleteTestPurchase, getProductPurchases, getAllPurchases } =
+            await import("../purchases");
+        const id = `financial-${Date.now()}-${Math.random()}`;
+        const domain = await DomainModel.create({
+            name: id,
+            email: `${id}@example.com`,
+        });
+        const user = await UserModel.create({
+            domain: domain._id,
+            userId: id,
+            email: domain.email,
+            active: true,
+            permissions: [constants.permissions.manageCourse],
+        });
+        const course = await CourseModel.create({
+            domain: domain._id,
+            courseId: id,
+            title: "Financial history",
+            slug: id,
+            cost: 0,
+            costType: "free",
+            privacy: "public",
+            type: "course",
+            creatorId: id,
+            published: true,
+        });
+        const membership = await MembershipModel.create({
+            domain: domain._id,
+            membershipId: id,
+            userId: id,
+            entityId: id,
+            entityType: "course",
+            sessionId: id,
+            paymentPlanId: id,
+            status: "active",
+        });
+        const invoice = await Invoice.create({
+            domain: domain._id,
+            invoiceId: id,
+            membershipId: id,
+            membershipSessionId: id,
+            amount: 11,
+            currencyISOCode: "NZD",
+            status: "paid",
+            paymentProcessor: "stripe",
+            paymentMode: "test",
+            paymentProcessorTransactionId: "cs_test_financial",
+        });
+        try {
+            const ctx = { subdomain: domain, user } as any;
+            const args = { courseId: course.courseId, purchaseId: id, ctx };
+            await expect(deleteTestPurchase(args)).rejects.toThrow(
+                "financial records",
+            );
+            expect(await Invoice.exists({ _id: invoice._id })).toBeTruthy();
+            expect(
+                await MembershipModel.exists({ _id: membership._id }),
+            ).toBeTruthy();
+            const blocked = { kind: "blocked", reason: "financial-history" };
+            expect((await getProductPurchases(args))[0].removal).toEqual(
+                blocked,
+            );
+            expect((await getAllPurchases({ ctx }))[0].removal).toEqual(
+                blocked,
+            );
+            const gql = await require("graphql").graphql({
+                schema,
+                contextValue: ctx,
+                source: `query { getProductPurchases(courseId: "${id}") { removal { kind reason } } getAllPurchases { removal { kind reason } } }`,
+            });
+            expect(gql.errors).toBeUndefined();
+            expect(gql.data.getProductPurchases[0].removal).toEqual(blocked);
+            expect(gql.data.getAllPurchases[0].removal).toEqual(blocked);
+            expect((await getAllPurchases({ ctx }))[0].userId).toBe(
+                user.userId,
+            );
+            await UserModel.updateOne(
+                { _id: user._id },
+                { $set: { active: false } },
+            );
+            expect((await getAllPurchases({ ctx }))[0].userId).toBeNull();
+            expect((await getProductPurchases(args))[0].userId).toBeNull();
+            await Invoice.updateOne(
+                { _id: invoice._id },
+                { $set: { status: "failed" } },
+            );
+            expect((await getProductPurchases(args))[0].removal).toEqual(
+                blocked,
+            );
+            await expect(deleteTestPurchase(args)).rejects.toThrow(
+                "financial records",
+            );
+            const stranger = {
+                ...ctx,
+                user: {
+                    ...user.toObject(),
+                    userId: "unrelated",
+                    permissions: [],
+                },
+            };
+            await expect(
+                getProductPurchases({ courseId: id, ctx: stranger }),
+            ).rejects.toThrow();
+            await expect(getAllPurchases({ ctx: stranger })).rejects.toThrow();
+            await expect(
+                deleteTestPurchase({ ...args, ctx: stranger }),
+            ).rejects.toThrow();
+            // A synthetic test row without any provider evidence remains removable, but never an old rejoin session.
+            await Invoice.updateOne(
+                { _id: invoice._id },
+                {
+                    $set: {
+                        paymentProcessor: "synthetic",
+                        paymentProcessorTransactionId: "fixture",
+                    },
+                },
+            );
+            await MembershipModel.updateOne(
+                { _id: membership._id },
+                { $set: { sessionId: "rejoined" } },
+            );
+            expect((await getProductPurchases(args))[0].removal).toEqual({
+                kind: "blocked",
+                reason: "membership-changed",
+            });
+            await expect(deleteTestPurchase(args)).rejects.toThrow();
+            await MembershipModel.updateOne(
+                { _id: membership._id },
+                { $set: { sessionId: id } },
+            );
+            expect((await getAllPurchases({ ctx }))[0].removal).toEqual({
+                kind: "allowed",
+            });
+            await expect(deleteTestPurchase(args)).resolves.toBe(true);
+        } finally {
+            for (const model of [
+                Invoice,
+                MembershipModel,
+                CourseModel,
+                UserModel,
+            ] as any[])
+                await model.deleteMany({ domain: domain._id });
+            await DomainModel.deleteOne({ _id: domain._id });
+        }
+    });
+});

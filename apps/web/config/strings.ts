@@ -410,3 +410,18 @@ export const dripAdminUi = {
 } as const;
 
 export { contactPreferencesCopy } from "./contact-preferences-copy";
+
+export const purchaseRemovalUi = {
+    transactionsHelp:
+        "Every purchase recorded across your products. Payment and refund history is kept, including provider test payments. Removal is offered only for test records without financial evidence.",
+    productHelp:
+        "Every purchase recorded for this product. Payment and refund history is kept, including provider test payments. Removal is offered only for test records without financial evidence.",
+    remove: "Remove test transaction",
+    unavailable: "Removal eligibility is unavailable. Refresh this list.",
+    reasons: {
+        "financial-history": "Kept for payment and refund reconciliation.",
+        "live-payment": "Live payment history is kept.",
+        "membership-changed":
+            "Membership has changed. Ask support to review removal.",
+    },
+} as const;

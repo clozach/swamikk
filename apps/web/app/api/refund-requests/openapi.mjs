@@ -4,7 +4,7 @@ export default {
             summary:
                 "Read the member's purchases, receipts and refund requests",
             description:
-                "Read-only tenant/subject projection; Member Mimic cannot see unsubmitted private drafts. No provider calls or access mutations.",
+                "Refund summaries report separately observed money status without altering original paid receipt amounts or access. Read-only tenant/subject projection; Member Mimic cannot see unsubmitted private drafts. No provider calls or access mutations.",
             responses: {
                 200: { description: "MemberRefundRequestsView" },
                 401: { description: "Sign in required" },

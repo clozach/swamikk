@@ -1,3 +1,4 @@
+import type { MemberRefundSummary } from "../../../../packages/common-models/src/stripe-refunds";
 /** Browser-safe billing contract. All monetary quote amounts use Stripe minor units. */
 export interface BillingConsequenceView {
     kind: "known" | "partly-unknown";
@@ -61,6 +62,7 @@ export interface BillingCancellationView {
     updatedAt: string;
 }
 export interface BillingInvoiceView {
+    refundSummary?: MemberRefundSummary;
     invoiceId: string;
     /** Existing native invoice amounts are major currency units. */
     amount: number;
