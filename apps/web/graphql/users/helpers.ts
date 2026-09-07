@@ -1,5 +1,6 @@
+"use server";
+
 import { revokeMemberMimicForUser } from "@/services/member-mimic/cleanup";
-("use server");
 
 import UserModel from "@models/User";
 import { deleteUserFeedback } from "@/services/content-changes/personal-data";
