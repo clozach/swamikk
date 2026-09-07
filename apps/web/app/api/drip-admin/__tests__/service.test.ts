@@ -304,6 +304,7 @@ describe("O11 approved native release schedules", () => {
         const saved = await CourseModel.findById(course._id);
         expect(saved!.groups![0].drip!.delayInMillis).toBe(day);
         expect(saved!.dripChangeReceipt?.outcome).toBe("applied");
+        expect(saved!.releaseRevision).toBe(1);
         expect(
             (
                 await approveDripChange(
@@ -419,10 +420,39 @@ describe("O11 approved native release schedules", () => {
         );
         proceed();
         expect((await applying).state.kind).toBe("not-applied");
+        expect((await CourseModel.findById(course._id))!.releaseRevision).toBe(
+            0,
+        );
         expect(
             (await CourseModel.findById(course._id))!.groups![0].drip!
                 .delayInMillis,
         ).toBe(10 * day);
+    });
+    it("preserves availability evidence when approval changes only notification delivery", async () => {
+        const change = await createDripChange(
+            {
+                courseId: course.courseId,
+                patch: {
+                    ...patch(),
+                    rule: { kind: "relative", delayInMillis: 10 * day },
+                    notificationEnabled: false,
+                },
+            },
+            ctx,
+        );
+        expect(
+            (
+                await approveDripChange(
+                    change.id,
+                    change.version,
+                    change.previewHash,
+                    ctx,
+                )
+            ).state.kind,
+        ).toBe("applied");
+        const current = await CourseModel.findById(course._id);
+        expect(current!.releaseRevision).toBe(0);
+        expect(current!.groups![0].drip!.email!.published).toBe(false);
     });
     it("prevents a loaded legacy course save from overwriting an approved schedule", async () => {
         const stale = await CourseModel.findById(course._id);

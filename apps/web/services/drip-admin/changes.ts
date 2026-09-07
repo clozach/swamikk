@@ -1,4 +1,6 @@
 import { randomUUID } from "crypto";
+import { releaseSettingsSignature } from "../../../../packages/common-logic/src/course-release-revision";
+import type { ScheduledGroup } from "../../../../packages/common-logic/src/drip-schedule";
 import type GQLContext from "@/models/GQLContext";
 import CourseModel from "@/models/Course";
 import type {
@@ -277,6 +279,15 @@ export async function approveDripChange(
         "This draft is already being processed. Refresh its status.",
         409,
     );
+    const releaseChanged =
+        releaseSettingsSignature({
+            published: record.preview.coursePublished,
+            groups: record.baseline.groups as ScheduledGroup[],
+        }) !==
+        releaseSettingsSignature({
+            published: record.preview.coursePublished,
+            groups: record.proposedGroups as ScheduledGroup[],
+        });
     try {
         const applied = await CourseModel.updateOne(
             {
@@ -295,7 +306,10 @@ export async function approveDripChange(
                         at: new Date(),
                     },
                 },
-                $inc: { __v: 1 },
+                $inc: {
+                    __v: 1,
+                    ...(releaseChanged ? { releaseRevision: 1 } : {}),
+                },
             },
         );
         return settle(

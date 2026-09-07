@@ -4,6 +4,7 @@ import type {
 } from "../../../common-models/src/member-access";
 import { AccessCourseModel, AccessLessonModel } from "./models";
 import { accessDate } from "./keys";
+import { classifyObservedRelease } from "./observations";
 
 /** Unknown historical dates never become a fresh drop just because this service observed them. */
 export async function snapshotRetention(
@@ -52,6 +53,21 @@ export async function snapshotRetention(
         )
             continue;
         snapshot.visibleLessonIds.push(lesson.lessonId);
+        if (!publication) {
+            const evidence = classifyObservedRelease({
+                observation: lesson.publicationObservation,
+                groupId: lesson.groupId,
+                releaseRevision: course.releaseRevision || 0,
+                availableNow: !group.drip?.status,
+                start,
+                cutoff,
+                releasedAt,
+            });
+            if (evidence === "retained")
+                snapshot.retainedLessonIds.push(lesson.lessonId);
+            if (evidence === "unknown") snapshot.unknownReleaseCount++;
+            continue;
+        }
         if (!start || !publication || (group.drip?.status && !releasedAt)) {
             snapshot.unknownReleaseCount++;
             continue;

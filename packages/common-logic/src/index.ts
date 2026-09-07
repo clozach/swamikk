@@ -15,3 +15,4 @@ export * from "./member-access/read";
 export * from "./member-access/cleanup";
 export * from "./member-access/drip";
 export * from "./drip-schedule";
+export * from "./course-release-revision";

@@ -1,5 +1,6 @@
 import { deleteCourseDripChanges } from "@/services/drip-admin/cleanup";
 import { revisionFilter } from "@/services/drip-admin/guard";
+import { releaseSettingsSignature } from "../../../../packages/common-logic/src/course-release-revision";
 import { deleteCourseMemberAccess } from "@/services/member-access";
 import { projectCourseForMemberAccess } from "@/services/member-access/projection";
 import { projectMimicCourse } from "@/services/member-mimic/course";
@@ -234,6 +235,8 @@ export const updateCourse = async (
     ctx: GQLContext,
 ) => {
     let course = await getCourseOrThrow(undefined, ctx, courseData.id);
+    const releaseSettingsBefore = releaseSettingsSignature(course);
+    const releaseRevisionBefore = course.releaseRevision || 0;
     const changesPreview = Object.prototype.hasOwnProperty.call(
         courseData,
         "previewAudioMediaId",
@@ -271,6 +274,7 @@ export const updateCourse = async (
             key === "id" ||
             key === "slug" ||
             key === "previewAudioMediaId" ||
+            key === "releaseRevision" ||
             key === "previewAudio"
         ) {
             continue;
@@ -347,6 +351,8 @@ export const updateCourse = async (
             course.pageId = newSlug;
         }
     }
+    if (releaseSettingsSignature(course) !== releaseSettingsBefore)
+        course.releaseRevision = releaseRevisionBefore + 1;
     try {
         course = await (course as any).save();
     } catch (err) {
@@ -814,6 +820,7 @@ export const addGroup = async ({
         name,
     } as Group);
 
+    course.releaseRevision = (course.releaseRevision || 0) + 1;
     await (course as any).save();
 
     return await formatCourse(course.courseId, ctx);
@@ -849,6 +856,7 @@ export const removeGroup = async (
     }
 
     await (course.groups as any).pull({ _id: id });
+    course.releaseRevision = (course.releaseRevision || 0) + 1;
     await (course as any).save();
 
     await UserModel.updateMany(
@@ -987,6 +995,26 @@ export const updateGroup = async ({
         }
     }
 
+    const proposedGroups = (course.groups || []).map((group) => {
+        if (group.id !== id) return group;
+        const proposed =
+            typeof (group as any).toObject === "function"
+                ? (group as any).toObject()
+                : structuredClone(group);
+        for (const [path, value] of Object.entries($set)) {
+            const keys = path.replace("groups.$.", "").split(".");
+            let target = proposed;
+            for (const key of keys.slice(0, -1)) target = target[key] ||= {};
+            target[keys[keys.length - 1]] = value;
+        }
+        return proposed;
+    });
+    const releaseChanged =
+        releaseSettingsSignature(course) !==
+        releaseSettingsSignature({
+            published: course.published,
+            groups: proposedGroups,
+        });
     const updated = await CourseModel.findOneAndUpdate(
         {
             domain: ctx.subdomain._id,
@@ -994,7 +1022,10 @@ export const updateGroup = async ({
             "groups._id": id,
             ...revisionFilter((course as any).__v || 0),
         },
-        { $set, $inc: { __v: 1 } },
+        {
+            $set,
+            $inc: { __v: 1, ...(releaseChanged ? { releaseRevision: 1 } : {}) },
+        },
         { new: true },
     );
     if (!updated)
@@ -1136,6 +1167,12 @@ export const reorderGroups = async ({
         ...plainGroupsById.get(groupId),
         rank: (index + 1) * GROUP_RANK_GAP,
     }));
+    const releaseChanged =
+        releaseSettingsSignature(course) !==
+        releaseSettingsSignature({
+            published: course.published,
+            groups: updatedGroups,
+        });
 
     const updated = await CourseModel.updateOne(
         {
@@ -1144,7 +1181,7 @@ export const reorderGroups = async ({
             ...revisionFilter((course as any).__v || 0),
         },
         {
-            $inc: { __v: 1 },
+            $inc: { __v: 1, ...(releaseChanged ? { releaseRevision: 1 } : {}) },
             $set: {
                 groups: updatedGroups,
             },

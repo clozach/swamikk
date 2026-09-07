@@ -53,6 +53,7 @@ export const CourseSchema = new mongoose.Schema<InternalCourse>(
         featuredImage: MediaSchema,
         previewAudio: MediaSchema,
         dripChangeReceipt: { type: mongoose.Schema.Types.Mixed },
+        releaseRevision: { type: Number, default: 0 },
         groups: [
             {
                 name: { type: String, required: true },

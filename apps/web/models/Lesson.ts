@@ -5,6 +5,7 @@ import {
     ScormContent,
     LessonContentChangeReceipt,
     LessonPublication,
+    LessonPublicationObservation,
 } from "@courselit/common-models";
 import { generateUniqueId } from "@courselit/utils";
 import mongoose from "mongoose";
@@ -34,6 +35,7 @@ export interface Lesson {
     requiresEnrollment: boolean;
     published: boolean;
     publication?: LessonPublication;
+    publicationObservation?: LessonPublicationObservation;
     groupId: string;
     __v?: number;
     contentChangeReceipt?: LessonContentChangeReceipt;
@@ -58,6 +60,10 @@ const LessonSchema = new mongoose.Schema<Lesson>(
         published: { type: Boolean, required: true, default: false },
         groupId: { type: String, required: true },
         publication: { type: mongoose.Schema.Types.Mixed, default: undefined },
+        publicationObservation: {
+            type: mongoose.Schema.Types.Mixed,
+            default: undefined,
+        },
         contentChangeReceipt: {
             type: new mongoose.Schema(
                 {

@@ -13,6 +13,8 @@ export type ProductAccessType =
     (typeof ProductAccessType)[keyof typeof ProductAccessType];
 
 export interface Course {
+    /** Monotonic version of release rules, order and course publication state. */
+    releaseRevision?: number;
     /** Atomic administrator schedule application/recovery receipt. */
     dripChangeReceipt?: import("./drip-change").DripChangeReceipt;
     courseId: string;

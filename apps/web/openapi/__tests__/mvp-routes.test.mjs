@@ -13,10 +13,12 @@ test("the assembled API includes feedback delivery, cancellation and read-only r
         "/api/contact-preferences/photo",
         "/api/refund-requests",
         "/api/refund-requests/review",
+        "/api/publication-observations",
     ])
         assert.ok(paths[path]?.get, `${path} GET must be documented`);
     assert.ok(paths["/api/member-billing"].post);
     assert.equal(paths["/api/member-receipts/{invoiceId}"].post, undefined);
     assert.ok(paths["/api/contact-preferences"].put);
     assert.ok(paths["/api/refund-requests/review"].post);
+    assert.ok(paths["/api/publication-observations"].post);
 });

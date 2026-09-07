@@ -12,6 +12,7 @@ import { dripAdminApiOpenApi } from "../app/api/drip-admin/openapi.mjs";
 import { contactPreferencesApiOpenApi } from "../app/api/contact-preferences/openapi.mjs";
 import refundRequestsOpenApi from "../app/api/refund-requests/openapi.mjs";
 import { newsletterUnsubscribeApiOpenApi } from "../app/api/unsubscribe/openapi.mjs";
+import { publicationObservationsApiOpenApi } from "../app/api/publication-observations/openapi.mjs";
 
 const routeSpecs = [
     userApiOpenApi,
@@ -28,6 +29,7 @@ const routeSpecs = [
     contactPreferencesApiOpenApi,
     { paths: refundRequestsOpenApi },
     newsletterUnsubscribeApiOpenApi,
+    publicationObservationsApiOpenApi,
 ];
 
 function mergeOpenApiFragments(fragments) {
