@@ -5,9 +5,8 @@ import { MenuItem, TopBarItem } from "./settings";
  * IDs are stable literals (never generated) so server and client render the
  * same markup and so re-saving in the page builder does not churn keys.
  *
- * Link policy: only Blog (/blog) and Shop (/products) resolve to real
- * CourseLit routes today. Everything else is "#" — fully styled and
- * hoverable, waiting for Karuna to point it somewhere.
+ * Membership, help and newsletter remain native. Retreat destinations are
+ * verified Anahata pages and carry an external-site cue.
  */
 
 export const sticky = true;
@@ -45,7 +44,7 @@ export const topBarRightItems: TopBarItem[] = [];
 
 export const mobileMenuLabel = "Menu";
 export const mobileCtaLabel = "Contact";
-export const mobileCtaHref = "#";
+export const mobileCtaHref = "/p/contact";
 export const mobileCloseLabel = "Close mobile menu";
 
 /* ------------------------------------------------------------------ *
@@ -82,39 +81,44 @@ export const accountContentHref = "/dashboard";
 export const accountLogoutLabel = "Logout";
 
 export const menu: MenuItem[] = [
+    { id: "membership", label: "Membership", href: "/p/members-library-test" },
     {
         id: "events",
-        label: "Events and Trainings",
-        href: "#",
+        label: "Anahata events ↗",
+        href: "https://www.anahata-retreat.org.nz/gatherings",
         children: [
-            { id: "events-upcoming", label: "Upcoming Events", href: "#" },
-            { id: "events-past", label: "Past Events", href: "#" },
-            { id: "events-venue", label: "Venue Hire", href: "#" },
+            {
+                id: "events-upcoming",
+                label: "Upcoming Events ↗",
+                href: "https://www.anahata-retreat.org.nz/upcoming-events",
+            },
+            {
+                id: "events-past",
+                label: "Past Events ↗",
+                href: "https://www.anahata-retreat.org.nz/gatherings/past-gatherings",
+            },
+            {
+                id: "events-venue",
+                label: "Venue Hire ↗",
+                href: "https://www.anahata-retreat.org.nz/venue-hire",
+            },
         ],
     },
-    /* Menu pivot (2026-07-21): STAY removed entirely, and ABOUT (with its
-       Yoga subtree) removed. The FAQ item that briefly lived here (it toggled
-       the demo-walkthrough tracker) is gone too — that tool became the
-       keyboard-summoned Journey Card, mounted site-wide outside this block
-       (apps/web/components/dev/journey-card). Events / Give / Contact / Our
-       Newsletter stay as styled placeholders. */
-    { id: "give", label: "Give", href: "#" },
+    {
+        id: "give",
+        label: "Give at Anahata ↗",
+        href: "https://www.anahata-retreat.org.nz/give",
+    },
     { id: "blog", label: "Blog", href: "/blog" },
-    { id: "contact", label: "Contact", href: "#" },
-    { id: "newsletter", label: "Our Newsletter", href: "#" },
+    { id: "contact", label: "Contact", href: "/p/contact" },
+    { id: "newsletter", label: "Newsletter", href: "/#stay-in-touch" },
     {
         id: "shop",
         label: "Shop",
         href: "/products",
         children: [
-            // Self-routes both personas: signed out -> the OTP sign-in form;
-            // signed in -> /dashboard, which CourseLit renders differently
-            // for an admin vs. an enrolled student. One link, either role.
             { id: "shop-account", label: "My account", href: "/login" },
             { id: "shop-all", label: "All Products", href: "/products" },
-            { id: "shop-books", label: "Books", href: "#" },
-            { id: "shop-audio", label: "Audio", href: "#" },
-            { id: "shop-other", label: "Other Products", href: "#" },
         ],
     },
 ];

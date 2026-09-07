@@ -67,9 +67,9 @@ export const DECOR_RIGHT_WIDTH = 387;
    ------------------------------------------------------------------ */
 export const copyrightPrefix = "Copyright © 2026";
 export const copyrightOwner = "Anahata Yoga Retreat";
-export const copyrightLinkPrefix = "Website by";
-export const copyrightLinkLabel = "SunRoom Web Design Studio";
-export const copyrightLinkHref = "#";
+export const copyrightLinkPrefix = "";
+export const copyrightLinkLabel = "";
+export const copyrightLinkHref = "";
 
 export const backToTop: BackToTop = {
     enabled: true,
@@ -81,8 +81,8 @@ export const backToTop: BackToTop = {
  * The three columns as the live site lists them. Ids are literals, not
  * generated, so server and client renders agree.
  *
- * Link policy for this build: Blog resolves to the real /blog route;
- * everything else is a "#" placeholder until the destination page exists.
+ * Native membership help and policies stay on this site. Retreat links
+ * lead to the verified Anahata website, with a visible external-site cue.
  */
 export const columns: FooterColumn[] = [
     {
@@ -90,13 +90,33 @@ export const columns: FooterColumn[] = [
         id: "col-anahata-site",
         title: "Anahata Site",
         links: [
-            { id: "lnk-stay", label: "Stay", href: "#" },
-            { id: "lnk-yoga", label: "Yoga", href: "#" },
-            { id: "lnk-about", label: "About", href: "#" },
-            { id: "lnk-give", label: "Give", href: "#" },
+            {
+                id: "lnk-stay",
+                label: "Stay ↗",
+                href: "https://www.anahata-retreat.org.nz/stay",
+            },
+            {
+                id: "lnk-yoga",
+                label: "Yoga ↗",
+                href: "https://www.anahata-retreat.org.nz/yoga",
+            },
+            {
+                id: "lnk-about",
+                label: "About ↗",
+                href: "https://www.anahata-retreat.org.nz/about",
+            },
+            {
+                id: "lnk-give",
+                label: "Give ↗",
+                href: "https://www.anahata-retreat.org.nz/give",
+            },
             { id: "lnk-blog", label: "Blog", href: "/blog" },
-            { id: "lnk-contact", label: "Contact", href: "#" },
-            { id: "lnk-faqs", label: "FAQs", href: "#" },
+            { id: "lnk-contact", label: "Help & contact", href: "/p/contact" },
+            {
+                id: "lnk-faqs",
+                label: "Retreat FAQs ↗",
+                href: "https://www.anahata-retreat.org.nz/stay/faqs",
+            },
         ],
     },
     {
@@ -106,16 +126,20 @@ export const columns: FooterColumn[] = [
         links: [
             {
                 id: "lnk-events-trainings",
-                label: "Events and Trainings",
-                href: "#",
+                label: "Anahata Events and Trainings ↗",
+                href: "https://www.anahata-retreat.org.nz/gatherings",
             },
-            { id: "lnk-past-gatherings", label: "Past Gatherings", href: "#" },
+            {
+                id: "lnk-past-gatherings",
+                label: "Past Gatherings ↗",
+                href: "https://www.anahata-retreat.org.nz/gatherings/past-gatherings",
+            },
             {
                 id: "lnk-cancellation",
                 label: "Cancellation/Refund Policy",
-                href: "#",
+                href: "/p/terms",
             },
-            { id: "lnk-privacy", label: "Privacy Policy", href: "#" },
+            { id: "lnk-privacy", label: "Privacy Policy", href: "/p/privacy" },
         ],
     },
     {
@@ -133,12 +157,28 @@ export const columns: FooterColumn[] = [
             "New Zealand 7142",
         ],
         emailLabel: "Email",
-        email: "yoga@anahata-retreat.org.nz",
+        email: "clozach+kk@gmail.com",
         socials: [
-            { id: "soc-facebook", platform: "facebook", href: "#" },
-            { id: "soc-instagram", platform: "instagram", href: "#" },
-            { id: "soc-youtube", platform: "youtube", href: "#" },
-            { id: "soc-vimeo", platform: "vimeo", href: "#" },
+            {
+                id: "soc-facebook",
+                platform: "facebook",
+                href: "https://www.facebook.com/anahatayogaretreatnz/",
+            },
+            {
+                id: "soc-instagram",
+                platform: "instagram",
+                href: "https://www.instagram.com/anahatayogaretreatnz/",
+            },
+            {
+                id: "soc-youtube",
+                platform: "youtube",
+                href: "https://www.youtube.com/channel/UCpco9cWH-8BUFdlk6DjaJPQ",
+            },
+            {
+                id: "soc-vimeo",
+                platform: "vimeo",
+                href: "https://vimeo.com/user30461373",
+            },
         ],
     },
 ];

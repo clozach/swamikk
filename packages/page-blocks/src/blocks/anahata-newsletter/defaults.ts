@@ -17,14 +17,8 @@ export const DEFAULT_EMAIL_LABEL = "Email address";
 export const DEFAULT_EMAIL_PLACEHOLDER = "Your email address";
 export const DEFAULT_BUTTON_CAPTION = "Subscribe";
 
-/**
- * Inert by default. The real site points this at `/our-newsletter`, but the
- * brief's link policy routes everything to "#" except Blog → /blog and
- * Shop → /products, and no `/our-newsletter` route exists in this app — a real
- * href here would 404. Matches the sibling anahata-header, whose "Our
- * Newsletter" nav item is likewise "#". Editable in the page builder.
- */
-export const DEFAULT_SUBSCRIBE_LINK = "#";
+/** The native homepage form has this stable anchor in its page settings. */
+export const DEFAULT_SUBSCRIBE_LINK = "/#stay-in-touch";
 
 export const DEFAULT_SUCCESS_MESSAGE =
     "Thank you. You are on the list for news from Anahata.";

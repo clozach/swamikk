@@ -23,6 +23,8 @@ export * from "./anahata-gatherings";
 export * from "./anahata-posts";
 export * from "./anahata-newsletter";
 export * from "./anahata-footer";
+export * from "./help-policies";
+export * from "./member-contact";
 
 // A single fixed magazine feature for the 2026 Developing Resilience course —
 // a faithful port of the 03-editorial-magazine design exploration. Unlike the
