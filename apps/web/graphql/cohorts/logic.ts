@@ -18,6 +18,8 @@ import {
 } from "../mails/logic";
 import { assertCanManageCohorts, cohortTag } from "./helpers";
 import { invalidateDomainCache } from "@/lib/domain-cache";
+import { validateClassListing } from "@/services/class-checkout/listing";
+import { requireCondition } from "@/services/content-changes/errors";
 
 const BLANK_SYSTEM_TEMPLATE_ID = "system-5";
 
@@ -67,14 +69,32 @@ const addMembers = async (
     cohortId: string,
     userIds: string[],
     ctx: GQLContext,
+    privateOnly = false,
 ) => {
     if (userIds.length === 0) {
         return;
     }
 
-    await CohortModel.updateOne(
-        { domain: ctx.subdomain._id, cohortId },
+    const added = await CohortModel.updateOne(
+        {
+            domain: ctx.subdomain._id,
+            cohortId,
+            ...(privateOnly
+                ? {
+                      $or: [
+                          { checkoutState: "private" },
+                          { checkoutState: { $exists: false } },
+                      ],
+                  }
+                : {}),
+        },
         { $addToSet: { members: { $each: userIds } } },
+    );
+    requireCondition(
+        added.matchedCount === 1,
+        "conflict",
+        "This roster changed. Listed class rosters cannot be filled from all course members.",
+        409,
     );
     await UserModel.updateMany(
         { domain: ctx.subdomain._id, userId: { $in: userIds } },
@@ -129,16 +149,30 @@ export const updateCohort = async (
         cohortId,
         name,
         schedule,
+        checkoutState,
+        expectedCheckoutRevision,
     }: {
         cohortId: string;
         name?: string;
         schedule?: CohortScheduleInput | null;
+        checkoutState?: "private" | "listed-closed" | "listed-open";
+        expectedCheckoutRevision?: number;
     },
     ctx: GQLContext,
 ) => {
     assertCanManageCohorts(ctx);
 
     const cohort = await getCohortOrThrow(cohortId, ctx);
+    const previousState = cohort.checkoutState || "private";
+    const revision = cohort.checkoutRevision || 0;
+    if (checkoutState !== undefined || previousState !== "private") {
+        requireCondition(
+            expectedCheckoutRevision === revision,
+            "conflict",
+            "Class booking details changed. Refresh before saving.",
+            409,
+        );
+    }
 
     if (name) {
         cohort.name = name;
@@ -146,17 +180,49 @@ export const updateCohort = async (
     if (typeof schedule !== "undefined") {
         cohort.schedule = toSchedule(schedule);
     }
+    if (checkoutState !== undefined) cohort.checkoutState = checkoutState;
+    await validateClassListing(
+        String(ctx.subdomain._id),
+        cohort,
+        previousState,
+    );
 
     try {
-        await cohort.save();
+        const saved = await CohortModel.findOneAndUpdate(
+            {
+                _id: cohort._id,
+                domain: ctx.subdomain._id,
+                $or: [
+                    { checkoutRevision: revision },
+                    ...(revision === 0
+                        ? [{ checkoutRevision: { $exists: false } }]
+                        : []),
+                ],
+            },
+            {
+                $set: {
+                    name: cohort.name,
+                    ...(cohort.schedule ? { schedule: cohort.schedule } : {}),
+                    checkoutState: cohort.checkoutState || "private",
+                },
+                ...(!cohort.schedule ? { $unset: { schedule: 1 } } : {}),
+                $inc: { checkoutRevision: 1 },
+            },
+            { new: true },
+        );
+        requireCondition(
+            saved,
+            "conflict",
+            "Class booking details changed. Refresh before saving.",
+            409,
+        );
+        return saved;
     } catch (err: any) {
         if (isDuplicateKeyError(err)) {
             throw new Error(responses.cohort_exists);
         }
         throw err;
     }
-
-    return cohort;
 };
 
 // Every step is idempotent so a partial failure is retryable: pause
@@ -203,6 +269,12 @@ export const deleteCohort = async (cohortId: string, ctx: GQLContext) => {
     assertCanManageCohorts(ctx);
 
     const cohort = await getCohortOrThrow(cohortId, ctx);
+    requireCondition(
+        !cohort.checkoutState || cohort.checkoutState === "private",
+        "conflict",
+        "Close listed class bookings instead of deleting their booking history.",
+        409,
+    );
     await removeCohort(cohort, ctx);
 
     return cohort;
@@ -294,6 +366,12 @@ export const syncCohortFromCourse = async (
     assertCanManageCohorts(ctx);
 
     const cohort = await getCohortOrThrow(cohortId, ctx);
+    requireCondition(
+        !cohort.checkoutState || cohort.checkoutState === "private",
+        "conflict",
+        "Listed class rosters come from their paid bookings. Course-wide synchronization is unavailable.",
+        409,
+    );
 
     const memberships = await MembershipModel.find({
         domain: ctx.subdomain._id,
@@ -306,7 +384,7 @@ export const syncCohortFromCourse = async (
         ctx,
     );
 
-    await addMembers(cohortId, enrolled, ctx);
+    await addMembers(cohortId, enrolled, ctx, true);
 
     // Re-assert the mirror tag across the full roster so drift (e.g. a
     // stray deleteTag) is repaired, not just new enrollments added.

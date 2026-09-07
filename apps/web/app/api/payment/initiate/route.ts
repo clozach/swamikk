@@ -26,6 +26,21 @@ import {
     withAccountWrite,
 } from "../../../../../../packages/common-logic/src/account-lifecycle/gate";
 import { assertNoMemberMimicMutation } from "@/services/member-mimic/context";
+import { z } from "zod";
+import { selectedClass } from "@/services/class-checkout/choices";
+import {
+    initiateClassCheckout,
+    pendingClassIntent,
+} from "@/services/class-checkout/intent";
+import {
+    recordCheckoutReference,
+    withCheckoutReservation,
+} from "@/services/class-checkout/reservation";
+import {
+    ContentChangeError,
+    requireCondition,
+} from "@/services/content-changes/errors";
+import { requireSameOrigin } from "@/services/content-changes/http";
 
 const { transactionSuccess, transactionFailed, transactionInitiated } =
     constants;
@@ -36,6 +51,7 @@ export interface PaymentInitiateRequest {
     planId: string;
     origin: string;
     joiningReason?: string;
+    classChoice?: { cohortId: string; fingerprint: string };
 }
 
 export async function POST(req: NextRequest) {
@@ -74,208 +90,317 @@ export async function POST(req: NextRequest) {
                 purpose: "checkout",
             },
             async () => {
-                const entity = await getEntity(type, id, domain._id);
-                if (!entity) {
-                    return Response.json(
-                        { message: responses.item_not_found },
-                        { status: 404 },
-                    );
-                }
+                return withCheckoutReservation(
+                    String(domain._id),
+                    user.userId,
+                    type === Constants.MembershipEntityType.COURSE ? id : null,
+                    async () => {
+                        const entity = await getEntity(type, id, domain._id);
+                        if (!entity) {
+                            return Response.json(
+                                { message: responses.item_not_found },
+                                { status: 404 },
+                            );
+                        }
 
-                // Verify the payment plan belongs to this entity
-                const planExists = await PaymentPlanModel.exists({
-                    domain: domain._id,
-                    planId: planId,
-                    entityId: id,
-                    entityType: type,
-                    archived: false,
-                });
+                        // Verify the payment plan belongs to this entity
+                        const planExists = await PaymentPlanModel.exists({
+                            domain: domain._id,
+                            planId: planId,
+                            entityId: id,
+                            entityType: type,
+                            archived: false,
+                        });
 
-                if (!planExists) {
-                    return Response.json(
-                        { message: "Invalid payment plan" },
-                        { status: 404 },
-                    );
-                }
+                        if (!planExists) {
+                            return Response.json(
+                                { message: "Invalid payment plan" },
+                                { status: 404 },
+                            );
+                        }
 
-                const paymentPlan = await getPaymentPlan(domain._id, planId);
-                if (!paymentPlan) {
-                    return Response.json(
-                        { message: "Invalid payment plan" },
-                        { status: 400 },
-                    );
-                }
-
-                const siteinfo = domain.settings;
-                const paymentMethod =
-                    await getPaymentMethodFromSettings(siteinfo);
-
-                if (
-                    !paymentMethod &&
-                    paymentPlan.type !== Constants.PaymentPlanType.FREE
-                ) {
-                    return Response.json(
-                        {
-                            status: transactionFailed,
-                            error: responses.payment_invalid_settings,
-                        },
-                        { status: 500 },
-                    );
-                }
-
-                const membership = await getMembership({
-                    domainId: domain._id,
-                    userId: user.userId,
-                    entityType: type,
-                    entityId: id,
-                    planId,
-                });
-
-                if (membership.status === Constants.MembershipStatus.REJECTED) {
-                    return Response.json({ status: transactionFailed });
-                }
-
-                if (membership.status === Constants.MembershipStatus.ACTIVE) {
-                    if (paymentPlan.type === Constants.PaymentPlanType.FREE) {
-                        await activateMembership(
-                            domain,
-                            membership,
-                            paymentPlan,
+                        const paymentPlan = await getPaymentPlan(
+                            domain._id,
+                            planId,
                         );
-                        return Response.json({ status: transactionSuccess });
-                    }
-                    if (
-                        membership.subscriptionId &&
-                        (paymentPlan.type === Constants.PaymentPlanType.EMI ||
-                            paymentPlan.type ===
-                                Constants.PaymentPlanType.SUBSCRIPTION)
-                    ) {
+                        if (!paymentPlan) {
+                            return Response.json(
+                                { message: "Invalid payment plan" },
+                                { status: 400 },
+                            );
+                        }
+
+                        const siteinfo = domain.settings;
+                        const paymentMethod =
+                            await getPaymentMethodFromSettings(siteinfo);
+
                         if (
-                            await paymentMethod?.validateSubscription(
-                                membership.subscriptionId,
-                            )
+                            !paymentMethod &&
+                            paymentPlan.type !== Constants.PaymentPlanType.FREE
                         ) {
+                            return Response.json(
+                                {
+                                    status: transactionFailed,
+                                    error: responses.payment_invalid_settings,
+                                },
+                                { status: 500 },
+                            );
+                        }
+
+                        const choice =
+                            body.classChoice === undefined
+                                ? undefined
+                                : z
+                                      .object({
+                                          cohortId: z.string().min(1).max(100),
+                                          fingerprint: z
+                                              .string()
+                                              .regex(/^[a-f0-9]{64}$/),
+                                      })
+                                      .strict()
+                                      .parse(body.classChoice);
+                        const classPlan =
+                            type === Constants.MembershipEntityType.COURSE &&
+                            paymentPlan.type ===
+                                Constants.PaymentPlanType.ONE_TIME;
+                        requireCondition(
+                            !choice || classPlan,
+                            "bad_request",
+                            "This payment plan does not accept a class date.",
+                        );
+                        const booking = classPlan
+                            ? await selectedClass(
+                                  String(domain._id),
+                                  id,
+                                  planId,
+                                  choice,
+                              )
+                            : null;
+                        if (booking) {
+                            requireSameOrigin(req);
+                            requireCondition(
+                                origin === req.headers.get("origin"),
+                                "bad_request",
+                                "Start this checkout from the current site.",
+                            );
+                            return Response.json(
+                                await initiateClassCheckout({
+                                    domain: String(domain._id),
+                                    userId: user.userId,
+                                    courseId: id,
+                                    title: (entity as Course).title,
+                                    plan: paymentPlan,
+                                    booking,
+                                    origin,
+                                    provider: paymentMethod!,
+                                }),
+                            );
+                        }
+                        if (type === Constants.MembershipEntityType.COURSE) {
+                            const pending = await pendingClassIntent(
+                                String(domain._id),
+                                user.userId,
+                                id,
+                            );
+                            requireCondition(
+                                !pending,
+                                "checkout_pending",
+                                `An earlier class checkout needs confirmation. Contact us with order ${pending?.invoiceId} before choosing another plan.`,
+                                409,
+                            );
+                        }
+
+                        const membership = await getMembership({
+                            domainId: domain._id,
+                            userId: user.userId,
+                            entityType: type,
+                            entityId: id,
+                            planId,
+                        });
+
+                        if (
+                            membership.status ===
+                            Constants.MembershipStatus.REJECTED
+                        ) {
+                            return Response.json({ status: transactionFailed });
+                        }
+
+                        if (
+                            membership.status ===
+                            Constants.MembershipStatus.ACTIVE
+                        ) {
+                            if (
+                                paymentPlan.type ===
+                                Constants.PaymentPlanType.FREE
+                            ) {
+                                await activateMembership(
+                                    domain,
+                                    membership,
+                                    paymentPlan,
+                                );
+                                return Response.json({
+                                    status: transactionSuccess,
+                                });
+                            }
+                            if (
+                                membership.subscriptionId &&
+                                (paymentPlan.type ===
+                                    Constants.PaymentPlanType.EMI ||
+                                    paymentPlan.type ===
+                                        Constants.PaymentPlanType.SUBSCRIPTION)
+                            ) {
+                                if (
+                                    await paymentMethod?.validateSubscription(
+                                        membership.subscriptionId,
+                                    )
+                                ) {
+                                    await activateMembership(
+                                        domain,
+                                        membership,
+                                        paymentPlan,
+                                    );
+                                    return Response.json({
+                                        status: transactionSuccess,
+                                    });
+                                } else {
+                                    membership.status =
+                                        Constants.MembershipStatus.EXPIRED;
+                                    await membership.save();
+                                }
+                            }
+                        }
+
+                        if (
+                            paymentPlan.type === Constants.PaymentPlanType.FREE
+                        ) {
+                            if (
+                                membership.status !==
+                                Constants.MembershipStatus.PENDING
+                            ) {
+                                membership.status =
+                                    Constants.MembershipStatus.PENDING;
+                                membership.sessionId = generateUniqueId();
+                                membership.accessActivation = undefined;
+                                membership.paymentPlanId = planId;
+                                await membership.save();
+                            }
+                            if (
+                                type ===
+                                    Constants.MembershipEntityType.COMMUNITY &&
+                                !(entity as Community).autoAcceptMembers
+                            ) {
+                                if (!joiningReason) {
+                                    return Response.json(
+                                        {
+                                            status: transactionFailed,
+                                            error: responses.joining_reason_missing,
+                                        },
+                                        { status: 400 },
+                                    );
+                                } else {
+                                    membership.joiningReason = joiningReason;
+                                }
+                            }
+
                             await activateMembership(
                                 domain,
                                 membership,
                                 paymentPlan,
                             );
+
                             return Response.json({
                                 status: transactionSuccess,
                             });
-                        } else {
-                            membership.status =
-                                Constants.MembershipStatus.EXPIRED;
-                            await membership.save();
                         }
-                    }
-                }
 
-                if (paymentPlan.type === Constants.PaymentPlanType.FREE) {
-                    if (
-                        membership.status !== Constants.MembershipStatus.PENDING
-                    ) {
+                        membership.paymentPlanId = planId;
                         membership.status = Constants.MembershipStatus.PENDING;
                         membership.sessionId = generateUniqueId();
-                        membership.accessActivation = undefined;
-                        membership.paymentPlanId = planId;
+
+                        const invoiceId = generateUniqueId();
+                        await recordCheckoutReference(invoiceId);
+                        const currencyISOCode =
+                            await paymentMethod?.getCurrencyISOCode();
+
+                        const metadata = {
+                            membershipId: membership.membershipId,
+                            invoiceId,
+                            currencyISOCode,
+                        };
+
+                        // Persist native intent before a provider call: a timeout is not proof
+                        // that no checkout was created. Keep its invoice/session for recovery.
                         await membership.save();
-                    }
-                    if (
-                        type === Constants.MembershipEntityType.COMMUNITY &&
-                        !(entity as Community).autoAcceptMembers
-                    ) {
-                        if (!joiningReason) {
-                            return Response.json(
-                                {
-                                    status: transactionFailed,
-                                    error: responses.joining_reason_missing,
+                        await InvoiceModel.create({
+                            domain: domain._id,
+                            invoiceId,
+                            membershipId: membership.membershipId,
+                            membershipSessionId: membership.sessionId,
+                            amount:
+                                paymentPlan.oneTimeAmount ||
+                                paymentPlan.subscriptionMonthlyAmount ||
+                                paymentPlan.subscriptionYearlyAmount ||
+                                paymentPlan.emiAmount ||
+                                0,
+                            status: Constants.InvoiceStatus.PENDING,
+                            paymentProcessor: paymentMethod!.name,
+                            currencyISOCode,
+                        });
+
+                        const paymentTracker = await paymentMethod!.initiate({
+                            metadata,
+                            paymentPlan,
+                            product: {
+                                id: id,
+                                title:
+                                    type ===
+                                    Constants.MembershipEntityType.COMMUNITY
+                                        ? (entity as Community)!.name
+                                        : (entity as Course)!.title,
+                                type,
+                            },
+                            origin,
+                        });
+
+                        await InvoiceModel.updateOne(
+                            { domain: domain._id, invoiceId },
+                            {
+                                $set: {
+                                    paymentProcessorEntityId: paymentTracker,
                                 },
-                                { status: 400 },
-                            );
-                        } else {
-                            membership.joiningReason = joiningReason;
-                        }
-                    }
+                            },
+                        );
 
-                    await activateMembership(domain, membership, paymentPlan);
+                        membership.subscriptionId = undefined;
+                        membership.subscriptionMethod = undefined;
+                        await (membership as any).save();
 
-                    return Response.json({
-                        status: transactionSuccess,
-                    });
-                }
-
-                membership.paymentPlanId = planId;
-                membership.status = Constants.MembershipStatus.PENDING;
-                membership.sessionId = generateUniqueId();
-
-                const invoiceId = generateUniqueId();
-                const currencyISOCode =
-                    await paymentMethod?.getCurrencyISOCode();
-
-                const metadata = {
-                    membershipId: membership.membershipId,
-                    invoiceId,
-                    currencyISOCode,
-                };
-
-                // Persist native intent before a provider call: a timeout is not proof
-                // that no checkout was created. Keep its invoice/session for recovery.
-                await membership.save();
-                await InvoiceModel.create({
-                    domain: domain._id,
-                    invoiceId,
-                    membershipId: membership.membershipId,
-                    membershipSessionId: membership.sessionId,
-                    amount:
-                        paymentPlan.oneTimeAmount ||
-                        paymentPlan.subscriptionMonthlyAmount ||
-                        paymentPlan.subscriptionYearlyAmount ||
-                        paymentPlan.emiAmount ||
-                        0,
-                    status: Constants.InvoiceStatus.PENDING,
-                    paymentProcessor: paymentMethod!.name,
-                    currencyISOCode,
-                });
-
-                const paymentTracker = await paymentMethod!.initiate({
-                    metadata,
-                    paymentPlan,
-                    product: {
-                        id: id,
-                        title:
-                            type === Constants.MembershipEntityType.COMMUNITY
-                                ? (entity as Community)!.name
-                                : (entity as Course)!.title,
-                        type,
+                        return Response.json({
+                            status: transactionInitiated,
+                            paymentTracker,
+                            metadata,
+                        });
                     },
-                    origin,
-                });
-
-                await InvoiceModel.updateOne(
-                    { domain: domain._id, invoiceId },
-                    { $set: { paymentProcessorEntityId: paymentTracker } },
                 );
-
-                membership.subscriptionId = undefined;
-                membership.subscriptionMethod = undefined;
-                await (membership as any).save();
-
-                return Response.json({
-                    status: transactionInitiated,
-                    paymentTracker,
-                    metadata,
-                });
             },
         );
     } catch (err: any) {
         if (
             err instanceof AccountLifecycleError ||
+            err instanceof ContentChangeError ||
             err?.code === "mimic_read_only"
         )
             return Response.json(
                 { status: transactionFailed, error: err.message },
                 { status: err.status || 403 },
+            );
+        if (err instanceof z.ZodError)
+            return Response.json(
+                {
+                    status: transactionFailed,
+                    error: "Choose a valid class date.",
+                },
+                { status: 400 },
             );
         error(`Error initiating payment: ${err.message}`, {
             domain: domainName,

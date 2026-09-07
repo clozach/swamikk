@@ -111,6 +111,8 @@ const cohortFields = `
     name
     courseId
     members
+    checkoutState
+    checkoutRevision
     schedule {
         startAt
         endAt
@@ -131,8 +133,14 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
         name: "",
         startAt: "",
         endAt: "",
+        checkoutState: "private",
     });
-    const initialDetailsRef = useRef({ name: "", startAt: "", endAt: "" });
+    const initialDetailsRef = useRef({
+        name: "",
+        startAt: "",
+        endAt: "",
+        checkoutState: "private",
+    });
     const [isSavingDetails, setIsSavingDetails] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
@@ -203,6 +211,7 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
         if (cohort) {
             const detailsFromCohort = {
                 name: cohort.name,
+                checkoutState: cohort.checkoutState || "private",
                 startAt: toDatetimeLocal(cohort.schedule?.startAt),
                 endAt: toDatetimeLocal(cohort.schedule?.endAt),
             };
@@ -309,11 +318,15 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
                 $cohortId: String!
                 $name: String
                 $schedule: CohortScheduleInput
+                $checkoutState: CohortCheckoutState!
+                $expectedCheckoutRevision: Float!
             ) {
                 cohort: updateCohort(
                     cohortId: $cohortId
                     name: $name
                     schedule: $schedule
+                    checkoutState: $checkoutState
+                    expectedCheckoutRevision: $expectedCheckoutRevision
                 ) {
                     ${cohortFields}
                 }
@@ -341,6 +354,10 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
                             ? trimmedName
                             : undefined,
                     schedule,
+                    checkoutState: details.checkoutState
+                        .toUpperCase()
+                        .replaceAll("-", "_"),
+                    expectedCheckoutRevision: cohort.checkoutRevision || 0,
                 },
             })
             .setIsGraphQLEndpoint(true)
@@ -639,7 +656,8 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
     const hasDetailsChanged =
         details.name.trim() !== initialDetailsRef.current.name ||
         details.startAt !== initialDetailsRef.current.startAt ||
-        details.endAt !== initialDetailsRef.current.endAt;
+        details.endAt !== initialDetailsRef.current.endAt ||
+        details.checkoutState !== initialDetailsRef.current.checkoutState;
     const isSaveButtonDisabled =
         isSavingDetails || !details.name.trim() || !hasDetailsChanged;
 
@@ -698,9 +716,66 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
                                         />
                                     </Field>
                                     <Field>
+                                        <FieldLabel htmlFor="cohort-checkout">
+                                            Class booking
+                                        </FieldLabel>
+                                        <select
+                                            id="cohort-checkout"
+                                            className="rounded border bg-background p-3"
+                                            value={details.checkoutState}
+                                            onChange={(event) =>
+                                                setDetails((previous) => ({
+                                                    ...previous,
+                                                    checkoutState:
+                                                        event.target.value,
+                                                }))
+                                            }
+                                        >
+                                            {(!cohort.checkoutState ||
+                                                cohort.checkoutState ===
+                                                    "private") && (
+                                                <option value="private">
+                                                    Private roster
+                                                </option>
+                                            )}
+                                            <option value="listed-closed">
+                                                Listed class · booking closed
+                                            </option>
+                                            <option value="listed-open">
+                                                Listed class · booking open
+                                            </option>
+                                        </select>
+                                        <p className="text-sm text-muted-foreground">
+                                            Listing shares the class name and
+                                            date. The roster stays private.
+                                            Opening requires a future start, a
+                                            published product and a paid
+                                            one-time plan. Close a listed class
+                                            to stop new bookings; retain it for
+                                            booking history.
+                                        </p>
+                                        {details.checkoutState !==
+                                            "private" && (
+                                            <p className="text-sm text-muted-foreground">
+                                                Changing class details may leave
+                                                a payment already underway
+                                                needing review. Closing does not
+                                                recall an open payment page. The
+                                                original booked date and history
+                                                stay saved. Saving here sends no
+                                                message; contact booked members
+                                                separately about a date change.
+                                            </p>
+                                        )}
+                                    </Field>
+                                    <Field>
                                         <FieldLabel htmlFor="cohort-start-at">
                                             {COHORT_SCHEDULE_START_LABEL}
                                         </FieldLabel>
+                                        <p className="text-sm text-muted-foreground">
+                                            Dates below use your browser’s local
+                                            time. Checkout shows UTC.
+                                        </p>
                                         <Input
                                             id="cohort-start-at"
                                             type="datetime-local"
@@ -783,7 +858,11 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
                             <Button
                                 variant="outline"
                                 onClick={handleSyncFromCourse}
-                                disabled={isSyncing}
+                                disabled={
+                                    isSyncing ||
+                                    (!!cohort.checkoutState &&
+                                        cohort.checkoutState !== "private")
+                                }
                             >
                                 {isSyncing ? (
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -791,6 +870,14 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
                                 {BTN_SYNC_FROM_COURSE}
                             </Button>
                         </div>
+                        {cohort.checkoutState &&
+                            cohort.checkoutState !== "private" && (
+                                <p className="mb-4 text-sm text-muted-foreground">
+                                    Paid class bookings add only the selected
+                                    date. Synchronizing everyone from the
+                                    product is unavailable for listed classes.
+                                </p>
+                            )}
                         {members.length === 0 ? (
                             <AdminEmptyState
                                 title={COHORT_MEMBERS_EMPTY_TITLE}
@@ -870,12 +957,24 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
+                        {cohort.checkoutState &&
+                            cohort.checkoutState !== "private" && (
+                                <p className="mb-4 text-sm">
+                                    Close this class to stop new bookings.
+                                    Listed classes are retained for booking
+                                    history.
+                                </p>
+                            )}
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
                                 <Button
                                     type="button"
                                     variant="destructive"
-                                    disabled={isDeleting}
+                                    disabled={
+                                        isDeleting ||
+                                        (!!cohort.checkoutState &&
+                                            cohort.checkoutState !== "private")
+                                    }
                                 >
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     {BTN_DELETE_COHORT}
@@ -896,7 +995,12 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
                                     </AlertDialogCancel>
                                     <AlertDialogAction
                                         onClick={handleDeleteCohort}
-                                        disabled={isDeleting}
+                                        disabled={
+                                            isDeleting ||
+                                            (!!cohort.checkoutState &&
+                                                cohort.checkoutState !==
+                                                    "private")
+                                        }
                                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {isDeleting ? (

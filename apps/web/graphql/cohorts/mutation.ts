@@ -41,6 +41,8 @@ const mutations = {
             cohortId: { type: new GraphQLNonNull(GraphQLString) },
             name: { type: GraphQLString },
             schedule: { type: types.cohortScheduleInput },
+            checkoutState: { type: types.checkoutState },
+            expectedCheckoutRevision: { type: GraphQLFloat },
         },
         resolve: async (
             _: any,
@@ -48,6 +50,8 @@ const mutations = {
                 cohortId: string;
                 name?: string;
                 schedule?: { startAt?: number; endAt?: number } | null;
+                checkoutState?: "private" | "listed-closed" | "listed-open";
+                expectedCheckoutRevision?: number;
             },
             context: GQLContext,
         ) => updateCohort(args, context),

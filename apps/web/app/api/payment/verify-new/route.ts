@@ -4,12 +4,19 @@ import { auth } from "@/auth";
 import { error } from "@/services/logger";
 import InvoiceModel from "@models/Invoice";
 import Membership from "@models/Membership";
+import { classInvoiceStatus } from "@/services/class-checkout/status";
+import { assertNoMemberMimicMutation } from "@/services/member-mimic/context";
 
 interface RequestPayload {
     id: string;
 }
 
 export async function POST(req: NextRequest) {
+    try {
+        assertNoMemberMimicMutation(req.headers);
+    } catch {
+        return Response.json({}, { status: 403 });
+    }
     const body: RequestPayload = await req.json();
     const domainName = req.headers.get("domain");
 
@@ -37,7 +44,10 @@ export async function POST(req: NextRequest) {
             return Response.json({ message: "Bad request" }, { status: 400 });
         }
 
-        const invoice = await InvoiceModel.findOne({ invoiceId: id });
+        const invoice = await InvoiceModel.findOne({
+            domain: domain._id,
+            invoiceId: id,
+        });
 
         if (!invoice) {
             return Response.json(
@@ -47,6 +57,7 @@ export async function POST(req: NextRequest) {
         }
 
         const membership = await Membership.findOne({
+            domain: domain._id,
             membershipId: invoice.membershipId,
         });
 
@@ -62,6 +73,11 @@ export async function POST(req: NextRequest) {
         return Response.json({
             status: invoice.status,
             entityId: membership.entityId,
+            classBooking: await classInvoiceStatus(
+                String(domain._id),
+                user.userId,
+                invoice.invoiceId,
+            ),
         });
     } catch (err: any) {
         error(`Error verifying invoice: ${err.message}`, {

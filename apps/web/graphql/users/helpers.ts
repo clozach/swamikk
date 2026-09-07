@@ -10,6 +10,7 @@ import UserModel from "@models/User";
 import { deleteUserFeedback } from "@/services/content-changes/personal-data";
 import { deleteUserFeedbackReviewGrants } from "@/services/feedback-review/cleanup";
 import { deleteUserRefundDrafts } from "@/services/refund-requests/cleanup";
+import { deleteUserClassCheckoutReservations } from "@/services/class-checkout/cleanup";
 import { requireAccountErasureReady } from "../../../../packages/common-logic/src/account-lifecycle/gate";
 import mongoose from "mongoose";
 import { responses, internal } from "@/config/strings";
@@ -268,6 +269,10 @@ export async function cleanupPersonalData(
             userToDelete.userId,
         ),
         deleteUserRefundDrafts(String(ctx.subdomain._id), userToDelete.userId),
+        deleteUserClassCheckoutReservations(
+            String(ctx.subdomain._id),
+            userToDelete.userId,
+        ),
         EmailDeliveryModel.deleteMany({
             domain: ctx.subdomain._id,
             userId: userToDelete.userId,

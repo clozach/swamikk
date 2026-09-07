@@ -8,6 +8,7 @@ import {
 import CommunityModel from "@models/Community";
 import MembershipModel from "@models/Membership";
 import mongoose from "mongoose";
+import { completeClassBooking } from "@/services/class-checkout/activation";
 import { withAccountWrite } from "../../../../../packages/common-logic/src/account-lifecycle/gate";
 
 export async function activateMembership(
@@ -101,6 +102,13 @@ async function applyMembershipActivation(
         accessActivation: activated.accessActivation,
     });
     if (activated.status !== Constants.MembershipStatus.ACTIVE) return;
+
+    await completeClassBooking(
+        String(domain._id),
+        activated.userId,
+        activated.membershipId,
+        activated.sessionId,
+    );
 
     if (
         activated.entityType === Constants.MembershipEntityType.COMMUNITY &&

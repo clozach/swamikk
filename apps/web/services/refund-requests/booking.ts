@@ -1,4 +1,5 @@
 import type GQLContext from "@/models/GQLContext";
+import ClassCheckoutIntent from "@/models/ClassCheckoutIntent";
 import CohortModel from "@/models/Cohort";
 import BookingEvidence from "@/models/RefundBookingEvidence";
 import { requireCondition } from "@/services/content-changes/errors";
@@ -96,8 +97,37 @@ export async function readRefundClassEvidence(
         invoiceId: receipt.invoice.invoiceId,
     }).lean();
     if (!evidence) return { kind: "none" as const };
+    if (evidence.source === "checkout") {
+        const intent =
+            evidence.checkout &&
+            (await ClassCheckoutIntent.findOne({
+                domain: ctx.subdomain._id,
+                id: evidence.checkout.intentId,
+                invoiceId: receipt.invoice.invoiceId,
+                userId: receipt.membership.userId,
+                membershipId: receipt.invoice.membershipId,
+                membershipSessionId: receipt.invoice.membershipSessionId,
+                courseId: evidence.courseId,
+                "state.kind": "completed",
+                "booking.cohortId": evidence.cohortId,
+                "booking.cohortDocumentId": evidence.checkout.cohortDocumentId,
+                "booking.fingerprint": evidence.checkout.fingerprint,
+            }).lean());
+        if (
+            !intent ||
+            receipt.invoice.status !== "paid" ||
+            receipt.invoice.settlement?.source !==
+                "stripe-checkout-confirmed" ||
+            new Date(intent.booking.startAt).getTime() !==
+                new Date(evidence.classStart).getTime()
+        )
+            return { kind: "unknown" as const };
+    }
     const cohort = await CohortModel.findOne({
         domain: ctx.subdomain._id,
+        ...(evidence.source === "checkout"
+            ? { _id: evidence.checkout?.cohortDocumentId }
+            : {}),
         cohortId: evidence.cohortId,
         courseId: evidence.courseId,
         members: receipt.membership.userId,

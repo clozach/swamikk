@@ -14,6 +14,12 @@ export interface InternalRefundBookingEvidence {
     explanation: string;
     verifiedAt: Date;
     revision: number;
+    checkout?: {
+        intentId: string;
+        cohortDocumentId: string;
+        fingerprint: string;
+        selectedAt: Date;
+    };
     verifications: Array<{
         cohortId: string;
         classStart: Date;
@@ -40,6 +46,7 @@ const schema = new mongoose.Schema<InternalRefundBookingEvidence>({
     explanation: { type: String, required: true },
     verifiedAt: { type: Date, required: true },
     revision: { type: Number, required: true, default: 0 },
+    checkout: { type: mongoose.Schema.Types.Mixed },
     verifications: { type: mongoose.Schema.Types.Mixed, default: [] },
 });
 schema.index({ domain: 1, invoiceId: 1 }, { unique: true });

@@ -9,6 +9,9 @@ export interface Cohort {
     courseId: string;
     members: string[];
     schedule?: CohortSchedule;
+    /** Existing internal cohorts are private until an administrator explicitly lists them. */
+    checkoutState?: "private" | "listed-closed" | "listed-open";
+    checkoutRevision?: number;
     createdAt?: Date;
     updatedAt?: Date;
 }

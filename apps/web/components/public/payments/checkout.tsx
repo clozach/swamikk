@@ -2,6 +2,8 @@
 
 import { useContext, useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { ClassChoiceControl, useClassChoices } from "./class-choice";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -116,6 +118,13 @@ export default function Checkout({
         MembershipStatus | undefined
     >();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const classState = useClassChoices(
+        address.backend,
+        product.type === "course" ? product.id : null,
+        selectedPlan?.planId,
+        profile?.userId,
+        selectedPlan?.type,
+    );
 
     const router = useRouter();
     const { toast } = useToast();
@@ -187,6 +196,17 @@ export default function Checkout({
                     planToSelect = paymentPlans[0];
                 }
 
+                try {
+                    const remembered = sessionStorage.getItem(
+                        `class-plan:${address.backend}:${product.id}`,
+                    );
+                    const previous = paymentPlans.find(
+                        (plan) =>
+                            plan.planId === remembered &&
+                            plan.type === paymentPlanType.ONE_TIME,
+                    );
+                    if (previous) planToSelect = previous;
+                } catch {}
                 if (planToSelect) {
                     setSelectedPlan(planToSelect);
                     form.setValue("selectedPlan", planToSelect.planId);
@@ -196,9 +216,16 @@ export default function Checkout({
         };
 
         initializeSelectedPlanWithDefaultPaymentPlan();
-    }, [paymentPlans, product.defaultPaymentPlanId, form]);
+    }, [
+        paymentPlans,
+        product.defaultPaymentPlanId,
+        form,
+        address.backend,
+        product.id,
+    ]);
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
+        if (submitBlockedReason || isBlocked) return;
         setIsSubmitting(true);
         const { paymentMethod } = siteinfo;
 
@@ -208,6 +235,9 @@ export default function Checkout({
             type: product.type,
             planId: selectedPlan!.planId,
             origin: address.frontend,
+            ...(classState.offer.kind === "class" && classState.choice
+                ? { classChoice: classState.choice }
+                : {}),
         };
 
         const fetch = new FetchBuilder()
@@ -275,6 +305,7 @@ export default function Checkout({
                 }
             }
         } catch (err) {
+            classState.refresh();
             toast({
                 title: "Error",
                 description: err.message,
@@ -320,6 +351,11 @@ export default function Checkout({
 
     const handlePlanSelection = (planId: string) => {
         const plan = paymentPlans.find((p) => p.planId === planId);
+        try {
+            sessionStorage.removeItem(
+                `class-plan:${address.backend}:${product.id}`,
+            );
+        } catch {}
         setSelectedPlan(plan || null);
         form.setValue("selectedPlan", planId);
     };
@@ -353,15 +389,28 @@ export default function Checkout({
     // button. selectedPlan is the real "is a plan chosen?" signal and is set
     // synchronously (initialPlan) for default/single-plan products. Each branch
     // yields the human-readable reason the tooltip shows on the disabled button.
+    const classBlockedReason =
+        classState.status.kind === "pending" ||
+        classState.status.kind === "paid-review"
+            ? "Contact us to confirm your earlier checkout before paying again."
+            : classState.offer.kind === "loading"
+              ? "Checking checkout availability…"
+              : classState.offer.kind === "unavailable"
+                ? "Check class dates again before continuing."
+                : classState.offer.kind === "class" && !classState.choice
+                  ? "Choose an open class date before continuing."
+                  : null;
     const submitBlockedReason: string | null = !isLoggedIn
         ? "Enter your email and verify the code above to continue."
         : !selectedPlan
           ? "Choose a plan to continue."
-          : selectedPlan.type === paymentPlanType.FREE &&
-              product.type === Constants.MembershipEntityType.COMMUNITY &&
-              !joiningReasonValue
-            ? "Add your reason for joining to continue."
-            : null;
+          : classBlockedReason
+            ? classBlockedReason
+            : selectedPlan.type === paymentPlanType.FREE &&
+                product.type === Constants.MembershipEntityType.COMMUNITY &&
+                !joiningReasonValue
+              ? "Add your reason for joining to continue."
+              : null;
     const submitDisabled = isSubmitting || submitBlockedReason !== null;
 
     const isBlocked =
@@ -391,6 +440,26 @@ export default function Checkout({
                                 ? "You already have access to this resource."
                                 : "You have been rejected and cannot proceed with the checkout."}
                         </Text1>
+                        {membershipStatus ===
+                            Constants.MembershipStatus.ACTIVE &&
+                            classState.offer.kind === "class" &&
+                            classState.status.kind !== "pending" &&
+                            classState.status.kind !== "paid-review" && (
+                                <p>
+                                    To book another class date,{" "}
+                                    <Link
+                                        href="/p/contact"
+                                        className="underline"
+                                    >
+                                        contact us before paying
+                                    </Link>
+                                    .
+                                </p>
+                            )}
+                        {(classState.status.kind === "pending" ||
+                            classState.status.kind === "paid-review") && (
+                            <ClassChoiceControl state={classState} />
+                        )}
                         {membershipStatus ===
                             Constants.MembershipStatus.ACTIVE && (
                             <Button
@@ -627,6 +696,7 @@ export default function Checkout({
                                         </div>
                                     )}
 
+                                    <ClassChoiceControl state={classState} />
                                     {/* FREE community — reason for joining */}
                                     {selectedPlan?.type ===
                                         paymentPlanType.FREE &&

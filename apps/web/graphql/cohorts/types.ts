@@ -5,6 +5,7 @@ import {
     GraphQLNonNull,
     GraphQLObjectType,
     GraphQLString,
+    GraphQLEnumType,
 } from "graphql";
 
 const toEpochMillis = (value?: Date | null) =>
@@ -34,12 +35,25 @@ const cohortScheduleInput = new GraphQLInputObjectType({
     },
 });
 
-const cohortType = new GraphQLObjectType({
+const cohortType = new GraphQLObjectType<{
+    checkoutState?: string;
+    checkoutRevision?: number;
+}>({
     name: "Cohort",
     fields: {
         cohortId: { type: new GraphQLNonNull(GraphQLString) },
         name: { type: new GraphQLNonNull(GraphQLString) },
         courseId: { type: new GraphQLNonNull(GraphQLString) },
+        checkoutState: {
+            type: GraphQLString,
+            resolve: (cohort: { checkoutState?: string }) =>
+                cohort.checkoutState || "private",
+        },
+        checkoutRevision: {
+            type: GraphQLFloat,
+            resolve: (cohort: { checkoutRevision?: number }) =>
+                cohort.checkoutRevision || 0,
+        },
         members: {
             type: new GraphQLNonNull(new GraphQLList(GraphQLString)),
         },
@@ -50,6 +64,14 @@ const cohortType = new GraphQLObjectType({
 });
 
 const types = {
+    checkoutState: new GraphQLEnumType({
+        name: "CohortCheckoutState",
+        values: {
+            PRIVATE: { value: "private" },
+            LISTED_CLOSED: { value: "listed-closed" },
+            LISTED_OPEN: { value: "listed-open" },
+        },
+    }),
     cohortType,
     cohortSchedule,
     cohortScheduleInput,

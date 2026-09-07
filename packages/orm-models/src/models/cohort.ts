@@ -20,6 +20,12 @@ export const CohortSchema = new mongoose.Schema<InternalCohort>(
         name: { type: String, required: true },
         courseId: { type: String, required: true },
         members: { type: [String], default: [] },
+        checkoutState: {
+            type: String,
+            enum: ["private", "listed-closed", "listed-open"],
+            default: "private",
+        },
+        checkoutRevision: { type: Number, default: 0 },
         schedule: new mongoose.Schema(
             {
                 startAt: { type: Date },

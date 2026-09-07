@@ -7,6 +7,8 @@ export default interface Cohort {
     cohortId: string;
     name: string;
     courseId: string;
+    checkoutState?: "private" | "listed-closed" | "listed-open";
+    checkoutRevision?: number;
     members: string[];
     schedule?: CohortSchedule | null;
     createdAt?: string;
