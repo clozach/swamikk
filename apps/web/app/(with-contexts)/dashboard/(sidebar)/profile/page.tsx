@@ -482,13 +482,14 @@ export default function Page() {
                                 className="items-center justify-between"
                             >
                                 <FieldContent>
-                                    <FieldLabel>
+                                    <FieldLabel htmlFor="profile-newsletter">
                                         {
                                             PROFILE_EMAIL_PREFERENCES_NEWSLETTER_OPTION_TEXT
                                         }
                                     </FieldLabel>
                                 </FieldContent>
                                 <Checkbox
+                                    id="profile-newsletter"
                                     disabled={isMimic || isSavingNews}
                                     checked={subscribedToUpdates}
                                     onChange={(

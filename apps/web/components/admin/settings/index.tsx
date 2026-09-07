@@ -786,6 +786,9 @@ const Settings = (props: SettingsProps) => {
                                     }
                                 </p>
                                 <Checkbox
+                                    aria-label={
+                                        SITE_SETTINGS_COURSELIT_BRANDING_SUB_CAPTION
+                                    }
                                     disabled={loading}
                                     checked={Boolean(
                                         newSettings.hideCourseLitBranding,

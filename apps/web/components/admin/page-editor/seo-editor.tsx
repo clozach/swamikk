@@ -79,6 +79,7 @@ export default function SeoEditor({
                 <div className="flex justify-between">
                     <PageBuilderPropertyHeader label={SEO_FORM_ROBOTS_LABEL} />
                     <Checkbox
+                        aria-label={SEO_FORM_ROBOTS_LABEL}
                         checked={innerRobotsAllowed}
                         onChange={(value: boolean) =>
                             setInnerRobotsAllowed(value)

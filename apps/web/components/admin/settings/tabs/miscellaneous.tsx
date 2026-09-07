@@ -174,6 +174,7 @@ export default function MiscellaneousTab() {
                             >
                                 <div className="flex items-center gap-3 flex-1">
                                     <Checkbox
+                                        aria-label={provider.label}
                                         disabled={
                                             loading ||
                                             (!!provider.featureFlag &&

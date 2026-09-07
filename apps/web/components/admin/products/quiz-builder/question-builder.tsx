@@ -110,6 +110,7 @@ export function QuestionBuilder({
                 <div className="flex items-center gap-2" key={index}>
                     <Tooltip title={QUESTION_BUILDER_CORRECT_ANS_TOOLTIP}>
                         <Checkbox
+                            aria-label={`${QUESTION_BUILDER_CORRECT_ANS_TOOLTIP} ${index + 1}${option.text ? `: ${option.text}` : ""}`}
                             checked={Boolean(option.correctAnswer)}
                             onChange={(value: boolean) =>
                                 setCorrectOption(index, value)

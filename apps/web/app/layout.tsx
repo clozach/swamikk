@@ -55,7 +55,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
         : "";
 
     return (
-        <html suppressHydrationWarning>
+        <html lang="en" suppressHydrationWarning>
             <head>
                 <style>{themeStyles}</style>
             </head>

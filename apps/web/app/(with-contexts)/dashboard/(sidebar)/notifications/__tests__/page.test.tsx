@@ -16,22 +16,9 @@ jest.mock("@components/admin/dashboard-content", () => ({
 }));
 
 jest.mock("@courselit/components-library", () => ({
-    Checkbox: ({
-        checked,
-        disabled,
-        onChange,
-    }: {
-        checked: boolean;
-        disabled?: boolean;
-        onChange: (value: boolean) => void;
-    }) => (
-        <input
-            type="checkbox"
-            checked={checked}
-            disabled={disabled}
-            onChange={(event) => onChange(event.target.checked)}
-        />
-    ),
+    Checkbox: jest.requireActual(
+        "../../../../../../../../packages/components-library/src/checkbox",
+    ).default,
     useToast: () => ({
         toast: mockToast,
     }),
@@ -71,6 +58,18 @@ function renderPage(permissions: string[]) {
 }
 
 describe("Notifications Page", () => {
+    it("names each notification checkbox with its activity and channel", async () => {
+        renderPage([]);
+        const checkboxes = await screen.findAllByRole("checkbox");
+        for (const checkbox of checkboxes)
+            expect(checkbox).toHaveAccessibleName();
+        expect(
+            screen.getByRole("checkbox", {
+                name: "Community Post Created: Email",
+            }),
+        ).toBeInTheDocument();
+    });
+
     beforeEach(() => {
         jest.clearAllMocks();
         mockExec.mockResolvedValue({

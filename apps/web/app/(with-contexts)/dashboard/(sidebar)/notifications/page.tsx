@@ -218,6 +218,7 @@ function ActivityRow({
                 >
                     <div className="flex justify-center">
                         <Checkbox
+                            aria-label={`${prettifyToken(preference.activityType)}: ${prettifyToken(channel)}`}
                             checked={preference.channels.includes(channel)}
                             disabled={isUpdating}
                             onChange={(value: boolean | "indeterminate") =>

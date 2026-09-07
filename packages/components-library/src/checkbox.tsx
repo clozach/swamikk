@@ -3,6 +3,10 @@ import { Indicator, Root } from "@radix-ui/react-checkbox";
 import { Check } from "@courselit/icons";
 
 interface CheckboxProps {
+    id?: string;
+    "aria-label"?: string;
+    "aria-labelledby"?: string;
+    "aria-describedby"?: string;
     checked: boolean;
     onChange: (...args: any[]) => void;
     style?: Record<string, string>;
@@ -14,9 +18,11 @@ export default function Checkbox({
     onChange,
     style,
     disabled,
+    ...labelProps
 }: CheckboxProps) {
     return (
         <Root
+            {...labelProps}
             className="border-2 border-slate-300 hover:bg-violet3 flex h-[25px] w-[25px] appearance-none items-center justify-center rounded-[4px] bg-white outline-none focus:border-0 focus:shadow-[0_0_0_2px] focus:shadow-black"
             checked={checked}
             onCheckedChange={onChange}

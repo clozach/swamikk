@@ -88,6 +88,7 @@ export default function PermissionsEditor({
                 >
                     <p>{permissionToCaptionMap[permission]}</p>
                     <Checkbox
+                        aria-label={permissionToCaptionMap[permission]}
                         disabled={loading || disabled}
                         checked={activePermissions?.includes(permission)}
                         onCheckedChange={(value: boolean) =>

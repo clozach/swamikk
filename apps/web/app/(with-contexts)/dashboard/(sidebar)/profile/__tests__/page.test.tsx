@@ -49,19 +49,9 @@ jest.mock("@courselit/components-library", () => ({
         <div>{children}</div>
     ),
     AvatarImage: ({ src }: { src?: string }) => <img alt="" src={src} />,
-    Checkbox: ({
-        checked,
-        onChange,
-    }: {
-        checked: boolean;
-        onChange: (value: boolean) => void;
-    }) => (
-        <input
-            type="checkbox"
-            checked={checked}
-            onChange={(event) => onChange(event.target.checked)}
-        />
-    ),
+    Checkbox: jest.requireActual(
+        "../../../../../../../../packages/components-library/src/checkbox",
+    ).default,
     Image: ({ alt, src }: { alt: string; src: string }) => (
         <img alt={alt} src={src} />
     ),
@@ -199,6 +189,18 @@ function renderPage() {
 }
 
 describe("ProfilePage", () => {
+    it("names the newsletter checkbox and lets its visible label toggle the preference", async () => {
+        renderPage();
+        const checkbox = await screen.findByRole("checkbox", {
+            name: "Receive newsletter and marketing emails",
+        });
+        expect(checkbox).not.toBeChecked();
+        fireEvent.click(
+            screen.getByText("Receive newsletter and marketing emails"),
+        );
+        expect(checkbox).toBeChecked();
+    });
+
     beforeEach(() => {
         jest.clearAllMocks();
         mockExec.mockReset();
