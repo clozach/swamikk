@@ -112,6 +112,10 @@ test.each([Releases, Changes, RefundReview])(
         toggle.focus();
         await user.keyboard("{Enter}");
         const dialog = screen.getByRole("dialog");
+        expect(dialog).toHaveAccessibleName("Navigation menu");
+        expect(dialog).toHaveAccessibleDescription(
+            "Choose a page in your account.",
+        );
         expect(dialog).toContainElement(document.activeElement as HTMLElement);
         expect(
             within(dialog).getByRole("link", { name: "Comments & changes" }),
