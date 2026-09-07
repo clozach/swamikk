@@ -369,11 +369,6 @@ export async function updateSequence({
 
     if (filter) {
         sequence.filter = JSON.parse(filter);
-    } else {
-        sequence.filter = {
-            aggregator: "or",
-            filters: [],
-        };
     }
     if (title) {
         sequence.title = title;
@@ -384,7 +379,7 @@ export async function updateSequence({
                 name: "",
             };
         }
-        sequence.from.email = fromName;
+        sequence.from.email = fromEmail;
     }
     if (fromName) {
         if (!sequence.from) {
