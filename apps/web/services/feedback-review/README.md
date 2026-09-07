@@ -4,7 +4,7 @@ This backend is disabled by absence of a grant. It contains no scheduler, model 
 
 ## Authority
 
-An authenticated, active settings administrator can `POST /api/feedback-review/grants` with `{name, scopes, expiresInDays}`. Scopes are explicit `public-page-text` and/or `public-lesson-text`; duration is 1–30 days. Issuance also requires current site-management or any-course-management permission for each requested scope. The raw `fbr_…` bearer credential is returned only in that successful no-store response; the database stores only its SHA256 hash. Keep it outside prompts, model context, repository files and logs. Grant listing returns metadata, never the hash or token. No grants were issued outside isolated tests by this implementation.
+An authenticated, active settings administrator can `POST /api/feedback-review/grants` with `{name, scopes, expiresInDays}`. Scopes are explicit `public-page-text` and/or `public-lesson-text`; duration is 1–30 days. Issuance also requires current site-management or any-course-management permission for each requested scope. The raw `fbr_…` bearer credential is returned only in that successful no-store response; the database stores only its SHA256 hash. Keep it outside prompts, model context, repository files and logs. Grant listing returns metadata, never the hash or token. Grant issuance is a separate operator action; deploying this source does not issue a grant.
 
 The credential works only on three POST endpoints: `/api/feedback-review/claim`, `/context` and `/result`. Each checks the request tenant, grant hash/state/expiry and the issuer's current active account and current permissions. It never looks up or fabricates an administrator session. Prepared proposals identify `feedback-review:<grant ID>` as their preparer and retain explicit provenance. The token cannot approve/apply, publish, create a page, access media, change memberships or payments, issue another grant or use administrator APIs.
 
@@ -49,3 +49,7 @@ Ordinary account erasure calls `deleteUserFeedbackReviewGrants` after the actual
 ## Status UI verification
 
 In Changes, load a saved comment with a sanitized review status and choose Refresh after that server status changes. A confirmed text proposal links to `/dashboard/changes?id=<exact proposal ID>` and the existing native proposal detail read. Human-review notes remain plain text. No grant/retry/approval/scheduler controls are added to this status panel. Isolated client tests cover every displayed state, private metadata omission, public/member/Mimic refusal, the exact detail route, and the existing Development prompt clipboard behavior. Root owns rendered local/hosted proof and the Changes reveal before release; the source integration does not assert native deployment.
+
+## Optional one-shot client
+
+The separately configured [feedback reviewer client](../../../../services/feedback-reviewer/README.md) implements this protocol for eligible plain text with a durable local result journal. It has no provider/model defaults, active grant, scheduler or publication authority. An operator must explicitly choose its endpoint/model/limits and private credential files before invoking it once. Its submitted output is an ordinary proposal requiring the existing administrator preview and approval; deployment alone still starts no review.
