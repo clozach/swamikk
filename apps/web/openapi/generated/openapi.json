@@ -5788,7 +5788,7 @@
             },
             "post": {
                 "summary": "Review, approve, decline, escalate, verify a class booking or reconcile",
-                "description": "Same-origin JSON and actual authorized operator. Decisions require the exact current review hash, explanation and complete payment/access evidence. Refund creation has a durable first-attempt claim and never blindly repeats after uncertainty.",
+                "description": "Same-origin JSON and actual authorized operator. Decisions require the exact current review hash, explanation and complete payment/access evidence. Review accepts optional amount in integer Stripe charge units. A changed amount requires a fresh exact approval. After a completed partial refund, review with newAttempt:true and its current reviewHash creates a separately versioned remaining attempt; old operation receipts remain preserved. Refund creation has a durable first-attempt claim and never blindly repeats after uncertainty. Confirmed cumulative full purchase/class refunds end only the correlated access; partial refunds keep it. Pending/failed/uncertain money alone does not end access. Ambiguous shared class roster/tag ownership is explicitly review-required, without removing another grant.",
                 "responses": {
                     "200": {
                         "description": "RefundRequestView or saved booking verification"
