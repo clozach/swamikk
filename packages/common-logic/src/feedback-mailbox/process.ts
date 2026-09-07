@@ -22,6 +22,7 @@ export async function processFeedbackMailboxDomain({
     send,
     now = () => new Date(),
     limit = 25,
+    aroundDelivery = (_record, operation) => operation(),
 }: {
     model: Model<InternalFeedback>;
     domain: FeedbackMailboxDomain;
@@ -32,6 +33,10 @@ export async function processFeedbackMailboxDomain({
     ) => Promise<FeedbackMailResult>;
     now?: () => Date;
     limit?: number;
+    aroundDelivery?: (
+        record: InternalFeedback,
+        operation: () => Promise<void>,
+    ) => Promise<void>;
 }) {
     // A worker may have died after SMTP accepted but before persisting that fact.
     const expired = await model
@@ -93,50 +98,52 @@ export async function processFeedbackMailboxDomain({
             { new: true },
         );
         if (!record) continue; // another worker or operator won the compare-and-set
-        // Closing/deleting before transport begins prevents sending. A send already
-        // in progress cannot be retracted; its result is still recorded truthfully.
-        if (
-            !(await model.exists({
-                domain: domain._id,
-                id: record.id,
-                state: "open",
-                "notification.attemptId": claim.attemptId,
-            }))
-        ) {
+        await aroundDelivery(record, async () => {
+            // Closing/deleting before transport begins prevents sending. A send already
+            // in progress cannot be retracted; its result is still recorded truthfully.
+            if (
+                !(await model.exists({
+                    domain: domain._id,
+                    id: record.id,
+                    state: "open",
+                    "notification.attemptId": claim.attemptId,
+                }))
+            ) {
+                await model.updateOne(
+                    {
+                        domain: domain._id,
+                        id: record.id,
+                        "notification.attemptId": claim.attemptId,
+                    },
+                    { $set: { notification: previous } },
+                );
+                return;
+            }
+            let result: FeedbackMailResult;
+            try {
+                result = await send(record, claim, domain);
+            } catch {
+                result = { kind: "uncertain" };
+            }
+            // Failure to save the outcome leaves the lease to become uncertain, never
+            // requeues a message whose SMTP acceptance might already have happened.
             await model.updateOne(
                 {
                     domain: domain._id,
                     id: record.id,
+                    "notification.kind": "sending",
                     "notification.attemptId": claim.attemptId,
                 },
-                { $set: { notification: previous } },
-            );
-            continue;
-        }
-        let result: FeedbackMailResult;
-        try {
-            result = await send(record, claim, domain);
-        } catch {
-            result = { kind: "uncertain" };
-        }
-        // Failure to save the outcome leaves the lease to become uncertain, never
-        // requeues a message whose SMTP acceptance might already have happened.
-        await model.updateOne(
-            {
-                domain: domain._id,
-                id: record.id,
-                "notification.kind": "sending",
-                "notification.attemptId": claim.attemptId,
-            },
-            {
-                $set: {
-                    notification: completedFeedbackNotification(
-                        claim,
-                        result,
-                        now(),
-                    ),
+                {
+                    $set: {
+                        notification: completedFeedbackNotification(
+                            claim,
+                            result,
+                            now(),
+                        ),
+                    },
                 },
-            },
-        );
+            );
+        });
     }
 }

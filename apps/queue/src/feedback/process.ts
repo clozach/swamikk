@@ -11,6 +11,10 @@ import {
 } from "@courselit/common-logic";
 import { sendFeedbackNotification } from "./transport";
 import { logger } from "../logger";
+import {
+    AccountLifecycleError,
+    withAccountWrite,
+} from "../../../../packages/common-logic/src/account-lifecycle/gate";
 
 const Feedback: mongoose.Model<InternalFeedback> =
     (mongoose.models.ContextualFeedback as mongoose.Model<InternalFeedback>) ||
@@ -34,6 +38,42 @@ export async function collectFeedbackNotifications() {
             await processFeedbackMailboxDomain({
                 model: Feedback,
                 domain,
+                aroundDelivery: async (record, operation) => {
+                    if (record.actor.kind === "visitor") return operation();
+                    try {
+                        await withAccountWrite(
+                            {
+                                domainId: String(domain._id),
+                                userId: record.actor.userId,
+                                purpose: "feedback-mail",
+                            },
+                            operation,
+                        );
+                    } catch (error) {
+                        if (!(error instanceof AccountLifecycleError))
+                            throw error;
+                        // Refused before SMTP. Update only; cleanup may already have erased it.
+                        const claim = record.notification;
+                        if (claim?.kind === "sending")
+                            await Feedback.updateOne(
+                                {
+                                    domain: domain._id,
+                                    id: record.id,
+                                    "notification.kind": "sending",
+                                    "notification.attemptId": claim.attemptId,
+                                },
+                                {
+                                    $set: {
+                                        notification: {
+                                            kind: "failed",
+                                            attempts: claim.attempts,
+                                            reason: "rejected",
+                                        },
+                                    },
+                                },
+                            );
+                    }
+                },
                 send: async (record, claim, target) => {
                     const latest = await Domains.findById(target._id)
                         .select("deleted settings.feedbackMailbox")

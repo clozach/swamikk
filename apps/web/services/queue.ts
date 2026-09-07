@@ -3,6 +3,11 @@ import { jwtUtils } from "@courselit/common-logic";
 import { error } from "./logger";
 import nodemailer from "nodemailer";
 import { responses } from "@/config/strings";
+import {
+    withAccountMail,
+    type AccountMailIdentity,
+} from "../../../packages/common-logic/src/account-lifecycle/mail";
+import { AccountLifecycleError } from "../../../packages/common-logic/src/account-lifecycle/gate";
 
 const queueServer = process.env.QUEUE_SERVER || "http://localhost:4000";
 
@@ -26,6 +31,7 @@ interface MailProps {
     body: string;
     from: string;
     headers?: Record<string, string>;
+    account?: AccountMailIdentity;
 }
 if (mailHost && mailUser && mailPass && mailPort) {
     transporter = nodemailer.createTransport({
@@ -49,16 +55,44 @@ if (mailHost && mailUser && mailPass && mailPort) {
     };
 }
 
-export async function addMailJob({
+export async function addMailJob(mail: MailProps) {
+    try {
+        return mail.account
+            ? await withAccountMail(mail.account, mail.to, () =>
+                  queueMailOrFallback(mail),
+              )
+            : await queueMailOrFallback(mail);
+    } catch (error) {
+        // A deliberate account refusal is final; never convert it into SMTP.
+        if (error instanceof AccountLifecycleError) return;
+        throw error;
+    }
+}
+
+async function queueMailOrFallback({
     to,
     from,
     subject,
     body,
     headers,
+    account,
 }: MailProps) {
     try {
         const jwtSecret = getJwtSecret();
-        const token = jwtUtils.generateToken({ service: "app" }, jwtSecret);
+        const token = jwtUtils.generateToken(
+            {
+                service: "app",
+                ...(account
+                    ? {
+                          user: {
+                              domain: account.domainId,
+                              userId: account.userId,
+                          },
+                      }
+                    : {}),
+            },
+            jwtSecret,
+        );
         const response = await fetch(`${queueServer}/job/mail`, {
             method: "POST",
             headers: {
@@ -71,20 +105,32 @@ export async function addMailJob({
                 subject,
                 body,
                 headers,
+                ...(account
+                    ? {
+                          account: {
+                              userId: account.userId,
+                              actorUserId: account.actorUserId,
+                          },
+                      }
+                    : {}),
             }),
         });
+        // Authentication/policy refusals can be HTML or empty. Their status is
+        // final even when the error body cannot be parsed.
+        if (account && response.status >= 400 && response.status < 500) return;
         const jsonResponse = await response.json();
+        if (account && jsonResponse.code === "account_unavailable") return;
 
         if (response.status !== 200) {
             throw new Error(jsonResponse.error);
         }
     } catch (err) {
-        error(`Error adding mail job: ${err.message}`, {
-            to,
-            from,
-            subject,
-            body,
-        });
+        error(
+            `Error adding mail job: ${err.message}`,
+            account
+                ? { domainId: account.domainId, userId: account.userId }
+                : { to, from, subject, body },
+        );
 
         let atLeastOneSuccessfulSend = false;
         for (const recipient of to) {

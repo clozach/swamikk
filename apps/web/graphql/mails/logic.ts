@@ -6,6 +6,7 @@ import UserModel from "@models/User";
 import path from "path";
 import { error } from "../../services/logger";
 import { createUser, getMembership } from "../users/logic";
+import { withAccountWrite } from "../../../../packages/common-logic/src/account-lifecycle/gate";
 import {
     checkIfAuthenticated,
     makeModelTextSearchable,
@@ -663,26 +664,39 @@ export async function sendCourseOverMail(
             domain: ctx.subdomain!,
             email: email,
             lead: constants.leadDownload,
-            subscribedToUpdates: true,
+            subscribedToUpdates: false,
         });
     }
 
-    const membership = await getMembership({
-        domainId: ctx.subdomain._id,
-        userId: dbUser!.userId,
-        entityType: Constants.MembershipEntityType.COURSE,
-        entityId: course.courseId,
-        planId: paymentPlans[0].planId,
-    });
+    return withAccountWrite(
+        {
+            domainId: String(ctx.subdomain._id),
+            userId: dbUser!.userId,
+            purpose: "lead-download-enrollment",
+        },
+        async () => {
+            const membership = await getMembership({
+                domainId: ctx.subdomain._id,
+                userId: dbUser!.userId,
+                entityType: Constants.MembershipEntityType.COURSE,
+                entityId: course.courseId,
+                planId: paymentPlans[0].planId,
+            });
 
-    await activateMembership(ctx.subdomain!, membership, paymentPlans[0]);
+            await activateMembership(
+                ctx.subdomain!,
+                membership,
+                paymentPlans[0],
+            );
 
-    if (course.lessons.length === 0) {
-        return true;
-    }
+            if (course.lessons.length === 0) {
+                return true;
+            }
 
-    await createTemplateAndSendMail({ course, ctx, user: dbUser! });
-    return true;
+            await createTemplateAndSendMail({ course, ctx, user: dbUser! });
+            return true;
+        },
+    );
 }
 
 export async function deleteMailFromSequence({

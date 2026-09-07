@@ -23,7 +23,7 @@ router.post(
         const domainId = getDomainId(req.user?.domain);
 
         try {
-            const { to, from, subject, body, headers } = req.body;
+            const { to, from, subject, body, headers, account } = req.body;
             MailJob.parse({
                 to,
                 from,
@@ -31,9 +31,27 @@ router.post(
                 body,
                 headers,
                 domainId,
+                account,
             });
-
-            await addMailJob({ to, from, subject, body, headers, domainId });
+            if (
+                account &&
+                (!req.user?.domain || req.user.userId !== account.userId)
+            ) {
+                res.status(409).json({
+                    code: "account_unavailable",
+                    error: "Mail identity does not match the signed account.",
+                });
+                return;
+            }
+            await addMailJob({
+                to,
+                from,
+                subject,
+                body,
+                headers,
+                domainId,
+                account,
+            });
 
             res.status(200).json({ message: "Success" });
         } catch (err: any) {

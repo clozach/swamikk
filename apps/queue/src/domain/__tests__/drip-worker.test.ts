@@ -6,6 +6,10 @@ import {
     claimDelivery,
     finishDelivery,
 } from "../../../../../packages/common-logic/src/member-access/drip";
+jest.mock("../account-mail", () => ({
+    withMailAccounts: (_input: unknown, operation: () => Promise<unknown>) =>
+        operation(),
+}));
 
 jest.mock("../queue", () => ({
     __esModule: true,

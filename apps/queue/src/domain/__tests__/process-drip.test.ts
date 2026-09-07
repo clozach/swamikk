@@ -12,6 +12,12 @@ import UserModel from "../model/user";
 import * as queries from "../queries";
 import mailQueue from "../queue";
 import * as posthog from "../../observability/posthog";
+// This suite isolates scheduling with synthetic periods. Real account/period
+// validation is exercised against Mongo in mail-closure.test.ts.
+jest.mock("../account-mail", () => ({
+    withMailAccounts: (_input: unknown, operation: () => Promise<unknown>) =>
+        operation(),
+}));
 import { ensureMembershipAccess } from "../../../../../packages/common-logic/src/member-access/lifecycle";
 import {
     recordDripRelease,

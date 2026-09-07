@@ -58,6 +58,10 @@ export class EmailChannel implements NotificationChannel {
                 email: process.env.EMAIL_FROM || "",
             }),
             domainId: getDomainId(payload.domain?._id),
+            account: {
+                userId: payload.recipient.userId,
+                actorUserId: payload.actorUserId,
+            },
             subject: notificationDetails.message,
             body,
         });

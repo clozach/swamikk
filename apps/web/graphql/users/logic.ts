@@ -2,6 +2,7 @@
 
 import { setNewsletterConsent } from "@/services/newsletter/consent";
 import { ensureMembershipAccess } from "@/services/member-access";
+import { withAccountWrite } from "../../../../packages/common-logic/src/account-lifecycle/gate";
 
 import {
     projectMemberPurchases,
@@ -235,55 +236,70 @@ export const inviteCustomer = async (
         });
     }
 
-    if (tags.length) {
-        user = await updateUser(
-            { id: user.userId, tags: [...user.tags, ...tags] },
-            ctx,
-        );
-    }
+    return withAccountWrite(
+        {
+            domainId: String(ctx.subdomain._id),
+            userId: user.userId,
+            purpose: "invite-enrollment",
+        },
+        async () => {
+            if (tags.length) {
+                user = await updateUser(
+                    { id: user.userId, tags: [...user.tags, ...tags] },
+                    ctx,
+                );
+            }
 
-    const paymentPlan = await getInternalPaymentPlan(ctx);
-    const membership = await getMembership({
-        domainId: ctx.subdomain._id,
-        userId: user.userId,
-        entityType: Constants.MembershipEntityType.COURSE,
-        entityId: course.courseId,
-        planId: paymentPlan.planId,
-    });
+            const paymentPlan = await getInternalPaymentPlan(ctx);
+            const membership = await getMembership({
+                domainId: ctx.subdomain._id,
+                userId: user.userId,
+                entityType: Constants.MembershipEntityType.COURSE,
+                entityId: course.courseId,
+                planId: paymentPlan.planId,
+            });
 
-    if (membership.status === Constants.MembershipStatus.ACTIVE) {
-        return user;
-    }
+            if (membership.status === Constants.MembershipStatus.ACTIVE) {
+                return user;
+            }
 
-    await activateMembership(ctx.subdomain!, membership, paymentPlan);
+            await activateMembership(ctx.subdomain!, membership, paymentPlan);
 
-    try {
-        const schoolName = ctx.subdomain?.settings?.title || ctx.subdomain.name;
+            try {
+                const schoolName =
+                    ctx.subdomain?.settings?.title || ctx.subdomain.name;
 
-        const emailBody = pug.render(courseEnrollTemplate, {
-            courseName: course.title,
-            loginLink: `${ctx.address}/login`,
-            schoolName,
-            // Served from apps/web/public, baked into the image.
-            logoUrl: `${ctx.address}/swami-kk-logo.png`,
-            signatureUrl: `${ctx.address}/swami-signature.png`,
-        });
+                const emailBody = pug.render(courseEnrollTemplate, {
+                    courseName: course.title,
+                    loginLink: `${ctx.address}/login`,
+                    schoolName,
+                    // Served from apps/web/public, baked into the image.
+                    logoUrl: `${ctx.address}/swami-kk-logo.png`,
+                    signatureUrl: `${ctx.address}/swami-signature.png`,
+                });
 
-        await addMailJob({
-            to: [user.email],
-            subject: `You're enrolled — ${course.title}`,
-            body: emailBody,
-            from: getEmailFrom({
-                name: schoolName,
-                email: process.env.EMAIL_FROM || "",
-            }),
-        });
-    } catch (error) {
-        // eslint-disable-next-line no-console
-        console.log("error", error);
-    }
+                await addMailJob({
+                    to: [user.email],
+                    account: {
+                        domainId: String(ctx.subdomain._id),
+                        userId: user.userId,
+                        actorUserId: ctx.user.userId,
+                    },
+                    subject: `You're enrolled — ${course.title}`,
+                    body: emailBody,
+                    from: getEmailFrom({
+                        name: schoolName,
+                        email: process.env.EMAIL_FROM || "",
+                    }),
+                });
+            } catch (error) {
+                // eslint-disable-next-line no-console
+                console.log("error", error);
+            }
 
-    return user;
+            return user;
+        },
+    );
 };
 
 export const deleteUser = async (

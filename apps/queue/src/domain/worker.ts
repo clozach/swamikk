@@ -8,6 +8,7 @@ import {
     finishDelivery,
 } from "../../../../packages/common-logic/src/member-access/drip";
 import { MailJob } from "./model/mail-job";
+import { withMailAccounts } from "./account-mail";
 
 export async function processMailJob(job: { id?: string; data: any }) {
     const { to, from, subject, body, headers, domainId } = job.data;
@@ -17,40 +18,45 @@ export async function processMailJob(job: { id?: string; data: any }) {
             ? undefined
             : MailJob.shape.drip.parse(job.data.drip);
     try {
-        if (drip) {
-            const claim = await claimDelivery(
-                domainId,
-                drip.periodId,
-                drip.deliveryId,
-            );
-            if (claim.kind === "skipped") return;
-            claimId = claim.claimId;
-        }
-        // Claim and cancellation contend on one ledger document. SMTP that has
-        // crossed this boundary cannot be recalled if cancellation follows it.
-        try {
-            await sendMail({ from, to, subject, html: body, headers });
-        } catch (error) {
-            if (drip && claimId) {
-                await finishDelivery(
-                    domainId,
-                    drip.periodId,
-                    drip.deliveryId,
-                    claimId,
-                    "uncertain",
-                );
-            }
-            throw error;
-        }
-        if (drip && claimId) {
-            await finishDelivery(
-                domainId,
-                drip.periodId,
-                drip.deliveryId,
-                claimId,
-                "sent",
-            );
-        }
+        return await withMailAccounts(
+            { domainId, to: [to], drip, account: job.data.account },
+            async () => {
+                if (drip) {
+                    const claim = await claimDelivery(
+                        domainId,
+                        drip.periodId,
+                        drip.deliveryId,
+                    );
+                    if (claim.kind === "skipped") return;
+                    claimId = claim.claimId;
+                }
+                // Claim and cancellation contend on one ledger document. SMTP that has
+                // crossed this boundary cannot be recalled if cancellation follows it.
+                try {
+                    await sendMail({ from, to, subject, html: body, headers });
+                } catch (error) {
+                    if (drip && claimId) {
+                        await finishDelivery(
+                            domainId,
+                            drip.periodId,
+                            drip.deliveryId,
+                            claimId,
+                            "uncertain",
+                        );
+                    }
+                    throw error;
+                }
+                if (drip && claimId) {
+                    await finishDelivery(
+                        domainId,
+                        drip.periodId,
+                        drip.deliveryId,
+                        claimId,
+                        "sent",
+                    );
+                }
+            },
+        );
     } catch (err: any) {
         logger.error(err);
         captureError({

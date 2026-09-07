@@ -9,6 +9,7 @@ import pug from "pug";
 import digitalDownloadTemplate from "../../templates/download-link";
 import { responses } from "@config/strings";
 import { addMailJob } from "@/services/queue";
+import { withAccountWrite } from "../../../../packages/common-logic/src/account-lifecycle/gate";
 import type { EmailBlock } from "@courselit/email-editor";
 import UserModel from "@models/User";
 import { InternalCourse } from "@courselit/orm-models";
@@ -81,40 +82,54 @@ export async function createTemplateAndSendMail({
     ctx: GQLContext;
     user: User;
 }) {
-    const downloadLink = await DownloadLinkModel.create({
-        domain: ctx.subdomain!._id,
-        courseId: course.courseId,
-        userId: user.userId,
-    });
+    return withAccountWrite(
+        {
+            domainId: String(ctx.subdomain._id),
+            userId: user.userId,
+            purpose: "lead-download",
+        },
+        async () => {
+            const downloadLink = await DownloadLinkModel.create({
+                domain: ctx.subdomain!._id,
+                courseId: course.courseId,
+                userId: user.userId,
+            });
 
-    const creator = await UserModel.findOne({
-        domain: ctx.subdomain._id,
-        userId: course.creatorId,
-    }).select("name");
+            const creator = await UserModel.findOne({
+                domain: ctx.subdomain._id,
+                userId: course.creatorId,
+            }).select("name");
 
-    const schoolName =
-        ctx.subdomain.settings?.title || ctx.subdomain.name || "";
+            const schoolName =
+                ctx.subdomain.settings?.title || ctx.subdomain.name || "";
 
-    const emailBody = pug.render(digitalDownloadTemplate, {
-        downloadLink: `${ctx.address}/api/download/${downloadLink.token}`,
-        loginLink: `${ctx.address}/login`,
-        courseName: course.title,
-        name: creator?.name || schoolName,
-        schoolName,
-        // Served from apps/web/public, baked into the image.
-        logoUrl: `${ctx.address}/swami-kk-logo.png`,
-        signatureUrl: `${ctx.address}/swami-signature.png`,
-    });
+            const emailBody = pug.render(digitalDownloadTemplate, {
+                downloadLink: `${ctx.address}/api/download/${downloadLink.token}`,
+                loginLink: `${ctx.address}/login`,
+                courseName: course.title,
+                name: creator?.name || schoolName,
+                schoolName,
+                // Served from apps/web/public, baked into the image.
+                logoUrl: `${ctx.address}/swami-kk-logo.png`,
+                signatureUrl: `${ctx.address}/swami-signature.png`,
+            });
 
-    await addMailJob({
-        to: [user.email],
-        subject: `Thank you for signing up for ${course.title}`,
-        body: emailBody,
-        from: getEmailFrom({
-            name: ctx.subdomain?.settings?.title || ctx.subdomain.name,
-            email: process.env.EMAIL_FROM || "",
-        }),
-    });
+            await addMailJob({
+                to: [user.email],
+                account: {
+                    domainId: String(ctx.subdomain._id),
+                    userId: user.userId,
+                    actorUserId: ctx.user?.userId,
+                },
+                subject: `Thank you for signing up for ${course.title}`,
+                body: emailBody,
+                from: getEmailFrom({
+                    name: ctx.subdomain?.settings?.title || ctx.subdomain.name,
+                    email: process.env.EMAIL_FROM || "",
+                }),
+            });
+        },
+    );
 }
 
 export function verifyMandatoryTags(emailContent: EmailBlock[]) {
