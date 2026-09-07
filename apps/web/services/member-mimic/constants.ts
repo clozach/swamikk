@@ -33,6 +33,8 @@ export function safeMimicReturnTo(value?: string): string {
         if (
             url.origin === "https://member-mimic.invalid" &&
             (url.pathname === "/dashboard/users" ||
+                url.pathname === "/dashboard/overview" ||
+                url.pathname === "/dashboard/support" ||
                 url.pathname === "/dashboard/subscribers" ||
                 url.pathname === "/dashboard/transactions" ||
                 /^\/dashboard\/cohorts\/[A-Za-z0-9_-]{1,128}$/.test(

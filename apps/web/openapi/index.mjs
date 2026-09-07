@@ -14,6 +14,7 @@ import refundRequestsOpenApi from "../app/api/refund-requests/openapi.mjs";
 import { newsletterUnsubscribeApiOpenApi } from "../app/api/unsubscribe/openapi.mjs";
 import { publicationObservationsApiOpenApi } from "../app/api/publication-observations/openapi.mjs";
 import { accountClosureApiOpenApi } from "../app/api/account-closure/openapi.mjs";
+import adminOverviewApiOpenApi from "../app/api/admin-overview/openapi.mjs";
 
 const routeSpecs = [
     userApiOpenApi,
@@ -32,6 +33,7 @@ const routeSpecs = [
     newsletterUnsubscribeApiOpenApi,
     publicationObservationsApiOpenApi,
     accountClosureApiOpenApi,
+    { paths: adminOverviewApiOpenApi },
 ];
 
 function mergeOpenApiFragments(fragments) {

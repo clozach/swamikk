@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import {
     Users,
     GraduationCap,
-    DollarSign,
     Download,
     BookOpen,
     ChevronDown,
@@ -58,10 +57,8 @@ import { capitalize, checkPermission } from "@courselit/utils";
 import { truncate } from "@ui-lib/utils";
 import MetricCard from "./metric-card";
 import { useToast, Tooltip as TooltipCL } from "@courselit/components-library";
-import { useActivities } from "@/hooks/use-activities";
 import { Constants, UIConstants } from "@courselit/common-models";
 import { TIME_RANGES } from "@ui-config/constants";
-import SalesCard from "../../overview/sales-card";
 import { appendCourseViewerSessionParamsToHref } from "@/lib/course-viewer-session-params";
 const { permissions } = UIConstants;
 
@@ -83,12 +80,6 @@ export default function DashboardPage() {
         },
     ];
     const siteinfo = useContext(SiteInfoContext);
-    const { data: salesData, loading: salesLoading } = useActivities(
-        ActivityType.PURCHASED,
-        timeRange,
-        productId,
-        true,
-    );
     const { toast } = useToast();
     if (productLoaded && !product) {
         redirect("/dashboard/products");
@@ -339,16 +330,15 @@ export default function DashboardPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
                 {" "}
                 {/* Updated grid columns */}
-                <Link href={`/dashboard/product/${productId}/transactions`}>
-                    <MetricCard
-                        title="Sales"
-                        icon={
-                            <DollarSign className="h-4 w-4 text-muted-foreground" />
-                        }
-                        type={ActivityType.PURCHASED}
-                        duration={timeRange}
-                        entityId={productId}
-                    />
+                <Link
+                    href={`/dashboard/product/${productId}/transactions`}
+                    className="space-y-3 rounded-xl border bg-card p-6 text-card-foreground shadow-sm"
+                >
+                    <h2 className="font-semibold">Transactions</h2>
+                    <p className="text-sm text-muted-foreground">
+                        Review original payments and their recorded status.
+                    </p>
+                    <span className="text-sm underline">Open transactions</span>
                 </Link>
                 <Link href={`/dashboard/product/${productId}/customers`}>
                     <MetricCard
@@ -385,75 +375,6 @@ export default function DashboardPage() {
                     />
                 )}
             </div>
-
-            <SalesCard
-                data={salesData}
-                loading={salesLoading}
-                transactionsHref={`/dashboard/product/${productId}/transactions`}
-            />
-
-            {/* <div className="mt-4">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Sales</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {salesLoading ? (
-                            <Skeleton className="h-[240px] w-full" />
-                        ) : (
-                            <div className="">
-                                <ResponsiveContainer width="100%" height={200}>
-                                    <LineChart
-                                        width={300}
-                                        height={200}
-                                        data={salesData?.points}
-                                    >
-                                        <CartesianGrid
-                                            strokeDasharray="3 3"
-                                            stroke="#e5e7eb"
-                                        />
-                                        <Line
-                                            type="monotone"
-                                            dataKey="count"
-                                            strokeWidth={2}
-                                            stroke="#000000"
-                                            dot={false}
-                                        />
-                                        <XAxis
-                                            dataKey="date"
-                                            className="text-xs"
-                                            axisLine={false}
-                                            tickLine={false}
-                                        />
-                                        <YAxis
-                                            tickFormatter={(value) =>
-                                                `${getSymbolFromCurrency(siteinfo.currencyISOCode || "USD")}${value}`
-                                            }
-                                            className="text-xs"
-                                            axisLine={false}
-                                            tickLine={false}
-                                        />
-                                        <Tooltip
-                                            contentStyle={{
-                                                backgroundColor: "#333",
-                                                border: "none",
-                                                borderRadius: "4px",
-                                                padding: "4px 8px",
-                                                fontSize: "12px",
-                                                color: "white",
-                                            }}
-                                            itemStyle={{ color: "white" }}
-                                            formatter={(value) => [
-                                                `Sales: ${value}`,
-                                            ]}
-                                        />
-                                    </LineChart>
-                                </ResponsiveContainer>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-            </div> */}
         </DashboardContent>
     );
 }

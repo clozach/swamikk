@@ -18,7 +18,9 @@ From the reviewed repository root, build the maintenance entry and its already b
 node apps/web/services/retention-recovery/build.mjs /tmp/retention-recovery.mjs
 ```
 
-Place this bundle where the clean application's installed `node_modules` resolve. Run it inside the selected application's existing environment; `DB_CONNECTION_STRING` must already be set. It is never accepted in a request or printed. Keep the webhook forwarder and other relevant writers stopped during the reviewed maintenance window, as the release operator controls them.
+Place this bundle where the clean installation's `node_modules` resolve. The web standalone image can omit package entry links needed by this maintenance bundle; placing it at `/app` is not sufficient in that image. A verified alternative is the clean queue image's full installation at `/app/apps/queue`, provided it is built from the same reviewed commit and uses the same selected database. The release operator verified that this location resolves `mongoose`, `zod` and `@courselit/orm-models` for commit `32200f39`. Run the unchanged bundle from that directory using the worker's existing environment; do not rebuild it against a different source tree or change its arguments or guards to accommodate placement.
+
+`DB_CONNECTION_STRING` must already be set in the selected environment. It is never accepted in a request or printed. Keep the webhook forwarder and other relevant writers stopped during the reviewed maintenance window, as the release operator controls them. The choice of web or queue installation changes dependency resolution only; the administrator, subject, tenant, preimage/hash and dry-run/apply checks below remain identical.
 
 Prepare a private request JSON containing exactly:
 

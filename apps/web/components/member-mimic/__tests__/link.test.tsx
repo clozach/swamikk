@@ -51,6 +51,8 @@ test.each([
 );
 
 test.each([
+    "/dashboard/overview",
+    "/dashboard/support",
     "/dashboard/cohorts/cohort-one?tab=members",
     "/dashboard/subscribers?page=3",
     "/dashboard/transactions",
