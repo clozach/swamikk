@@ -1,3 +1,4 @@
+import { FeedbackControlSlot } from "@/components/feedback/placement";
 import React from "react";
 import { IconButton } from "@courselit/components-library";
 import { Menu } from "@courselit/icons";
@@ -24,7 +25,10 @@ const Header = ({ onMenuClick, siteinfo }: HeaderProps) => {
                 </IconButton>
             )}
             <Branding siteinfo={siteinfo} />
-            <ExitCourseButton />
+            <div className="flex shrink-0 items-center gap-2">
+                <FeedbackControlSlot />
+                <ExitCourseButton />
+            </div>
         </header>
     );
 };

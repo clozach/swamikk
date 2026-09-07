@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import State from "./state";
 import WidgetDefaultSettings from "./widget-default-settings";
 import { PaymentPlan } from "./payment-plan";
@@ -15,6 +16,8 @@ export default interface WidgetProps<T extends WidgetDefaultSettings> {
     state: State;
     settings: T;
     editing: boolean;
+    /** Live shell utilities, never serialized as widget settings. */
+    headerUtilities?: ReactNode;
     toggleTheme: () => void;
     nextTheme: string | undefined;
 }

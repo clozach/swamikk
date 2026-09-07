@@ -1,6 +1,7 @@
 import LayoutWithContext from "./layout-with-context";
 import MediaDebugOverlay from "@components/public/media-debug-overlay";
 import ContextualFeedback from "@components/feedback";
+import { FeedbackPlacementProvider } from "@components/feedback/placement";
 import React from "react";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
@@ -65,17 +66,21 @@ export default async function Layout({
             features={siteSetup?.features || defaultState.features}
         >
             <MemberMimicProvider initialView={mimicView}>
-                {mimicView.kind === "inactive" ||
-                (mimicView.kind === "active" &&
-                    isMemberMimicPath(
-                        requestHeaders.get(MEMBER_MIMIC_PATH_HEADER) || "",
-                    ))
-                    ? children
-                    : null}
-                <HideDuringMimic>
-                    <MediaDebugOverlay />
-                    <ContextualFeedback />
-                </HideDuringMimic>
+                <FeedbackPlacementProvider>
+                    <HideDuringMimic>
+                        <ContextualFeedback />
+                    </HideDuringMimic>
+                    {mimicView.kind === "inactive" ||
+                    (mimicView.kind === "active" &&
+                        isMemberMimicPath(
+                            requestHeaders.get(MEMBER_MIMIC_PATH_HEADER) || "",
+                        ))
+                        ? children
+                        : null}
+                    <HideDuringMimic>
+                        <MediaDebugOverlay />
+                    </HideDuringMimic>
+                </FeedbackPlacementProvider>
             </MemberMimicProvider>
         </LayoutWithContext>
     );

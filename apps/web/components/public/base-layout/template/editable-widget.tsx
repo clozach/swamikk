@@ -21,6 +21,7 @@ const EditableWidget = ({
     onMoveWidgetUp,
     onMoveWidgetDown,
     state,
+    headerUtilities,
 }: {
     item: Record<string, any>;
     pageData: WidgetProps<WidgetDefaultSettings>["pageData"];
@@ -34,6 +35,7 @@ const EditableWidget = ({
     onMoveWidgetUp?: (index: number) => void;
     onMoveWidgetDown?: (index: number) => void;
     state: State;
+    headerUtilities?: WidgetProps<WidgetDefaultSettings>["headerUtilities"];
 }) => {
     if (editing) {
         return (
@@ -115,6 +117,7 @@ const EditableWidget = ({
                 id={item.widgetId}
                 state={state}
                 editing={false}
+                headerUtilities={headerUtilities}
             />
         </div>
     );

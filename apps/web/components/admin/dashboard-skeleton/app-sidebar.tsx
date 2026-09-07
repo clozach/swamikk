@@ -28,6 +28,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
     SidebarRail,
+    useSidebar,
 } from "@/components/ui/sidebar";
 import Link from "next/link";
 import { Image } from "@courselit/components-library";
@@ -73,6 +74,10 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
     const path = usePathname();
     const searchParams = useSearchParams();
     const tab = searchParams?.get("tab");
+    const { setOpenMobile } = useSidebar();
+    useEffect(() => {
+        setOpenMobile(false);
+    }, [path, tab, setOpenMobile]);
     const [checklist, setChecklist] = useState<string[]>([]);
     const [totalChecklistItems, setTotalChecklistItems] = useState<number>(0);
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { FeedbackControlSlot } from "@/components/feedback/placement";
 import { useSearchParams } from "next/navigation";
 import { Button2 } from "@courselit/components-library";
 import { use } from "react";
@@ -47,6 +48,7 @@ const EditorLayout = ({
             <div className="fixed w-full border-b z-10 bg-background">
                 <header className="flex w-full h-14 px-6 justify-between items-center">
                     <div className="flex items-center gap-3">
+                        <FeedbackControlSlot />
                         <div className="w-[220px]">
                             <div className="h-10 flex items-center px-3 rounded-md text-sm text-muted-foreground">
                                 {EMAIL_EDITOR_TEMPLATE_EDIT_HEADER}

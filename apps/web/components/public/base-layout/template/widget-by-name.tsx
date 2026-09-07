@@ -12,6 +12,7 @@ const WidgetByName = ({
     settings,
     pageData,
     editing = false,
+    headerUtilities,
 }: Omit<WidgetProps<WidgetDefaultSettings>, "toggleTheme" | "nextTheme">) => {
     const { resolvedTheme, setTheme: setNextTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
@@ -39,6 +40,7 @@ const WidgetByName = ({
         pageData,
         editing,
         nextTheme,
+        headerUtilities: editing ? undefined : headerUtilities,
         toggleTheme,
     };
 

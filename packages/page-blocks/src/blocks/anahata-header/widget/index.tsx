@@ -186,6 +186,7 @@ export default function Widget({
     nextTheme,
     toggleTheme,
     state,
+    headerUtilities,
 }: WidgetProps<Settings>): JSX.Element {
     const isDarkTheme = nextTheme === "dark";
     // The page already resolves the signed-in member into `state.profile`
@@ -380,6 +381,7 @@ export default function Widget({
                             )}
                         />
                     </div>
+                    {!editing && headerUtilities}
                 </div>
 
                 {/* Mobile bar: inside the header band, below the masthead row. */}

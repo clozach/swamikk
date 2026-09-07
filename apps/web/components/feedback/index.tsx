@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { PageSelection, pageChoices, pageSelection } from "./targets";
 import { useSelection } from "./use-selection";
+import { FeedbackControlPlacement } from "./placement";
 import { getPagePrompt } from "./page-prompt";
 import "./feedback.css";
 
@@ -93,6 +94,32 @@ function FeedbackSession({ path }: { path: string }) {
 
     return (
         <>
+            <FeedbackControlPlacement>
+                <button
+                    type="button"
+                    className={`kk-feedback-toggle ${expanded ? "is-open" : ""}`}
+                    aria-label={expanded ? copy.close : copy.open}
+                    aria-expanded={expanded}
+                    aria-keyshortcuts="Shift+/ Escape"
+                    title={
+                        expanded
+                            ? "Close (? or Escape)"
+                            : "Comment on this page (?)"
+                    }
+                    onClick={() => {
+                        setMode(
+                            expanded
+                                ? { kind: "closed" }
+                                : { kind: "choosing" },
+                        );
+                        setNotice("");
+                    }}
+                >
+                    <span className="kk-question" aria-hidden="true">
+                        ?
+                    </span>
+                </button>
+            </FeedbackControlPlacement>
             {rect && panel.kind === "closed" && (
                 <div
                     aria-hidden="true"
@@ -129,6 +156,17 @@ function FeedbackSession({ path }: { path: string }) {
                             </p>
                         )}
                         <div className="grid gap-1">
+                            <Button
+                                variant="outline"
+                                className="min-h-11 justify-between"
+                                onClick={() => {
+                                    setMode({ kind: "closed" });
+                                    setNotice("");
+                                }}
+                            >
+                                {copy.close}
+                                <kbd className="text-xs">Esc</kbd>
+                            </Button>
                             <Button
                                 className="min-h-11 justify-start"
                                 onClick={() =>
@@ -196,35 +234,6 @@ function FeedbackSession({ path }: { path: string }) {
                         </div>
                     </div>
                 )}
-                <button
-                    className={`kk-feedback-toggle ${expanded ? "is-open" : ""}`}
-                    aria-label={expanded ? copy.close : copy.open}
-                    aria-expanded={expanded}
-                    aria-keyshortcuts="Shift+/ Escape"
-                    title={
-                        expanded
-                            ? "Close (? or Escape)"
-                            : "Comment on this page (?)"
-                    }
-                    onClick={() => {
-                        setMode(
-                            expanded
-                                ? { kind: "closed" }
-                                : { kind: "choosing" },
-                        );
-                        setNotice("");
-                    }}
-                >
-                    <span className="kk-question" aria-hidden="true">
-                        ?
-                    </span>
-                    {expanded && (
-                        <span>
-                            {copy.close}{" "}
-                            <kbd className="ml-2 text-xs opacity-70">Esc</kbd>
-                        </span>
-                    )}
-                </button>
             </aside>
             <Dialog
                 open={panel.kind !== "closed"}

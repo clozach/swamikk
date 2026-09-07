@@ -18,11 +18,24 @@
     max-height: 65dvh;
     overflow-y: auto;
 }
+.kk-feedback-slot {
+    display: inline-flex;
+    flex-shrink: 0;
+    min-width: 44px;
+    min-height: 44px;
+}
+.kk-feedback-fallback {
+    display: flex;
+    justify-content: flex-end;
+    padding: 8px max(16px, env(safe-area-inset-right)) 8px 16px;
+}
 .kk-feedback-toggle {
-    min-width: 52px;
-    min-height: 52px;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    justify-content: center;
     border-radius: 28px;
-    padding: 0 16px;
+    padding: 0;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -67,6 +80,8 @@
     }
 }
 @media print {
+    .kk-feedback-slot,
+    .kk-feedback-fallback,
     .kk-feedback-tools,
     .kk-feedback-outline {
         display: none !important;

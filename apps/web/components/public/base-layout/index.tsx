@@ -1,3 +1,4 @@
+import { FeedbackControlSlot } from "@/components/feedback/placement";
 import React, { ReactNode } from "react";
 import Head from "next/head";
 import Template from "./template";
@@ -97,6 +98,7 @@ export default function BaseLayout({
             </Head>
             <Template
                 id={pageId}
+                headerUtilities={<FeedbackControlSlot />}
                 layout={layout}
                 childrenOnTop={childrenOnTop}
                 pageData={pageData}

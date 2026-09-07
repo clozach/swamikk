@@ -1,3 +1,4 @@
+import { FeedbackControlSlot } from "@/components/feedback/placement";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
     Page,
@@ -643,6 +644,7 @@ export default function PageEditor({
                 <div className="fixed w-full border-b z-10 bg-background">
                     <header className="flex w-full h-14 px-6 justify-between items-center">
                         <div className="flex items-center gap-3">
+                            <FeedbackControlSlot />
                             <div className="w-[220px]">
                                 {loadingPages ? (
                                     <div className="flex flex-col gap-2">

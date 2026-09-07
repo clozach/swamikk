@@ -1,5 +1,6 @@
 "use client";
 
+import { FeedbackControlSlot } from "@/components/feedback/placement";
 import { ProfileContext, SiteInfoContext } from "@components/contexts";
 import { Image } from "@courselit/components-library";
 import { NotificationsViewer } from "@components/notifications-viewer";
@@ -133,6 +134,7 @@ export default function DashboardContent({
                     )}
                 </div>
                 <div className="ml-auto flex shrink-0 items-center gap-2 px-3">
+                    <FeedbackControlSlot />
                     <NextThemeSwitcher variant="ghost" />
                     <HideDuringMimic>
                         <NotificationsViewer />

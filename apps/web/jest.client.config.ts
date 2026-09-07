@@ -61,6 +61,7 @@ const config = {
         "@config/(.*)": "<rootDir>/config/$1",
         "@/models/(.*)": "<rootDir>/models/$1",
         "@components/(.*)": "<rootDir>/components/$1",
+        "@/ui-config/(.*)": "<rootDir>/ui-config/$1",
         "@ui-config/(.*)": "<rootDir>/ui-config/$1",
         "@ui-models/(.*)": "<rootDir>/ui-models/$1",
         "\\.(css|less|scss|sass)$": "identity-obj-proxy",

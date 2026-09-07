@@ -27,6 +27,7 @@ interface TemplateProps {
     state: State;
     id?: string;
     injectThemeStyles?: boolean;
+    headerUtilities?: ReactNode;
 }
 
 const Template = (props: TemplateProps) => {
@@ -84,6 +85,9 @@ const Template = (props: TemplateProps) => {
             {header && (
                 <EditableWidget
                     item={header}
+                    headerUtilities={
+                        editing ? undefined : props.headerUtilities
+                    }
                     editing={editing}
                     pageData={normalizedPageData}
                     onEditClick={onEditClick}

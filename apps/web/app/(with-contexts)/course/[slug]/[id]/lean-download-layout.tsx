@@ -1,5 +1,6 @@
 "use client";
 
+import { FeedbackControlSlot } from "@/components/feedback/placement";
 import { useContext } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -83,6 +84,7 @@ export default function LeanDownloadLayout({
                                 {PREVIEW_COURSE_MENU_ITEM}
                             </Badge>
                         )}
+                        <FeedbackControlSlot />
                         <NextThemeSwitcher variant="ghost" />
                         {hasSession && (
                             <Tooltip>

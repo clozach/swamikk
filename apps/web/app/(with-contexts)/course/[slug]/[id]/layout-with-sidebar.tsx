@@ -1,5 +1,6 @@
 "use client";
 
+import { FeedbackControlSlot } from "@/components/feedback/placement";
 import { useMemberMimic } from "@components/member-mimic/context";
 import { usePrivatePalette } from "@/lib/use-private-palette";
 import { cn } from "@/lib/shadcn-utils";
@@ -201,6 +202,7 @@ export default function ProductPage({
                                 </TooltipContent>
                             </Tooltip>
                         )}
+                        <FeedbackControlSlot />
                         <NextThemeSwitcher variant="ghost" />
                         <Tooltip>
                             <TooltipTrigger asChild>
