@@ -1,5 +1,7 @@
 "use server";
 
+import { deleteUserContactPreferences } from "@/services/contact-preferences/cleanup";
+import { deleteUserDripChanges } from "@/services/drip-admin/cleanup";
 import { deleteUserMemberAccess } from "@/services/member-access";
 
 import { revokeMemberMimicForUser } from "@/services/member-mimic/cleanup";
@@ -271,6 +273,11 @@ export async function cleanupPersonalData(
     await Promise.all([
         deleteUserFeedback(String(ctx.subdomain._id), userToDelete.userId),
         deleteUserMemberAccess(String(ctx.subdomain._id), userToDelete.userId),
+        deleteUserDripChanges(String(ctx.subdomain._id), userToDelete.userId),
+        deleteUserContactPreferences(
+            String(ctx.subdomain._id),
+            userToDelete.userId,
+        ),
         revokeMemberMimicForUser(
             String(ctx.subdomain._id),
             userToDelete.userId,

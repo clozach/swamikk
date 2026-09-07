@@ -310,6 +310,12 @@ describe("Member Mimic identity, expiry and read boundary", () => {
         ])
             expect(isMemberMimicPath(path)).toBe(false);
         expect(isMemberMimicPath("/course/shared/id/lesson")).toBe(true);
+        expect(isMemberMimicPath("/dashboard/receipts/stripe-receipt-1")).toBe(
+            true,
+        );
+        expect(isMemberMimicPath("/dashboard/receipts/id%2fprivate")).toBe(
+            false,
+        );
     });
 
     it("bounds return destinations to the member list", () => {

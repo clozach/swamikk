@@ -461,6 +461,7 @@ describe("processDripPass", () => {
                         type: "relative-date",
                         delayInMillis: DAY_IN_MS,
                         email: {
+                            published: true,
                             subject: "Section unlocked",
                             content: {
                                 content: [
@@ -492,6 +493,9 @@ describe("processDripPass", () => {
                 },
             ],
         };
+        jest.spyOn(CourseModel, "findOne").mockImplementation(
+            () => ({ lean: jest.fn().mockResolvedValue(course) }) as any,
+        );
         jest.spyOn(CourseModel, "find").mockReturnValue({
             lean: jest.fn().mockResolvedValue([course]),
         } as any);
@@ -551,6 +555,7 @@ describe("processDripPass", () => {
             ["group-1"],
             now,
             4,
+            0,
         );
         expect(projectDripAccess).toHaveBeenCalledWith(period);
         expect(mailQueue.add).toHaveBeenCalledWith(
@@ -590,6 +595,7 @@ describe("processDripPass", () => {
             expect.any(Array),
             now,
             4,
+            0,
         );
     });
 
@@ -634,6 +640,7 @@ describe("processDripPass", () => {
             [],
             now,
             4,
+            0,
         );
         expect(mailQueue.add).not.toHaveBeenCalled();
     });

@@ -3284,3 +3284,130 @@ describe("Stripe payment mode in transaction history", () => {
         await domain.deleteOne();
     });
 });
+
+describe("native section writes respect the approved schedule revision", () => {
+    it.each(["updateGroup", "reorderGroups", "moveLesson"] as const)(
+        "%s refuses an older course snapshot",
+        async (operation) => {
+            const suffix = Math.random().toString(36).slice(2);
+            const domain = await DomainModel.create({
+                name: `schedule-cas-${suffix}`,
+                email: `schedule-cas-${suffix}@example.com`,
+            });
+            const admin = await UserModel.create({
+                domain: domain._id,
+                userId: `schedule-admin-${suffix}`,
+                email: `schedule-admin-${suffix}@example.com`,
+                active: true,
+                permissions: ["course:manage_any"],
+            });
+            const course = await CourseModel.create({
+                domain: domain._id,
+                courseId: `schedule-course-${suffix}`,
+                title: `Schedule ${suffix}`,
+                slug: `schedule-${suffix}`,
+                creatorId: admin.userId,
+                cost: 0,
+                costType: "free",
+                privacy: "public",
+                type: "course",
+                published: true,
+                lessons: [`schedule-lesson-${suffix}`],
+                groups: [
+                    {
+                        _id: "one",
+                        name: "One",
+                        rank: 1000,
+                        lessonsOrder: [`schedule-lesson-${suffix}`],
+                        drip: {
+                            status: true,
+                            type: "relative-date",
+                            delayInMillis: 86400000,
+                        },
+                    },
+                    { _id: "two", name: "Two", rank: 2000, lessonsOrder: [] },
+                ],
+            });
+            const lesson = await LessonModel.create({
+                domain: domain._id,
+                lessonId: `schedule-lesson-${suffix}`,
+                courseId: course.courseId,
+                groupId: "one",
+                creatorId: admin.userId,
+                title: "One",
+                type: "text",
+                content: { type: "doc", content: [] },
+                requiresEnrollment: true,
+                published: false,
+            });
+            const originalUpdate = CourseModel.updateOne.bind(CourseModel);
+            const originalFindUpdate =
+                CourseModel.findOneAndUpdate.bind(CourseModel);
+            const changeCourse = () =>
+                originalUpdate(
+                    { _id: course._id },
+                    {
+                        $inc: { __v: 1 },
+                        $set: { "groups.0.drip.delayInMillis": 3 * 86400000 },
+                    },
+                );
+            const spy =
+                operation === "updateGroup"
+                    ? jest
+                          .spyOn(CourseModel, "findOneAndUpdate")
+                          .mockImplementationOnce((async (...args: any[]) => {
+                              await changeCourse();
+                              return (originalFindUpdate as any)(...args);
+                          }) as any)
+                    : jest
+                          .spyOn(CourseModel, "updateOne")
+                          .mockImplementationOnce((async (...args: any[]) => {
+                              await changeCourse();
+                              return (originalUpdate as any)(...args);
+                          }) as any);
+            const logic = await import("../logic");
+            const ctx = {
+                user: admin,
+                subdomain: domain,
+                address: "https://school.example",
+            } as any;
+            try {
+                const result =
+                    operation === "updateGroup"
+                        ? logic.updateGroup({
+                              courseId: course.courseId,
+                              id: "one",
+                              name: "Renamed",
+                              ctx,
+                          })
+                        : operation === "reorderGroups"
+                          ? logic.reorderGroups({
+                                courseId: course.courseId,
+                                groupIds: ["two", "one"],
+                                ctx,
+                            })
+                          : logic.moveLesson({
+                                courseId: course.courseId,
+                                lessonId: lesson.lessonId,
+                                destinationGroupId: "two",
+                                destinationIndex: 0,
+                                ctx,
+                            });
+                await expect(result).rejects.toThrow("The course changed");
+                expect(
+                    (await CourseModel.findById(course._id))!.groups![0].drip!
+                        .delayInMillis,
+                ).toBe(3 * 86400000);
+                expect((await LessonModel.findById(lesson._id))!.groupId).toBe(
+                    "one",
+                );
+            } finally {
+                spy.mockRestore();
+                await LessonModel.deleteMany({ domain: domain._id });
+                await CourseModel.deleteMany({ domain: domain._id });
+                await UserModel.deleteMany({ domain: domain._id });
+                await DomainModel.deleteOne({ _id: domain._id });
+            }
+        },
+    );
+});

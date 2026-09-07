@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import ContactPreferencesPanel from "@/components/contact-preferences/panel";
+import { contactPreferencesCopy as contactCopy } from "@/config/strings";
 import { billingCopy } from "@/components/member-billing/copy";
 import { useMemberMimic } from "@components/member-mimic/context";
 import DashboardContent from "@components/admin/dashboard-content";
@@ -37,7 +39,6 @@ import {
     PROFILE_SECTION_DETAILS_BIO,
     PROFILE_SECTION_DETAILS_EMAIL,
     PROFILE_SECTION_DETAILS_NAME,
-    PROFILE_SECTION_DISPLAY_PICTURE,
 } from "@ui-config/strings";
 import { FormEvent, useContext, useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@components/ui/card";
@@ -56,6 +57,9 @@ export default function Page() {
     const [avatar, setAvatar] = useState<Partial<Media>>({});
     const [subscribedToUpdates, setSubscribedToUpdates] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isSavingNews, setIsSavingNews] = useState(false);
+    const [newsNotice, setNewsNotice] = useState("");
+    const initialNewsRef = useRef(false);
     const initialDetailsRef = useRef<{ name: string; bio: string }>({
         name: "",
         bio: "",
@@ -101,6 +105,7 @@ export default function Page() {
                     setBio(response.user.bio);
                     setAvatar(response.user.avatar);
                     setSubscribedToUpdates(response.user.subscribedToUpdates);
+                    initialNewsRef.current = response.user.subscribedToUpdates;
                     initialDetailsRef.current = {
                         name: response.user.name ?? "",
                         bio: response.user.bio ?? "",
@@ -245,9 +250,11 @@ export default function Page() {
         }
     };
 
-    const saveEmailPreference = async function (state: boolean) {
-        if (isMimic) return;
-        setSubscribedToUpdates(state);
+    const saveEmailPreference = async function () {
+        if (isMimic || isSavingNews) return;
+        const state = subscribedToUpdates;
+        setIsSavingNews(true);
+        setNewsNotice("");
         const mutation = `
           mutation ($id: ID!, $subscribedToUpdates: Boolean) {
             user: updateUser(userData: {
@@ -271,14 +278,19 @@ export default function Page() {
             .build();
 
         try {
-            await fetch.exec();
+            const response = await fetch.exec();
+            if (typeof response.user?.subscribedToUpdates !== "boolean")
+                throw new Error(contactCopy.saveFailed);
+            initialNewsRef.current = response.user.subscribedToUpdates;
+            setNewsNotice(contactCopy.newsSaved);
         } catch (err: any) {
-            setSubscribedToUpdates(!state);
             toast({
                 title: TOAST_TITLE_ERROR,
                 description: err.message,
                 variant: "destructive",
             });
+        } finally {
+            setIsSavingNews(false);
         }
     };
 
@@ -300,9 +312,12 @@ export default function Page() {
             <div className="flex flex-col lg:flex-row gap-4">
                 <Card className="w-full lg:w-2/6">
                     <CardHeader>
-                        <CardTitle>{PROFILE_SECTION_DISPLAY_PICTURE}</CardTitle>
+                        <CardTitle>{contactCopy.publicAvatar}</CardTitle>
                     </CardHeader>
                     <CardContent className="flex flex-col items-center gap-4">
+                        <p className="text-sm text-muted-foreground">
+                            {contactCopy.publicAvatarNote}
+                        </p>
                         <Avatar className="w-40 h-40">
                             <AvatarImage src={avatar?.file} />
                             <AvatarFallback className="text-5xl font-semibold text-foreground">
@@ -400,11 +415,18 @@ export default function Page() {
                     </form>
                 </Card>
             </div>
+            <ContactPreferencesPanel
+                key={profile?.userId || "anonymous"}
+                readOnly={isMimic}
+            />
             <Card className="mt-4">
                 <CardHeader>
                     <CardTitle>{PROFILE_EMAIL_PREFERENCES}</CardTitle>
                 </CardHeader>
                 <CardContent>
+                    <p className="mb-4 text-sm text-muted-foreground">
+                        {contactCopy.newsNote}
+                    </p>
                     <FieldSet disabled={isMimic}>
                         <FieldLegend className="sr-only" variant="label">
                             {PROFILE_EMAIL_PREFERENCES}
@@ -422,15 +444,38 @@ export default function Page() {
                                     </FieldLabel>
                                 </FieldContent>
                                 <Checkbox
-                                    disabled={isMimic}
+                                    disabled={isMimic || isSavingNews}
                                     checked={subscribedToUpdates}
                                     onChange={(
                                         value: boolean | "indeterminate",
-                                    ) => saveEmailPreference(value === true)}
+                                    ) => {
+                                        setSubscribedToUpdates(value === true);
+                                        setNewsNotice("");
+                                    }}
                                 />
                             </Field>
                         </FieldGroup>
                     </FieldSet>
+                    {!isMimic && (
+                        <Button
+                            type="button"
+                            className="mt-4 min-h-11"
+                            disabled={
+                                isSavingNews ||
+                                subscribedToUpdates === initialNewsRef.current
+                            }
+                            onClick={() => void saveEmailPreference()}
+                        >
+                            {isSavingNews
+                                ? contactCopy.newsSaving
+                                : contactCopy.newsSave}
+                        </Button>
+                    )}
+                    {newsNotice && (
+                        <p className="mt-3" role="status">
+                            {newsNotice}
+                        </p>
+                    )}
                 </CardContent>
             </Card>
         </DashboardContent>

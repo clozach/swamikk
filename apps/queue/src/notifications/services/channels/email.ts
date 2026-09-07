@@ -3,7 +3,6 @@ import { renderEmailToHtml } from "@courselit/email-editor";
 import { getEmailFrom } from "@courselit/utils";
 import { addMailJob } from "../../../domain/handler";
 import { getSiteUrl } from "../../../utils/get-site-url";
-import { getUnsubLink } from "../../../utils/get-unsub-link";
 import { ChannelPayload, NotificationChannel } from "./types";
 import { getDomainId } from "../../../observability/posthog";
 import { buildNotificationEmailTemplate } from "./notification-email-template";
@@ -14,11 +13,7 @@ function getActorAvatarUrl(actor: ChannelPayload["actor"]) {
 
 export class EmailChannel implements NotificationChannel {
     async send(payload: ChannelPayload): Promise<void> {
-        if (!payload.recipient.email || !payload.recipient.unsubscribeToken) {
-            return;
-        }
-
-        if (!payload.recipient.subscribedToUpdates) {
+        if (!payload.recipient.email || payload.recipient.active !== true) {
             return;
         }
 
@@ -43,17 +38,14 @@ export class EmailChannel implements NotificationChannel {
             return;
         }
 
-        const unsubscribeUrl = getUnsubLink(
-            payload.domain,
-            payload.recipient.unsubscribeToken,
-        );
+        const preferencesUrl = `${getSiteUrl(payload.domain)}/dashboard/notifications`;
         const body = await renderEmailToHtml({
             email: buildNotificationEmailTemplate({
                 actorName,
                 actorAvatarUrl: getActorAvatarUrl(payload.actor),
                 message: notificationDetails.message,
                 notificationUrl: notificationDetails.href,
-                unsubscribeUrl,
+                preferencesUrl,
                 hideCourseLitBranding:
                     payload.domain.settings?.hideCourseLitBranding,
             }),
@@ -68,10 +60,6 @@ export class EmailChannel implements NotificationChannel {
             domainId: getDomainId(payload.domain?._id),
             subject: notificationDetails.message,
             body,
-            headers: {
-                "List-Unsubscribe": `<${unsubscribeUrl}>`,
-                "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-            },
         });
     }
 }

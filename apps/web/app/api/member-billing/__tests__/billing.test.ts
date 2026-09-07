@@ -63,7 +63,10 @@ it("GET includes owned historical receipts after rejoin, omits provider data and
                 amount: 50,
                 currency: "NZD",
                 mode: "test",
-                receipt: { kind: "unavailable" },
+                receipt: expect.objectContaining({
+                    kind: "available",
+                    href: expect.stringMatching(/^\/dashboard\/receipts\//),
+                }),
             }),
             expect.objectContaining({
                 invoiceId: "other-session",

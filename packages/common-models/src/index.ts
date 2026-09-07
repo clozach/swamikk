@@ -97,3 +97,6 @@ export type {
 } from "./feedback-mailbox";
 
 export * from "./member-access";
+export * from "./drip-change";
+
+export * from "./contact-preferences";

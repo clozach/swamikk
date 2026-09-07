@@ -59,6 +59,18 @@
         {
             "name": "Feedback Mailbox",
             "description": "Private operational notification configuration and reconciliation. No site change or AI execution."
+        },
+        {
+            "name": "Release scheduling",
+            "description": "O11 versioned native CourseLit release schedules."
+        },
+        {
+            "name": "Contact preferences",
+            "description": "Optional private contact/check-in/photo sharing. Separate from newsletter consent and public avatars."
+        },
+        {
+            "name": "Newsletter",
+            "description": "Explicit newsletter opt-out, separate from service and activity notification preferences."
         }
     ],
     "paths": {
@@ -4187,6 +4199,1168 @@
                     }
                 }
             }
+        },
+        "/api/member-billing": {
+            "get": {
+                "summary": "Read the signed-in member's billing and cancellation status",
+                "description": "Tenant-scoped, read-only billing projection. Member Mimic receives the subject's safe view. No provider credentials or identifiers, payment mutations or access initialization occur.",
+                "responses": {
+                    "200": {
+                        "description": "MemberBillingView: memberships, settled invoice summaries and cancellation/consequence state."
+                    },
+                    "401": {
+                        "description": "Sign in required."
+                    },
+                    "403": {
+                        "description": "Expired Member Mimic."
+                    }
+                }
+            },
+            "post": {
+                "summary": "Prepare, confirm or reconcile the member's monthly cancellation",
+                "description": "Authenticated same-origin JSON only; Member Mimic writes rejected. Prepare stores an expiring provider quote without changing access. Confirm requires its exact operation ID/hash and records retention cutoff before cancellation. Reconcile preserves uncertain refund claims; it never blindly creates another refund.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "oneOf": [
+                                    {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": ["action", "membershipId"],
+                                        "properties": {
+                                            "action": {
+                                                "const": "prepare"
+                                            },
+                                            "membershipId": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": [
+                                            "action",
+                                            "operationId",
+                                            "quoteHash"
+                                        ],
+                                        "properties": {
+                                            "action": {
+                                                "enum": ["confirm", "reconcile"]
+                                            },
+                                            "operationId": {
+                                                "type": "string"
+                                            },
+                                            "quoteHash": {
+                                                "type": "string",
+                                                "pattern": "^[a-f0-9]{64}$"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "MemberBillingCommandResult: persisted operation or explicit review/unavailable result."
+                    },
+                    "403": {
+                        "description": "Cross-origin or Member Mimic mutation refused."
+                    },
+                    "404": {
+                        "description": "Membership/operation is not owned by this member and tenant."
+                    },
+                    "409": {
+                        "description": "Expired or changed review/session; refresh before retrying."
+                    },
+                    "503": {
+                        "description": "Refresh persisted state before retrying after uncertainty."
+                    }
+                }
+            }
+        },
+        "/api/member-receipts/{invoiceId}": {
+            "get": {
+                "summary": "Read a native payment receipt without changing payments or access",
+                "description": "Tenant and member ownership are checked through the native membership, including historical sessions. Member Mimic receives the approved subject's read-only view. No provider IDs, credentials, card data or external receipt URLs are exposed. A missing historical payment date stays unknown.",
+                "parameters": [
+                    {
+                        "name": "invoiceId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Native paid receipt with date provenance and test/live/unknown mode."
+                    },
+                    "401": {
+                        "description": "Sign in required."
+                    },
+                    "403": {
+                        "description": "Expired Member Mimic."
+                    },
+                    "404": {
+                        "description": "Receipt unavailable to this member."
+                    }
+                }
+            }
+        },
+        "/api/drip-admin": {
+            "get": {
+                "tags": ["Release scheduling"],
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "operationId": "readReleaseSchedules",
+                "summary": "List manageable collections or read their sections and recent drafts",
+                "parameters": [
+                    {
+                        "name": "courseId",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128,
+                            "pattern": "^[a-zA-Z0-9_-]+$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Without courseId: {courses:[{courseId,title,published}]}. With courseId: {course:{courseId,title,published,sections,availabilityChangesRestricted,changes}}. Read-only, no-store; no access ledger initialization."
+                    },
+                    "400": {
+                        "description": "Invalid target, patch or bounded JSON."
+                    },
+                    "403": {
+                        "description": "Course administrator and same-origin writes required; Member Mimic is refused."
+                    },
+                    "404": {
+                        "description": "Course or draft unavailable in this tenant and ownership scope."
+                    },
+                    "409": {
+                        "description": "Conflicting review/application, or an availability-mode migration is required for current memberships."
+                    },
+                    "429": {
+                        "description": "Too many requests."
+                    },
+                    "503": {
+                        "description": "Result is unavailable. Refresh or reconcile before retrying."
+                    }
+                }
+            },
+            "post": {
+                "tags": ["Release scheduling"],
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "operationId": "prepareReleaseSchedule",
+                "summary": "Persist an unapproved release schedule draft",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["courseId", "patch"],
+                                "properties": {
+                                    "courseId": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 128,
+                                        "pattern": "^[a-zA-Z0-9_-]+$"
+                                    },
+                                    "patch": {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": [
+                                            "groupId",
+                                            "rule",
+                                            "groupOrder",
+                                            "notificationEnabled"
+                                        ],
+                                        "properties": {
+                                            "groupId": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 128,
+                                                "pattern": "^[a-zA-Z0-9_-]+$"
+                                            },
+                                            "rule": {
+                                                "oneOf": [
+                                                    {
+                                                        "type": "object",
+                                                        "additionalProperties": false,
+                                                        "required": ["kind"],
+                                                        "properties": {
+                                                            "kind": {
+                                                                "const": "available"
+                                                            }
+                                                        }
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "additionalProperties": false,
+                                                        "required": [
+                                                            "kind",
+                                                            "at"
+                                                        ],
+                                                        "properties": {
+                                                            "kind": {
+                                                                "const": "exact"
+                                                            },
+                                                            "at": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            }
+                                                        }
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "additionalProperties": false,
+                                                        "required": [
+                                                            "kind",
+                                                            "delayInMillis"
+                                                        ],
+                                                        "properties": {
+                                                            "kind": {
+                                                                "const": "relative"
+                                                            },
+                                                            "delayInMillis": {
+                                                                "type": "integer",
+                                                                "minimum": 0,
+                                                                "maximum": 315360000000
+                                                            }
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            "groupOrder": {
+                                                "type": "array",
+                                                "minItems": 1,
+                                                "maxItems": 500,
+                                                "uniqueItems": true,
+                                                "items": {
+                                                    "type": "string",
+                                                    "minLength": 1,
+                                                    "maxLength": 128,
+                                                    "pattern": "^[a-zA-Z0-9_-]+$"
+                                                }
+                                            },
+                                            "notificationEnabled": {
+                                                "type": "boolean"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Persisted versioned DripChange and its discriminated outcome. Native course groups and receipts are never returned.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": ["change"],
+                                    "properties": {
+                                        "change": {
+                                            "$ref": "#/components/schemas/DripChange"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid target, patch or bounded JSON."
+                    },
+                    "403": {
+                        "description": "Course administrator and same-origin writes required; Member Mimic is refused."
+                    },
+                    "404": {
+                        "description": "Course or draft unavailable in this tenant and ownership scope."
+                    },
+                    "409": {
+                        "description": "Conflicting review/application, or an availability-mode migration is required for current memberships."
+                    },
+                    "429": {
+                        "description": "Too many requests."
+                    },
+                    "503": {
+                        "description": "Result is unavailable. Refresh or reconcile before retrying."
+                    }
+                }
+            }
+        },
+        "/api/drip-admin/{id}": {
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 128,
+                        "pattern": "^[a-zA-Z0-9_-]+$"
+                    }
+                }
+            ],
+            "get": {
+                "tags": ["Release scheduling"],
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "operationId": "readReleaseScheduleDraft",
+                "summary": "Read a persisted release draft and result",
+                "responses": {
+                    "200": {
+                        "description": "Persisted versioned DripChange and its discriminated outcome. Native course groups and receipts are never returned.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": ["change"],
+                                    "properties": {
+                                        "change": {
+                                            "$ref": "#/components/schemas/DripChange"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid target, patch or bounded JSON."
+                    },
+                    "403": {
+                        "description": "Course administrator and same-origin writes required; Member Mimic is refused."
+                    },
+                    "404": {
+                        "description": "Course or draft unavailable in this tenant and ownership scope."
+                    },
+                    "409": {
+                        "description": "Conflicting review/application, or an availability-mode migration is required for current memberships."
+                    },
+                    "429": {
+                        "description": "Too many requests."
+                    },
+                    "503": {
+                        "description": "Result is unavailable. Refresh or reconcile before retrying."
+                    }
+                }
+            },
+            "post": {
+                "tags": ["Release scheduling"],
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "operationId": "actOnReleaseScheduleDraft",
+                "summary": "Refresh, approve, reconcile, discard or prepare restoration",
+                "description": "Approval requires the exact version/hash, fresh course and audience, then an atomic native course version guard. Reconciliation reads the native receipt or fences a delayed write. Restoration is another unapproved draft. None of these actions retracts viewed content or dispatched mail.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "oneOf": [
+                                    {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": [
+                                            "action",
+                                            "version",
+                                            "previewHash"
+                                        ],
+                                        "properties": {
+                                            "action": {
+                                                "const": "approve"
+                                            },
+                                            "version": {
+                                                "type": "integer",
+                                                "minimum": 1
+                                            },
+                                            "previewHash": {
+                                                "type": "string",
+                                                "pattern": "^[a-f0-9]{64}$"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": ["action", "version"],
+                                        "properties": {
+                                            "action": {
+                                                "const": "refresh"
+                                            },
+                                            "version": {
+                                                "type": "integer",
+                                                "minimum": 1
+                                            },
+                                            "patch": {
+                                                "type": "object",
+                                                "additionalProperties": false,
+                                                "required": [
+                                                    "groupId",
+                                                    "rule",
+                                                    "groupOrder",
+                                                    "notificationEnabled"
+                                                ],
+                                                "properties": {
+                                                    "groupId": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 128,
+                                                        "pattern": "^[a-zA-Z0-9_-]+$"
+                                                    },
+                                                    "rule": {
+                                                        "oneOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "additionalProperties": false,
+                                                                "required": [
+                                                                    "kind"
+                                                                ],
+                                                                "properties": {
+                                                                    "kind": {
+                                                                        "const": "available"
+                                                                    }
+                                                                }
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "additionalProperties": false,
+                                                                "required": [
+                                                                    "kind",
+                                                                    "at"
+                                                                ],
+                                                                "properties": {
+                                                                    "kind": {
+                                                                        "const": "exact"
+                                                                    },
+                                                                    "at": {
+                                                                        "type": "string",
+                                                                        "format": "date-time"
+                                                                    }
+                                                                }
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "additionalProperties": false,
+                                                                "required": [
+                                                                    "kind",
+                                                                    "delayInMillis"
+                                                                ],
+                                                                "properties": {
+                                                                    "kind": {
+                                                                        "const": "relative"
+                                                                    },
+                                                                    "delayInMillis": {
+                                                                        "type": "integer",
+                                                                        "minimum": 0,
+                                                                        "maximum": 315360000000
+                                                                    }
+                                                                }
+                                                            }
+                                                        ]
+                                                    },
+                                                    "groupOrder": {
+                                                        "type": "array",
+                                                        "minItems": 1,
+                                                        "maxItems": 500,
+                                                        "uniqueItems": true,
+                                                        "items": {
+                                                            "type": "string",
+                                                            "minLength": 1,
+                                                            "maxLength": 128,
+                                                            "pattern": "^[a-zA-Z0-9_-]+$"
+                                                        }
+                                                    },
+                                                    "notificationEnabled": {
+                                                        "type": "boolean"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": ["action", "version"],
+                                        "properties": {
+                                            "action": {
+                                                "enum": ["discard", "restore"]
+                                            },
+                                            "version": {
+                                                "type": "integer",
+                                                "minimum": 1
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": ["action"],
+                                        "properties": {
+                                            "action": {
+                                                "const": "reconcile"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Persisted versioned DripChange and its discriminated outcome. Native course groups and receipts are never returned.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": ["change"],
+                                    "properties": {
+                                        "change": {
+                                            "$ref": "#/components/schemas/DripChange"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid target, patch or bounded JSON."
+                    },
+                    "403": {
+                        "description": "Course administrator and same-origin writes required; Member Mimic is refused."
+                    },
+                    "404": {
+                        "description": "Course or draft unavailable in this tenant and ownership scope."
+                    },
+                    "409": {
+                        "description": "Conflicting review/application, or an availability-mode migration is required for current memberships."
+                    },
+                    "429": {
+                        "description": "Too many requests."
+                    },
+                    "503": {
+                        "description": "Result is unavailable. Refresh or reconcile before retrying."
+                    }
+                }
+            }
+        },
+        "/api/contact-preferences": {
+            "get": {
+                "tags": ["Contact preferences"],
+                "operationId": "getContactPreferences",
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "summary": "Read own preferences or an authorized Mimic subject",
+                "description": "No-store. Rechecks active account, tenant and Mimic actor session. Returns photo presence/version only; never bytes or a public asset URL. No arbitrary target ID is accepted. Missing records return no check-ins/no photo without creating a record.",
+                "responses": {
+                    "200": {
+                        "description": "Saved preferences or unpersisted defaults.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "revision",
+                                        "contact",
+                                        "checkIns",
+                                        "photo"
+                                    ],
+                                    "properties": {
+                                        "revision": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                        },
+                                        "contact": {
+                                            "oneOf": [
+                                                {
+                                                    "type": "object",
+                                                    "additionalProperties": false,
+                                                    "required": [
+                                                        "kind",
+                                                        "value"
+                                                    ],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": ["email"]
+                                                        },
+                                                        "value": {
+                                                            "type": "string",
+                                                            "maxLength": 254
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "additionalProperties": false,
+                                                    "required": [
+                                                        "kind",
+                                                        "value"
+                                                    ],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": ["voice"]
+                                                        },
+                                                        "value": {
+                                                            "type": "string",
+                                                            "maxLength": 40
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "additionalProperties": false,
+                                                    "required": [
+                                                        "kind",
+                                                        "value"
+                                                    ],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": ["text"]
+                                                        },
+                                                        "value": {
+                                                            "type": "string",
+                                                            "maxLength": 40
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "checkIns": {
+                                            "type": "string",
+                                            "enum": ["none", "occasional"]
+                                        },
+                                        "photo": {
+                                            "oneOf": [
+                                                {
+                                                    "type": "object",
+                                                    "required": ["kind"],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": ["none"]
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "kind",
+                                                        "version"
+                                                    ],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": ["shared"]
+                                                        },
+                                                        "version": {
+                                                            "type": "integer",
+                                                            "minimum": 1
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid preference or undecodable photo."
+                    },
+                    "403": {
+                        "description": "Sign-in, same-origin request, or current Mimic authorization required. Mimic cannot write."
+                    },
+                    "409": {
+                        "description": "Stale revision: preserve input and reload before saving."
+                    },
+                    "413": {
+                        "description": "JSON exceeds 3 MB or decoded photo exceeds 2 MB."
+                    },
+                    "429": {
+                        "description": "Too many changes; retry later."
+                    },
+                    "503": {
+                        "description": "Request unavailable; preserve input and check saved status."
+                    }
+                }
+            },
+            "put": {
+                "tags": ["Contact preferences"],
+                "operationId": "saveContactPreferences",
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "summary": "Save own optional private preferences",
+                "description": "Same-origin JSON, at most 12 writes/minute. Revision compare-and-swap prevents stale tabs restoring removed photos. Contact email does not change sign-in identity. Photo replacement requires explicit base64 bytes; JPEG/PNG/WebP are decoded with a 16-megapixel limit, resized to at most 512px, stripped of metadata and stored as private JPEG. Removal deletes the bytes atomically. No marketing consent change or external send.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "revision",
+                                    "contact",
+                                    "checkIns",
+                                    "photo"
+                                ],
+                                "properties": {
+                                    "revision": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "contact": {
+                                        "oneOf": [
+                                            {
+                                                "type": "object",
+                                                "additionalProperties": false,
+                                                "required": ["kind", "value"],
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": ["email"]
+                                                    },
+                                                    "value": {
+                                                        "type": "string",
+                                                        "maxLength": 254
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "type": "object",
+                                                "additionalProperties": false,
+                                                "required": ["kind", "value"],
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": ["voice"]
+                                                    },
+                                                    "value": {
+                                                        "type": "string",
+                                                        "maxLength": 40
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "type": "object",
+                                                "additionalProperties": false,
+                                                "required": ["kind", "value"],
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": ["text"]
+                                                    },
+                                                    "value": {
+                                                        "type": "string",
+                                                        "maxLength": 40
+                                                    }
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    "checkIns": {
+                                        "type": "string",
+                                        "enum": ["none", "occasional"]
+                                    },
+                                    "photo": {
+                                        "oneOf": [
+                                            {
+                                                "type": "object",
+                                                "additionalProperties": false,
+                                                "required": ["kind"],
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": ["keep"]
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "type": "object",
+                                                "additionalProperties": false,
+                                                "required": ["kind"],
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": ["remove"]
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "type": "object",
+                                                "additionalProperties": false,
+                                                "required": ["kind", "data"],
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": ["replace"]
+                                                    },
+                                                    "data": {
+                                                        "type": "string",
+                                                        "maxLength": 2800000,
+                                                        "description": "Base64 image bytes, without a data-URL prefix."
+                                                    }
+                                                }
+                                            }
+                                        ]
+                                    }
+                                },
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Saved preferences.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "revision",
+                                        "contact",
+                                        "checkIns",
+                                        "photo"
+                                    ],
+                                    "properties": {
+                                        "revision": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                        },
+                                        "contact": {
+                                            "oneOf": [
+                                                {
+                                                    "type": "object",
+                                                    "additionalProperties": false,
+                                                    "required": [
+                                                        "kind",
+                                                        "value"
+                                                    ],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": ["email"]
+                                                        },
+                                                        "value": {
+                                                            "type": "string",
+                                                            "maxLength": 254
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "additionalProperties": false,
+                                                    "required": [
+                                                        "kind",
+                                                        "value"
+                                                    ],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": ["voice"]
+                                                        },
+                                                        "value": {
+                                                            "type": "string",
+                                                            "maxLength": 40
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "additionalProperties": false,
+                                                    "required": [
+                                                        "kind",
+                                                        "value"
+                                                    ],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": ["text"]
+                                                        },
+                                                        "value": {
+                                                            "type": "string",
+                                                            "maxLength": 40
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "checkIns": {
+                                            "type": "string",
+                                            "enum": ["none", "occasional"]
+                                        },
+                                        "photo": {
+                                            "oneOf": [
+                                                {
+                                                    "type": "object",
+                                                    "required": ["kind"],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": ["none"]
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "kind",
+                                                        "version"
+                                                    ],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": ["shared"]
+                                                        },
+                                                        "version": {
+                                                            "type": "integer",
+                                                            "minimum": 1
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid preference or undecodable photo."
+                    },
+                    "403": {
+                        "description": "Sign-in, same-origin request, or current Mimic authorization required. Mimic cannot write."
+                    },
+                    "409": {
+                        "description": "Stale revision: preserve input and reload before saving."
+                    },
+                    "413": {
+                        "description": "JSON exceeds 3 MB or decoded photo exceeds 2 MB."
+                    },
+                    "429": {
+                        "description": "Too many changes; retry later."
+                    },
+                    "503": {
+                        "description": "Request unavailable; preserve input and check saved status."
+                    }
+                }
+            }
+        },
+        "/api/contact-preferences/photo": {
+            "get": {
+                "tags": ["Contact preferences"],
+                "operationId": "getContactPreferencePhoto",
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "summary": "Read the private photo through current owner/Mimic authorization",
+                "description": "No arbitrary member/media IDs. Private no-store JPEG response with same-origin resource policy. Removed/unshared photo returns 404; revoked or expired authorization cannot fetch it.",
+                "responses": {
+                    "200": {
+                        "description": "Private JPEG.",
+                        "content": {
+                            "image/jpeg": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid preference or undecodable photo."
+                    },
+                    "403": {
+                        "description": "Sign-in, same-origin request, or current Mimic authorization required. Mimic cannot write."
+                    },
+                    "404": {
+                        "description": "No shared photo."
+                    },
+                    "409": {
+                        "description": "Stale revision: preserve input and reload before saving."
+                    },
+                    "413": {
+                        "description": "JSON exceeds 3 MB or decoded photo exceeds 2 MB."
+                    },
+                    "429": {
+                        "description": "Too many changes; retry later."
+                    },
+                    "503": {
+                        "description": "Request unavailable; preserve input and check saved status."
+                    }
+                }
+            }
+        },
+        "/api/refund-requests": {
+            "get": {
+                "summary": "Read the member's purchases, receipts and refund requests",
+                "description": "Read-only tenant/subject projection; Member Mimic cannot see unsubmitted private drafts. No provider calls or access mutations.",
+                "responses": {
+                    "200": {
+                        "description": "MemberRefundRequestsView"
+                    },
+                    "401": {
+                        "description": "Sign in required"
+                    },
+                    "403": {
+                        "description": "Mimic expired"
+                    }
+                }
+            },
+            "post": {
+                "summary": "Prepare, submit or reconcile an owned refund request",
+                "description": "Same-origin JSON; rejects Member Mimic and browser provider IDs. Prepare preserves a private draft. Submit enters Al's private review queue or a proved class policy path; request, approval and provider result are distinct.",
+                "responses": {
+                    "200": {
+                        "description": "RefundRequestView"
+                    },
+                    "403": {
+                        "description": "Origin or Mimic mutation rejected"
+                    },
+                    "404": {
+                        "description": "Receipt/request not owned by this member and tenant"
+                    },
+                    "409": {
+                        "description": "Changed review, proof or policy requires review"
+                    }
+                }
+            }
+        },
+        "/api/refund-requests/review": {
+            "get": {
+                "summary": "Read the private refund review queue or class booking choices",
+                "description": "Actual operator with tenant setting:manage permission only. Optional invoiceId returns real cohort choices for explicit booking verification; roster membership alone never proves payment association.",
+                "responses": {
+                    "200": {
+                        "description": "OperatorRefundRequestsView or verified booking choices"
+                    },
+                    "403": {
+                        "description": "Operator permission required; Mimic rejected"
+                    }
+                }
+            },
+            "post": {
+                "summary": "Review, approve, decline, escalate, verify a class booking or reconcile",
+                "description": "Same-origin JSON and actual authorized operator. Decisions require the exact current review hash, explanation and complete payment/access evidence. Refund creation has a durable first-attempt claim and never blindly repeats after uncertainty.",
+                "responses": {
+                    "200": {
+                        "description": "RefundRequestView or saved booking verification"
+                    },
+                    "403": {
+                        "description": "Operator permission or origin rejected"
+                    },
+                    "409": {
+                        "description": "Stale review, unresolved policy or ambiguous evidence"
+                    }
+                }
+            }
+        },
+        "/api/unsubscribe/{token}": {
+            "parameters": [
+                {
+                    "name": "token",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string"
+                    },
+                    "description": "Opaque per-subscriber unsubscribe token, scoped to the current site."
+                }
+            ],
+            "get": {
+                "tags": ["Newsletter"],
+                "operationId": "unsubscribeNewsletterConfirmation",
+                "summary": "Unsubscribe without login and show a readable confirmation",
+                "description": "Idempotently turns off newsletter consent only. Repeated and unknown tokens show the same confirmation without revealing account existence. No address/token appears in the HTML body. No-store/no-referrer; no external assets. Receipts, sign-in codes, access mail and enabled service notifications continue. Mimic cannot perform this mutation.",
+                "responses": {
+                    "200": {
+                        "description": "Readable confirmation.",
+                        "content": {
+                            "text/html": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Read-only Mimic; readable failure confirmation."
+                    },
+                    "503": {
+                        "description": "Cannot confirm the result; readable recovery page."
+                    }
+                }
+            },
+            "post": {
+                "tags": ["Newsletter"],
+                "operationId": "unsubscribeNewsletterOneClick",
+                "summary": "Idempotent one-click newsletter unsubscribe",
+                "description": "No login needed. Token and tenant provide the target; request body is ignored. Does not affect service or activity notification choices. Repeated/unknown tokens reveal no account existence. Mimic cannot change consent.",
+                "responses": {
+                    "200": {
+                        "description": "Unsubscribe processed or already absent.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": ["message"],
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Read-only Mimic."
+                    },
+                    "503": {
+                        "description": "Unable to confirm; retry/reconcile."
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -5152,6 +6326,190 @@
                     "error": {
                         "type": "string",
                         "example": "Unable to generate media signature"
+                    }
+                }
+            },
+            "DripChange": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "courseId",
+                    "version",
+                    "patch",
+                    "preview",
+                    "previewHash",
+                    "state",
+                    "history",
+                    "preparedBy",
+                    "preparedAt",
+                    "createdAt",
+                    "updatedAt"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 128,
+                        "pattern": "^[a-zA-Z0-9_-]+$"
+                    },
+                    "courseId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 128,
+                        "pattern": "^[a-zA-Z0-9_-]+$"
+                    },
+                    "version": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "patch": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "groupId",
+                            "rule",
+                            "groupOrder",
+                            "notificationEnabled"
+                        ],
+                        "properties": {
+                            "groupId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 128,
+                                "pattern": "^[a-zA-Z0-9_-]+$"
+                            },
+                            "rule": {
+                                "oneOf": [
+                                    {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": ["kind"],
+                                        "properties": {
+                                            "kind": {
+                                                "const": "available"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": ["kind", "at"],
+                                        "properties": {
+                                            "kind": {
+                                                "const": "exact"
+                                            },
+                                            "at": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": ["kind", "delayInMillis"],
+                                        "properties": {
+                                            "kind": {
+                                                "const": "relative"
+                                            },
+                                            "delayInMillis": {
+                                                "type": "integer",
+                                                "minimum": 0,
+                                                "maximum": 315360000000
+                                            }
+                                        }
+                                    }
+                                ]
+                            },
+                            "groupOrder": {
+                                "type": "array",
+                                "minItems": 1,
+                                "maxItems": 500,
+                                "uniqueItems": true,
+                                "items": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 128,
+                                    "pattern": "^[a-zA-Z0-9_-]+$"
+                                }
+                            },
+                            "notificationEnabled": {
+                                "type": "boolean"
+                            }
+                        }
+                    },
+                    "preview": {
+                        "type": "object",
+                        "description": "Exact before/after section rules and message templates, audience/delivery counts, relative date samples, unknowns, five-minute expiry and effects hash."
+                    },
+                    "previewHash": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
+                    },
+                    "state": {
+                        "type": "object",
+                        "required": ["kind"],
+                        "properties": {
+                            "kind": {
+                                "enum": [
+                                    "draft",
+                                    "stale",
+                                    "applying",
+                                    "uncertain",
+                                    "applied",
+                                    "not-applied",
+                                    "discarded"
+                                ]
+                            },
+                            "operationId": {
+                                "type": "string"
+                            },
+                            "approvedBy": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 128,
+                                "pattern": "^[a-zA-Z0-9_-]+$"
+                            },
+                            "at": {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            "reason": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "history": {
+                        "type": "array",
+                        "maxItems": 20,
+                        "items": {
+                            "type": "object",
+                            "description": "Earlier complete reviewed version; never authorizes a current write."
+                        }
+                    },
+                    "preparedBy": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 128,
+                        "pattern": "^[a-zA-Z0-9_-]+$"
+                    },
+                    "preparedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "restoresChangeId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 128,
+                        "pattern": "^[a-zA-Z0-9_-]+$"
                     }
                 }
             }

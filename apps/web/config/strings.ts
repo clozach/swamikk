@@ -310,3 +310,101 @@ export const memberMimicUi = {
         "Exit Mimic before changing account details or sending anything.",
 };
 export { mediaPlayerUi, catalogMediaUi } from "@courselit/common-models";
+
+export const dripAdminUi = {
+    title: "Release schedule",
+    intro: "Plan when each section becomes available. Every section releases its published lessons together.",
+    course: "Content collection",
+    empty: "No content collections are available to manage.",
+    choose: "Choose a collection",
+    section: "Section",
+    rule: "Release rule",
+    available: "Available now",
+    exact: "On a date",
+    relative: "After a delay",
+    unknown: "Legacy rule needs attention",
+    exactDate: "Date and time (UTC)",
+    delay: "Delay in days (24 hours each)",
+    delayHelp:
+        "The first relative delay starts at membership enrollment. Later delays start from the previous actual relative release; a late release can move the following dates.",
+    availabilityRestriction:
+        "Available now can change to or from a schedule only while a collection is unpublished and has no current members. Existing member availability must first be preserved. Scheduled dates, delays, order and messages can still be reviewed.",
+    availableHelp:
+        "Available now opens this section to active members. It is not a pause control. Moving a date later does not remove a section already released.",
+    timezone: "Dates use UTC. Your local time is shown alongside exact dates.",
+    notification: "Send the existing section message on release",
+    notificationHelp:
+        "Turning notifications off holds pending messages. Turning them on can resume pending work. A message already being sent cannot be recalled. Available now does not create a release email.",
+    noMessage:
+        "No release message is prepared. Use a contextual comment to request one before enabling notifications.",
+    invalidMessage:
+        "This legacy message cannot be previewed. Repair it before enabling notifications.",
+    up: "Move earlier",
+    down: "Move later",
+    order: "Section order",
+    save: "Save draft and review",
+    saving: "Working…",
+    drafts: "Recent drafts and results",
+    version: "Version",
+    review: "Review before approval",
+    expires: "Review expires",
+    approve: "Approve this schedule",
+    refresh: "Refresh review",
+    discard: "Discard draft",
+    reconcile: "Check what happened",
+    restore: "Prepare restoration draft",
+    before: "Current rule",
+    after: "Proposed rule",
+    retained:
+        "Canceled members keep their frozen retained lessons. This schedule does not add future drops or pre-start archive to their access. Unknown legacy publication dates remain unknown.",
+    inFlight:
+        "A release or message already being processed may finish under the previous settings. Saving a schedule cannot retract content already viewed, grants already recorded, or mail already sent.",
+    messagePreview: "Release message template",
+    templateHelp:
+        "Member details, product links and the unsubscribe link are filled when mail is prepared. Remote images are omitted here. Previously queued messages may contain an earlier template.",
+    unpublished:
+        "This collection is unpublished. Saving its rules will not release content or queue messages until it is published.",
+    acknowledge:
+        "I reviewed the rules, section order, member effects and notification settings below.",
+    changed:
+        "Your controls have unsaved changes. Save and review a new version before approving.",
+    stale: "This review changed or expired. Refresh it and review the new effects.",
+    applied:
+        "The schedule was saved. Content releases and message delivery happen separately; their current counts appear in a refreshed review.",
+    uncertain:
+        "The result needs checking. Reconcile this operation before trying another schedule change.",
+    restoreHelp:
+        "Restoration creates another approval draft. It cannot remove content or mail already delivered.",
+    failed: "Could not finish this request. Refresh its status before retrying.",
+    missing: "Choose a section to prepare its schedule.",
+    currentMembers: "Active members",
+    processingMembers: "Access changes in progress",
+    endedPeriods: "Ended membership periods",
+    alreadyReleased: "Already received this section",
+    newlyAvailable: "Members gaining content now",
+    recipients: "Members with release mail due now",
+    unknownAnchors: "Unrecorded enrollment anchors",
+    pending: "Pending messages for this section",
+    dispatching: "Messages already being sent",
+    sent: "Messages recorded as sent",
+    uncertainMessages: "Messages with uncertain outcomes",
+    samples: "Example release dates",
+    released: "Already released",
+    unknownDate: "Unknown date",
+    publishedLessons: "published lessons",
+    draftLessons: "draft lessons",
+    legacyDates: "unrecorded publication dates",
+    history: "Earlier reviewed versions",
+    noDrafts: "No saved release drafts yet.",
+    status: {
+        draft: "Awaiting approval",
+        stale: "Review needs refreshing",
+        applying: "Applying schedule",
+        uncertain: "Result needs checking",
+        applied: "Schedule saved",
+        "not-applied": "Schedule not applied",
+        discarded: "Draft discarded",
+    },
+} as const;
+
+export { contactPreferencesCopy } from "./contact-preferences-copy";

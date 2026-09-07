@@ -290,7 +290,7 @@ const createAuthConfig = (baseURL = ""): any => ({
                                 constants.permissions.manageMedia,
                             ],
                             lead: constants.leadWebsite,
-                            subscribedToUpdates: true,
+                            subscribedToUpdates: false,
                             tags: [],
                             unsubscribeToken: generateUniqueId(),
                         },

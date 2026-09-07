@@ -22,6 +22,7 @@ import PermissionError from "./permission-error";
 import NextThemeSwitcher from "./next-theme-switcher";
 import { NavUser } from "./dashboard-skeleton/nav-user";
 import { ADMIN_PERMISSIONS } from "@ui-config/constants";
+import { HideDuringMimic } from "@/components/member-mimic/context";
 
 export default function DashboardContent({
     breadcrumbs,
@@ -133,7 +134,9 @@ export default function DashboardContent({
                 </div>
                 <div className="ml-auto flex items-center gap-2 px-3">
                     <NextThemeSwitcher variant="ghost" />
-                    <NotificationsViewer />
+                    <HideDuringMimic>
+                        <NotificationsViewer />
+                    </HideDuringMimic>
                     {isAdmin ? null : (
                         <div className="w-56">
                             <NavUser />

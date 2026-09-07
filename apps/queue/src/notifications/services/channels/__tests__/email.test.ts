@@ -1,3 +1,6 @@
+jest.mock("../../../../observability/posthog", () => ({
+    getDomainId: () => "test",
+}));
 /**
  * @jest-environment node
  */
@@ -43,6 +46,7 @@ function makePayload(overrides: Partial<any> = {}): any {
             email: "student@example.com",
             unsubscribeToken: "unsubscribe-token",
             subscribedToUpdates: true,
+            active: true,
             permissions: ["course:manage_any"],
         },
         activityType: Constants.ActivityType.ENROLLED,
@@ -68,7 +72,7 @@ describe("EmailChannel", () => {
         });
     });
 
-    it("renders a notification email with actor avatar, CTA, footer unsubscribe, branding, and unsubscribe headers", async () => {
+    it("renders a notification email with actor avatar, CTA, notification preferences and branding, without newsletter unsubscribe headers", async () => {
         await new EmailChannel().send(makePayload());
 
         expect(mockedGetNotificationMessageAndHref).toHaveBeenCalledWith(
@@ -93,25 +97,21 @@ describe("EmailChannel", () => {
         expect(mail.body).toContain(
             "https://school.courselit.test/community/post",
         );
-        expect(mail.body).toContain("Unsubscribe from email notifications");
+        expect(mail.body).toContain("Manage notification preferences");
         expect(mail.body).toContain(
-            "https://school.courselit.test/api/unsubscribe/unsubscribe-token",
+            "https://school.courselit.test/dashboard/notifications",
         );
         expect(mail.body).toContain("Powered by");
         expect(mail.body).toContain("CourseLit");
         expect(mail.body.indexOf("View notification")).toBeLessThan(
-            mail.body.indexOf("Unsubscribe from email notifications"),
+            mail.body.indexOf("Manage notification preferences"),
         );
         expect(mail.body).toContain("background-color:#000000");
         expect(mail.body).not.toContain("background-color:#07077b");
         expect(mail.body).toContain("padding:12px 24px 56px 24px");
         expect(mail.body).toContain("padding:32px 24px 16px 24px");
         expect(mail.body).toMatch(/font-size:\s*12px/);
-        expect(mail.headers).toEqual({
-            "List-Unsubscribe":
-                "<https://school.courselit.test/api/unsubscribe/unsubscribe-token>",
-            "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-        });
+        expect(mail.headers).toBeUndefined();
     });
 
     it("omits the actor avatar image when avatar is missing", async () => {
@@ -201,7 +201,7 @@ describe("EmailChannel", () => {
         expect(mail.body).not.toContain("CourseLit");
     });
 
-    it("does not send when the recipient is unsubscribed from updates", async () => {
+    it("sends enabled service notices when news is off", async () => {
         await new EmailChannel().send(
             makePayload({
                 recipient: {
@@ -209,14 +209,15 @@ describe("EmailChannel", () => {
                     email: "student@example.com",
                     unsubscribeToken: "unsubscribe-token",
                     subscribedToUpdates: false,
+                    active: true,
                 },
             }),
         );
 
-        expect(mockedAddMailJob).not.toHaveBeenCalled();
+        expect(mockedAddMailJob).toHaveBeenCalledTimes(1);
     });
 
-    it("does not send when the recipient cannot receive unsubscribe-managed email", async () => {
+    it("does not send when email is missing or the account is inactive", async () => {
         await new EmailChannel().send(
             makePayload({
                 recipient: {
@@ -224,6 +225,7 @@ describe("EmailChannel", () => {
                     email: "",
                     unsubscribeToken: "unsubscribe-token",
                     subscribedToUpdates: true,
+                    active: true,
                 },
             }),
         );
@@ -235,6 +237,7 @@ describe("EmailChannel", () => {
                     email: "student@example.com",
                     unsubscribeToken: "",
                     subscribedToUpdates: true,
+                    active: false,
                 },
             }),
         );

@@ -77,6 +77,7 @@ export async function recordDripRelease(
     emailGroupIds: string[],
     at: Date,
     expectedRevision?: number,
+    expectedCourseRevision?: number,
 ): Promise<MembershipAccessPeriod | null> {
     accessAssert(
         Number.isFinite(at.getTime()),
@@ -113,6 +114,19 @@ export async function recordDripRelease(
                 createdAt: at,
                 state: { kind: "pending" },
             }));
+        if (expectedCourseRevision !== undefined) {
+            const currentSchedule = await AccessCourseModel.exists({
+                domain: period.domain,
+                courseId: period.courseId,
+                published: true,
+                ...(expectedCourseRevision === 0
+                    ? { $or: [{ __v: 0 }, { __v: { $exists: false } }] }
+                    : { __v: expectedCourseRevision }),
+            });
+            if (!currentSchedule) return null;
+        }
+        // This is the final schedule read before the atomic access grant. An
+        // already-started grant can still finish while another document changes.
         const released = await MembershipAccessModel.findOneAndUpdate(
             {
                 ...keyFilter(key),
@@ -180,6 +194,23 @@ export async function claimDelivery(
             )
         )
             return { kind: "skipped" };
+        const delivery = period.deliveries.find(
+            (item) => item.id === deliveryId,
+        )!;
+        const notificationEnabled = await AccessCourseModel.exists({
+            domain: period.domain,
+            courseId: period.courseId,
+            published: true,
+            groups: {
+                $elemMatch: {
+                    _id: delivery.groupId,
+                    "drip.email.published": true,
+                },
+            },
+        });
+        // Off holds pending work. Re-enabling can resume it; dispatching work is
+        // already in flight and must retain its honest sent/uncertain outcome.
+        if (!notificationEnabled) return { kind: "skipped" };
         const claimId = randomUUID();
         const result = await MembershipAccessModel.updateOne(
             {

@@ -1,3 +1,4 @@
+import { resolveDripSchedule } from "../../../../packages/common-logic/src/drip-schedule";
 import CourseModel from "./model/course";
 import UserModel from "./model/user";
 import { Liquid } from "liquidjs";
@@ -35,14 +36,7 @@ function toGroupId(group: CourseGroup): string | undefined {
     return String(value);
 }
 
-function getSortedGroups(groups: CourseGroup[] = []): CourseGroup[] {
-    return [...groups].sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0));
-}
-
-/**
- * Answers: given this course, this user’s progress, and current time, which section
- * group IDs should be newly unlocked right now?
- */
+/** Compatibility entry point; administrator review uses the identical pure resolver. */
 export function getNewAccessibleGroupIdsForPurchase({
     course,
     userProgressInCourse,
@@ -52,83 +46,14 @@ export function getNewAccessibleGroupIdsForPurchase({
     userProgressInCourse: UserPurchase;
     nowUTC: number;
 }): string[] {
-    const accessibleGroups = Array.isArray(
-        userProgressInCourse.accessibleGroups,
-    )
-        ? userProgressInCourse.accessibleGroups
-        : [];
-    const sortedGroups = getSortedGroups(course.groups ?? []);
-
-    const exactDateAccessibleGroupIds = sortedGroups
-        .filter((group) => {
-            const releaseDateInUTC = group.drip?.dateInUTC;
-            return (
-                group.drip?.status &&
-                group.drip.type === "exact-date" &&
-                typeof releaseDateInUTC === "number" &&
-                nowUTC >= releaseDateInUTC
-            );
-        })
-        .map(toGroupId)
-        .filter((id): id is string => Boolean(id));
-
-    const progressAnchor = userProgressInCourse.lastDripAt
-        ? new Date(userProgressInCourse.lastDripAt)
-        : userProgressInCourse.createdAt
-          ? new Date(userProgressInCourse.createdAt)
-          : null;
-    if (!progressAnchor) {
-        return exactDateAccessibleGroupIds.filter(
-            (id) => !accessibleGroups.includes(id),
-        );
-    }
-
-    const anchorInUTC = progressAnchor.getTime();
-    if (Number.isNaN(anchorInUTC)) {
-        return exactDateAccessibleGroupIds.filter(
-            (id) => !accessibleGroups.includes(id),
-        );
-    }
-
-    const relativeAccessibleGroupIds: string[] = [];
-    let releaseCursorUTC = anchorInUTC;
-    for (const group of sortedGroups) {
-        if (
-            !group.drip?.status ||
-            group.drip.type !== "relative-date" ||
-            !Number.isFinite(group.drip.delayInMillis)
-        ) {
-            continue;
-        }
-
-        const groupId = toGroupId(group);
-        if (!groupId || accessibleGroups.includes(groupId)) {
-            continue;
-        }
-
-        const delayInMillis = group.drip.delayInMillis as number;
-        if (delayInMillis < 0) {
-            break;
-        }
-
-        const unlockAtUTC = releaseCursorUTC + delayInMillis;
-        if (nowUTC >= unlockAtUTC) {
-            relativeAccessibleGroupIds.push(groupId);
-            releaseCursorUTC = unlockAtUTC;
-            continue;
-        }
-
-        // Relative drips are sequential by section order.
-        break;
-    }
-
-    const allAccessibleGroupIds = new Set([
-        ...exactDateAccessibleGroupIds,
-        ...relativeAccessibleGroupIds,
-    ]);
-    return Array.from(allAccessibleGroupIds).filter(
-        (id) => !accessibleGroups.includes(id),
-    );
+    const rawAnchor =
+        userProgressInCourse.lastDripAt || userProgressInCourse.createdAt;
+    return resolveDripSchedule({
+        groups: course.groups || [],
+        accessibleGroupIds: userProgressInCourse.accessibleGroups || [],
+        anchorAt: rawAnchor ? new Date(rawAnchor).getTime() : undefined,
+        now: nowUTC,
+    }).dueGroupIds;
 }
 
 /** One pass is separately callable for recovery and cancellation-boundary tests. */
@@ -201,6 +126,13 @@ async function processMembershipDrip(
                 : originalPurchase?.createdAt,
         lastDripAt: period.lastRelativeReleaseAt,
     } as UserPurchase;
+    const currentCourse = (await CourseModel.findOne({
+        domain: course.domain,
+        courseId: course.courseId,
+        published: true,
+    }).lean()) as InternalCourse | null;
+    if (!currentCourse) return;
+    course = currentCourse;
     const groupIds = getNewAccessibleGroupIdsForPurchase({
         course,
         userProgressInCourse: scheduledPurchase,
@@ -215,7 +147,10 @@ async function processMembershipDrip(
         .filter((id): id is string => Boolean(id));
     const emailIds = course.groups
         .filter(
-            (group) => group.drip?.email?.content && group.drip?.email?.subject,
+            (group) =>
+                group.drip?.email?.published === true &&
+                group.drip.email.content &&
+                group.drip.email.subject,
         )
         .map(toGroupId)
         .filter((id): id is string => Boolean(id));
@@ -227,6 +162,7 @@ async function processMembershipDrip(
             emailIds,
             now,
             period.revision,
+            (course as InternalCourse & { __v?: number }).__v || 0,
         );
         if (!committed) return;
         logInfo(
@@ -266,7 +202,8 @@ async function processMembershipDrip(
             (candidate) => toGroupId(candidate) === delivery.groupId,
         );
         const email = group?.drip?.email;
-        if (!email?.content || !email.subject) continue;
+        if (!email?.content || !email.subject || email.published !== true)
+            continue;
         const content = await liquidEngine.parseAndRender(
             await renderEmailToHtml({ email: email.content }),
             templatePayload,

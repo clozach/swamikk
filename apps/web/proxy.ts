@@ -91,6 +91,12 @@ export async function proxy(request: NextRequest) {
                     ((path.startsWith("/api/media/") &&
                         path !== "/api/media/presigned") ||
                         path === "/api/member-billing" ||
+                        path === "/api/contact-preferences" ||
+                        path === "/api/contact-preferences/photo" ||
+                        path === "/api/refund-requests" ||
+                        /^\/api\/member-receipts\/[A-Za-z0-9_-]{1,128}$/.test(
+                            path,
+                        ) ||
                         path === "/api/config"));
             if (!permitted)
                 return Response.json(

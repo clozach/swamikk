@@ -5,7 +5,7 @@ interface NotificationEmailTemplateInput {
     actorAvatarUrl?: string;
     message: string;
     notificationUrl: string;
-    unsubscribeUrl: string;
+    preferencesUrl: string;
     hideCourseLitBranding?: boolean;
 }
 
@@ -39,7 +39,7 @@ export function buildNotificationEmailTemplate({
     actorAvatarUrl,
     message,
     notificationUrl,
-    unsubscribeUrl,
+    preferencesUrl,
     hideCourseLitBranding,
 }: NotificationEmailTemplateInput): Email {
     const safeActorAvatarUrl = getSafeAvatarUrl(actorAvatarUrl);
@@ -110,7 +110,7 @@ export function buildNotificationEmailTemplate({
         {
             blockType: "text",
             settings: {
-                content: `[Unsubscribe from email notifications](${unsubscribeUrl})`,
+                content: `[Manage notification preferences](${preferencesUrl})`,
                 alignment: "center",
                 fontSize: "12px",
                 foregroundColor: "#666666",

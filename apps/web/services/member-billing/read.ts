@@ -11,6 +11,7 @@ import {
     previewConsequences,
 } from "./memberships";
 import { cancellationView } from "./projection";
+import { receiptDate } from "@/services/member-receipts/read";
 import type { BillingMembershipView, MemberBillingView } from "./types";
 
 export async function readMemberBilling(
@@ -108,8 +109,14 @@ export async function readMemberBilling(
                 currency: invoice.currencyISOCode,
                 mode: invoice.paymentMode || "unknown",
                 status: invoice.status,
-                paidAt: null,
-                receipt: { kind: "unavailable" as const },
+                paidAt:
+                    receiptDate(invoice).kind === "recorded"
+                        ? new Date(invoice.settlement!.at).toISOString()
+                        : null,
+                receipt: {
+                    kind: "available" as const,
+                    href: `/dashboard/receipts/${encodeURIComponent(invoice.invoiceId)}`,
+                },
             })),
         });
     }

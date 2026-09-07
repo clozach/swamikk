@@ -45,3 +45,6 @@ export * from "./models/content-change";
 export * from "./models/member-mimic";
 
 export * from "./models/member-access";
+export * from "./models/drip-change";
+
+export * from "./models/contact-preferences";

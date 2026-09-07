@@ -6,6 +6,24 @@ import { Constants } from "@courselit/common-models";
 import InvoiceModel from "@models/Invoice";
 import { fromStripeAmount } from "@/payments-new/stripe-currency";
 
+function settlementEvidence(event: Stripe.Event) {
+    const initial = event.type === "checkout.session.completed";
+    const seconds = initial
+        ? event.created
+        : (event.data.object as Stripe.Invoice).status_transitions?.paid_at;
+    if (!Number.isSafeInteger(seconds) || !seconds || seconds < 0) return {};
+    const at = new Date(seconds * 1000);
+    if (!Number.isFinite(at.getTime())) return {};
+    return {
+        settlement: {
+            at,
+            source: initial
+                ? ("stripe-checkout-confirmed" as const)
+                : ("stripe-invoice-paid" as const),
+        },
+    };
+}
+
 /** One invoice per settled provider object, including concurrent deliveries. */
 export async function recordStripeInvoice(
     event: Stripe.Event,
@@ -45,6 +63,7 @@ export async function recordStripeInvoice(
         status: Constants.InvoiceStatus.PAID,
         paymentProcessorTransactionId: object.id,
         paymentMode: event.livemode ? "live" : "test",
+        ...settlementEvidence(event),
     };
     if (initial) {
         const updated = await InvoiceModel.findOneAndUpdate(

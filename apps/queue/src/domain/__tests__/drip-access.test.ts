@@ -43,6 +43,31 @@ beforeEach(async () => {
         costType: "free",
         privacy: "public",
         type: "course",
+        groups: [
+            {
+                _id: "group-1",
+                name: "One",
+                rank: 1,
+                drip: {
+                    status: true,
+                    type: "relative-date",
+                    delayInMillis: 0,
+                    email: {
+                        published: true,
+                        subject: "Ready",
+                        content: {
+                            content: [],
+                            style: {
+                                colors: {},
+                                typography: {},
+                                structure: {},
+                            },
+                            meta: {},
+                        },
+                    },
+                },
+            },
+        ],
     });
     await AccessMembershipModel.create({
         domain: key.domainId,
@@ -481,4 +506,45 @@ it("suppresses pending mail when the user is disabled or the course is unpublish
     expect(
         await claimDelivery(key.domainId, period.id, period.deliveries[0].id),
     ).toEqual({ kind: "skipped" });
+});
+
+describe("approved schedule changes at the grant and delivery boundaries", () => {
+    it("declines a sampled schedule after its course revision changes", async () => {
+        await AccessCourseModel.updateOne(
+            { domain: key.domainId, courseId: key.courseId },
+            { $inc: { __v: 1 } },
+        );
+        expect(
+            await recordDripRelease(
+                key,
+                ["group-1"],
+                ["group-1"],
+                ["group-1"],
+                at,
+                0,
+                0,
+            ),
+        ).toBeNull();
+        expect((await readPeriod())!.groupReleases).toHaveLength(0);
+    });
+    it("holds pending mail while disabled and can resume it when enabled", async () => {
+        const period = await grant();
+        const delivery = period.deliveries[0];
+        await AccessCourseModel.updateOne(
+            { domain: key.domainId, courseId: key.courseId },
+            { $set: { "groups.0.drip.email.published": false } },
+        );
+        expect(
+            await claimDelivery(key.domainId, period.id, delivery.id, at),
+        ).toEqual({ kind: "skipped" });
+        expect((await readPeriod())!.deliveries[0].state.kind).toBe("pending");
+        await AccessCourseModel.updateOne(
+            { domain: key.domainId, courseId: key.courseId },
+            { $set: { "groups.0.drip.email.published": true } },
+        );
+        expect(
+            (await claimDelivery(key.domainId, period.id, delivery.id, at))
+                .kind,
+        ).toBe("claimed");
+    });
 });

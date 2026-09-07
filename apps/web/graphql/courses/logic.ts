@@ -1,3 +1,5 @@
+import { deleteCourseDripChanges } from "@/services/drip-admin/cleanup";
+import { revisionFilter } from "@/services/drip-admin/guard";
 import { deleteCourseMemberAccess } from "@/services/member-access";
 import { projectCourseForMemberAccess } from "@/services/member-access/projection";
 import { projectMimicCourse } from "@/services/member-mimic/course";
@@ -390,6 +392,7 @@ export const deleteCourse = async (id: string, ctx: GQLContext) => {
         entityType: Constants.MembershipEntityType.COURSE,
     });
     await deleteCourseMemberAccess(String(ctx.subdomain._id), course.courseId);
+    await deleteCourseDripChanges(String(ctx.subdomain._id), course.courseId);
     await deleteCohortsForCourse(course.courseId, ctx);
     await PaymentPlanModel.deleteMany({
         domain: ctx.subdomain._id,
@@ -984,15 +987,21 @@ export const updateGroup = async ({
         }
     }
 
-    return await CourseModel.findOneAndUpdate(
+    const updated = await CourseModel.findOneAndUpdate(
         {
             domain: ctx.subdomain._id,
             courseId: course.courseId,
             "groups._id": id,
+            ...revisionFilter((course as any).__v || 0),
         },
-        { $set },
+        { $set, $inc: { __v: 1 } },
         { new: true },
     );
+    if (!updated)
+        throw new Error(
+            "The course changed. Refresh before saving its section.",
+        );
+    return updated;
 };
 
 export const moveLesson = async ({
@@ -1060,17 +1069,23 @@ export const moveLesson = async ({
     );
     destinationLessons.splice(safeDestinationIndex, 0, lessonId);
 
-    await CourseModel.updateOne(
+    const updated = await CourseModel.updateOne(
         {
             domain: ctx.subdomain._id,
             courseId: course.courseId,
+            ...revisionFilter((course as any).__v || 0),
         },
         {
+            $inc: { __v: 1 },
             $set: {
                 groups: normalizedGroups,
             },
         },
     );
+    if (!updated.matchedCount)
+        throw new Error(
+            "The course changed. Refresh before saving its sections.",
+        );
 
     if (lesson.groupId !== destinationGroupId) {
         lesson.groupId = destinationGroupId;
@@ -1122,17 +1137,23 @@ export const reorderGroups = async ({
         rank: (index + 1) * GROUP_RANK_GAP,
     }));
 
-    await CourseModel.updateOne(
+    const updated = await CourseModel.updateOne(
         {
             domain: ctx.subdomain._id,
             courseId: course.courseId,
+            ...revisionFilter((course as any).__v || 0),
         },
         {
+            $inc: { __v: 1 },
             $set: {
                 groups: updatedGroups,
             },
         },
     );
+    if (!updated.matchedCount)
+        throw new Error(
+            "The course changed. Refresh before saving its sections.",
+        );
 
     return await formatCourse(course.courseId, ctx);
 };

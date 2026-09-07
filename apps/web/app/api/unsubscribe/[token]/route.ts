@@ -1,55 +1,45 @@
 import { NextRequest } from "next/server";
 import { responses } from "@/config/strings";
 import User from "@models/User";
-import DomainModel, { Domain } from "@models/Domain";
-import { recordActivity } from "@/lib/record-activity";
-import { Constants } from "@courselit/common-models";
+import DomainModel from "@models/Domain";
+import { setNewsletterConsent } from "@/services/newsletter/consent";
+import { assertNoMemberMimicMutation } from "@/services/member-mimic/context";
+import { newsletterConfirmationResponse } from "@/services/newsletter/confirmation";
+import { apiResponse } from "@/services/content-changes/http";
 
-async function unsubscribe(
-    req: NextRequest,
-    { params }: { params: Promise<{ token: string }> },
-) {
-    const domain = await DomainModel.findOne<Domain>({
+async function unsubscribe(req: NextRequest, token: string) {
+    assertNoMemberMimicMutation(req.headers);
+    const domain = await DomainModel.findOne({
         name: req.headers.get("domain"),
     });
-    if (!domain) {
-        return Response.json({ message: "Domain not found" }, { status: 404 });
-    }
-
-    const token = (await params).token;
-
-    const user = await User.findOne({
-        domain: domain._id,
-        unsubscribeToken: token,
-        subscribedToUpdates: true,
-    });
-
-    if (!user) {
-        return Response.json({ message: responses.unsubscribe_success });
-    }
-
-    await user.updateOne({ subscribedToUpdates: false });
-
-    await recordActivity({
-        domain: domain._id,
-        userId: user.userId,
-        type: Constants.ActivityType.NEWSLETTER_UNSUBSCRIBED,
-        entityId: user.userId,
-    });
-
-    return Response.json({ message: responses.unsubscribe_success });
+    if (!domain) throw new Error("Site unavailable");
+    const user =
+        token && token.length <= 256
+            ? await User.findOne({
+                  domain: domain._id,
+                  unsubscribeToken: token,
+              })
+            : null;
+    if (user)
+        await setNewsletterConsent(String(domain._id), user.userId, false);
+    return { message: responses.unsubscribe_success };
 }
 
 export async function GET(
     req: NextRequest,
     context: { params: Promise<{ token: string }> },
 ) {
-    return unsubscribe(req, context);
+    const response = await apiResponse(async () =>
+        unsubscribe(req, (await context.params).token),
+    );
+    return newsletterConfirmationResponse(response.ok, response.status);
 }
 
 export async function POST(
     req: NextRequest,
     context: { params: Promise<{ token: string }> },
 ) {
-    return unsubscribe(req, context);
+    return apiResponse(async () =>
+        unsubscribe(req, (await context.params).token),
+    );
 }

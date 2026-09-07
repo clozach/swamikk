@@ -14,6 +14,11 @@ export interface Invoice {
     paymentProcessorTransactionId?: string;
     paymentProcessorEntityId?: string;
     paymentMode?: "test" | "live";
+    /** Provider evidence; absent on older records, never inferred from local creation time. */
+    settlement?: {
+        at: Date;
+        source: "stripe-invoice-paid" | "stripe-checkout-confirmed";
+    };
     currencyISOCode: string;
     createdAt?: Date;
     updatedAt?: Date;

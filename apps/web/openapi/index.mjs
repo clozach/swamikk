@@ -7,6 +7,11 @@ import { memberMimicApiOpenApi } from "../app/api/member-mimic/openapi.mjs";
 import { paymentWebhookOpenApi } from "../app/api/payment/webhook/openapi.mjs";
 import feedbackMailboxOpenApi from "../app/api/feedback-mailbox/openapi.mjs";
 import memberBillingOpenApi from "../app/api/member-billing/openapi.mjs";
+import memberReceiptsOpenApi from "../app/api/member-receipts/openapi.mjs";
+import { dripAdminApiOpenApi } from "../app/api/drip-admin/openapi.mjs";
+import { contactPreferencesApiOpenApi } from "../app/api/contact-preferences/openapi.mjs";
+import refundRequestsOpenApi from "../app/api/refund-requests/openapi.mjs";
+import { newsletterUnsubscribeApiOpenApi } from "../app/api/unsubscribe/openapi.mjs";
 
 const routeSpecs = [
     userApiOpenApi,
@@ -17,7 +22,12 @@ const routeSpecs = [
     memberMimicApiOpenApi,
     paymentWebhookOpenApi,
     feedbackMailboxOpenApi,
-    memberBillingOpenApi,
+    { paths: memberBillingOpenApi },
+    { paths: memberReceiptsOpenApi },
+    dripAdminApiOpenApi,
+    contactPreferencesApiOpenApi,
+    { paths: refundRequestsOpenApi },
+    newsletterUnsubscribeApiOpenApi,
 ];
 
 function mergeOpenApiFragments(fragments) {

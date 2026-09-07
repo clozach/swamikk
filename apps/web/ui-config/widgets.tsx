@@ -22,6 +22,8 @@ import {
     AnahataNewsletter,
     AnahataFooter,
     EditorialResilience,
+    HelpPolicies,
+    MemberContact,
 } from "@courselit/page-blocks";
 
 function loadWidgets(): Record<string, any> {
@@ -59,6 +61,8 @@ function loadWidgets(): Record<string, any> {
     });
 
     widgets[EditorialResilience.metadata.name] = EditorialResilience;
+    widgets[HelpPolicies.metadata.name] = HelpPolicies;
+    widgets[MemberContact.metadata.name] = MemberContact;
 
     return widgets;
 }

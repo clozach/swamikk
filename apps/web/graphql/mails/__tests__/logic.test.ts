@@ -1,3 +1,5 @@
+jest.mock("@/lib/record-activity", () => ({ recordActivity: jest.fn() }));
+jest.mock("@/lib/trigger-sequences", () => ({ triggerSequences: jest.fn() }));
 /**
  * @jest-environment node
  */
@@ -11,6 +13,7 @@ import { defaultEmail } from "../default-email";
 import {
     addMailToSequence,
     createEmailTemplate,
+    createSubscription,
     createSequence,
     getEmailTemplates,
     getSystemEmailTemplates,
@@ -247,5 +250,72 @@ describe("createEmailTemplate", () => {
         expect(sequence?.emails[0].content?.meta?.previewText).toBe(
             defaultEmail.meta.previewText,
         );
+    });
+});
+
+describe("explicit newsletter consent", () => {
+    it("subscribes new people and truly resubscribes without duplicate subscription events", async () => {
+        const { default: User } = await import("@/models/User");
+        const { createUser } = await import("@/graphql/users/logic");
+        const { triggerSequences } = await import("@/lib/trigger-sequences");
+        const domain = await DomainModel.create({
+            name: `news-${Date.now()}`,
+            email: "owner-news@example.com",
+        });
+        const ctx = { subdomain: domain } as unknown as GQLContext;
+        const user = await createUser({ domain, email: "rejoin@example.com" });
+        expect(user.subscribedToUpdates).toBe(false);
+        (triggerSequences as jest.Mock).mockClear();
+        expect(
+            await createSubscription("Member", "rejoin@example.com", ctx),
+        ).toBe(true);
+        expect(
+            (await User.findOne({ domain: domain._id, userId: user.userId }))!
+                .subscribedToUpdates,
+        ).toBe(true);
+        await createSubscription("Member", "rejoin@example.com", ctx);
+        expect(triggerSequences).toHaveBeenCalledTimes(1);
+        await User.updateOne(
+            { domain: domain._id, userId: user.userId },
+            { subscribedToUpdates: false },
+        );
+        await Promise.all([
+            createSubscription("Member", "rejoin@example.com", ctx),
+            createSubscription("Member", "rejoin@example.com", ctx),
+        ]);
+        expect(
+            (await User.findOne({ domain: domain._id, userId: user.userId }))!
+                .subscribedToUpdates,
+        ).toBe(true);
+        expect(triggerSequences).toHaveBeenCalledTimes(2);
+        expect(
+            await User.countDocuments({
+                domain: domain._id,
+                email: user.email,
+            }),
+        ).toBe(1);
+        expect(
+            await createSubscription("New", "new-news@example.com", ctx),
+        ).toBe(true);
+        expect(
+            (await User.findOne({
+                domain: domain._id,
+                email: "new-news@example.com",
+            }))!.subscribedToUpdates,
+        ).toBe(true);
+    });
+    it("preserves existing consent through ordinary sign-in/account creation", async () => {
+        const { createUser } = await import("@/graphql/users/logic");
+        const domain = await DomainModel.create({
+            name: `keep-news-${Date.now()}`,
+            email: "owner-keep@example.com",
+        });
+        const first = await createUser({
+            domain,
+            email: "keep@example.com",
+            subscribedToUpdates: true,
+        });
+        const again = await createUser({ domain, email: first.email });
+        expect(again.subscribedToUpdates).toBe(true);
     });
 });

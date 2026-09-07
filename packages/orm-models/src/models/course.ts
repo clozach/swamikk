@@ -52,6 +52,7 @@ export const CourseSchema = new mongoose.Schema<InternalCourse>(
         description: String,
         featuredImage: MediaSchema,
         previewAudio: MediaSchema,
+        dripChangeReceipt: { type: mongoose.Schema.Types.Mixed },
         groups: [
             {
                 name: { type: String, required: true },
@@ -87,6 +88,7 @@ export const CourseSchema = new mongoose.Schema<InternalCourse>(
     },
     {
         timestamps: true,
+        optimisticConcurrency: true,
     },
 );
 

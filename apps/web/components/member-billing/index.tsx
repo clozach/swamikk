@@ -59,12 +59,12 @@ function BillingForIdentity({ mimicReadOnly }: { mimicReadOnly: boolean }) {
                     >
                         {copy.library}
                     </Link>
-                    <a
-                        href="#your-payments"
+                    <Link
+                        href="/dashboard/refunds"
                         className="inline-flex min-h-11 items-center underline underline-offset-4"
                     >
                         {copy.refundLink}
-                    </a>
+                    </Link>
                 </nav>
             </header>
             {readOnly && (

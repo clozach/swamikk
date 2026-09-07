@@ -42,6 +42,12 @@ it("blocks writes through page server actions as well as API endpoints", async (
         "/products",
         "/api/feedback",
         "/api/member-billing",
+        "/api/member-receipts/receipt-1",
+        "/api/contact-preferences",
+        "/api/contact-preferences/photo",
+        "/api/refund-requests",
+        "/api/refund-requests/review",
+        "/api/drip-admin",
         "/api/media/asset/file",
         "/api/content-changes",
     ])
@@ -72,12 +78,19 @@ it("denies private reads and legacy GET side effects while preserving explicit E
         "/api/track",
         "/api/media/presigned",
         "/api/feedback/private/photos/photo",
+        "/api/refund-requests/review",
+        "/api/drip-admin",
+        "/api/contact-preferences/another-member",
     ])
         expect((await proxy(request(path, "GET"))).status).toBe(403);
     for (const [path, method] of [
         ["/api/member-mimic", "DELETE"],
         ["/api/member-mimic", "GET"],
         ["/api/member-billing", "GET"],
+        ["/api/contact-preferences", "GET"],
+        ["/api/contact-preferences/photo", "GET"],
+        ["/api/refund-requests", "GET"],
+        ["/api/member-receipts/receipt-1", "GET"],
         ["/api/media/asset", "GET"],
         ["/api/graph", "POST"],
     ])

@@ -13,6 +13,8 @@ export type ProductAccessType =
     (typeof ProductAccessType)[keyof typeof ProductAccessType];
 
 export interface Course {
+    /** Atomic administrator schedule application/recovery receipt. */
+    dripChangeReceipt?: import("./drip-change").DripChangeReceipt;
     courseId: string;
     title: string;
     description?: string;

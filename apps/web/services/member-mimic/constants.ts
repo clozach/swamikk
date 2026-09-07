@@ -16,6 +16,8 @@ export function isMemberMimicPath(path: string): boolean {
     return (
         pathname === "/dashboard/profile" ||
         pathname === "/dashboard/membership" ||
+        pathname === "/dashboard/refunds" ||
+        /^\/dashboard\/receipts\/[A-Za-z0-9_-]{1,128}$/.test(pathname) ||
         pathname === "/dashboard/my-content" ||
         pathname === "/dashboard/my-content/products" ||
         (/^\/course\/[^/]+\/[^/]+(?:\/[^/]+)?\/?$/.test(pathname) &&

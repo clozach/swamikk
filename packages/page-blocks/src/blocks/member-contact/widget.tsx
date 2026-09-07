@@ -79,8 +79,8 @@ export default function Widget({ settings, state }: WidgetProps<Settings>) {
                 <div className="kk-help-actions">
                     <a href="/#stay-in-touch">Open the newsletter form</a>
                     {signedIn && (
-                        <a href="/dashboard/profile">
-                            Your account and news preferences
+                        <a href="/dashboard/profile#contact-preferences">
+                            Your contact, check-in and news preferences
                         </a>
                     )}
                 </div>

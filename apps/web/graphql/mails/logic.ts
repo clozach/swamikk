@@ -1,4 +1,5 @@
 import constants from "@config/constants";
+import { setNewsletterConsent } from "@/services/newsletter/consent";
 import { promises as fs } from "fs";
 import GQLContext from "@models/GQLContext";
 import UserModel from "@models/User";
@@ -123,19 +124,20 @@ export async function createSubscription(
 ): Promise<boolean> {
     try {
         const sanitizedEmail = sanitizeEmail(email);
-        let dbUser: User | null = await UserModel.findOne({
+        const dbUser = await createUser({
+            domain: ctx.subdomain!,
+            name,
             email: sanitizedEmail,
-            domain: ctx.subdomain._id,
+            lead: constants.leadNewsletter,
+            subscribedToUpdates: false,
         });
-
-        if (!dbUser) {
-            dbUser = await createUser({
-                domain: ctx.subdomain!,
-                name: name,
-                email: sanitizedEmail,
-                lead: constants.leadNewsletter,
-            });
-        }
+        if (!dbUser.active) return false;
+        // Submitting the newsletter form is explicit consent, including rejoining.
+        await setNewsletterConsent(
+            String(ctx.subdomain._id),
+            dbUser.userId,
+            true,
+        );
     } catch (e: any) {
         error(e.message, {
             stack: e.stack,

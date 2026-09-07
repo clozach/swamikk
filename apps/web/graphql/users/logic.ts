@@ -1,5 +1,6 @@
 "use server";
 
+import { setNewsletterConsent } from "@/services/newsletter/consent";
 import { ensureMembershipAccess } from "@/services/member-access";
 
 import {
@@ -168,7 +169,9 @@ export const updateUser = async (userData: UserData, ctx: GQLContext) => {
         }
     }
 
-    for (const key of keys.filter((key) => key !== "id")) {
+    for (const key of keys.filter(
+        (key) => key !== "id" && key !== "subscribedToUpdates",
+    )) {
         if (key === "tags") {
             // cohort:* tags mirror Cohort.members and are managed solely by
             // the cohorts module: user edits can neither add nor remove them,
@@ -197,14 +200,12 @@ export const updateUser = async (userData: UserData, ctx: GQLContext) => {
     user = await user.save();
 
     if (Object.prototype.hasOwnProperty.call(userData, "subscribedToUpdates")) {
-        recordActivity({
-            domain: ctx.subdomain._id,
-            userId: user.userId,
-            type: userData.subscribedToUpdates
-                ? Constants.ActivityType.NEWSLETTER_SUBSCRIBED
-                : Constants.ActivityType.NEWSLETTER_UNSUBSCRIBED,
-            entityId: user.userId,
-        });
+        await setNewsletterConsent(
+            String(ctx.subdomain._id),
+            user.userId,
+            userData.subscribedToUpdates === true,
+        );
+        user.subscribedToUpdates = userData.subscribedToUpdates === true;
     }
 
     return user;
@@ -235,7 +236,7 @@ export const inviteCustomer = async (
         user = await createUser({
             domain: ctx.subdomain!,
             email: sanitizedEmail,
-            subscribedToUpdates: true,
+            subscribedToUpdates: false,
         });
     }
 
@@ -504,7 +505,7 @@ export async function createUser({
     email,
     lead,
     superAdmin = false,
-    subscribedToUpdates = true,
+    subscribedToUpdates = false,
     permissions = [],
 }: {
     domain: Domain;

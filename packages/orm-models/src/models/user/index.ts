@@ -20,7 +20,7 @@ export const UserSchema = new mongoose.Schema<InternalUser>(
         purchases: [ProgressSchema],
         bio: { type: String },
         permissions: [String],
-        subscribedToUpdates: { type: Boolean, default: true },
+        subscribedToUpdates: { type: Boolean, default: false },
         lead: {
             type: String,
             required: true,

@@ -26,6 +26,23 @@ export const InvoiceSchema = new mongoose.Schema<InternalInvoice>(
         paymentProcessor: { type: String, required: true },
         paymentProcessorEntityId: { type: String },
         paymentMode: { type: String, enum: ["test", "live"] },
+        settlement: {
+            type: new mongoose.Schema(
+                {
+                    at: { type: Date, required: true },
+                    source: {
+                        type: String,
+                        required: true,
+                        enum: [
+                            "stripe-invoice-paid",
+                            "stripe-checkout-confirmed",
+                        ],
+                    },
+                },
+                { _id: false },
+            ),
+            required: false,
+        },
         paymentProcessorTransactionId: { type: String },
         currencyISOCode: { type: String, required: true },
     },

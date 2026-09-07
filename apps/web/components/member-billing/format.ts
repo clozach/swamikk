@@ -4,6 +4,7 @@ import { billingCopy as copy } from "./copy";
 
 export function money(amount: number, currency: string, minor = false) {
     try {
+        if (!Number.isFinite(amount) || amount < 0) throw new Error();
         return new Intl.NumberFormat(undefined, {
             style: "currency",
             currency,

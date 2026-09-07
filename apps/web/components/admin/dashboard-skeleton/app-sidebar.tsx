@@ -2,6 +2,7 @@
 
 import {
     Box,
+    CalendarDays,
     Images,
     LibraryBig,
     LifeBuoy,
@@ -61,6 +62,7 @@ import {
     ADMIN_PERMISSIONS,
     FEEDBACK_ADMIN_PERMISSIONS,
 } from "@ui-config/constants";
+import { dripAdminUi } from "@config/strings";
 import { feedbackUi as feedbackCopy } from "@config/strings";
 import { getSetupChecklist } from "@/app/(with-contexts)/dashboard/(sidebar)/action";
 const { permissions } = UIConstants;
@@ -205,6 +207,13 @@ function getSidebarItems({
             isActive: path === "/dashboard/transactions",
         });
         contentItems.push({
+            title: dripAdminUi.title,
+            url: "/dashboard/releases",
+            icon: CalendarDays,
+            isActive: path === "/dashboard/releases",
+            items: [],
+        });
+        contentItems.push({
             title: feedbackCopy.organize,
             url: "/dashboard/content",
             icon: Box,
@@ -316,6 +325,12 @@ function getSidebarItems({
         });
     }
     if (profile.permissions!.includes(permissions.manageSettings)) {
+        insightsItems.push({
+            title: "Refund review",
+            url: "/dashboard/refund-review",
+            icon: Receipt,
+            isActive: path === "/dashboard/refund-review",
+        });
         const items = [
             {
                 title: SITE_SETTINGS_SECTION_GENERAL,

@@ -5,6 +5,7 @@ import {
     ChevronsUpDown,
     LibraryBig,
     LogOut,
+    Receipt,
     UserPen,
 } from "lucide-react";
 
@@ -28,6 +29,8 @@ import { useContext } from "react";
 import { ProfileContext } from "@components/contexts";
 import Link from "next/link";
 import { Chip } from "@courselit/components-library";
+import { HideDuringMimic } from "@/components/member-mimic/context";
+import { billingCopy } from "@/components/member-billing/copy";
 import {
     BETA_LABEL,
     LOGOUT,
@@ -118,15 +121,23 @@ export function NavUser() {
                                     {MAIN_MENU_ITEM_PROFILE}
                                 </DropdownMenuItem>
                             </Link>
-                            <Link href={"/dashboard/notifications"}>
+                            <Link href="/dashboard/membership">
                                 <DropdownMenuItem>
-                                    <div className="flex items-center gap-2">
-                                        <Bell />
-                                        {MAIN_MENU_ITEM_NOTIFICATIONS}
-                                    </div>
-                                    <Chip>{BETA_LABEL}</Chip>
+                                    <Receipt />
+                                    {billingCopy.profileLink}
                                 </DropdownMenuItem>
                             </Link>
+                            <HideDuringMimic>
+                                <Link href={"/dashboard/notifications"}>
+                                    <DropdownMenuItem>
+                                        <div className="flex items-center gap-2">
+                                            <Bell />
+                                            {MAIN_MENU_ITEM_NOTIFICATIONS}
+                                        </div>
+                                        <Chip>{BETA_LABEL}</Chip>
+                                    </DropdownMenuItem>
+                                </Link>
+                            </HideDuringMimic>
                         </DropdownMenuGroup>
                         {/* <DropdownMenuSeparator />
                         <DropdownMenuGroup>
@@ -143,13 +154,15 @@ export function NavUser() {
                                 Notifications
                             </DropdownMenuItem>
                         </DropdownMenuGroup> */}
-                        <DropdownMenuSeparator />
-                        <Link href={"/logout"}>
-                            <DropdownMenuItem>
-                                <LogOut />
-                                {LOGOUT}
-                            </DropdownMenuItem>
-                        </Link>
+                        <HideDuringMimic>
+                            <DropdownMenuSeparator />
+                            <Link href={"/logout"}>
+                                <DropdownMenuItem>
+                                    <LogOut />
+                                    {LOGOUT}
+                                </DropdownMenuItem>
+                            </Link>
+                        </HideDuringMimic>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </SidebarMenuItem>

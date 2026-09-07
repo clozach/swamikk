@@ -225,3 +225,55 @@ it("puts correlation metadata on the subscription as well as its checkout sessio
         expect.objectContaining({ metadata, subscription_data: { metadata } }),
     );
 });
+
+it("keeps the first provider payment-confirmation time on duplicate checkout events", async () => {
+    const first = event("checkout.session.completed", "cs_confirmed");
+    first.created = 1788672000;
+    (first.data.object as any).created = 1700000000;
+    await recordStripeInvoice(first, domain, initialId, membership);
+    const retry = { ...first, created: first.created + 3600 };
+    await recordStripeInvoice(retry, domain, initialId, membership);
+    const stored = await Invoice.findOne({ domain, invoiceId: initialId });
+    expect(stored.settlement).toMatchObject({
+        at: new Date(first.created * 1000),
+        source: "stripe-checkout-confirmed",
+    });
+});
+it("records native invoice paid_at and does not use event/local creation as a renewal payment date", async () => {
+    const renewal = event("invoice.paid", "in_dated");
+    renewal.created = 1788675600;
+    (renewal.data.object as any).status_transitions = { paid_at: 1788672000 };
+    await recordStripeInvoice(renewal, domain, initialId, membership);
+    const stored = await Invoice.findOne({
+        domain,
+        paymentProcessorTransactionId: "in_dated",
+    });
+    expect(stored.settlement).toMatchObject({
+        at: new Date(1788672000000),
+        source: "stripe-invoice-paid",
+    });
+    const unknown = event("invoice.paid", "in_undated");
+    unknown.created = 1788675600;
+    await recordStripeInvoice(unknown, domain, initialId, membership);
+    expect(
+        (
+            await Invoice.findOne({
+                domain,
+                paymentProcessorTransactionId: "in_undated",
+            })
+        ).settlement,
+    ).toBeUndefined();
+});
+it("does not backfill an already settled legacy invoice from a later retry", async () => {
+    const first = event("checkout.session.completed", "cs_legacy_undated");
+    await recordStripeInvoice(first, domain, initialId, membership);
+    await recordStripeInvoice(
+        { ...first, created: 1788672000 },
+        domain,
+        initialId,
+        membership,
+    );
+    expect(
+        (await Invoice.findOne({ domain, invoiceId: initialId })).settlement,
+    ).toBeUndefined();
+});

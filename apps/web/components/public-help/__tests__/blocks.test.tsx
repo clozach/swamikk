@@ -184,9 +184,9 @@ describe("P10 public contact slice", () => {
         ).toHaveAttribute("href", "/dashboard/membership");
         expect(
             screen.getByRole("link", {
-                name: "Your account and news preferences",
+                name: "Your contact, check-in and news preferences",
             }),
-        ).toHaveAttribute("href", "/dashboard/profile");
+        ).toHaveAttribute("href", "/dashboard/profile#contact-preferences");
     });
 });
 

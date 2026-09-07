@@ -74,7 +74,7 @@ export function refundStatus(status: string | null): RefundStatus {
     return status as RefundStatus;
 }
 export async function allChargeRefunds(
-    stripe: StripeCancellationClient,
+    stripe: Pick<StripeCancellationClient, "refunds">,
     chargeId: string,
 ) {
     const refunds: Stripe.Refund[] = [];
