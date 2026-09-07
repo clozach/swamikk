@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import * as PopoverPrimitive from "@radix-ui/react-popover";
+import { UnstyledPopover as PopoverPrimitive } from "@courselit/components-library/dialogs";
 
 import { cn } from "@/lib/shadcn-utils";
 

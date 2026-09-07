@@ -1,7 +1,10 @@
 "use client";
 
-// Share the library peer-qualified Radix managers with nested media dialogs.
+// Share the library peer-qualified Radix managers across nested layers.
 export { Cancel as UnstyledAlertDialogCancel } from "@radix-ui/react-alert-dialog";
+export * as UnstyledPopover from "@radix-ui/react-popover";
+export * as UnstyledSelect from "@radix-ui/react-select";
+export * as UnstyledDropdownMenu from "@radix-ui/react-dropdown-menu";
 export {
     Dialog,
     DialogPortal,

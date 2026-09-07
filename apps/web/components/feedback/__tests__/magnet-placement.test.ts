@@ -68,3 +68,75 @@ test("a large target still yields reachable controls; an absent target reserves 
     const unselected = placeMagnet(null, viewport, { width: 100, height: 52 });
     expect(unselected.top + 52).toBeLessThanOrEqual(350 - 60);
 });
+
+describe.each([106, 250])("%ipx public/admin tools", (width) => {
+    test.each([
+        {
+            viewport: { left: 0, top: 0, width: 260, height: 466.666687 },
+            help: { left: 200, top: 406.65625, right: 244, bottom: 450.65625 },
+        },
+        {
+            viewport: { left: 0, top: 0, width: 390, height: 260 },
+            help: { left: 330, top: 200, right: 374, bottom: 244 },
+        },
+        {
+            // The mobile purchase bar raises the actual help button by 96px.
+            viewport: { left: 40, top: 120, width: 260, height: 300 },
+            help: { left: 240, top: 264, right: 284, bottom: 308 },
+        },
+    ])(
+        "keep the help control usable for clamped and unselected tools %j",
+        ({ viewport, help }) => {
+            for (const target of [
+                { left: 0, top: 566, right: 390, bottom: 1460.203 },
+                { left: -100, top: -1000, right: 1500, bottom: -500 },
+                { left: 0, top: 0, right: 1500, bottom: 2000 },
+                null,
+            ]) {
+                const result = placeMagnet(
+                    target,
+                    viewport,
+                    { width, height: 58 },
+                    help,
+                );
+                const rect = {
+                    ...result,
+                    width: Math.min(width, result.maxWidth),
+                    height: 58,
+                };
+                expect(
+                    intersects(rect, {
+                        left: help.left - 8,
+                        top: help.top - 8,
+                        right: help.right + 8,
+                        bottom: help.bottom + 8,
+                    }),
+                ).toBe(false);
+                expect(rect.left).toBeGreaterThanOrEqual(viewport.left);
+                expect(rect.top).toBeGreaterThanOrEqual(viewport.top);
+                expect(rect.left + rect.width).toBeLessThanOrEqual(
+                    viewport.left + viewport.width,
+                );
+                expect(rect.top + rect.height).toBeLessThanOrEqual(
+                    viewport.top + viewport.height,
+                );
+            }
+        },
+    );
+});
+
+test("reserves only the help rectangle, leaving an adjacent bottom target edge available", () => {
+    const target = { left: 10, top: 300, right: 110, bottom: 340 };
+    const help = { left: 330, top: 340, right: 374, bottom: 384 };
+    const result = placeMagnet(
+        target,
+        { left: 0, top: 0, width: 390, height: 400 },
+        { width: 106, height: 44 },
+        help,
+    );
+    expect(result.top).toBe(348);
+    expect(intersects({ ...result, width: 106, height: 44 }, help)).toBe(false);
+    expect(intersects({ ...result, width: 106, height: 44 }, target)).toBe(
+        false,
+    );
+});

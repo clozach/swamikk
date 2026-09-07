@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import * as SelectPrimitive from "@radix-ui/react-select";
+import { UnstyledSelect as SelectPrimitive } from "@courselit/components-library/dialogs";
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
 
 import { cn } from "@/lib/shadcn-utils";

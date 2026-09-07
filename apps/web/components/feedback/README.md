@@ -3,9 +3,12 @@
 The question-mark control stays at the bottom-right of the visible viewport. The
 selection outline and compact action toolbar are body portals, so a transformed
 or clipped page ancestor cannot move them offscreen. Toolbar placement first
-keeps every control inside the visible viewport, then minimizes coverage of the
-selected target. Scrolling, resizing and visual-viewport panning update their
-positions without changing the selected target.
+keeps every control inside the visible viewport, keeps the question-mark button
+clear, then minimizes coverage of the selected target. It reserves that button's
+measured rectangle plus a small gap, including when checkout raises the button
+above its purchase bar. It does not reserve the whole bottom edge. Scrolling,
+resizing and visual-viewport panning update these positions without changing the
+selected target.
 
 On a narrow or short viewport, the comment composer fills the visible viewport, including
 when a software keyboard reduces its height. Close and Send occupy a separate
@@ -35,7 +38,10 @@ After a clean app rollout, inspect the following without submitting a comment:
 
 1. At 390px width, open the bottom-right question mark, choose a part of the page
    and scroll it near an edge. The compact tools remain reachable and the outline
-   stays on the selected part. Repeat after scrolling it outside the viewport.
+   stays on the selected part. Repeat after scrolling it outside the viewport,
+   with a zoomed visible area, and above the mobile purchase bar. Check that the
+   question-mark button itself receives a tap; an in-bounds rectangle alone does
+   not prove that another control is not covering it.
 2. Open Add a comment. Reduce visible height or open a phone keyboard. Close and
    Send remain visible above the scrolling body; close and reopen to check the
    unsent draft. Enter in the text adds a line rather than sending.
@@ -64,6 +70,22 @@ The failure was reproduced on native app `159701ba`. An isolated browser bundle
 using the actual built `FileUploadAlertDialog` reproduces it with all three old
 web wrappers and verifies caption typing, Cancel focus return and preservation
 of an unsent draft with the shared wrappers. That fixture selects no file and
-makes no network request. A clean deployment still needs step 4 above before
-claiming the native app fix. The page-primitives Sheet already resolves the
-library's focus manager and remains unchanged.
+makes no network request. Native app `78c62f91` also passed caption typing,
+Cancel focus return and preservation of the unsent draft without choosing a
+file. The page-primitives Sheet already resolves the library's focus manager
+and remains unchanged.
+
+DropdownMenu, Select and Popover retain their web wrappers and styles while
+using primitive namespaces from the same library export. The corresponding
+library versions keep their focus and dismissal managers shared with the parent
+Dialog or Sheet. The prior split also blocked popover typing and redirected
+menu/select keyboard interaction to the parent. Isolated browser checks cover
+actual wrappers, pointer and keyboard use, child Escape, focus return and the
+untouched parent draft. A running-app check remains a separate deployment step.
+
+Native `78c62f91` exposed a separate placement collision at a desktop-emulated
+pinch scale of 1.5: the selected-target tools covered the question-mark button
+even though both rectangles were inside the visible viewport. The placement
+regressions cover compact public and wider admin tools, short and panned
+viewports, and a purchase-bar-raised button. This correction must also pass the
+same native center hit check after rollout; it is not an actual-phone claim.
