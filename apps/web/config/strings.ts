@@ -23,6 +23,8 @@ export const responses = {
     media_id_cannot_be_null: "Media cannot be empty",
     item_not_found: "Item not found",
     drip_not_released: "This section is not yet released for you",
+    membership_ended_content:
+        "Your membership has ended. You can still open the content released to you during your membership from My content.",
     not_a_creator: "You do not have rights to perform this action",
     course_not_empty: "Delete all lessons before trying deleting the course",
     invalid_offset: "Invalid offset",

@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 import { Constants } from "@courselit/common-models";
 import CommunityModel from "@models/Community";
 import MembershipModel from "@models/Membership";
+import UserModel from "@models/User";
+import { AccountLifecycleModel } from "../../../../../../packages/common-logic/src/account-lifecycle/model";
 import { activateMembership } from "../helpers";
 
 jest.mock("@models/Community");
@@ -37,14 +39,22 @@ async function member(extra = {}) {
     });
 }
 
-beforeEach(() => {
+beforeEach(async () => {
     jest.clearAllMocks();
+    await UserModel.create({
+        domain: domain._id,
+        userId: "member",
+        email: "member@example.com",
+        active: true,
+    });
     (CommunityModel.findOne as jest.Mock).mockResolvedValue({
         autoAcceptMembers: true,
     });
 });
 afterEach(async () => {
     await MembershipModel.deleteMany({ domain: domain._id });
+    await UserModel.deleteMany({ domain: domain._id });
+    await AccountLifecycleModel.deleteMany({ domain: domain._id });
 });
 
 it("persists the activation date with ACTIVE and shares it with included products", async () => {

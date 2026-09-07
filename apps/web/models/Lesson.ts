@@ -38,6 +38,8 @@ export interface Lesson {
     publicationObservation?: LessonPublicationObservation;
     groupId: string;
     __v?: number;
+    createdAt?: Date;
+    updatedAt?: Date;
     contentChangeReceipt?: LessonContentChangeReceipt;
 }
 
@@ -77,7 +79,7 @@ const LessonSchema = new mongoose.Schema<Lesson>(
             default: undefined,
         },
     },
-    { optimisticConcurrency: true },
+    { optimisticConcurrency: true, timestamps: true },
 );
 
 export default mongoose.models.Lesson || mongoose.model("Lesson", LessonSchema);

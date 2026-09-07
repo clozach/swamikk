@@ -154,7 +154,9 @@ export const getLessonDetails = async (
                     ? responses.item_not_found
                     : access.reason === "membership-required"
                       ? responses.not_enrolled
-                      : responses.drip_not_released,
+                      : access.reason === "membership-ended"
+                        ? responses.membership_ended_content
+                        : responses.drip_not_released,
             );
     }
     const memberScope =
@@ -609,7 +611,9 @@ export const markLessonCompleted = async (
                 ? responses.not_enrolled
                 : access.reason === "unpublished"
                   ? responses.item_not_found
-                  : responses.drip_not_released,
+                  : access.reason === "membership-ended"
+                    ? responses.membership_ended_content
+                    : responses.drip_not_released,
         );
     }
 
@@ -826,7 +830,9 @@ export const evaluateLesson = async (
                 ? responses.not_enrolled
                 : access.reason === "unpublished"
                   ? responses.item_not_found
-                  : responses.drip_not_released,
+                  : access.reason === "membership-ended"
+                    ? responses.membership_ended_content
+                    : responses.drip_not_released,
         );
     }
 

@@ -102,3 +102,4 @@ export * from "./drip-change";
 export * from "./contact-preferences";
 export * from "./publication-observation";
 export * from "./page-content-change";
+export * from "./stripe-lifecycle";

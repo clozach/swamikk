@@ -150,6 +150,25 @@ beforeEach(async () => {
             ...item,
         })),
     );
+    // Fixture context already existed before its February cancellation cutoff.
+    await Course.updateMany(
+        { domain: domainId },
+        { $set: { updatedAt: new Date("2026-01-01") } },
+        { timestamps: false },
+    );
+    for (const lesson of await Lesson.find({ domain: domainId }))
+        await Lesson.updateOne(
+            { _id: lesson._id },
+            {
+                $set: {
+                    updatedAt:
+                        lesson.publication?.kind === "known"
+                            ? lesson.publication.firstPublishedAt
+                            : new Date("2026-01-01"),
+                },
+            },
+            { timestamps: false },
+        );
 });
 afterEach(async () => {
     jest.restoreAllMocks();
@@ -267,7 +286,13 @@ it("keeps an earned drip release date after the author switches the schedule off
     await recordDripRelease(key, ["released"], [], [], release);
     await Course.updateOne(
         { _id: course._id },
-        { $set: { "groups.1.drip.status": false } },
+        {
+            $set: {
+                "groups.1.drip.status": false,
+                updatedAt: new Date("2026-02-08"),
+            },
+        },
+        { timestamps: false },
     );
     expect((await prepareRetention(op())).snapshot.retainedLessonIds).toEqual([
         "drip",

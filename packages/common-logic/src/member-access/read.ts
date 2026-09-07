@@ -11,6 +11,7 @@ import {
     MembershipAccessModel,
 } from "./models";
 import { accessDate, accessPeriod } from "./keys";
+import { subscriptionEndCutoff } from "./subscription";
 
 export async function getMemberCourseReadScope({
     domainId,
@@ -36,13 +37,29 @@ export async function getMemberCourseReadScope({
         userId,
         entityId: courseId,
         entityType: Constants.MembershipEntityType.COURSE,
-        status: Constants.MembershipStatus.ACTIVE,
     }).lean();
-    const activeMemberships = new Set(
-        memberships.map(
-            (membership: any) =>
+    const providerCutoffs = new Map<string, Date>();
+    for (const membership of memberships) {
+        const cutoff = await subscriptionEndCutoff({ domainId, ...membership });
+        if (cutoff)
+            providerCutoffs.set(
                 `${membership.membershipId}:${membership.sessionId}`,
-        ),
+                cutoff,
+            );
+    }
+    const activeMemberships = new Set(
+        memberships
+            .filter(
+                (membership) =>
+                    membership.status === Constants.MembershipStatus.ACTIVE &&
+                    !providerCutoffs.has(
+                        `${membership.membershipId}:${membership.sessionId}`,
+                    ),
+            )
+            .map(
+                (membership: any) =>
+                    `${membership.membershipId}:${membership.sessionId}`,
+            ),
     );
     const periods = (
         await MembershipAccessModel.find({
@@ -57,6 +74,13 @@ export async function getMemberCourseReadScope({
         (item: any) => item.courseId === courseId,
     );
     for (const membership of memberships) {
+        if (
+            membership.status !== Constants.MembershipStatus.ACTIVE ||
+            providerCutoffs.has(
+                `${membership.membershipId}:${membership.sessionId}`,
+            )
+        )
+            continue;
         if (
             periods.some(
                 (period) =>
@@ -100,17 +124,40 @@ export async function getMemberCourseReadScope({
     const capped = new Set<string>();
     const activeGroups = new Set<string>();
     let active = false,
-        processing = false;
+        processing = Array.from(providerCutoffs).some(
+            ([key, cutoff]) =>
+                !periods.some(
+                    (period) =>
+                        `${period.membershipId}:${period.membershipSessionId}` ===
+                            key &&
+                        period.state.kind === "ended" &&
+                        new Date(period.state.snapshot.cutoff) <= cutoff,
+                ),
+        );
     let startedAt: Date | undefined, lastRelativeReleaseAt: Date | undefined;
     for (const period of periods) {
+        const cutoff =
+            providerCutoffs.get(
+                `${period.membershipId}:${period.membershipSessionId}`,
+            ) ||
+            (await subscriptionEndCutoff({
+                domainId,
+                userId,
+                membershipId: period.membershipId,
+                sessionId: period.membershipSessionId,
+            }));
+        if (cutoff && period.state.kind !== "ended") processing = true;
         const hasMembership = activeMemberships.has(
             `${period.membershipId}:${period.membershipSessionId}`,
         );
         if (period.state.kind === "ended" || period.state.kind === "prepared") {
+            // A newly verified earlier end must not expose an older, wider snapshot.
+            if (cutoff && new Date(period.state.snapshot.cutoff) > cutoff)
+                continue;
             period.state.snapshot.retainedLessonIds.forEach((id) =>
                 retained.add(id),
             );
-            if (period.state.kind === "prepared" && hasMembership) {
+            if (period.state.kind === "prepared" && hasMembership && !cutoff) {
                 processing = true;
                 period.state.snapshot.visibleLessonIds.forEach((id) =>
                     capped.add(id),
@@ -214,7 +261,7 @@ export async function getLessonAccess({
             };
         return {
             kind: "denied",
-            reason: scope.processing ? "access-processing" : "not-released",
+            reason: scope.processing ? "access-processing" : "membership-ended",
         };
     }
     if (scope.kind === "active") {

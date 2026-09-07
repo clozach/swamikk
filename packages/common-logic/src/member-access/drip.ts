@@ -13,6 +13,7 @@ import {
     MembershipAccessModel,
 } from "./models";
 import { accessAssert, MemberAccessError } from "./errors";
+import { subscriptionEndCutoff } from "./subscription";
 
 const MAX_CAS_ATTEMPTS = 8;
 
@@ -34,16 +35,21 @@ function publicPeriod(
 }
 
 async function membershipIsActive(period: InternalMembershipAccess) {
-    return Boolean(
-        await AccessMembershipModel.exists({
-            domain: period.domain,
-            userId: period.userId,
-            entityId: period.courseId,
-            entityType: Constants.MembershipEntityType.COURSE,
-            membershipId: period.membershipId,
-            sessionId: period.membershipSessionId,
-            status: Constants.MembershipStatus.ACTIVE,
-        }),
+    const membership = await AccessMembershipModel.findOne({
+        domain: period.domain,
+        userId: period.userId,
+        entityId: period.courseId,
+        entityType: Constants.MembershipEntityType.COURSE,
+        membershipId: period.membershipId,
+        sessionId: period.membershipSessionId,
+        status: Constants.MembershipStatus.ACTIVE,
+    }).lean();
+    return (
+        !!membership &&
+        !(await subscriptionEndCutoff({
+            domainId: String(period.domain),
+            ...membership,
+        }))
     );
 }
 

@@ -10,6 +10,7 @@ import { classifyObservedRelease } from "./observations";
 export async function snapshotRetention(
     period: MembershipAccessPeriod,
     cutoff: Date,
+    timing: "current" | "historical" = "current",
 ): Promise<RetentionSnapshot> {
     const course = await AccessCourseModel.findOne({
         domain: period.domainId,
@@ -52,6 +53,35 @@ export async function snapshotRetention(
             (!release || (releasedAt && releasedAt >= cutoff))
         )
             continue;
+        const courseContextBy = accessDate(course.updatedAt);
+        const lessonContextBy = accessDate(lesson.updatedAt);
+        // Also reject a native edit that overtakes an immediate member-confirm cutoff.
+        if (
+            (courseContextBy && courseContextBy > cutoff) ||
+            (lessonContextBy && lessonContextBy > cutoff)
+        ) {
+            snapshot.unknownReleaseCount++;
+            continue;
+        }
+        if (timing === "historical") {
+            // These are upper bounds on the CURRENT context, never publication
+            // or release dates. A later edit/reassignment cannot prove what was
+            // available at an earlier provider end. Withhold rather than invent.
+            if (!courseContextBy || !lessonContextBy) {
+                snapshot.unknownReleaseCount++;
+                continue;
+            }
+            if (
+                publication &&
+                start &&
+                publication < start &&
+                !releasedAt &&
+                (courseContextBy >= start || lessonContextBy >= start)
+            ) {
+                snapshot.unknownReleaseCount++;
+                continue;
+            }
+        }
         snapshot.visibleLessonIds.push(lesson.lessonId);
         if (!publication) {
             const evidence = classifyObservedRelease({

@@ -106,6 +106,7 @@ export type LessonAccessDecision =
           reason:
               | "unpublished"
               | "membership-required"
+              | "membership-ended"
               | "not-released"
               | "access-processing";
       };

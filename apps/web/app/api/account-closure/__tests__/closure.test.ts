@@ -8,6 +8,7 @@ import Account from "@/models/Account";
 import EmailDelivery from "@/models/EmailDelivery";
 import OngoingSequence from "@/models/OngoingSequence";
 import RefundRequest from "@/models/RefundRequest";
+import StripeSubscriptionBinding from "@/models/StripeSubscriptionBinding";
 import {
     MembershipModel,
     InvoiceModel,
@@ -475,4 +476,54 @@ it("keeps operator recovery of an existing attempt available after account erasu
         ),
     ).rejects.toMatchObject({ code: "account_closed" });
     expect(execute).toHaveBeenCalledTimes(1);
+});
+
+it("accepts only an exact terminal provider binding while retaining financial blockers", async () => {
+    const membershipId = randomUUID();
+    await MembershipModel.create({
+        domain: domain._id,
+        userId: user.userId,
+        membershipId,
+        sessionId: "current",
+        entityId: "course",
+        entityType: "course",
+        paymentPlanId: "plan",
+        status: "expired",
+        subscriptionId: "sub_external",
+    });
+    const binding = await StripeSubscriptionBinding.create({
+        domain: domain._id,
+        userId: user.userId,
+        subscriptionId: "sub_external",
+        mode: "test",
+        membershipId,
+        membershipSessionId: "previous",
+        paymentPlanId: "plan",
+        planType: "subscription",
+        originalInvoiceId: "order",
+        customerId: "customer",
+        state: {
+            kind: "ended",
+            cutoff: new Date(),
+            operationId: "external",
+            unknownReleaseCount: 0,
+        },
+    });
+    const blockers = async () =>
+        (await (await GET(request())).json()).blockers.map(
+            (item: any) => item.kind,
+        );
+    expect(await blockers()).toContain("membership");
+    await StripeSubscriptionBinding.updateOne(
+        { _id: binding._id },
+        { $set: { membershipSessionId: "current", "state.kind": "ending" } },
+    );
+    expect(await blockers()).toContain("membership");
+    await StripeSubscriptionBinding.updateOne(
+        { _id: binding._id },
+        { $set: { "state.kind": "ended" } },
+    );
+    expect(await blockers()).toEqual([]);
+    await refund({ state: "submitted", submittedAt: new Date() });
+    expect(await blockers()).toEqual(["financial"]);
 });

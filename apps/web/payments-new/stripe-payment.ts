@@ -99,16 +99,18 @@ export default class StripePayment implements Payment {
     }
 
     async verify(event: Stripe.Event, context?: WebhookContext) {
-        if (!event) {
-            return false;
-        }
+        const verified = await this.authenticate(context);
+        return !!verified && this.isPaymentEvent(verified);
+    }
+
+    async authenticate(context?: WebhookContext): Promise<Stripe.Event | null> {
         if (this.siteinfo.stripeWebhookSecret) {
             const signature = context?.headers.get("stripe-signature");
             if (!context || !signature) {
-                return false;
+                return null;
             }
             try {
-                event = this.stripe.webhooks.constructEvent(
+                return this.stripe.webhooks.constructEvent(
                     context.rawBody,
                     signature,
                     this.siteinfo.stripeWebhookSecret,
@@ -117,14 +119,17 @@ export default class StripePayment implements Payment {
                 await error(
                     `Stripe webhook signature verification failed: ${err.message}`,
                 );
-                return false;
+                return null;
             }
         } else {
             await warn(
                 "Stripe webhook secret is not configured; rejecting the webhook without changing payment or membership data.",
             );
-            return false;
+            return null;
         }
+    }
+
+    isPaymentEvent(event: Stripe.Event) {
         if (
             event.type === "checkout.session.completed" &&
             (event.data.object as any).payment_status === "paid"

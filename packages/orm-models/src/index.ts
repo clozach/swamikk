@@ -48,3 +48,4 @@ export * from "./models/member-access";
 export * from "./models/drip-change";
 
 export * from "./models/contact-preferences";
+export * from "./models/stripe-lifecycle";

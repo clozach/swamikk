@@ -23,7 +23,8 @@ import mongoose from "mongoose";
 import MembershipModel from "@models/Membership";
 import { runPostMembershipTasks } from "../users/logic";
 import ActivityModel from "@models/Activity";
-import { createHash } from "crypto";
+import { includedMembershipId } from "../../../../packages/common-logic/src/member-access/included-membership-id";
+import { rememberIncludedSubscriptionTarget } from "../../../../packages/common-logic/src/member-access/subscription";
 const { MembershipEntityType: membershipEntityType } = Constants;
 const { permissions } = constants;
 
@@ -451,8 +452,27 @@ export async function addIncludedProductsMemberships({
         // membershipId index to converge concurrent retries without a migration.
         let membership = await MembershipModel.findOne(key);
         let created = false;
+        const membershipId =
+            membership?.membershipId ||
+            includedMembershipId({
+                domainId: String(domain),
+                userId,
+                courseId: course.courseId,
+                paymentPlanId: paymentPlan.planId,
+                sessionId,
+            });
+        if (
+            !(await rememberIncludedSubscriptionTarget({
+                domainId: String(domain),
+                userId,
+                sessionId,
+                paymentPlanId: paymentPlan.planId,
+                membershipId,
+                isIncludedInPlan: true,
+            }))
+        )
+            throw new Error("The provider subscription has ended.");
         if (!membership) {
-            const membershipId = `included-${createHash("sha256").update(JSON.stringify(key)).digest("hex")}`;
             await MembershipModel.init();
             try {
                 const result = await MembershipModel.updateOne(

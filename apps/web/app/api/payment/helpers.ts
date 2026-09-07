@@ -8,8 +8,24 @@ import {
 import CommunityModel from "@models/Community";
 import MembershipModel from "@models/Membership";
 import mongoose from "mongoose";
+import { withAccountWrite } from "../../../../../packages/common-logic/src/account-lifecycle/gate";
 
 export async function activateMembership(
+    domain: Domain & { _id: mongoose.Types.ObjectId },
+    membership: Membership,
+    paymentPlan: PaymentPlan | null,
+) {
+    return withAccountWrite(
+        {
+            domainId: String(domain._id),
+            userId: membership.userId,
+            purpose: "payment-activation",
+        },
+        () => applyMembershipActivation(domain, membership, paymentPlan),
+    );
+}
+
+async function applyMembershipActivation(
     domain: Domain & { _id: mongoose.Types.ObjectId },
     membership: Membership,
     paymentPlan: PaymentPlan | null,
@@ -76,7 +92,7 @@ export async function activateMembership(
             });
             if (!winner)
                 throw new Error("The membership changed during activation.");
-            return activateMembership(domain, winner, paymentPlan);
+            return applyMembershipActivation(domain, winner, paymentPlan);
         }
     }
     Object.assign(membership, {

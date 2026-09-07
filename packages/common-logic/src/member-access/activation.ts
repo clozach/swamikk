@@ -12,6 +12,7 @@ import {
 import { accessAssert } from "./errors";
 import { accessDate, accessKey, accessPeriod } from "./keys";
 import { withAccountWrite } from "../account-lifecycle/gate";
+import { subscriptionEndCutoff } from "./subscription";
 
 type EnsureMembershipAccessInput = {
     domainId: string;
@@ -58,6 +59,11 @@ async function ensureAccessPeriod({
         current,
         "not_found",
         "An active matching course membership is required.",
+    );
+    accessAssert(
+        !(await subscriptionEndCutoff({ domainId, ...current })),
+        "conflict",
+        "The provider subscription has ended.",
     );
     const activation = current.accessActivation;
     const recordedStart =

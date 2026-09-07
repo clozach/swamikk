@@ -142,6 +142,17 @@ beforeEach(async () => {
             firstPublishedAt: new Date("2026-02-05"),
         },
     });
+    // The dated lesson/course fixture existed before the historical cancellation.
+    await Course.updateMany(
+        { domain: domain._id },
+        { $set: { updatedAt: new Date("2026-01-01") } },
+        { timestamps: false },
+    );
+    await Lesson.updateMany(
+        { domain: domain._id },
+        { $set: { updatedAt: new Date("2026-02-05") } },
+        { timestamps: false },
+    );
     jest.mocked(auth.api.getSession).mockResolvedValue({
         user: { email: member.email },
         session: { id: "auth-session" },

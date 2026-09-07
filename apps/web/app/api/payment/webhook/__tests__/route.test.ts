@@ -20,6 +20,18 @@ jest.mock("@models/PaymentPlan");
 jest.mock("@models/Invoice");
 jest.mock("@/payments-new");
 jest.mock("../../helpers");
+jest.mock(
+    "../../../../../../../packages/common-logic/src/account-lifecycle/gate",
+    () => ({
+        ...jest.requireActual(
+            "../../../../../../../packages/common-logic/src/account-lifecycle/gate",
+        ),
+        withAccountWrite: jest.fn(
+            async (_key: unknown, operation: () => Promise<unknown>) =>
+                operation(),
+        ),
+    }),
+);
 
 const { activateMembership } = jest.requireMock("../../helpers");
 

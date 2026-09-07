@@ -14,6 +14,7 @@ import {
     updateLesson,
 } from "../logic";
 import { responses } from "@/config/strings";
+import { MembershipAccessModel } from "../../../../../packages/common-logic/src/member-access/models";
 import { sealMedia } from "@/services/medialit";
 import {
     lessonFingerprint,
@@ -389,6 +390,51 @@ describe("Lesson visibility and progress", () => {
                 course.courseId,
             ),
         ).rejects.toThrow(responses.item_not_found);
+    });
+
+    it("explains ended membership without promising that denied content will release later", async () => {
+        const membership = await MembershipModel.findOne({
+            domain: testDomain._id,
+            userId: student.userId,
+            entityId: course.courseId,
+        });
+        const period = await MembershipAccessModel.create({
+            domain: testDomain._id,
+            id: id("ended-copy"),
+            userId: student.userId,
+            courseId: course.courseId,
+            membershipId: membership.membershipId,
+            membershipSessionId: membership.sessionId,
+            start: { kind: "legacy-unknown" },
+            state: {
+                kind: "ended",
+                operationId: "copy-test",
+                endedAt: new Date(),
+                snapshot: {
+                    cutoff: new Date(),
+                    retainedLessonIds: [],
+                    visibleLessonIds: [],
+                    unknownReleaseCount: 0,
+                },
+            },
+            groupReleases: [],
+            deliveries: [],
+            reopenedOperations: [],
+            revision: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        try {
+            await expect(
+                getLessonDetails(
+                    publishedLessonOne.lessonId,
+                    studentCtx,
+                    course.courseId,
+                ),
+            ).rejects.toThrow(responses.membership_ended_content);
+        } finally {
+            await MembershipAccessModel.deleteOne({ _id: period._id });
+        }
     });
 
     it("seals media before saving media-backed lessons on create", async () => {

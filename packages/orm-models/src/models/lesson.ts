@@ -30,6 +30,8 @@ export interface InternalLesson {
     publicationObservation?: LessonPublicationObservation;
     groupId: string;
     __v?: number;
+    createdAt?: Date;
+    updatedAt?: Date;
     contentChangeReceipt?: LessonContentChangeReceipt;
 }
 
@@ -69,5 +71,5 @@ export const LessonSchema = new mongoose.Schema<InternalLesson>(
             default: undefined,
         },
     },
-    { optimisticConcurrency: true },
+    { optimisticConcurrency: true, timestamps: true },
 );

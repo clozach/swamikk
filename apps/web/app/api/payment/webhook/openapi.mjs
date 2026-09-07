@@ -11,7 +11,7 @@ export const paymentWebhookOpenApi = {
                 tags: ["Payment callbacks"],
                 summary: "Reconcile a signed payment notification",
                 description:
-                    "Stripe requires a configured signing secret and validates the unmodified request body. Completed paid checkouts and paid renewals settle one tenant-scoped invoice per provider object. Old and current Stripe invoice metadata shapes are accepted. Cancellation/refund notifications are not yet handled by this route.",
+                    "Stripe verifies the unchanged UTF-8 body (maximum 1 MiB) with the tenant signing secret. Paid checkout/renewal and subscription.updated/deleted callbacks reconcile exact tenant, mode, provider and membership-session bindings. Actual subscription ending caps and freezes retained access; scheduled cancellation and attention states do not imply ending. Completed event IDs deduplicate; unsupported signed events are ignored. Refund callbacks are not processed by this subscription checkpoint.",
                 security: [],
                 parameters: [
                     {
@@ -39,9 +39,13 @@ export const paymentWebhookOpenApi = {
                         description:
                             "Payment recorded and membership reconciled, or recorded without activating an inactive subscription.",
                     },
+                    202: {
+                        description:
+                            "Verified event retained for review because correlation or account state is unavailable; no guessed access activation.",
+                    },
                     400: {
                         description:
-                            "Invalid signature, unpaid/unsupported notification, malformed data or unsuccessful reconciliation; no success acknowledged.",
+                            "Invalid signature, mode mismatch, malformed or oversized body.",
                     },
                     404: {
                         description: "Tenant or matching membership not found.",
@@ -52,7 +56,7 @@ export const paymentWebhookOpenApi = {
                     },
                     503: {
                         description:
-                            "Stripe signing secret is missing; no payment data changed.",
+                            "Signing configuration unavailable or reconciliation is retryable/in progress. Replay the signed event; do not create another payment.",
                     },
                 },
             },

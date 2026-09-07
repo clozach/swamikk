@@ -9,6 +9,7 @@ import {
 } from "@/services/member-billing/models";
 import { AccountLifecycleModel } from "../../../../packages/common-logic/src/account-lifecycle/model";
 import { requireCondition } from "@/services/content-changes/errors";
+import { hasConfirmedSubscriptionEnd } from "@/payments-new/stripe-lifecycle/subscription";
 import { Constants } from "@courselit/common-models";
 import { internal } from "@/config/strings";
 
@@ -29,6 +30,23 @@ export async function accountClosureReview(
         AccountLifecycleModel.findOne(scope).lean(),
     ]);
     const blockers: ClosureBlocker[] = [];
+    const externalEnds = new Set(
+        (
+            await Promise.all(
+                memberships.map(async (member) =>
+                    member.subscriptionId &&
+                    (await hasConfirmedSubscriptionEnd(
+                        String(ctx.subdomain._id),
+                        member.membershipId,
+                        member.sessionId,
+                        member.subscriptionId,
+                    ))
+                        ? `${member.membershipId}:${member.sessionId}`
+                        : null,
+                ),
+            )
+        ).filter(Boolean),
+    );
     const pendingInvoices = await InvoiceModel.find({
         domain: ctx.subdomain._id,
         membershipId: { $in: memberships.map((item) => item.membershipId) },
@@ -70,6 +88,9 @@ export async function accountClosureReview(
         memberships.some(
             (member) =>
                 member.subscriptionId &&
+                !externalEnds.has(
+                    `${member.membershipId}:${member.sessionId}`,
+                ) &&
                 !cancellations.some(
                     (operation) =>
                         operation.membershipId === member.membershipId &&
