@@ -146,6 +146,50 @@ test.each(["inactive", "active"] as const)(
     },
 );
 
+test.each([
+    { name: "Member", expected: "Viewing as Member (member@example.com)" },
+    { name: "member@example.com", expected: "Viewing as member@example.com" },
+])(
+    "shows the subject email only once when the display name is $name",
+    async ({ name, expected }) => {
+        if (active.kind !== "active") throw new Error("Expected active view");
+        active.subject.name = name;
+        mockFetch.mockResolvedValueOnce(response(active));
+        mount();
+        await screen.findByText("Published member lesson");
+
+        const banner = screen.getByRole("complementary", { name: copy.title });
+        expect(banner).toHaveTextContent(expected);
+        expect(banner.textContent?.match(/member@example\.com/g)).toHaveLength(
+            1,
+        );
+        expect(privateRendered).not.toHaveBeenCalled();
+    },
+);
+
+test("allows My content navigation while preserving the private-data mask", async () => {
+    mockFetch.mockResolvedValueOnce(response(active));
+    mount(active, "/dashboard/my-content");
+    const target = await screen.findByText("Follow this link");
+    let blockedByMimic: boolean | undefined;
+    document.addEventListener(
+        "click",
+        (event) => {
+            blockedByMimic = event.defaultPrevented;
+            // Prevent jsdom navigation after observing the provider's capture handler.
+            event.preventDefault();
+        },
+        { once: true },
+    );
+
+    fireEvent.click(target);
+
+    expect(blockedByMimic).toBe(false);
+    expect(screen.queryByText(copy.outsideHelp)).not.toBeInTheDocument();
+    expect(screen.getByText(copy.readOnly)).toBeInTheDocument();
+    expect(privateRendered).not.toHaveBeenCalled();
+});
+
 test("an external arrival with inactive server state redirects to the verified subject without mounting an unlabelled child", async () => {
     const pending = deferredResponse();
     mockFetch.mockReturnValueOnce(pending.promise);

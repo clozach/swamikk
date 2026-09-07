@@ -1,3 +1,5 @@
+import type { FeedbackNotification } from "./feedback-mailbox";
+
 export type FeedbackTarget =
     | { kind: "lesson"; lessonId: string; field: "title" | "content" }
     | { kind: "page"; path: string; componentId: string; label?: string };
@@ -19,6 +21,8 @@ export interface ContextualFeedback {
     actor: FeedbackActor;
     photoMediaIds: string[];
     state: "open" | "closed";
+    /** Operational delivery details are returned to administrators only. */
+    notification?: FeedbackNotification;
     createdAt: string;
     updatedAt: string;
 }

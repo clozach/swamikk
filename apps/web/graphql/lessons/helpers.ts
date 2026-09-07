@@ -131,13 +131,20 @@ export const getPrevNextCursor = async (
     domainId: mongoose.Types.ObjectId,
     lessonId?: string,
     publishedOnly: boolean = false,
+    allowedLessonIds?: string[],
 ) => {
-    const lessonsInSequentialOrder = await getGroupedLessons(
+    let lessonsInSequentialOrder = await getGroupedLessons(
         courseId,
         domainId,
         publishedOnly,
         { lessonId: 1, groupId: 1 },
     );
+    if (allowedLessonIds) {
+        const allowed = new Set(allowedLessonIds);
+        lessonsInSequentialOrder = lessonsInSequentialOrder.filter((lesson) =>
+            allowed.has(lesson.lessonId),
+        );
+    }
     const indexOfCurrentLesson = lessonId
         ? lessonsInSequentialOrder.findIndex(
               (item) => item.lessonId === lessonId,

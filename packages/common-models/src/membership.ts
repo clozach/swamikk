@@ -22,6 +22,7 @@ export interface Membership {
     joiningReason?: string;
     rejectionReason?: string;
     sessionId: string;
+    accessActivation?: { sessionId: string; startedAt: Date };
     createdAt?: Date;
     updatedAt?: Date;
     isIncludedInPlan?: boolean;

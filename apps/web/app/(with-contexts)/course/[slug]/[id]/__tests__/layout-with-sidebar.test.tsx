@@ -1226,3 +1226,49 @@ describe("Course viewer layout", () => {
         ).toBeInTheDocument();
     });
 });
+
+it("unlocks only retained lesson IDs within an otherwise locked rejoin group", () => {
+    const { Lock, Circle } = require("@courselit/icons");
+    const course = {
+        courseId: "retained-course",
+        slug: "retained",
+        groups: [
+            {
+                id: "locked-group",
+                name: "Later",
+                drip: { status: true, type: "RELATIVE", delayInMillis: 100000 },
+                lessons: [
+                    {
+                        lessonId: "kept",
+                        title: "Kept",
+                        requiresEnrollment: true,
+                    },
+                    {
+                        lessonId: "future",
+                        title: "Future",
+                        requiresEnrollment: true,
+                    },
+                ],
+            },
+        ],
+    } as any;
+    const profile = {
+        userId: "member",
+        purchases: [
+            {
+                courseId: course.courseId,
+                accessibleGroups: [],
+                retainedLessonIds: ["kept"],
+                completedLessons: [],
+            },
+        ],
+    } as any;
+    const items = generateSideBarItems(
+        course,
+        profile,
+        "/course/retained/retained-course",
+    );
+    const lessons = items.find((item) => item.title === "Later")!.items!;
+    expect((lessons[0].icon as any).type).toBe(Circle);
+    expect((lessons[1].icon as any).type).toBe(Lock);
+});

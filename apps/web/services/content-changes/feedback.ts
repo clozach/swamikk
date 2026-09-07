@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import { initialFeedbackNotification } from "@courselit/common-logic";
 import type {
     ContextualFeedback,
     FeedbackInput,
@@ -15,7 +16,10 @@ import { feedbackInputSchema } from "./validation";
 import { cursorFilter } from "./pagination";
 import { formatFeedbackPrompt } from "@/lib/feedback-prompt";
 
-export function feedbackView(record: InternalFeedback): ContextualFeedback {
+export function feedbackView(
+    record: InternalFeedback,
+    admin = false,
+): ContextualFeedback {
     return {
         id: record.id,
         text: record.text,
@@ -23,6 +27,9 @@ export function feedbackView(record: InternalFeedback): ContextualFeedback {
         actor: record.actor,
         photoMediaIds: record.photoMediaIds,
         state: record.state,
+        ...(admin && record.notification
+            ? { notification: record.notification }
+            : {}),
         createdAt: record.createdAt.toISOString(),
         updatedAt: record.updatedAt.toISOString(),
     };
@@ -82,8 +89,11 @@ export async function createFeedback(
             ? { kind: admin ? "admin" : "member", userId: ctx.user.userId }
             : { kind: "visitor" },
         state: "open",
+        notification: initialFeedbackNotification(
+            ctx.subdomain.settings?.feedbackMailbox,
+        ),
     });
-    return feedbackView(record);
+    return feedbackView(record, admin);
 }
 
 export async function listFeedback(ctx: GQLContext, before?: string) {
@@ -100,7 +110,7 @@ export async function listFeedback(ctx: GQLContext, before?: string) {
     })
         .sort({ createdAt: -1, id: 1 })
         .limit(50);
-    return records.map(feedbackView);
+    return records.map((record) => feedbackView(record, isFeedbackAdmin(ctx)));
 }
 
 export async function feedbackDetail(
@@ -114,7 +124,7 @@ export async function feedbackDetail(
         ...(isFeedbackAdmin(ctx) ? {} : { "actor.userId": ctx.user.userId }),
     });
     requireCondition(record, "not_found", "Feedback not found.", 404);
-    const feedback = feedbackView(record);
+    const feedback = feedbackView(record, isFeedbackAdmin(ctx));
     return {
         feedback,
         ...(isFeedbackAdmin(ctx)
@@ -146,7 +156,7 @@ export async function setFeedbackState(
         { new: true },
     );
     requireCondition(record, "not_found", "Feedback not found.", 404);
-    return feedbackView(record);
+    return feedbackView(record, true);
 }
 
 export async function deleteFeedback(id: string, ctx: GQLContext) {

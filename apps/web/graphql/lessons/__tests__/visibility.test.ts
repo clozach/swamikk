@@ -3,6 +3,7 @@ import DomainModel from "@/models/Domain";
 import UserModel from "@/models/User";
 import CourseModel from "@/models/Course";
 import LessonModel from "@/models/Lesson";
+import MembershipModel from "@/models/Membership";
 import ActivityModel from "@/models/Activity";
 import {
     createLesson,
@@ -303,6 +304,16 @@ describe("Lesson visibility and progress", () => {
         student.markModified("purchases");
         await student.save();
 
+        for (const product of [course, quizCourse])
+            await MembershipModel.create({
+                domain: testDomain._id,
+                userId: student.userId,
+                membershipId: id(`membership-${product.courseId}`),
+                entityId: product.courseId,
+                entityType: Constants.MembershipEntityType.COURSE,
+                paymentPlanId: "free",
+                status: Constants.MembershipStatus.ACTIVE,
+            });
         studentCtx = {
             user: student,
             subdomain: testDomain,
@@ -330,6 +341,7 @@ describe("Lesson visibility and progress", () => {
     });
 
     afterAll(async () => {
+        await MembershipModel.deleteMany({ domain: testDomain._id });
         await ActivityModel.deleteMany({ domain: testDomain._id });
         await LessonModel.deleteMany({ domain: testDomain._id });
         await CourseModel.deleteMany({ domain: testDomain._id });
@@ -702,5 +714,63 @@ describe("Lesson visibility and progress", () => {
         } finally {
             save.mockRestore();
         }
+    });
+    it("timestamps native first publication once while legacy republishing remains undated", async () => {
+        const created = await createLesson(
+            {
+                courseId: course.courseId,
+                groupId,
+                title: "New dated lesson",
+                type: "text",
+                content: JSON.stringify({ type: "doc", content: [] }),
+                published: false,
+                requiresEnrollment: true,
+            } as any,
+            ownerManagerCtx,
+        );
+        await LessonModel.updateOne(
+            { _id: created._id },
+            { lessonId: id("first-publication") },
+        );
+        created.lessonId = id("first-publication");
+        expect(created.publication).toEqual({ kind: "never" });
+        const before = Date.now();
+        const published = await updateLesson(
+            { id: created.lessonId, published: true } as any,
+            ownerManagerCtx,
+        );
+        if (published.publication?.kind !== "known")
+            throw new Error("Expected first publication date");
+        expect(
+            published.publication.firstPublishedAt.getTime(),
+        ).toBeGreaterThanOrEqual(before);
+        const first = published.publication.firstPublishedAt;
+        await updateLesson(
+            { id: created.lessonId, published: false } as any,
+            ownerManagerCtx,
+        );
+        const republished = await updateLesson(
+            { id: created.lessonId, published: true } as any,
+            ownerManagerCtx,
+        );
+        expect(republished.publication).toMatchObject({
+            kind: "known",
+            firstPublishedAt: first,
+        });
+        await updateLesson(
+            { id: unpublishedLesson.lessonId, published: true } as any,
+            manageAnyAdminCtx,
+        );
+        expect(
+            (
+                await LessonModel.findOne({
+                    lessonId: unpublishedLesson.lessonId,
+                })
+            ).publication,
+        ).toBeUndefined();
+        await updateLesson(
+            { id: unpublishedLesson.lessonId, published: false } as any,
+            manageAnyAdminCtx,
+        );
     });
 });

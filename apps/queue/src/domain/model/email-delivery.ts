@@ -1,5 +1,7 @@
-import mongoose from "mongoose";
+import mongoose, { Model } from "mongoose";
 import { EmailDeliverySchema } from "@courselit/orm-models";
-
-export default mongoose.models.EmailDelivery ||
-    mongoose.model("EmailDelivery", EmailDeliverySchema);
+type EmailDeliveryRecord = mongoose.InferSchemaType<typeof EmailDeliverySchema>;
+const EmailDeliveryModel =
+    (mongoose.models.EmailDelivery as Model<EmailDeliveryRecord>) ||
+    mongoose.model<EmailDeliveryRecord>("EmailDelivery", EmailDeliverySchema);
+export default EmailDeliveryModel;

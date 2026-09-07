@@ -89,3 +89,11 @@ export * from "./content-change";
 export * from "./media-player";
 export * from "./media-player-copy";
 export * from "./member-mimic";
+export type {
+    FeedbackMailboxSettings,
+    FeedbackNotification,
+    FeedbackMailResult,
+    FeedbackMailboxView,
+} from "./feedback-mailbox";
+
+export * from "./member-access";

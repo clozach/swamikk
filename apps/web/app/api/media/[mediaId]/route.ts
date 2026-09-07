@@ -8,8 +8,7 @@ import { auth } from "@/auth";
 import DomainModel, { Domain } from "@models/Domain";
 import UserModel from "@models/User";
 import LessonModel from "@models/Lesson";
-import { isEnrolled } from "@/ui-lib/utils";
-import { isPartOfDripGroup } from "@/graphql/lessons/helpers";
+import { getLessonAccess } from "@/services/member-access";
 
 const UPSTREAM_FETCH_TIMEOUT_MS = 30_000;
 
@@ -103,10 +102,6 @@ export async function GET(
             return mediaNotFound();
         }
 
-        if (media.access === Constants.MediaAccessType.PUBLIC) {
-            return await streamAsAttachment(media);
-        }
-
         // PRIVATE media: authorization comes only from domain-scoped Mongo
         // state (the medialit record above is a global lookup — it supplies
         // the file URL and filename, never the authorization decision).
@@ -116,6 +111,18 @@ export async function GET(
         if (!domain) {
             return mediaNotFound();
         }
+
+        const lessons = await LessonModel.find({
+            "media.mediaId": mediaId,
+            domain: domain._id,
+        });
+        // Standalone public assets remain public; lesson-backed downloads always
+        // follow the member's current or retained entitlement, even for a public URL.
+        if (
+            !lessons.length &&
+            media.access === Constants.MediaAccessType.PUBLIC
+        )
+            return await streamAsAttachment(media);
 
         const session = await auth.api.getSession({
             headers: request.headers,
@@ -143,32 +150,20 @@ export async function GET(
         // downloadable flag and published state are enforced, enrollment is
         // required UNCONDITIONALLY (requiresEnrollment only governs the
         // in-app viewer), and dripped groups stay locked until released.
-        const lessons = await LessonModel.find({
-            "media.mediaId": mediaId,
-            domain: domain._id,
-        });
-
         let authorized = false;
         for (const lesson of lessons) {
             try {
                 if (!lesson.downloadable || !lesson.published) {
                     continue;
                 }
-                if (!isEnrolled(lesson.courseId, user)) {
-                    continue;
-                }
-                if (await isPartOfDripGroup(lesson, domain._id)) {
-                    const progress = user.purchases?.find(
-                        (purchase: { courseId: string }) =>
-                            purchase.courseId === lesson.courseId,
-                    );
-                    if (
-                        !progress ||
-                        progress.accessibleGroups.indexOf(lesson.groupId) === -1
-                    ) {
-                        continue;
-                    }
-                }
+                const access = await getLessonAccess({
+                    domainId: String(domain._id),
+                    userId: user.userId,
+                    courseId: lesson.courseId,
+                    lessonId: lesson.lessonId,
+                    requireMembership: true,
+                });
+                if (access.kind !== "allowed") continue;
                 authorized = true;
                 break;
             } catch {

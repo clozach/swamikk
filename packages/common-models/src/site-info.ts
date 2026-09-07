@@ -1,9 +1,12 @@
+import type { FeedbackMailboxSettings } from "./feedback-mailbox";
 import { LoginProvider } from "./login-provider";
 import { Media } from "./media";
 import { PaymentMethod } from "./payment-method";
 import { SocialHeroConfig, SocialHeroPoolCache } from "./social-hero";
 
 export default interface SiteInfo {
+    /** Private operational configuration, excluded from public site info. */
+    feedbackMailbox?: FeedbackMailboxSettings;
     title?: string;
     subtitle?: string;
     logo?: Partial<Media>;

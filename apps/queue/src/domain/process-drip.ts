@@ -3,9 +3,18 @@ import UserModel from "./model/user";
 import { Liquid } from "liquidjs";
 import { getDomain, getMemberships } from "./queries";
 import { Constants } from "@courselit/common-models";
-import { InternalCourse, InternalUser } from "@courselit/orm-models";
+import { ensureMembershipAccess } from "../../../../packages/common-logic/src/member-access/lifecycle";
+import {
+    recordDripRelease,
+    getPendingDripDeliveries,
+    projectDripAccess,
+} from "../../../../packages/common-logic/src/member-access/drip";
+import {
+    InternalCourse,
+    InternalMembership,
+    InternalUser,
+} from "@courselit/orm-models";
 import { getEmailFrom } from "@courselit/utils";
-import { FilterQuery, UpdateQuery } from "mongoose";
 import { renderEmailToHtml } from "@courselit/email-editor";
 import { getSiteUrl } from "../utils/get-site-url";
 import { getUnsubLink } from "../utils/get-unsub-link";
@@ -117,194 +126,177 @@ export function getNewAccessibleGroupIdsForPurchase({
         ...exactDateAccessibleGroupIds,
         ...relativeAccessibleGroupIds,
     ]);
-    return [...allAccessibleGroupIds].filter(
+    return Array.from(allAccessibleGroupIds).filter(
         (id) => !accessibleGroups.includes(id),
     );
+}
+
+/** One pass is separately callable for recovery and cancellation-boundary tests. */
+export async function processDripPass(now = new Date()) {
+    const courses = (await CourseModel.find({
+        "groups.drip": { $exists: true },
+        published: true,
+    }).lean()) as unknown as InternalCourse[];
+    for (const course of courses) {
+        try {
+            await processCourseDrip(course, now);
+        } catch (error) {
+            captureError({
+                error,
+                source: "processDrip.course",
+                domainId: getDomainId(course.domain),
+                context: { course_id: course.courseId },
+            });
+        }
+    }
+}
+
+async function processCourseDrip(course: InternalCourse, now: Date) {
+    const memberships = await getMemberships(
+        course.courseId,
+        Constants.MembershipEntityType.COURSE,
+        course.domain,
+    );
+    for (const membership of memberships) {
+        try {
+            await processMembershipDrip(course, membership, now);
+        } catch (error) {
+            captureError({
+                error,
+                source: "processDrip.membership",
+                domainId: getDomainId(course.domain),
+                context: {
+                    course_id: course.courseId,
+                    membership_id: membership.membershipId,
+                },
+            });
+        }
+    }
+}
+
+async function processMembershipDrip(
+    course: InternalCourse,
+    membership: InternalMembership,
+    now: Date,
+) {
+    const domainId = String(course.domain);
+    const user = (await UserModel.findOne({
+        domain: course.domain,
+        userId: membership.userId,
+        active: true,
+    }).lean()) as unknown as InternalUser | null;
+    if (!user) return;
+    const period = await ensureMembershipAccess({ domainId, membership });
+    if (period.state.kind !== "active") return;
+    const originalPurchase = user.purchases.find(
+        (purchase) => purchase.courseId === course.courseId,
+    );
+    const scheduledPurchase = {
+        accessibleGroups: period.groupReleases.map(
+            (release) => release.groupId,
+        ),
+        createdAt:
+            period.start.kind === "recorded"
+                ? period.start.at
+                : originalPurchase?.createdAt,
+        lastDripAt: period.lastRelativeReleaseAt,
+    } as UserPurchase;
+    const groupIds = getNewAccessibleGroupIdsForPurchase({
+        course,
+        userProgressInCourse: scheduledPurchase,
+        nowUTC: now.getTime(),
+    });
+    const relativeIds = course.groups
+        .filter(
+            (group) =>
+                group.drip?.status && group.drip.type === "relative-date",
+        )
+        .map(toGroupId)
+        .filter((id): id is string => Boolean(id));
+    const emailIds = course.groups
+        .filter(
+            (group) => group.drip?.email?.content && group.drip?.email?.subject,
+        )
+        .map(toGroupId)
+        .filter((id): id is string => Boolean(id));
+    if (groupIds.length) {
+        const committed = await recordDripRelease(
+            period,
+            groupIds,
+            relativeIds,
+            emailIds,
+            now,
+            period.revision,
+        );
+        if (!committed) return;
+        logInfo(
+            `${groupIds.length} Sections unlocked for ${user.email} in course ${course.title}`,
+            {
+                source: "processDrip.unlock",
+                domainId,
+                course_id: course.courseId,
+                user_id: user.userId,
+                unlocked_group_ids: groupIds.join(","),
+            },
+        );
+    }
+    // Recover the compatibility cache and outbox even after a grant-only crash.
+    await projectDripAccess(period);
+    const pending = await getPendingDripDeliveries(domainId, period.id);
+    if (!pending.length) return;
+    const [domain, creator] = await Promise.all([
+        getDomain(course.domain),
+        UserModel.findOne({
+            domain: course.domain,
+            userId: course.creatorId,
+        }).lean(),
+    ]);
+    if (!domain) return;
+    const templatePayload = {
+        subscriber: { email: user.email, name: user.name, tags: user.tags },
+        product: {
+            title: course.title,
+            url: `${getSiteUrl(domain)}/course/${course.slug}/${course.courseId}`,
+        },
+        address: domain.settings.mailingAddress,
+        unsubscribe_link: getUnsubLink(domain, user.unsubscribeToken),
+    };
+    for (const delivery of pending) {
+        const group = course.groups.find(
+            (candidate) => toGroupId(candidate) === delivery.groupId,
+        );
+        const email = group?.drip?.email;
+        if (!email?.content || !email.subject) continue;
+        const content = await liquidEngine.parseAndRender(
+            await renderEmailToHtml({ email: email.content }),
+            templatePayload,
+        );
+        await addMailJob({
+            to: [user.email],
+            subject: email.subject,
+            body: content,
+            from: getEmailFrom({
+                name: creator?.name || creator?.email || "",
+                email: process.env.EMAIL_FROM || "",
+            }),
+            domainId,
+            drip: { periodId: period.id, deliveryId: delivery.id },
+        });
+    }
 }
 
 export async function processDrip() {
     // eslint-disable-next-line no-constant-condition
     while (true) {
         try {
-            // eslint-disable-next-line no-console
-            console.log(
-                `Starting process of drips at ${new Date().toDateString()}`,
-            );
-
-            const courseQuery: FilterQuery<InternalCourse> = {
-                "groups.drip": { $exists: true },
-            };
-            // @ts-ignore - Mongoose type compatibility issue
-            const courses = (await CourseModel.find(
-                courseQuery,
-            ).lean()) as unknown as InternalCourse[];
-
-            const nowUTC = new Date().getTime();
-
-            for (const course of courses) {
-                try {
-                    const creatorQuery: FilterQuery<InternalUser> = {
-                        userId: course.creatorId,
-                    };
-                    // @ts-ignore - Mongoose type compatibility issue
-                    const creator = (await UserModel.findOne(
-                        creatorQuery,
-                    ).lean()) as unknown as InternalUser | null;
-
-                    const memberships = await getMemberships(
-                        course.courseId,
-                        Constants.MembershipEntityType.COURSE,
-                        course.domain,
-                    );
-                    const userQuery: FilterQuery<InternalUser> = {
-                        domain: course.domain,
-                        userId: { $in: memberships.map((m) => m.userId) },
-                    };
-                    // @ts-ignore - Mongoose type compatibility issue
-                    const users = (await UserModel.find(
-                        userQuery,
-                    ).lean()) as unknown as InternalUser[];
-
-                    for (const user of users) {
-                        const userProgressInCourse = user.purchases.find(
-                            (p) => p.courseId === course.courseId,
-                        );
-                        if (!userProgressInCourse) continue;
-
-                        const newGroupIds = getNewAccessibleGroupIdsForPurchase(
-                            {
-                                course,
-                                userProgressInCourse,
-                                nowUTC,
-                            },
-                        );
-
-                        if (newGroupIds.length > 0) {
-                            const newlyUnlockedGroups = newGroupIds
-                                .map((groupId) =>
-                                    course.groups.find(
-                                        (group) =>
-                                            toGroupId(group as CourseGroup) ===
-                                            groupId,
-                                    ),
-                                )
-                                .filter((group): group is CourseGroup =>
-                                    Boolean(group),
-                                );
-
-                            const updateQuery: FilterQuery<InternalUser> = {
-                                userId: user.userId,
-                                "purchases.courseId": course.courseId,
-                            };
-                            const updateData: UpdateQuery<InternalUser> = {
-                                $addToSet: {
-                                    "purchases.$.accessibleGroups": {
-                                        $each: newGroupIds,
-                                    },
-                                },
-                            };
-                            if (
-                                newlyUnlockedGroups.some(
-                                    (group) =>
-                                        group.drip?.status &&
-                                        group.drip.type === "relative-date",
-                                )
-                            ) {
-                                updateData.$set = {
-                                    "purchases.$.lastDripAt": new Date(nowUTC),
-                                };
-                            }
-                            // @ts-ignore - Mongoose type compatibility issue
-                            await UserModel.updateOne(updateQuery, updateData);
-
-                            logInfo(
-                                `${newGroupIds.length} Sections unlocked for ${user.email} in course ${course.title}`,
-                                {
-                                    source: "processDrip.unlock",
-                                    domainId: getDomainId(course.domain),
-                                    course_id: course.courseId,
-                                    user_id: user.userId,
-                                    unlocked_group_ids: newGroupIds.join(","),
-                                },
-                            );
-
-                            const newlyUnlockedGroupsWithDripEmail =
-                                newlyUnlockedGroups.filter(
-                                    (group) =>
-                                        Boolean(group.drip?.email?.content) &&
-                                        Boolean(group.drip?.email?.subject),
-                                );
-
-                            if (newlyUnlockedGroupsWithDripEmail.length > 0) {
-                                const domain = await getDomain(course.domain);
-                                const templatePayload = {
-                                    subscriber: {
-                                        email: user.email,
-                                        name: user.name,
-                                        tags: user.tags,
-                                    },
-                                    product: {
-                                        title: course.title,
-                                        url: `${getSiteUrl(domain)}/course/${course.slug}/${course.courseId}`,
-                                    },
-                                    address: domain.settings.mailingAddress,
-                                    unsubscribe_link: getUnsubLink(
-                                        domain,
-                                        user.unsubscribeToken,
-                                    ),
-                                };
-                                for (const group of newlyUnlockedGroupsWithDripEmail) {
-                                    const dripEmail = group.drip?.email;
-                                    if (
-                                        !dripEmail?.content ||
-                                        !dripEmail.subject
-                                    ) {
-                                        continue;
-                                    }
-
-                                    const content =
-                                        await liquidEngine.parseAndRender(
-                                            await renderEmailToHtml({
-                                                email: dripEmail.content,
-                                            }),
-                                            templatePayload,
-                                        );
-                                    await addMailJob({
-                                        to: [user.email],
-                                        subject: dripEmail.subject,
-                                        body: content,
-                                        from: getEmailFrom({
-                                            name:
-                                                creator?.name ||
-                                                creator?.email ||
-                                                "",
-                                            email: process.env.EMAIL_FROM || "",
-                                        }),
-                                        domainId: getDomainId(course.domain),
-                                    });
-                                }
-                            }
-                        }
-                    }
-                } catch (err: any) {
-                    captureError({
-                        error: err,
-                        source: "processDrip.course",
-                        domainId: getDomainId(course.domain),
-                        context: {
-                            course_id: course.courseId,
-                        },
-                    });
-                }
-            }
-        } catch (err: any) {
+            await processDripPass();
+        } catch (error) {
             captureError({
-                error: err,
+                error,
                 source: "processDrip.loop",
                 domainId: getDomainId(),
             });
         }
-
         await new Promise((resolve) => setTimeout(resolve, 60 * 1000));
     }
 }

@@ -1,6 +1,6 @@
 # Member Mimic
 
-Selecting a member in `/dashboard/users` replaces the former bespoke user details screen with the same `/dashboard/profile` page members use. My content and published course navigation reuse their existing components. No member authentication session is created. The actor retains her actual authentication; each member read rechecks `user:manage`, tenant, active actor and subject, the actor's current authentication session, and a separate revocable Mimic record.
+Selecting a member in `/dashboard/users` replaces the former bespoke user details screen with the same `/dashboard/profile` page members use. My content, Membership and published course navigation reuse their existing components. Membership reads resolve the subject through the billing service; cancellation/retry actions remain disabled and all Mimic writes are blocked. No member authentication session is created. The actor retains her actual authentication; each member read rechecks `user:manage`, tenant, active actor and subject, the actor's current authentication session, and a separate revocable Mimic record.
 
 ## API and integration
 

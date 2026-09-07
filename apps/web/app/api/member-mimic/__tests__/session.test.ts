@@ -129,7 +129,33 @@ describe("Member Mimic identity, expiry and read boundary", () => {
         });
     });
 
+    async function seedPublishedMembership() {
+        const courseId = member.purchases[0].courseId;
+        await CourseModel.create({
+            domain: domain._id,
+            courseId,
+            title: "Member course",
+            creatorId: actor.userId,
+            slug: "member-course",
+            published: true,
+            type: "course",
+            cost: 0,
+            costType: "free",
+            privacy: "public",
+        });
+        await MembershipModel.create({
+            membershipId: randomUUID(),
+            domain: domain._id,
+            userId: member.userId,
+            entityId: courseId,
+            entityType: Constants.MembershipEntityType.COURSE,
+            paymentPlanId: "free",
+            status: Constants.MembershipStatus.ACTIVE,
+        });
+    }
+
     it("creates an admin-attributed view without any member session or activity writes", async () => {
+        await seedPublishedMembership();
         const before = await UserModel.findById(member._id).lean();
         const started = await startMemberMimic(
             { userId: member.userId, returnTo: "/dashboard/users?page=2" },
@@ -345,6 +371,7 @@ describe("Member Mimic identity, expiry and read boundary", () => {
         expect(exit.headers.get("set-cookie")).toContain("Max-Age=0");
     });
     it("projects explicit getUser requests at the real GraphQL boundary and never records a view as activity", async () => {
+        await seedPublishedMembership();
         const started = await startMemberMimic(
             { userId: member.userId },
             ctx,

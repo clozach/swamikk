@@ -13,6 +13,7 @@ export const getUserProfile = async (address: string) => {
                 courseId
                 completedLessons
                 accessibleGroups
+                retainedLessonIds
                 certificateId
                 createdAt
                 lastDripAt

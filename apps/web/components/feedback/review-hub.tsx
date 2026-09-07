@@ -14,6 +14,8 @@ import { FEEDBACK_ADMIN_PERMISSIONS } from "@ui-config/constants";
 import { feedbackUi as copy } from "@config/strings";
 import { Button } from "@/components/ui/button";
 import { feedbackRequest, allFeedbackPages } from "./api";
+import MailboxSettings from "./mailbox-settings";
+import MailboxStatus from "./mailbox-status";
 import ProposalReview, { changeStateLabel } from "./proposal-review";
 
 type HubState =
@@ -32,7 +34,9 @@ export default function ReviewHub() {
             checkPermission(profile.permissions, FEEDBACK_ADMIN_PERMISSIONS),
     );
     const router = useRouter();
-    const id = useSearchParams()?.get("id");
+    const search = useSearchParams();
+    const id = search?.get("id");
+    const feedbackId = search?.get("feedback");
     const [state, setState] = useState<HubState>({ kind: "loading" });
     const [selected, setSelected] = useState<ContentChange | null>(null);
     const [prompt, setPrompt] = useState("");
@@ -74,6 +78,14 @@ export default function ReviewHub() {
     useEffect(() => {
         refresh();
     }, [refresh]);
+
+    useEffect(() => {
+        if (state.kind === "ready" && feedbackId) {
+            const target = document.getElementById(`feedback-${feedbackId}`);
+            target?.scrollIntoView({ block: "center" });
+            target?.focus();
+        }
+    }, [state.kind, feedbackId]);
 
     async function commentAction(
         comment: ContextualFeedback,
@@ -182,6 +194,7 @@ export default function ReviewHub() {
                                 </Button>
                             </section>
                         </div>
+                        <MailboxSettings />
                         <section className="mb-10">
                             <h2 className="text-xl font-semibold mb-4">
                                 {copy.proposals}
@@ -225,7 +238,9 @@ export default function ReviewHub() {
                                     {state.feedback.map((comment) => (
                                         <li
                                             key={comment.id}
-                                            className="rounded-xl border p-5"
+                                            id={`feedback-${comment.id}`}
+                                            tabIndex={-1}
+                                            className="rounded-xl border p-5 focus:outline focus:outline-primary"
                                         >
                                             <div className="flex flex-wrap justify-between gap-2 text-sm text-muted-foreground">
                                                 <span>
@@ -270,6 +285,10 @@ export default function ReviewHub() {
                                                     )}
                                                 </div>
                                             )}
+                                            <MailboxStatus
+                                                comment={comment}
+                                                onChanged={refresh}
+                                            />
                                             <div className="mt-4 flex flex-wrap gap-2">
                                                 <Button
                                                     variant="outline"

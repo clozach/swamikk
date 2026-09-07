@@ -1,3 +1,7 @@
+import {
+    getLessonAccess,
+    getMemberCourseReadScope,
+} from "@/services/member-access";
 /**
  * Business logic for managing lessons
  */
@@ -11,7 +15,6 @@ import CourseModel from "../../models/Course";
 import {
     evaluateLessonResult,
     getPrevNextCursor,
-    isPartOfDripGroup,
     lessonValidator,
     removeCorrectAnswersProp,
 } from "./helpers";
@@ -138,38 +141,37 @@ export const getLessonDetails = async (
         throw new Error(responses.item_not_found);
     }
 
-    if (
-        !isPreview &&
-        lesson.requiresEnrollment &&
-        (!ctx.user ||
-            !ctx.user.purchases.some(
-                (purchase: Progress) => purchase.courseId === lesson.courseId,
-            ))
-    ) {
-        throw new Error(responses.not_enrolled);
+    if (!isPreview) {
+        const access = await getLessonAccess({
+            domainId: String(ctx.subdomain._id),
+            userId: ctx.user?.userId,
+            courseId: lesson.courseId,
+            lessonId: lesson.lessonId,
+        });
+        if (access.kind === "denied")
+            throw new Error(
+                access.reason === "unpublished"
+                    ? responses.item_not_found
+                    : access.reason === "membership-required"
+                      ? responses.not_enrolled
+                      : responses.drip_not_released,
+            );
     }
-
-    if (!isPreview && (await isPartOfDripGroup(lesson, ctx.subdomain._id))) {
-        if (!ctx.user) {
-            throw new Error(responses.drip_not_released);
-        }
-
-        const userProgress = ctx.user.purchases.find(
-            (x) => x.courseId === lesson.courseId,
-        );
-        if (
-            !userProgress ||
-            userProgress.accessibleGroups.indexOf(lesson.groupId) === -1
-        ) {
-            throw new Error(responses.drip_not_released);
-        }
-    }
+    const memberScope =
+        !isPreview && ctx.user
+            ? await getMemberCourseReadScope({
+                  domainId: String(ctx.subdomain._id),
+                  userId: ctx.user.userId,
+                  courseId: lesson.courseId,
+              })
+            : null;
 
     const { prevLesson, nextLesson } = await getPrevNextCursor(
         lesson.courseId,
         ctx.subdomain._id,
         lesson.lessonId,
         !isPreview,
+        memberScope?.kind === "restricted" ? memberScope.lessonIds : undefined,
     );
     lesson.prevLesson = prevLesson;
     lesson.nextLesson = nextLesson;
@@ -228,7 +230,7 @@ export const createLesson = async (
             throw new Error(responses.group_not_found);
         }
 
-        const lesson = await LessonModel.create({
+        let lesson = await LessonModel.create({
             domain: ctx.subdomain._id,
             title: lessonData.title,
             type: lessonData.type,
@@ -242,9 +244,29 @@ export const createLesson = async (
             courseId: course.courseId,
             groupId: lessonData.groupId,
             requiresEnrollment: lessonData.requiresEnrollment,
-            published: lessonData.published || false,
+            published: false,
+            publication: { kind: "never" },
         });
 
+        if (lessonData.published) {
+            lesson = await LessonModel.findOneAndUpdate(
+                {
+                    _id: lesson._id,
+                    published: false,
+                    "publication.kind": "never",
+                },
+                {
+                    $set: {
+                        published: true,
+                        "publication.kind": "known",
+                        "publication.source": "native",
+                    },
+                    $currentDate: { "publication.firstPublishedAt": true },
+                    $inc: { __v: 1 },
+                },
+                { new: true, runValidators: true },
+            );
+        }
         course.lessons.push(lesson.lessonId);
         group.lessonsOrder.push(lesson.lessonId);
         await (course as any).save();
@@ -284,6 +306,10 @@ export const updateLesson = async (
     // All native edits share this atomic compare-and-swap, including the legacy editor.
     // The full content/permission context also detects maintenance writes without __v.
     const writeFilter = lessonWriteFilter(lesson);
+    const firstPublication =
+        !lesson.published &&
+        lessonData.published === true &&
+        lesson.publication?.kind === "never";
     const nextRevision = lessonRevision(lesson) + 1;
     lessonData.lessonId = lessonData.id;
     delete (lessonData as any).id;
@@ -384,7 +410,21 @@ export const updateLesson = async (
     }
     const savedLesson = await LessonModel.findOneAndUpdate(
         writeFilter,
-        { $set: updates, $inc: { __v: 1 } },
+        {
+            $set: {
+                ...updates,
+                ...(firstPublication
+                    ? {
+                          "publication.kind": "known",
+                          "publication.source": "native",
+                      }
+                    : {}),
+            },
+            ...(firstPublication
+                ? { $currentDate: { "publication.firstPublishedAt": true } }
+                : {}),
+            $inc: { __v: 1 },
+        },
         { new: true, runValidators: true },
     );
     if (!savedLesson)
@@ -501,6 +541,15 @@ export const getAllLessons = async (
         query.published = true;
     }
 
+    if (!(course as any).isPreview && ctx.user) {
+        const memberScope = await getMemberCourseReadScope({
+            domainId: String(ctx.subdomain._id),
+            userId: ctx.user.userId,
+            courseId: course.courseId,
+        });
+        if (memberScope.kind === "restricted")
+            query.lessonId = { $in: memberScope.lessonIds };
+    }
     const lessons = await LessonModel.find(query, {
         id: 1,
         lessonId: 1,
@@ -547,14 +596,21 @@ export const markLessonCompleted = async (
         throw new Error(responses.not_enrolled);
     }
 
-    if (await isPartOfDripGroup(lesson, ctx.subdomain._id)) {
-        const groupIsNotInAccessibleGroups =
-            ctx.user.purchases[enrolledItemIndex].accessibleGroups.indexOf(
-                lesson.groupId,
-            ) === -1;
-        if (groupIsNotInAccessibleGroups) {
-            throw new Error(responses.drip_not_released);
-        }
+    const access = await getLessonAccess({
+        domainId: String(ctx.subdomain._id),
+        userId: ctx.user.userId,
+        courseId: lesson.courseId,
+        lessonId: lesson.lessonId,
+        requireMembership: true,
+    });
+    if (access.kind === "denied") {
+        throw new Error(
+            access.reason === "membership-required"
+                ? responses.not_enrolled
+                : access.reason === "unpublished"
+                  ? responses.item_not_found
+                  : responses.drip_not_released,
+        );
     }
 
     if (lesson.type === quiz) {
@@ -757,14 +813,21 @@ export const evaluateLesson = async (
         throw new Error(responses.not_enrolled);
     }
 
-    if (await isPartOfDripGroup(lesson, ctx.subdomain._id)) {
-        const groupIsNotInAccessibleGroups =
-            ctx.user.purchases[enrolledItemIndex].accessibleGroups.indexOf(
-                lesson.groupId,
-            ) === -1;
-        if (groupIsNotInAccessibleGroups) {
-            throw new Error(responses.drip_not_released);
-        }
+    const access = await getLessonAccess({
+        domainId: String(ctx.subdomain._id),
+        userId: ctx.user.userId,
+        courseId: lesson.courseId,
+        lessonId: lesson.lessonId,
+        requireMembership: true,
+    });
+    if (access.kind === "denied") {
+        throw new Error(
+            access.reason === "membership-required"
+                ? responses.not_enrolled
+                : access.reason === "unpublished"
+                  ? responses.item_not_found
+                  : responses.drip_not_released,
+        );
     }
 
     if (lesson.type !== quiz) {

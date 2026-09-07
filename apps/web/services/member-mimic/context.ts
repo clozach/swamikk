@@ -1,3 +1,4 @@
+import { projectMemberPurchases } from "@/services/member-access/projection";
 import type { InternalUser } from "@courselit/orm-models";
 import type { MemberMimicResolution } from "@courselit/common-models";
 import type GQLContext from "@/models/GQLContext";
@@ -66,12 +67,17 @@ export async function resolveMemberReadContext(
     });
     if (!subject)
         return { kind: "expired", view: expiredMimicView(record.returnTo) };
+    const projected = projectMimicSubject(subject);
+    projected.purchases = await projectMemberPurchases(
+        String(ctx.subdomain._id),
+        projected,
+    );
     return {
         kind: "mimic",
         context: {
             ...ctx,
             actor: ctx.user,
-            user: projectMimicSubject(subject),
+            user: projected,
             memberMimic: {
                 id: record.id,
                 actorUserId: ctx.user.userId,

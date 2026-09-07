@@ -1,3 +1,4 @@
+import { getLessonAccess } from "@/services/member-access";
 import DomainModel, { Domain } from "@models/Domain";
 import { NextRequest } from "next/server";
 import DownloadLinkModel, { DownloadLink } from "@models/DownloadLink";
@@ -76,7 +77,7 @@ export async function GET(
         );
     }
 
-    const allLessons: Lesson[] = await LessonModel.find(
+    const publishedLessons: Lesson[] = await LessonModel.find(
         {
             courseId: course.courseId,
             domain: domain._id,
@@ -84,8 +85,26 @@ export async function GET(
         },
         {
             media: 1,
+            lessonId: 1,
         },
     );
+
+    const allLessons: Lesson[] = [];
+    for (const lesson of publishedLessons) {
+        const access = await getLessonAccess({
+            domainId: String(domain._id),
+            userId: downloadLink.userId,
+            courseId: course.courseId,
+            lessonId: lesson.lessonId,
+            requireMembership: true,
+        });
+        if (access.kind === "allowed") allLessons.push(lesson);
+    }
+    if (publishedLessons.length && !allLessons.length)
+        return Response.json(
+            { message: responses.item_not_found },
+            { status: 404 },
+        );
 
     if (allLessons.length === 0) {
         return Response.json(
@@ -123,6 +142,7 @@ export async function GET(
         const zipStream = createReadStream(zipFileAddress);
         const headers = new Headers({
             "Content-Type": "application/zip",
+            "Cache-Control": "private, no-store",
             "Content-Disposition": `attachment; filename=${course.title}.zip`,
         });
 

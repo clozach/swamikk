@@ -1,7 +1,6 @@
 import mongoose, { Model } from "mongoose";
-import { UserSchema } from "@courselit/orm-models";
-
+import { UserSchema, type InternalUser } from "@courselit/orm-models";
 const UserModel =
-    (mongoose.models.User as Model<any>) || mongoose.model("User", UserSchema);
-
+    (mongoose.models.User as Model<InternalUser>) ||
+    mongoose.model<InternalUser>("User", UserSchema);
 export default UserModel;

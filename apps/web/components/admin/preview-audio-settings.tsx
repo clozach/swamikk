@@ -82,7 +82,7 @@ export function PreviewAudioSettings({ courseId }: { courseId: string }) {
             </p>
             {status !== "loading" && (
                 <MediaSelector
-                    title={catalogMediaUi.previewSetting}
+                    title={catalogMediaUi.previewFile}
                     src={selected?.thumbnail || ""}
                     srcTitle={selected?.originalFileName || ""}
                     mediaId={selected?.mediaId || ""}

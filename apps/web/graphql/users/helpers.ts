@@ -1,5 +1,7 @@
 "use server";
 
+import { deleteUserMemberAccess } from "@/services/member-access";
+
 import { revokeMemberMimicForUser } from "@/services/member-mimic/cleanup";
 
 import UserModel from "@models/User";
@@ -268,6 +270,7 @@ export async function cleanupPersonalData(
 ): Promise<void> {
     await Promise.all([
         deleteUserFeedback(String(ctx.subdomain._id), userToDelete.userId),
+        deleteUserMemberAccess(String(ctx.subdomain._id), userToDelete.userId),
         revokeMemberMimicForUser(
             String(ctx.subdomain._id),
             userToDelete.userId,

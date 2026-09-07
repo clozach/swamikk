@@ -1,6 +1,12 @@
 "use client";
 
-import { Bell, ChevronsUpDown, LogOut, UserPen } from "lucide-react";
+import {
+    Bell,
+    ChevronsUpDown,
+    LibraryBig,
+    LogOut,
+    UserPen,
+} from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -27,6 +33,7 @@ import {
     LOGOUT,
     MAIN_MENU_ITEM_NOTIFICATIONS,
     MAIN_MENU_ITEM_PROFILE,
+    MY_CONTENT_HEADER,
 } from "@ui-config/strings";
 
 export function NavUser() {
@@ -99,6 +106,12 @@ export function NavUser() {
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuGroup>
+                            <Link href="/dashboard/my-content">
+                                <DropdownMenuItem>
+                                    <LibraryBig />
+                                    {MY_CONTENT_HEADER}
+                                </DropdownMenuItem>
+                            </Link>
                             <Link href={"/dashboard/profile"}>
                                 <DropdownMenuItem>
                                     <UserPen />

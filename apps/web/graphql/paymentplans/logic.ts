@@ -23,6 +23,7 @@ import mongoose from "mongoose";
 import MembershipModel from "@models/Membership";
 import { runPostMembershipTasks } from "../users/logic";
 import ActivityModel from "@models/Activity";
+import { createHash } from "crypto";
 const { MembershipEntityType: membershipEntityType } = Constants;
 const { permissions } = constants;
 
@@ -422,11 +423,13 @@ export async function addIncludedProductsMemberships({
     userId,
     paymentPlan,
     sessionId,
+    startedAt,
 }: {
     domain: mongoose.Types.ObjectId;
     userId: string;
     paymentPlan: PaymentPlan;
     sessionId: string;
+    startedAt?: Date;
 }) {
     const courses = await CourseModel.find({
         domain,
@@ -435,18 +438,59 @@ export async function addIncludedProductsMemberships({
     });
 
     for (const course of courses) {
-        const membership = await MembershipModel.create({
+        const key = {
             domain,
             userId,
             entityId: course.courseId,
             entityType: Constants.MembershipEntityType.COURSE,
             paymentPlanId: paymentPlan.planId,
-            status: Constants.MembershipStatus.ACTIVE,
             sessionId,
             isIncludedInPlan: true,
-        });
+        };
+        // Reuse pre-existing generated IDs; new records use the existing unique
+        // membershipId index to converge concurrent retries without a migration.
+        let membership = await MembershipModel.findOne(key);
+        let created = false;
+        if (!membership) {
+            const membershipId = `included-${createHash("sha256").update(JSON.stringify(key)).digest("hex")}`;
+            await MembershipModel.init();
+            try {
+                const result = await MembershipModel.updateOne(
+                    { domain, membershipId },
+                    {
+                        $setOnInsert: {
+                            ...key,
+                            membershipId,
+                            status: Constants.MembershipStatus.ACTIVE,
+                            ...(startedAt
+                                ? { accessActivation: { sessionId, startedAt } }
+                                : {}),
+                        },
+                    },
+                    { upsert: true },
+                );
+                created = result.upsertedCount === 1;
+            } catch (error) {
+                if ((error as { code?: number }).code !== 11000) throw error;
+            }
+            membership = await MembershipModel.findOne({
+                domain,
+                membershipId,
+            });
+        }
+        if (
+            !membership ||
+            membership.status !== Constants.MembershipStatus.ACTIVE
+        ) {
+            throw new Error("The included membership is no longer active.");
+        }
 
-        await runPostMembershipTasks({ domain, membership, paymentPlan });
+        await runPostMembershipTasks({
+            domain,
+            membership,
+            paymentPlan,
+            recoveryOnly: !created,
+        });
     }
 }
 

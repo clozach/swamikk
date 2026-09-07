@@ -5,6 +5,8 @@ import { feedbackApiOpenApi } from "../app/api/feedback/openapi.mjs";
 import { contentChangesApiOpenApi } from "../app/api/content-changes/openapi.mjs";
 import { memberMimicApiOpenApi } from "../app/api/member-mimic/openapi.mjs";
 import { paymentWebhookOpenApi } from "../app/api/payment/webhook/openapi.mjs";
+import feedbackMailboxOpenApi from "../app/api/feedback-mailbox/openapi.mjs";
+import memberBillingOpenApi from "../app/api/member-billing/openapi.mjs";
 
 const routeSpecs = [
     userApiOpenApi,
@@ -14,6 +16,8 @@ const routeSpecs = [
     contentChangesApiOpenApi,
     memberMimicApiOpenApi,
     paymentWebhookOpenApi,
+    feedbackMailboxOpenApi,
+    memberBillingOpenApi,
 ];
 
 function mergeOpenApiFragments(fragments) {

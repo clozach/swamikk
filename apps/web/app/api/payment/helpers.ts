@@ -6,6 +6,7 @@ import {
     PaymentPlan,
 } from "@courselit/common-models";
 import CommunityModel from "@models/Community";
+import MembershipModel from "@models/Membership";
 import mongoose from "mongoose";
 
 export async function activateMembership(
@@ -13,51 +14,98 @@ export async function activateMembership(
     membership: Membership,
     paymentPlan: PaymentPlan | null,
 ) {
-    if (membership.status === Constants.MembershipStatus.ACTIVE) {
-        return;
-    }
+    const key = {
+        domain: domain._id,
+        membershipId: membership.membershipId,
+        sessionId: membership.sessionId,
+    };
+    const current = await MembershipModel.findOne(key);
+    if (!current) throw new Error("The membership session has changed.");
+    const recoveryOnly = current.status === Constants.MembershipStatus.ACTIVE;
+    let activated = current;
 
-    if (membership.entityType === Constants.MembershipEntityType.COMMUNITY) {
-        if (paymentPlan?.type === Constants.PaymentPlanType.FREE) {
-            const community = await CommunityModel.findOne<Community>({
-                communityId: membership.entityId,
-            });
-            if (community) {
-                membership.status = community.autoAcceptMembers
-                    ? Constants.MembershipStatus.ACTIVE
-                    : Constants.MembershipStatus.PENDING;
-                (membership.role = community.autoAcceptMembers
-                    ? Constants.MembershipRole.POST
-                    : Constants.MembershipRole.COMMENT),
-                    (membership.joiningReason = community.autoAcceptMembers
-                        ? `Auto accepted`
-                        : membership.joiningReason);
-            }
-        } else {
-            membership.status = Constants.MembershipStatus.ACTIVE;
-            membership.role = Constants.MembershipRole.POST;
-        }
-        if (
-            membership.status === Constants.MembershipStatus.ACTIVE &&
-            paymentPlan &&
-            paymentPlan.includedProducts &&
-            paymentPlan.includedProducts.length > 0
-        ) {
-            const { addIncludedProductsMemberships } = await import(
-                "@/graphql/paymentplans/logic"
+    if (!recoveryOnly) {
+        if (current.status !== Constants.MembershipStatus.PENDING) {
+            throw new Error(
+                "Start a new checkout before activating this membership.",
             );
-            await addIncludedProductsMemberships({
-                domain: domain._id,
-                userId: membership.userId,
-                paymentPlan,
-                sessionId: membership.sessionId,
-            });
         }
-    } else {
-        membership.status = Constants.MembershipStatus.ACTIVE;
+        const update: Record<string, unknown> = {
+            status: Constants.MembershipStatus.ACTIVE,
+            accessActivation: {
+                sessionId: current.sessionId,
+                startedAt: new Date(),
+            },
+        };
+        if (current.entityType === Constants.MembershipEntityType.COMMUNITY) {
+            if (paymentPlan?.type === Constants.PaymentPlanType.FREE) {
+                const community = await CommunityModel.findOne<Community>({
+                    communityId: membership.entityId,
+                    domain: domain._id,
+                });
+                if (community) {
+                    update.status = community.autoAcceptMembers
+                        ? Constants.MembershipStatus.ACTIVE
+                        : Constants.MembershipStatus.PENDING;
+                    update.role = community.autoAcceptMembers
+                        ? Constants.MembershipRole.POST
+                        : Constants.MembershipRole.COMMENT;
+                    update.joiningReason = community.autoAcceptMembers
+                        ? `Auto accepted`
+                        : membership.joiningReason;
+                } else {
+                    throw new Error("The community is unavailable.");
+                }
+            } else {
+                update.role = Constants.MembershipRole.POST;
+            }
+        }
+        if (update.status !== Constants.MembershipStatus.ACTIVE)
+            delete update.accessActivation;
+        activated = await MembershipModel.findOneAndUpdate(
+            { ...key, status: Constants.MembershipStatus.PENDING },
+            { $set: update },
+            { new: true },
+        );
+        if (!activated) {
+            // Another delivery may have activated this exact session. Recover its
+            // follow-up work, but never overwrite cancellation or a newer checkout.
+            const winner = await MembershipModel.findOne({
+                ...key,
+                status: Constants.MembershipStatus.ACTIVE,
+            });
+            if (!winner)
+                throw new Error("The membership changed during activation.");
+            return activateMembership(domain, winner, paymentPlan);
+        }
     }
+    Object.assign(membership, {
+        status: activated.status,
+        role: activated.role,
+        accessActivation: activated.accessActivation,
+    });
+    if (activated.status !== Constants.MembershipStatus.ACTIVE) return;
 
-    await (membership as any).save();
+    if (
+        activated.entityType === Constants.MembershipEntityType.COMMUNITY &&
+        paymentPlan &&
+        paymentPlan.includedProducts &&
+        paymentPlan.includedProducts.length > 0
+    ) {
+        const { addIncludedProductsMemberships } = await import(
+            "@/graphql/paymentplans/logic"
+        );
+        await addIncludedProductsMemberships({
+            domain: domain._id,
+            userId: activated.userId,
+            paymentPlan,
+            sessionId: activated.sessionId,
+            startedAt:
+                activated.accessActivation?.sessionId === activated.sessionId
+                    ? activated.accessActivation.startedAt
+                    : undefined,
+        });
+    }
 
     if (paymentPlan) {
         const { runPostMembershipTasks } = await import(
@@ -65,8 +113,9 @@ export async function activateMembership(
         );
         await runPostMembershipTasks({
             domain: domain._id,
-            membership,
+            membership: activated,
             paymentPlan,
+            recoveryOnly,
         });
     }
 }

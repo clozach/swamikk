@@ -8,6 +8,7 @@ const mutableFields = [
     "downloadable",
     "requiresEnrollment",
     "published",
+    "publication",
     "type",
     "creatorId",
     "courseId",
@@ -21,10 +22,16 @@ export function lessonRevision(lesson: Lesson): number {
 export function lessonFingerprint(lesson: Lesson): string {
     return fingerprint(
         Object.fromEntries(
-            mutableFields.map((key) => [
-                key,
-                JSON.parse(JSON.stringify(lesson[key] ?? null)),
-            ]),
+            mutableFields
+                .filter(
+                    (key) =>
+                        key !== "publication" ||
+                        lesson.publication !== undefined,
+                )
+                .map((key) => [
+                    key,
+                    JSON.parse(JSON.stringify(lesson[key] ?? null)),
+                ]),
         ),
     );
 }

@@ -90,6 +90,7 @@ export async function proxy(request: NextRequest) {
                 (read &&
                     ((path.startsWith("/api/media/") &&
                         path !== "/api/media/presigned") ||
+                        path === "/api/member-billing" ||
                         path === "/api/config"));
             if (!permitted)
                 return Response.json(

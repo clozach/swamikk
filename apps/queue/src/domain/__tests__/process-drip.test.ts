@@ -4,7 +4,7 @@
 
 import {
     getNewAccessibleGroupIdsForPurchase,
-    processDrip,
+    processDripPass,
 } from "../process-drip";
 import { Constants } from "@courselit/common-models";
 import CourseModel from "../model/course";
@@ -12,9 +12,27 @@ import UserModel from "../model/user";
 import * as queries from "../queries";
 import mailQueue from "../queue";
 import * as posthog from "../../observability/posthog";
+import { ensureMembershipAccess } from "../../../../../packages/common-logic/src/member-access/lifecycle";
+import {
+    recordDripRelease,
+    getPendingDripDeliveries,
+    projectDripAccess,
+} from "../../../../../packages/common-logic/src/member-access/drip";
+
+jest.mock(
+    "../../../../../packages/common-logic/src/member-access/lifecycle",
+    () => ({ ensureMembershipAccess: jest.fn() }),
+);
+jest.mock(
+    "../../../../../packages/common-logic/src/member-access/drip",
+    () => ({
+        recordDripRelease: jest.fn(),
+        getPendingDripDeliveries: jest.fn(),
+        projectDripAccess: jest.fn(),
+    }),
+);
 
 const DAY_IN_MS = 86_400_000;
-const STOP_LOOP_ERROR_MESSAGE = "stop-loop-after-first-iteration";
 
 jest.mock("../queue", () => ({
     __esModule: true,
@@ -405,32 +423,30 @@ describe("getNewAccessibleGroupIdsForPurchase", () => {
         expect(newGroupIds).toEqual(["shared-group", "relative-group"]);
     });
 });
-
-describe("processDrip", () => {
-    function mockStopLoopAfterFirstIteration() {
-        const stopError = new Error(STOP_LOOP_ERROR_MESSAGE);
-        const setTimeoutSpy = jest
-            .spyOn(global, "setTimeout")
-            .mockImplementation(() => {
-                throw stopError;
-            });
-        return { stopError, setTimeoutSpy };
-    }
-
+describe("processDripPass", () => {
+    const now = new Date("2026-01-10T00:00:00.000Z");
+    let period: any;
+    let course: any;
+    let user: any;
     beforeEach(() => {
         jest.clearAllMocks();
-    });
-
-    afterEach(() => {
-        jest.restoreAllMocks();
-    });
-
-    it("updates accessible groups and queues drip email when a new group unlocks", async () => {
-        const { stopError } = mockStopLoopAfterFirstIteration();
-        const nowUTC = new Date("2026-01-10T00:00:00.000Z").getTime();
-        jest.spyOn(Date.prototype, "getTime").mockReturnValue(nowUTC);
-
-        const course = {
+        period = {
+            id: "period-1",
+            domainId: "domain-1",
+            userId: "user-1",
+            courseId: "course-1",
+            membershipId: "membership-1",
+            membershipSessionId: "session-1",
+            start: {
+                kind: "recorded",
+                at: new Date("2026-01-01T00:00:00.000Z"),
+            },
+            state: { kind: "active" },
+            groupReleases: [],
+            deliveries: [],
+            revision: 4,
+        };
+        course = {
             courseId: "course-1",
             creatorId: "creator-1",
             domain: "domain-1",
@@ -442,8 +458,8 @@ describe("processDrip", () => {
                     rank: 1000,
                     drip: {
                         status: true,
-                        type: "exact-date",
-                        dateInUTC: nowUTC - DAY_IN_MS,
+                        type: "relative-date",
+                        delayInMillis: DAY_IN_MS,
                         email: {
                             subject: "Section unlocked",
                             content: {
@@ -460,15 +476,8 @@ describe("processDrip", () => {
                     },
                 }),
             ],
-        } as any;
-
-        const creator = {
-            userId: "creator-1",
-            name: "Creator Name",
-            email: "creator@example.com",
-        } as any;
-
-        const user = {
+        };
+        user = {
             userId: "user-1",
             email: "user@example.com",
             name: "Student",
@@ -477,611 +486,171 @@ describe("processDrip", () => {
             purchases: [
                 {
                     courseId: "course-1",
-                    accessibleGroups: [],
-                    createdAt: new Date("2026-01-01T00:00:00.000Z"),
+                    accessibleGroups: ["stale-group"],
+                    createdAt: new Date("2025-01-01"),
+                    lastDripAt: new Date("2025-01-02"),
                 },
             ],
-        } as any;
-
+        };
         jest.spyOn(CourseModel, "find").mockReturnValue({
             lean: jest.fn().mockResolvedValue([course]),
         } as any);
-        jest.spyOn(UserModel, "findOne").mockReturnValue({
-            lean: jest.fn().mockResolvedValue(creator),
-        } as any);
-        jest.spyOn(UserModel, "find").mockReturnValue({
-            lean: jest.fn().mockResolvedValue([user]),
-        } as any);
-        const updateOneSpy = jest
-            .spyOn(UserModel, "updateOne")
-            .mockResolvedValue({} as any);
-
+        jest.spyOn(UserModel, "findOne").mockImplementation(
+            (query: any) =>
+                ({
+                    lean: jest.fn().mockResolvedValue(
+                        query.userId === "creator-1"
+                            ? {
+                                  name: "Creator",
+                                  email: "creator@example.com",
+                              }
+                            : user,
+                    ),
+                }) as any,
+        );
         jest.spyOn(queries, "getMemberships").mockResolvedValue([
-            {
-                userId: "user-1",
-            } as any,
-        ]);
+            { userId: "user-1", membershipId: "membership-1" },
+        ] as any);
         jest.spyOn(queries, "getDomain").mockResolvedValue({
+            name: "example",
             settings: { mailingAddress: "Main street" },
-            name: "school",
         } as any);
+        jest.spyOn(posthog, "captureError").mockImplementation(() => undefined);
+        jest.mocked(ensureMembershipAccess).mockImplementation(
+            async () => period,
+        );
+        jest.mocked(recordDripRelease).mockImplementation(async () => period);
+        jest.mocked(projectDripAccess).mockResolvedValue(undefined);
+        jest.mocked(getPendingDripDeliveries).mockResolvedValue([
+            {
+                id: "delivery-1",
+                groupId: "group-1",
+                createdAt: now,
+                state: { kind: "pending" },
+            },
+        ]);
+    });
+    afterEach(() => jest.restoreAllMocks());
 
-        await expect(processDrip()).rejects.toThrow(stopError);
-
+    it("commits with the sampled revision, then queues a period-bound delivery", async () => {
+        await processDripPass(now);
         expect(queries.getMemberships).toHaveBeenCalledWith(
             "course-1",
             Constants.MembershipEntityType.COURSE,
             "domain-1",
         );
-        expect(updateOneSpy).toHaveBeenCalledTimes(1);
-        expect(updateOneSpy).toHaveBeenCalledWith(
-            {
-                userId: "user-1",
-                "purchases.courseId": "course-1",
-            },
-            {
-                $addToSet: {
-                    "purchases.$.accessibleGroups": {
-                        $each: ["group-1"],
-                    },
-                },
-            },
+        expect(UserModel.findOne).toHaveBeenCalledWith({
+            domain: "domain-1",
+            userId: "user-1",
+            active: true,
+        });
+        expect(recordDripRelease).toHaveBeenCalledWith(
+            period,
+            ["group-1"],
+            ["group-1"],
+            ["group-1"],
+            now,
+            4,
         );
-        expect((mailQueue as any).add).toHaveBeenCalledTimes(1);
-        expect((mailQueue as any).add).toHaveBeenCalledWith(
+        expect(projectDripAccess).toHaveBeenCalledWith(period);
+        expect(mailQueue.add).toHaveBeenCalledWith(
             "mail",
             expect.objectContaining({
-                to: "user@example.com",
+                to: user.email,
                 subject: "Section unlocked",
                 domainId: "domain-1",
+                drip: { periodId: "period-1", deliveryId: "delivery-1" },
             }),
-        );
-    });
-
-    it("queues email for later unlocked group when first unlocked group has no drip email", async () => {
-        const { stopError } = mockStopLoopAfterFirstIteration();
-        const nowUTC = new Date("2026-01-10T00:00:00.000Z").getTime();
-        jest.spyOn(Date.prototype, "getTime").mockReturnValue(nowUTC);
-
-        const course = {
-            courseId: "course-1",
-            creatorId: "creator-1",
-            domain: "domain-1",
-            slug: "course-1",
-            title: "Course One",
-            groups: [
-                makeDripGroup({
-                    id: "group-1",
-                    rank: 1000,
-                    drip: {
-                        status: true,
-                        type: "exact-date",
-                        dateInUTC: nowUTC - DAY_IN_MS,
-                    },
-                }),
-                makeDripGroup({
-                    id: "group-2",
-                    rank: 2000,
-                    drip: {
-                        status: true,
-                        type: "exact-date",
-                        dateInUTC: nowUTC - DAY_IN_MS,
-                        email: {
-                            subject: "Second section unlocked",
-                            content: {
-                                content: [
-                                    {
-                                        blockType: "text",
-                                        settings: {
-                                            content: "Section two is now live",
-                                        },
-                                    },
-                                ],
-                            },
-                        },
-                    },
-                }),
-            ],
-        } as any;
-
-        const creator = {
-            userId: "creator-1",
-            name: "Creator Name",
-            email: "creator@example.com",
-        } as any;
-
-        const user = {
-            userId: "user-1",
-            email: "user@example.com",
-            name: "Student",
-            tags: [],
-            unsubscribeToken: "token-1",
-            purchases: [
-                {
-                    courseId: "course-1",
-                    accessibleGroups: [],
-                    createdAt: new Date("2026-01-01T00:00:00.000Z"),
-                },
-            ],
-        } as any;
-
-        jest.spyOn(CourseModel, "find").mockReturnValue({
-            lean: jest.fn().mockResolvedValue([course]),
-        } as any);
-        jest.spyOn(UserModel, "findOne").mockReturnValue({
-            lean: jest.fn().mockResolvedValue(creator),
-        } as any);
-        jest.spyOn(UserModel, "find").mockReturnValue({
-            lean: jest.fn().mockResolvedValue([user]),
-        } as any);
-        const updateOneSpy = jest
-            .spyOn(UserModel, "updateOne")
-            .mockResolvedValue({} as any);
-        jest.spyOn(queries, "getMemberships").mockResolvedValue([
             {
-                userId: "user-1",
-            } as any,
-        ]);
-        jest.spyOn(queries, "getDomain").mockResolvedValue({
-            settings: { mailingAddress: "Main street" },
-            name: "school",
-        } as any);
-
-        await expect(processDrip()).rejects.toThrow(stopError);
-
-        expect(updateOneSpy).toHaveBeenCalledWith(
-            {
-                userId: "user-1",
-                "purchases.courseId": "course-1",
-            },
-            {
-                $addToSet: {
-                    "purchases.$.accessibleGroups": {
-                        $each: ["group-1", "group-2"],
-                    },
-                },
-            },
-        );
-        expect((mailQueue as any).add).toHaveBeenCalledTimes(1);
-        expect((mailQueue as any).add).toHaveBeenCalledWith(
-            "mail",
-            expect.objectContaining({
-                subject: "Second section unlocked",
-                to: "user@example.com",
-                domainId: "domain-1",
-            }),
-        );
-    });
-
-    it("queues one email per unlocked group with drip email configured", async () => {
-        const { stopError } = mockStopLoopAfterFirstIteration();
-        const nowUTC = new Date("2026-01-10T00:00:00.000Z").getTime();
-        jest.spyOn(Date.prototype, "getTime").mockReturnValue(nowUTC);
-
-        const course = {
-            courseId: "course-1",
-            creatorId: "creator-1",
-            domain: "domain-1",
-            slug: "course-1",
-            title: "Course One",
-            groups: [
-                makeDripGroup({
-                    id: "group-1",
-                    rank: 1000,
-                    drip: {
-                        status: true,
-                        type: "exact-date",
-                        dateInUTC: nowUTC - DAY_IN_MS,
-                        email: {
-                            subject: "First section unlocked",
-                            content: {
-                                content: [
-                                    {
-                                        blockType: "text",
-                                        settings: {
-                                            content: "Section one is now live",
-                                        },
-                                    },
-                                ],
-                            },
-                        },
-                    },
-                }),
-                makeDripGroup({
-                    id: "group-2",
-                    rank: 2000,
-                    drip: {
-                        status: true,
-                        type: "exact-date",
-                        dateInUTC: nowUTC - DAY_IN_MS,
-                        email: {
-                            subject: "Second section unlocked",
-                            content: {
-                                content: [
-                                    {
-                                        blockType: "text",
-                                        settings: {
-                                            content: "Section two is now live",
-                                        },
-                                    },
-                                ],
-                            },
-                        },
-                    },
-                }),
-            ],
-        } as any;
-
-        const creator = {
-            userId: "creator-1",
-            name: "Creator Name",
-            email: "creator@example.com",
-        } as any;
-
-        const user = {
-            userId: "user-1",
-            email: "user@example.com",
-            name: "Student",
-            tags: [],
-            unsubscribeToken: "token-1",
-            purchases: [
-                {
-                    courseId: "course-1",
-                    accessibleGroups: [],
-                    createdAt: new Date("2026-01-01T00:00:00.000Z"),
-                },
-            ],
-        } as any;
-
-        jest.spyOn(CourseModel, "find").mockReturnValue({
-            lean: jest.fn().mockResolvedValue([course]),
-        } as any);
-        jest.spyOn(UserModel, "findOne").mockReturnValue({
-            lean: jest.fn().mockResolvedValue(creator),
-        } as any);
-        jest.spyOn(UserModel, "find").mockReturnValue({
-            lean: jest.fn().mockResolvedValue([user]),
-        } as any);
-        jest.spyOn(UserModel, "updateOne").mockResolvedValue({} as any);
-        jest.spyOn(queries, "getMemberships").mockResolvedValue([
-            {
-                userId: "user-1",
-            } as any,
-        ]);
-        jest.spyOn(queries, "getDomain").mockResolvedValue({
-            settings: { mailingAddress: "Main street" },
-            name: "school",
-        } as any);
-
-        await expect(processDrip()).rejects.toThrow(stopError);
-
-        expect((mailQueue as any).add).toHaveBeenCalledTimes(2);
-        expect((mailQueue as any).add).toHaveBeenNthCalledWith(
-            1,
-            "mail",
-            expect.objectContaining({
-                subject: "First section unlocked",
-            }),
-        );
-        expect((mailQueue as any).add).toHaveBeenNthCalledWith(
-            2,
-            "mail",
-            expect.objectContaining({
-                subject: "Second section unlocked",
-            }),
-        );
-    });
-
-    it("does not queue email when drip email content is missing", async () => {
-        const { stopError } = mockStopLoopAfterFirstIteration();
-        const nowUTC = new Date("2026-01-10T00:00:00.000Z").getTime();
-        jest.spyOn(Date.prototype, "getTime").mockReturnValue(nowUTC);
-
-        const course = {
-            courseId: "course-1",
-            creatorId: "creator-1",
-            domain: "domain-1",
-            slug: "course-1",
-            title: "Course One",
-            groups: [
-                makeDripGroup({
-                    id: "group-1",
-                    rank: 1000,
-                    drip: {
-                        status: true,
-                        type: "exact-date",
-                        dateInUTC: nowUTC - DAY_IN_MS,
-                    },
-                }),
-            ],
-        } as any;
-
-        const user = {
-            userId: "user-1",
-            email: "user@example.com",
-            name: "Student",
-            tags: [],
-            unsubscribeToken: "token-1",
-            purchases: [
-                {
-                    courseId: "course-1",
-                    accessibleGroups: [],
-                    createdAt: new Date("2026-01-01T00:00:00.000Z"),
-                },
-            ],
-        } as any;
-
-        jest.spyOn(CourseModel, "find").mockReturnValue({
-            lean: jest.fn().mockResolvedValue([course]),
-        } as any);
-        jest.spyOn(UserModel, "findOne").mockReturnValue({
-            lean: jest.fn().mockResolvedValue(null),
-        } as any);
-        jest.spyOn(UserModel, "find").mockReturnValue({
-            lean: jest.fn().mockResolvedValue([user]),
-        } as any);
-        jest.spyOn(UserModel, "updateOne").mockResolvedValue({} as any);
-
-        jest.spyOn(queries, "getMemberships").mockResolvedValue([
-            {
-                userId: "user-1",
-            } as any,
-        ]);
-
-        await expect(processDrip()).rejects.toThrow(stopError);
-
-        expect((mailQueue as any).add).not.toHaveBeenCalled();
-    });
-
-    it("does not update lastDripAt when only exact-date groups unlock", async () => {
-        const { stopError } = mockStopLoopAfterFirstIteration();
-        const nowUTC = new Date("2026-01-10T00:00:00.000Z").getTime();
-        jest.spyOn(Date.prototype, "getTime").mockReturnValue(nowUTC);
-
-        const course = {
-            courseId: "course-1",
-            creatorId: "creator-1",
-            domain: "domain-1",
-            slug: "course-1",
-            title: "Course One",
-            groups: [
-                makeDripGroup({
-                    id: "exact-group",
-                    rank: 1000,
-                    drip: {
-                        status: true,
-                        type: "exact-date",
-                        dateInUTC: nowUTC - DAY_IN_MS,
-                    },
-                }),
-            ],
-        } as any;
-
-        const user = {
-            userId: "user-1",
-            email: "user@example.com",
-            name: "Student",
-            tags: [],
-            unsubscribeToken: "token-1",
-            purchases: [
-                {
-                    courseId: "course-1",
-                    accessibleGroups: [],
-                    createdAt: new Date("2026-01-01T00:00:00.000Z"),
-                    lastDripAt: new Date("2026-01-05T00:00:00.000Z"),
-                },
-            ],
-        } as any;
-
-        jest.spyOn(CourseModel, "find").mockReturnValue({
-            lean: jest.fn().mockResolvedValue([course]),
-        } as any);
-        jest.spyOn(UserModel, "findOne").mockReturnValue({
-            lean: jest.fn().mockResolvedValue(null),
-        } as any);
-        jest.spyOn(UserModel, "find").mockReturnValue({
-            lean: jest.fn().mockResolvedValue([user]),
-        } as any);
-        const updateOneSpy = jest
-            .spyOn(UserModel, "updateOne")
-            .mockResolvedValue({} as any);
-        jest.spyOn(queries, "getMemberships").mockResolvedValue([
-            {
-                userId: "user-1",
-            } as any,
-        ]);
-
-        await expect(processDrip()).rejects.toThrow(stopError);
-
-        expect(updateOneSpy).toHaveBeenCalledWith(
-            {
-                userId: "user-1",
-                "purchases.courseId": "course-1",
-            },
-            {
-                $addToSet: {
-                    "purchases.$.accessibleGroups": {
-                        $each: ["exact-group"],
-                    },
-                },
+                jobId: "drip-period-1-delivery-1",
+                removeOnComplete: true,
+                removeOnFail: true,
             },
         );
     });
 
-    it("updates lastDripAt when a relative-date group unlocks", async () => {
-        const { stopError } = mockStopLoopAfterFirstIteration();
-        const nowUTC = new Date("2026-01-10T00:00:00.000Z").getTime();
-        jest.spyOn(Date.prototype, "getTime").mockReturnValue(nowUTC);
+    it("uses the current period start rather than an old purchase on rejoin", async () => {
+        period.start.at = now;
+        jest.mocked(getPendingDripDeliveries).mockResolvedValue([]);
+        await processDripPass(now);
+        expect(recordDripRelease).not.toHaveBeenCalled();
+    });
 
-        const course = {
-            courseId: "course-1",
-            creatorId: "creator-1",
-            domain: "domain-1",
-            slug: "course-1",
-            title: "Course One",
-            groups: [
-                makeDripGroup({
-                    id: "relative-group",
-                    rank: 1000,
-                    drip: {
-                        status: true,
-                        type: "relative-date",
-                        delayInMillis: 0,
-                    },
-                }),
-            ],
-        } as any;
-
-        const user = {
-            userId: "user-1",
-            email: "user@example.com",
-            name: "Student",
-            tags: [],
-            unsubscribeToken: "token-1",
-            purchases: [
-                {
-                    courseId: "course-1",
-                    accessibleGroups: [],
-                    createdAt: new Date("2026-01-01T00:00:00.000Z"),
-                },
-            ],
-        } as any;
-
-        jest.spyOn(CourseModel, "find").mockReturnValue({
-            lean: jest.fn().mockResolvedValue([course]),
-        } as any);
-        jest.spyOn(UserModel, "findOne").mockReturnValue({
-            lean: jest.fn().mockResolvedValue(null),
-        } as any);
-        jest.spyOn(UserModel, "find").mockReturnValue({
-            lean: jest.fn().mockResolvedValue([user]),
-        } as any);
-        const updateOneSpy = jest
-            .spyOn(UserModel, "updateOne")
-            .mockResolvedValue({} as any);
-        jest.spyOn(queries, "getMemberships").mockResolvedValue([
-            {
-                userId: "user-1",
-            } as any,
-        ]);
-
-        await expect(processDrip()).rejects.toThrow(stopError);
-
-        expect(updateOneSpy).toHaveBeenCalledWith(
-            {
-                userId: "user-1",
-                "purchases.courseId": "course-1",
-            },
-            {
-                $addToSet: {
-                    "purchases.$.accessibleGroups": {
-                        $each: ["relative-group"],
-                    },
-                },
-                $set: {
-                    "purchases.$.lastDripAt": expect.any(Date),
-                },
-            },
+    it("uses ledger releases and the latest relative anchor instead of stale purchases", async () => {
+        user.purchases[0].accessibleGroups = ["group-1"];
+        period.lastRelativeReleaseAt = now;
+        await processDripPass(now);
+        expect(recordDripRelease).not.toHaveBeenCalled();
+        period.lastRelativeReleaseAt = new Date(now.getTime() - DAY_IN_MS);
+        await processDripPass(now);
+        expect(recordDripRelease).toHaveBeenCalledWith(
+            period,
+            ["group-1"],
+            expect.any(Array),
+            expect.any(Array),
+            now,
+            4,
         );
     });
 
-    it("does not update users when no new groups are unlockable", async () => {
-        const { stopError } = mockStopLoopAfterFirstIteration();
-        const nowUTC = new Date("2026-01-02T00:00:00.000Z").getTime();
-        jest.spyOn(Date.prototype, "getTime").mockReturnValue(nowUTC);
-
-        const course = {
-            courseId: "course-1",
-            creatorId: "creator-1",
-            domain: "domain-1",
-            slug: "course-1",
-            title: "Course One",
-            groups: [
-                makeDripGroup({
-                    id: "group-1",
-                    rank: 1000,
-                    drip: {
-                        status: true,
-                        type: "exact-date",
-                        dateInUTC: nowUTC + DAY_IN_MS,
-                    },
-                }),
-            ],
-        } as any;
-
-        const user = {
-            userId: "user-1",
-            email: "user@example.com",
-            name: "Student",
-            purchases: [
-                {
-                    courseId: "course-1",
-                    accessibleGroups: [],
-                    createdAt: new Date("2026-01-01T00:00:00.000Z"),
-                },
-            ],
-        } as any;
-
-        jest.spyOn(CourseModel, "find").mockReturnValue({
-            lean: jest.fn().mockResolvedValue([course]),
-        } as any);
-        jest.spyOn(UserModel, "findOne").mockReturnValue({
-            lean: jest.fn().mockResolvedValue(null),
-        } as any);
-        jest.spyOn(UserModel, "find").mockReturnValue({
-            lean: jest.fn().mockResolvedValue([user]),
-        } as any);
-        const updateOneSpy = jest
-            .spyOn(UserModel, "updateOne")
-            .mockResolvedValue({} as any);
-        jest.spyOn(queries, "getMemberships").mockResolvedValue([
-            {
-                userId: "user-1",
-            } as any,
-        ]);
-
-        await expect(processDrip()).rejects.toThrow(stopError);
-
-        expect(updateOneSpy).not.toHaveBeenCalled();
-        expect((mailQueue as any).add).not.toHaveBeenCalled();
+    it("preserves the legacy scheduling anchor without inventing a recorded start", async () => {
+        period.start = { kind: "legacy-unknown" };
+        await processDripPass(now);
+        expect(recordDripRelease).toHaveBeenCalled();
+        expect(period.start).toEqual({ kind: "legacy-unknown" });
     });
 
-    it("captures per-course errors and continues the loop", async () => {
-        const { stopError } = mockStopLoopAfterFirstIteration();
-        const nowUTC = new Date("2026-01-10T00:00:00.000Z").getTime();
-        jest.spyOn(Date.prototype, "getTime").mockReturnValue(nowUTC);
+    it("recovers pending mail even when every group was already released", async () => {
+        period.groupReleases = [{ kind: "drip", groupId: "group-1", at: now }];
+        await processDripPass(now);
+        expect(recordDripRelease).not.toHaveBeenCalled();
+        expect(projectDripAccess).toHaveBeenCalled();
+        expect(mailQueue.add).toHaveBeenCalledTimes(1);
+    });
 
-        jest.spyOn(CourseModel, "find").mockReturnValue({
-            lean: jest.fn().mockResolvedValue([
-                {
-                    courseId: "course-1",
-                    creatorId: "creator-1",
-                    domain: "domain-1",
-                    slug: "course-1",
-                    title: "Course One",
-                    groups: [],
-                },
-            ]),
-        } as any);
-        jest.spyOn(UserModel, "findOne").mockReturnValue({
-            lean: jest
-                .fn()
-                .mockRejectedValue(new Error("creator-query-failed")),
-        } as any);
-        const captureErrorSpy = jest
-            .spyOn(posthog, "captureError")
-            .mockImplementation(() => {});
+    it("leaves stale or cancelled grants for a fresh pass without projecting or mailing", async () => {
+        jest.mocked(recordDripRelease).mockResolvedValue(null);
+        await processDripPass(now);
+        expect(projectDripAccess).not.toHaveBeenCalled();
+        expect(getPendingDripDeliveries).not.toHaveBeenCalled();
+        expect(mailQueue.add).not.toHaveBeenCalled();
+    });
 
-        await expect(processDrip()).rejects.toThrow(stopError);
+    it("does not revive an ended period even when a membership was sampled active", async () => {
+        period.state = { kind: "ended" };
+        await processDripPass(now);
+        expect(recordDripRelease).not.toHaveBeenCalled();
+        expect(projectDripAccess).not.toHaveBeenCalled();
+        expect(mailQueue.add).not.toHaveBeenCalled();
+    });
 
-        expect(captureErrorSpy).toHaveBeenCalledWith(
-            expect.objectContaining({
-                source: "processDrip.course",
-                domainId: "domain-1",
-                context: {
-                    course_id: "course-1",
-                },
-            }),
+    it("keeps email optional and skips pending groups whose email was removed", async () => {
+        delete course.groups[0].drip.email;
+        await processDripPass(now);
+        expect(recordDripRelease).toHaveBeenCalledWith(
+            period,
+            ["group-1"],
+            ["group-1"],
+            [],
+            now,
+            4,
         );
+        expect(mailQueue.add).not.toHaveBeenCalled();
+    });
+
+    it("continues other memberships when one membership changes during processing", async () => {
+        jest.spyOn(queries, "getMemberships").mockResolvedValue([
+            { userId: "user-1", membershipId: "membership-1" },
+            { userId: "user-2", membershipId: "membership-2" },
+        ] as any);
+        jest.mocked(ensureMembershipAccess).mockRejectedValueOnce(
+            new Error("membership ended"),
+        );
+        await processDripPass(now);
+        expect(posthog.captureError).toHaveBeenCalledWith(
+            expect.objectContaining({ source: "processDrip.membership" }),
+        );
+        expect(ensureMembershipAccess).toHaveBeenCalledTimes(2);
+        expect(mailQueue.add).toHaveBeenCalledTimes(1);
     });
 });

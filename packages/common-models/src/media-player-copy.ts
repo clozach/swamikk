@@ -26,6 +26,7 @@ export const mediaPlayerUi: MediaPlayerLabels = {
 };
 
 export const catalogMediaUi = {
+    previewFile: "Sample file",
     membership: "Membership",
     class: "Class",
     download: "Download",

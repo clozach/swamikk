@@ -1,3 +1,4 @@
+import MembershipModel from "@/models/Membership";
 import { markLessonCompleted } from "../logic";
 import LessonModel from "@/models/Lesson";
 import UserModel from "@/models/User";
@@ -99,6 +100,15 @@ describe("SCORM Logic Integration", () => {
         user.markModified("purchases");
         await user.save();
 
+        await MembershipModel.create({
+            domain: testDomain._id,
+            userId: user.userId,
+            membershipId: id("membership"),
+            entityId: course.courseId,
+            entityType: Constants.MembershipEntityType.COURSE,
+            paymentPlanId: "free",
+            status: Constants.MembershipStatus.ACTIVE,
+        });
         mockCtx = {
             user: user,
             subdomain: testDomain,
@@ -106,6 +116,7 @@ describe("SCORM Logic Integration", () => {
     });
 
     afterAll(async () => {
+        await MembershipModel.deleteMany({ domain: testDomain._id });
         await UserModel.deleteMany({ domain: testDomain._id });
         await LessonModel.deleteMany({ domain: testDomain._id });
         await CourseModel.deleteMany({ domain: testDomain._id });

@@ -21,6 +21,7 @@ const media: FieldRules = {
 const progress: FieldRules = {
     courseId: true,
     accessibleGroups: true,
+    retainedLessonIds: true,
     completedLessons: true,
     certificateId: true,
     createdAt: true,

@@ -46,6 +46,7 @@ const SocialHeroConfigSchema = new mongoose.Schema(
 );
 
 export const SettingsSchema = new mongoose.Schema<SiteInfo>({
+    feedbackMailbox: { type: mongoose.Schema.Types.Mixed },
     title: { type: String },
     subtitle: { type: String },
     logo: MediaSchema,

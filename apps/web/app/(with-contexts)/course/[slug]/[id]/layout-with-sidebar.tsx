@@ -606,15 +606,24 @@ export function generateSideBarItems(
                         <Lock />
                     ) : undefined;
                 } else if (isEnrolled(course.courseId, profile as Profile)) {
-                    lessonStatusIcon = isMimic ? undefined : isLessonCompleted({
-                          courseId: course.courseId,
-                          lessonId: lesson.lessonId,
-                          profile: profile as Profile,
-                      }) ? (
-                        <CheckCircled />
-                    ) : (
-                        <Circle />
-                    );
+                    const retained = profile.purchases
+                        ?.find(
+                            (purchase) => purchase.courseId === course.courseId,
+                        )
+                        ?.retainedLessonIds?.includes(lesson.lessonId);
+                    lessonStatusIcon =
+                        !retained &&
+                        !isGroupAccessibleToUser(course, profile, group) ? (
+                            <Lock />
+                        ) : isMimic ? undefined : isLessonCompleted({
+                              courseId: course.courseId,
+                              lessonId: lesson.lessonId,
+                              profile: profile as Profile,
+                          }) ? (
+                            <CheckCircled />
+                        ) : (
+                            <Circle />
+                        );
                 } else {
                     lessonStatusIcon = lesson.requiresEnrollment ? (
                         <Lock />

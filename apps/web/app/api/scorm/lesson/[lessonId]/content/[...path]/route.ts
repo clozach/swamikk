@@ -4,7 +4,8 @@ import DomainModel, { Domain } from "@models/Domain";
 import User from "@models/User";
 import Lesson from "@models/Lesson";
 import { MediaLit } from "medialit";
-import { isEnrolled } from "@/ui-lib/utils";
+import { getLessonAccess } from "@/services/member-access";
+import { hasMemberMimicCookie } from "@/services/member-mimic/constants";
 import path from "path";
 import { getExtractedFile, MIME_TYPES } from "@/lib/scorm/cache";
 import { error } from "@/services/logger";
@@ -17,6 +18,14 @@ export async function GET(
     req: NextRequest,
     { params }: { params: Promise<{ lessonId: string; path: string[] }> },
 ) {
+    if (hasMemberMimicCookie(req.headers))
+        return Response.json(
+            {
+                message:
+                    "Exit Member Mimic before opening private practice data.",
+            },
+            { status: 403 },
+        );
     const { lessonId, path: pathParts } = await params;
     const filePath = pathParts.join("/");
 
@@ -49,8 +58,14 @@ export async function GET(
         return Response.json({ message: "Lesson not found" }, { status: 404 });
     }
 
-    const enrolled = isEnrolled(lesson.courseId, user);
-    if (!enrolled) {
+    const access = await getLessonAccess({
+        domainId: String(domain._id),
+        userId: user.userId,
+        courseId: lesson.courseId,
+        lessonId,
+        requireMembership: true,
+    });
+    if (access.kind === "denied") {
         return Response.json(
             { message: "Enrollment required" },
             { status: 403 },
@@ -90,7 +105,7 @@ export async function GET(
         return new Response(new Uint8Array(fileContent), {
             headers: {
                 "Content-Type": mimeType,
-                "Cache-Control": "public, max-age=3600",
+                "Cache-Control": "private, no-store",
             },
         });
     } catch (err: any) {

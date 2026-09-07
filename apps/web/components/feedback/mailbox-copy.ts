@@ -1,0 +1,37 @@
+export const mailboxCopy = {
+    title: "Private mailbox",
+    off: "Delivery off",
+    on: "Mailbox notifications enabled",
+    guide: "Feedback is saved here even when email is off or unavailable. Email contains a short excerpt and a sign-in link; photos stay in the private review.",
+    automation:
+        "Human review is available here anytime. Automated AI review is not connected.",
+    enable: "Send notifications to the private mailbox",
+    recipient: "Approved recipient",
+    interval: "Notification interval (minutes)",
+    intervalHelp:
+        "New feedback becomes eligible at the next interval. The queue checks each minute. Enabling delivery also includes open feedback waiting here.",
+    approve: "I approve this recipient to receive private feedback excerpts.",
+    save: "Save delivery settings",
+    saved: "Delivery settings saved.",
+    noSettings:
+        "A settings administrator can enable delivery or change the recipient.",
+    failed: "Delivery settings could not be loaded.",
+    pending: "Queued for mailbox notification",
+    sending: "Notification in progress",
+    accepted: "Accepted by the mail server",
+    confirmed: "Receipt confirmed by an administrator",
+    notQueued: "No notification queued",
+    configuration: "Delivery needs email configuration",
+    rejected: "Mail server declined the notification",
+    connection: "Could not connect to the mail server",
+    uncertain: "Delivery uncertain — check the mailbox before retrying",
+    retry: "Queue notification again",
+    queued: "Notification queued. Feedback remains saved here.",
+    verify: "I checked the mailbox or provider log for this message.",
+    received: "Confirm it was received",
+    unsent: "Confirm it was not sent and queue again",
+    updated: "Notification status updated.",
+    conflict: "Could not update delivery. Refresh its status before retrying.",
+    acceptedHelp:
+        "Mail-server acceptance is not proof of arrival or human review.",
+};

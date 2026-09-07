@@ -1,3 +1,4 @@
+import { processFeedbackMailbox } from "./feedback/process";
 import { connectToDatabase } from "./db";
 import { processDrip } from "./domain/process-drip";
 import { processOngoingSequences } from "./domain/process-ongoing-sequences";
@@ -19,6 +20,7 @@ export async function startEmailAutomation() {
         throw err;
     }
 
+    void processFeedbackMailbox();
     processOngoingSequences().catch((err) => {
         logger.error(err);
         captureError({

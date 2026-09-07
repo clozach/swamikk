@@ -123,6 +123,7 @@ export async function POST(req: NextRequest) {
 
         if (membership.status === Constants.MembershipStatus.ACTIVE) {
             if (paymentPlan.type === Constants.PaymentPlanType.FREE) {
+                await activateMembership(domain, membership, paymentPlan);
                 return Response.json({ status: transactionSuccess });
             }
             if (
@@ -135,6 +136,7 @@ export async function POST(req: NextRequest) {
                         membership.subscriptionId,
                     )
                 ) {
+                    await activateMembership(domain, membership, paymentPlan);
                     return Response.json({ status: transactionSuccess });
                 } else {
                     membership.status = Constants.MembershipStatus.EXPIRED;
@@ -144,6 +146,13 @@ export async function POST(req: NextRequest) {
         }
 
         if (paymentPlan.type === Constants.PaymentPlanType.FREE) {
+            if (membership.status !== Constants.MembershipStatus.PENDING) {
+                membership.status = Constants.MembershipStatus.PENDING;
+                membership.sessionId = generateUniqueId();
+                membership.accessActivation = undefined;
+                membership.paymentPlanId = planId;
+                await membership.save();
+            }
             if (
                 type === Constants.MembershipEntityType.COMMUNITY &&
                 !(entity as Community).autoAcceptMembers

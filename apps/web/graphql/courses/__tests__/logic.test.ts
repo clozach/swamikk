@@ -1867,6 +1867,32 @@ describe("product discussion comment and reply logic", () => {
             lessonId,
         ]);
 
+        await MembershipModel.updateOne(
+            {
+                domain: testDomain._id,
+                userId: learnerUser.userId,
+                entityId: courseId,
+            },
+            { status: CommonConstants.MembershipStatus.EXPIRED },
+        );
+        try {
+            const stale = await listDiscussionSummaries({
+                ctx,
+                productId: courseId,
+                limit: 10,
+            });
+            expect(stale.items).toEqual([]);
+        } finally {
+            await MembershipModel.updateOne(
+                {
+                    domain: testDomain._id,
+                    userId: learnerUser.userId,
+                    entityId: courseId,
+                },
+                { status: CommonConstants.MembershipStatus.ACTIVE },
+            );
+        }
+
         const adminSummaries = await listDiscussionSummaries({
             ctx: {
                 subdomain: testDomain,

@@ -41,6 +41,7 @@ it("blocks writes through page server actions as well as API endpoints", async (
         "/dashboard/profile",
         "/products",
         "/api/feedback",
+        "/api/member-billing",
         "/api/media/asset/file",
         "/api/content-changes",
     ])
@@ -76,6 +77,7 @@ it("denies private reads and legacy GET side effects while preserving explicit E
     for (const [path, method] of [
         ["/api/member-mimic", "DELETE"],
         ["/api/member-mimic", "GET"],
+        ["/api/member-billing", "GET"],
         ["/api/media/asset", "GET"],
         ["/api/graph", "POST"],
     ])

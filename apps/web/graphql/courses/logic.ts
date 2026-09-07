@@ -1,3 +1,5 @@
+import { deleteCourseMemberAccess } from "@/services/member-access";
+import { projectCourseForMemberAccess } from "@/services/member-access/projection";
 import { projectMimicCourse } from "@/services/member-mimic/course";
 /**
  * Business logic for managing courses.
@@ -180,6 +182,10 @@ export const getCourse = async (
             ctx,
             false,
             false,
+        );
+        formattedCourse = await projectCourseForMemberAccess(
+            formattedCourse,
+            ctx,
         );
         if (ctx.memberMimic)
             formattedCourse = await projectMimicCourse(formattedCourse, ctx);
@@ -383,6 +389,7 @@ export const deleteCourse = async (id: string, ctx: GQLContext) => {
         entityId: course.courseId,
         entityType: Constants.MembershipEntityType.COURSE,
     });
+    await deleteCourseMemberAccess(String(ctx.subdomain._id), course.courseId);
     await deleteCohortsForCourse(course.courseId, ctx);
     await PaymentPlanModel.deleteMany({
         domain: ctx.subdomain._id,

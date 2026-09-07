@@ -7,6 +7,7 @@ export interface InternalFeedback
     createdAt: Date;
     updatedAt: Date;
     expiresAt?: Date;
+    notificationReview?: { action: string; by: string; at: string };
 }
 
 export const FeedbackSchema = new mongoose.Schema<InternalFeedback>(
@@ -18,12 +19,24 @@ export const FeedbackSchema = new mongoose.Schema<InternalFeedback>(
         actor: { type: mongoose.Schema.Types.Mixed, required: true },
         photoMediaIds: { type: [String], default: [] },
         state: { type: String, enum: ["open", "closed"], required: true },
+        notification: { type: mongoose.Schema.Types.Mixed },
+        notificationReview: { type: mongoose.Schema.Types.Mixed },
         expiresAt: Date,
     },
     { timestamps: true },
 );
 FeedbackSchema.index({ domain: 1, id: 1 }, { unique: true });
 FeedbackSchema.index({ domain: 1, createdAt: -1, id: 1 });
+FeedbackSchema.index({
+    domain: 1,
+    "notification.kind": 1,
+    "notification.nextAttemptAt": 1,
+});
+FeedbackSchema.index({
+    domain: 1,
+    "notification.kind": 1,
+    "notification.leaseUntil": 1,
+});
 FeedbackSchema.index({ domain: 1, "actor.userId": 1, createdAt: -1 });
 // Open feedback has no expiry. Closing schedules removal after 90 days.
 FeedbackSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });

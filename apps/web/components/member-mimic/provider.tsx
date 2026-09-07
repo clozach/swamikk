@@ -175,10 +175,16 @@ export default function MemberMimicProvider({
                                 <span>
                                     {" "}
                                     · {copy.viewing}{" "}
-                                    <strong>{view.subject.name}</strong>{" "}
-                                    <span className="kk-mimic-email">
-                                        ({view.subject.email})
-                                    </span>
+                                    <strong>{view.subject.name}</strong>
+                                    {view.subject.name !==
+                                        view.subject.email && (
+                                        <>
+                                            {" "}
+                                            <span className="kk-mimic-email">
+                                                ({view.subject.email})
+                                            </span>
+                                        </>
+                                    )}
                                 </span>
                             )}
                             <small>{copy.readOnly}</small>

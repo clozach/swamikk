@@ -1,3 +1,4 @@
+import { getLessonAccess } from "@/services/member-access";
 import { responses } from "@/config/strings";
 import appConstants from "@/config/constants";
 import CourseModel from "@/models/Course";
@@ -30,7 +31,6 @@ import {
     decodeCursor,
     encodeCursor,
     getDiscussionSubjectId,
-    getProductProgress,
     validateDiscussionContent,
     validateDiscussionTargetForLearner,
     getNextReportStatus,
@@ -1693,30 +1693,19 @@ async function getAccessibleDiscussionLessonIds({
         return lessons.map((lesson) => lesson.lessonId);
     }
 
-    const progress = getProductProgress(ctx, productId);
-    if (!progress) {
-        return [];
+    if (!ctx.user) return [];
+    const accessible: string[] = [];
+    for (const lesson of lessons) {
+        const access = await getLessonAccess({
+            domainId: String(ctx.subdomain._id),
+            userId: ctx.user.userId,
+            courseId: productId,
+            lessonId: lesson.lessonId,
+            requireMembership: true,
+        });
+        if (access.kind === "allowed") accessible.push(lesson.lessonId);
     }
-    const accessibleGroups = new Set(progress?.accessibleGroups || []);
-
-    const dripLockedGroupIds = new Set<string>();
-    if (product && Array.isArray(product.groups)) {
-        for (const group of product.groups) {
-            const groupId = String(group.id);
-            if (group.drip?.status && !accessibleGroups.has(groupId)) {
-                dripLockedGroupIds.add(groupId);
-            }
-        }
-    }
-
-    return lessons
-        .filter((lesson) => {
-            if (dripLockedGroupIds.has(lesson.groupId)) {
-                return false;
-            }
-            return true;
-        })
-        .map((lesson) => lesson.lessonId);
+    return accessible;
 }
 
 async function moderationSoftDelete({

@@ -1,5 +1,12 @@
 "use server";
 
+import { ensureMembershipAccess } from "@/services/member-access";
+
+import {
+    projectMemberPurchases,
+    memberCourseLibrary,
+} from "@/services/member-access/projection";
+
 import UserModel from "@models/User";
 import { responses } from "@/config/strings";
 import { makeModelTextSearchable, checkIfAuthenticated } from "@/lib/graphql";
@@ -36,7 +43,6 @@ import courseEnrollTemplate from "@/templates/course-enroll";
 import MembershipModel from "@models/Membership";
 import CommunityModel from "@models/Community";
 import CourseModel from "@models/Course";
-import LessonModel from "@models/Lesson";
 import { addMailJob } from "@/services/queue";
 import { getPaymentMethodFromSettings } from "@/payments-new";
 import { checkForInvalidPermissions } from "@/lib/check-invalid-permissions";
@@ -99,7 +105,14 @@ export const getUser = async (
         (user.userId === ctx.user.userId ||
             checkPermission(ctx.user.permissions, [permissions.manageUsers]))
     ) {
-        return user;
+        return {
+            ...(typeof user.toObject === "function" ? user.toObject() : user),
+            id: user.id || String(user._id),
+            purchases: await projectMemberPurchases(
+                String(ctx.subdomain._id),
+                user,
+            ),
+        };
     } else {
         return removeAdminFieldsFromUserObject(user);
     }
@@ -797,19 +810,10 @@ export const getUserContent = async (
         if (userId && userId !== ctx.memberMimic.subjectUserId)
             throw new Error(responses.action_not_allowed);
         const content = await getUserContentInternal(ctx, ctx.user as any);
-        const published = await CourseModel.find({
-            domain: ctx.subdomain._id,
-            published: true,
-            courseId: {
-                $in: ctx.user.purchases.map((purchase) => purchase.courseId),
-            },
-        }).select("courseId");
-        const allowed = new Set(published.map((course) => course.courseId));
         return content
             .filter(
                 (item: any) =>
-                    item.entityType === Constants.MembershipEntityType.COURSE &&
-                    allowed.has(item.entity.id),
+                    item.entityType === Constants.MembershipEntityType.COURSE,
             )
             .map((item: any) => ({
                 ...item,
@@ -848,65 +852,9 @@ async function getUserContentInternal(ctx: GQLContext, user: User) {
         status: Constants.MembershipStatus.ACTIVE,
     });
 
-    const content: Record<string, unknown>[] = [];
+    const content = await memberCourseLibrary(ctx, user);
 
     for (const membership of memberships) {
-        if (membership.entityType === Constants.MembershipEntityType.COURSE) {
-            const distinctCourse = content.some(
-                (item: any) =>
-                    item.entityType === Constants.MembershipEntityType.COURSE &&
-                    item.entity.id === membership.entityId,
-            );
-
-            if (distinctCourse) {
-                continue;
-            }
-
-            const course = await CourseModel.findOne({
-                courseId: membership.entityId,
-                domain: ctx.subdomain._id,
-            });
-
-            if (course) {
-                const publishedLessonIds = new Set(
-                    (
-                        await LessonModel.find(
-                            {
-                                domain: ctx.subdomain._id,
-                                courseId: course.courseId,
-                                published: true,
-                            },
-                            {
-                                lessonId: 1,
-                            },
-                        )
-                    ).map((lesson) => lesson.lessonId),
-                );
-                const completedPublishedLessons = (
-                    user.purchases.find(
-                        (progress: Progress) =>
-                            progress.courseId === course.courseId,
-                    )?.completedLessons || []
-                ).filter((lessonId) => publishedLessonIds.has(lessonId));
-
-                content.push({
-                    entityType: Constants.MembershipEntityType.COURSE,
-                    entity: {
-                        id: course.courseId,
-                        title: course.title,
-                        slug: course.slug,
-                        type: course.type,
-                        totalLessons: publishedLessonIds.size,
-                        completedLessonsCount: completedPublishedLessons.length,
-                        featuredImage: course.featuredImage,
-                        certificateId: user.purchases.find(
-                            (progress: Progress) =>
-                                progress.courseId === course.courseId,
-                        )?.certificateId,
-                    },
-                });
-            }
-        }
         if (
             membership.entityType === Constants.MembershipEntityType.COMMUNITY
         ) {
@@ -1030,17 +978,30 @@ export async function runPostMembershipTasks({
     domain,
     membership,
     paymentPlan,
+    recoveryOnly = false,
 }: {
     domain: mongoose.Types.ObjectId;
     membership: Membership;
     paymentPlan: PaymentPlan;
+    recoveryOnly?: boolean;
 }) {
     const user = await UserModel.findOne<InternalUser>({
         userId: membership.userId,
+        domain,
     });
     if (!user) {
         return;
     }
+
+    if (membership.entityType === Constants.MembershipEntityType.COURSE) {
+        const product = await CourseModel.findOne<InternalCourse>({
+            courseId: membership.entityId,
+            domain,
+        });
+        if (product) await addProductToUser({ user, product });
+        await ensureMembershipAccess({ domainId: String(domain), membership });
+    }
+    if (recoveryOnly) return;
 
     let event: Event | undefined = undefined;
     if (
@@ -1069,15 +1030,6 @@ export async function runPostMembershipTasks({
         event = Constants.EventType.COMMUNITY_JOINED as unknown as Event;
     }
     if (membership.entityType === Constants.MembershipEntityType.COURSE) {
-        const product = await CourseModel.findOne<InternalCourse>({
-            courseId: membership.entityId,
-        });
-        if (product) {
-            await addProductToUser({
-                user,
-                product,
-            });
-        }
         await recordActivity({
             domain,
             userId: user.userId,

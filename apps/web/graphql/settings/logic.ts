@@ -136,6 +136,7 @@ export const getSiteInfo = async (ctx: GQLContext) => {
         // subtree (defence-in-depth atop the output-type omission + the SSR
         // formatSiteInfo allowlist). Tokens especially must never ride along.
         "settings.socialHero": 0,
+        "settings.feedbackMailbox": 0,
     };
     const isSiteEditor =
         ctx.user &&

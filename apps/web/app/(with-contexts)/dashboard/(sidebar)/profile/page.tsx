@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { billingCopy } from "@/components/member-billing/copy";
 import { useMemberMimic } from "@components/member-mimic/context";
 import DashboardContent from "@components/admin/dashboard-content";
 import { AddressContext, ProfileContext } from "@components/contexts";
@@ -188,6 +190,7 @@ export default function Page() {
                     courseId
                     completedLessons
                     accessibleGroups
+                    retainedLessonIds
                     certificateId
                 },
                 bio,
@@ -288,6 +291,12 @@ export default function Page() {
             <h1 className="text-4xl font-semibold mb-2">
                 {PROFILE_PAGE_HEADER}
             </h1>
+            <Link
+                href="/dashboard/membership"
+                className="mb-5 inline-flex min-h-11 items-center underline underline-offset-4"
+            >
+                {billingCopy.profileLink}
+            </Link>
             <div className="flex flex-col lg:flex-row gap-4">
                 <Card className="w-full lg:w-2/6">
                     <CardHeader>

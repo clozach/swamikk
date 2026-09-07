@@ -27,6 +27,16 @@ export const MembershipSchema = new mongoose.Schema<InternalMembership>(
             required: true,
         },
         sessionId: { type: String, required: true, default: generateUniqueId },
+        accessActivation: {
+            type: new mongoose.Schema(
+                {
+                    sessionId: { type: String, required: true },
+                    startedAt: { type: Date, required: true },
+                },
+                { _id: false },
+            ),
+            default: undefined,
+        },
         isIncludedInPlan: { type: Boolean, default: false },
         status: {
             type: String,

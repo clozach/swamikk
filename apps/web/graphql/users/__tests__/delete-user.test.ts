@@ -4,6 +4,7 @@
 
 import { deleteUser } from "../logic";
 import UserModel from "@models/User";
+import { MembershipAccessModel } from "../../../../../packages/common-logic/src/member-access/models";
 import { MemberMimicModel } from "@/services/member-mimic/model";
 import { FeedbackModel } from "@/services/content-changes/models";
 import CourseModel from "@models/Course";
@@ -134,6 +135,7 @@ describe("deleteUser - Comprehensive Test Suite", () => {
         // Clean up all collections - only this test's data
         await Promise.all([
             MemberMimicModel.deleteMany({ domain: testDomain._id }),
+            MembershipAccessModel.deleteMany({ domain: testDomain._id }),
             FeedbackModel.deleteMany({ domain: testDomain._id }),
             UserModel.deleteMany({ domain: testDomain._id }),
             CourseModel.deleteMany({ domain: testDomain._id }),
@@ -215,6 +217,39 @@ describe("deleteUser - Comprehensive Test Suite", () => {
                 (await MemberMimicModel.findOne({ id: duId("other-view") }))
                     ?.state.kind,
             ).toBe("active");
+        });
+
+        it("deletes the member's access grants while preserving another member's retention", async () => {
+            for (const userId of [targetUser.userId, adminUser.userId])
+                await MembershipAccessModel.create({
+                    id: duId(`access-${userId}`),
+                    domain: testDomain._id,
+                    userId,
+                    courseId: "retained-course",
+                    membershipId: duId(`membership-${userId}`),
+                    membershipSessionId: "session",
+                    start: { kind: "legacy-unknown" },
+                    state: {
+                        kind: "ended",
+                        operationId: "cancel",
+                        endedAt: new Date(),
+                        snapshot: {
+                            cutoff: new Date(),
+                            visibleLessonIds: [],
+                            retainedLessonIds: ["kept"],
+                            unknownReleaseCount: 0,
+                        },
+                    },
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                });
+            await deleteUser(targetUser.userId, mockCtx);
+            expect(
+                await MembershipAccessModel.find({ userId: targetUser.userId }),
+            ).toHaveLength(0);
+            expect(
+                await MembershipAccessModel.find({ userId: adminUser.userId }),
+            ).toHaveLength(1);
         });
 
         it("removes the deleted member's private feedback and preserves other members' comments", async () => {

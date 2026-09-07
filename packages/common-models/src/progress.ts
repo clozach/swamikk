@@ -7,6 +7,8 @@ export interface Progress {
     completedLessons: string[];
     downloaded?: boolean;
     accessibleGroups: string[];
+    /** Read-only projection from the retention ledger; never a stored grant. */
+    retainedLessonIds?: string[];
     lastDripAt?: Date;
     certificateId?: string;
     scormData?: ScormData;

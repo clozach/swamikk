@@ -3,13 +3,22 @@ import { auth } from "@/auth";
 import DomainModel, { Domain } from "@models/Domain";
 import User from "@models/User";
 import Lesson from "@models/Lesson";
-import { isEnrolled } from "@/ui-lib/utils";
+import { getLessonAccess } from "@/services/member-access";
+import { hasMemberMimicCookie } from "@/services/member-mimic/constants";
 import { error } from "@/services/logger";
 
 export async function GET(
     req: NextRequest,
     { params }: { params: Promise<{ lessonId: string }> },
 ) {
+    if (hasMemberMimicCookie(req.headers))
+        return Response.json(
+            {
+                message:
+                    "Exit Member Mimic before opening private practice data.",
+            },
+            { status: 403 },
+        );
     const { lessonId } = await params;
 
     const domain = await DomainModel.findOne<Domain>({
@@ -43,8 +52,14 @@ export async function GET(
 
     const { courseId } = lesson;
 
-    const enrolled = isEnrolled(courseId, user);
-    if (!enrolled) {
+    const access = await getLessonAccess({
+        domainId: String(domain._id),
+        userId: user.userId,
+        courseId,
+        lessonId,
+        requireMembership: true,
+    });
+    if (access.kind === "denied") {
         return Response.json(
             { message: "Enrollment required" },
             { status: 403 },
@@ -65,13 +80,23 @@ export async function GET(
         ? lessonScormData
         : { cmi: lessonScormData };
 
-    return Response.json(result);
+    return Response.json(result, {
+        headers: { "Cache-Control": "private, no-store" },
+    });
 }
 
 export async function POST(
     req: NextRequest,
     { params }: { params: Promise<{ lessonId: string }> },
 ) {
+    if (hasMemberMimicCookie(req.headers))
+        return Response.json(
+            {
+                message:
+                    "Exit Member Mimic before opening private practice data.",
+            },
+            { status: 403 },
+        );
     const { lessonId } = await params;
 
     const domain = await DomainModel.findOne<Domain>({
@@ -105,8 +130,14 @@ export async function POST(
 
     const { courseId } = lesson;
 
-    const enrolled = isEnrolled(courseId, user);
-    if (!enrolled) {
+    const access = await getLessonAccess({
+        domainId: String(domain._id),
+        userId: user.userId,
+        courseId,
+        lessonId,
+        requireMembership: true,
+    });
+    if (access.kind === "denied") {
         return Response.json(
             { message: "Enrollment required" },
             { status: 403 },
