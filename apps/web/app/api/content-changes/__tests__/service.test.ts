@@ -284,7 +284,9 @@ describe("Persisted feedback and approved lesson changes", () => {
         expect(result.approvals).toHaveLength(1);
         const live = await LessonModel.findOne({ lessonId: lesson.lessonId });
         expect(live.__v).toBe(1);
-        expect(live.content).toEqual(proposed.preview.after.content);
+        expect(live.content).toEqual(
+            (proposed.preview.after as { content: unknown }).content,
+        );
         await approveChange(proposed.id, 1, proposed.previewHash, ctx);
         expect(
             (await LessonModel.findOne({ lessonId: lesson.lessonId })).__v,

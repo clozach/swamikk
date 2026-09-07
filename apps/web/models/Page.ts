@@ -1,3 +1,4 @@
+import type { PageContentChangeReceipt } from "@courselit/common-models";
 import mongoose from "mongoose";
 import { WidgetSchema } from "./Widget";
 import constants from "../config/constants";
@@ -14,6 +15,7 @@ export interface Page extends PublicPage {
     domain: mongoose.Types.ObjectId;
     draftLayout: WidgetInstance[];
     creatorId: string;
+    contentChangeReceipt?: PageContentChangeReceipt;
     draftTitle?: string;
     draftDescription?: string;
     draftSocialImage?: Media | null;
@@ -45,6 +47,7 @@ const PageSchema = new mongoose.Schema<Page>(
         draftSocialImage: MediaSchema,
         draftRobotsAllowed: Boolean,
         deleted: { type: Boolean, default: false },
+        contentChangeReceipt: { type: mongoose.Schema.Types.Mixed },
     },
     {
         timestamps: true,

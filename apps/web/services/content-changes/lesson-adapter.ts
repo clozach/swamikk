@@ -1,6 +1,6 @@
 import type {
-    ContentChangeInput,
-    ContentChangeVersion,
+    LessonContentChangeInput,
+    LessonContentChangeVersion,
     LessonTextSnapshot,
 } from "@courselit/common-models";
 import { Constants } from "@courselit/common-models";
@@ -31,10 +31,10 @@ export async function editableLesson(lessonId: string, ctx: GQLContext) {
 }
 
 export async function prepareVersion(
-    input: ContentChangeInput,
+    input: LessonContentChangeInput,
     version: number,
     ctx: GQLContext,
-): Promise<ContentChangeVersion> {
+): Promise<LessonContentChangeVersion> {
     const lesson = await editableLesson(input.target.lessonId, ctx);
     requireCondition(
         lesson.type === Constants.LessonType.TEXT &&

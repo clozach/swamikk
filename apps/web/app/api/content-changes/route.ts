@@ -1,3 +1,4 @@
+import { assertNoMemberMimicMutation } from "@/services/member-mimic/context";
 import type { NextRequest } from "next/server";
 import {
     apiResponse,
@@ -17,6 +18,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
     return apiResponse(async () => {
+        assertNoMemberMimicMutation(req.headers);
         requireSameOrigin(req);
         const ctx = await requestContext(req);
         await limitRequest(req, ctx, "content-change-create");
@@ -27,6 +29,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
     return apiResponse(async () => {
+        assertNoMemberMimicMutation(req.headers);
         const ctx = await requestContext(req);
         await limitRequest(req, ctx, "content-change-read", 120);
         const changes = await listChanges(

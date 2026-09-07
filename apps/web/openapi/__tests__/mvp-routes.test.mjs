@@ -14,6 +14,8 @@ test("the assembled API includes feedback delivery, cancellation and read-only r
         "/api/refund-requests",
         "/api/refund-requests/review",
         "/api/publication-observations",
+        "/api/account-closure",
+        "/api/content-changes/page-widget",
     ])
         assert.ok(paths[path]?.get, `${path} GET must be documented`);
     assert.ok(paths["/api/member-billing"].post);
@@ -21,4 +23,5 @@ test("the assembled API includes feedback delivery, cancellation and read-only r
     assert.ok(paths["/api/contact-preferences"].put);
     assert.ok(paths["/api/refund-requests/review"].post);
     assert.ok(paths["/api/publication-observations"].post);
+    assert.ok(paths["/api/account-closure"].delete);
 });

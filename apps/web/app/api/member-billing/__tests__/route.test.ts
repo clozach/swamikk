@@ -6,6 +6,10 @@ import { MEMBER_MIMIC_COOKIE } from "@/services/member-mimic/constants";
 import * as preparation from "@/services/member-billing/prepare";
 import { fixture, cleanup } from "./fixtures";
 import BillingCancellation from "@/models/BillingCancellation";
+import {
+    beginAccountClosure,
+    requireAccountErasureReady,
+} from "../../../../../../packages/common-logic/src/account-lifecycle/gate";
 jest.mock("@/auth", () => ({ auth: { api: { getSession: jest.fn() } } }));
 let f: Awaited<ReturnType<typeof fixture>>;
 const session = auth.api.getSession as unknown as jest.Mock;
@@ -91,4 +95,32 @@ it("returns the safe subject projection in Mimic and never falls back after expi
     );
     resolve.mockResolvedValueOnce({ kind: "expired", view: {} } as any);
     expect((await GET(req())).status).toBe(403);
+});
+it("reserves a billing attempt through provider work and refuses new attempts during closure", async () => {
+    let entered!: () => void, release!: () => void;
+    const reached = new Promise<void>((resolve) => {
+        entered = resolve;
+    });
+    const pending = new Promise<void>((resolve) => {
+        release = resolve;
+    });
+    const prepare = jest
+        .spyOn(preparation, "prepareMemberCancellation")
+        .mockImplementationOnce(async () => {
+            entered();
+            await pending;
+            return { kind: "review-required" } as any;
+        });
+    const writing = POST(req("POST"));
+    await reached;
+    const key = { domainId: String(f.domain._id), userId: f.user.userId };
+    expect((await beginAccountClosure(key)).kind).toBe("pending");
+    await expect(requireAccountErasureReady(key)).rejects.toMatchObject({
+        code: "account_busy",
+    });
+    release();
+    expect((await writing).status).toBe(200);
+    expect((await POST(req("POST"))).status).toBe(409);
+    expect(prepare).toHaveBeenCalledTimes(1);
+    prepare.mockRestore();
 });

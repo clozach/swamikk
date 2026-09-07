@@ -1,3 +1,8 @@
+import {
+    pageWidgetInput,
+    pageWidgetPatch,
+    pageWidgetPaths,
+} from "./page-widget/openapi.mjs";
 const json = (schema) => ({ content: { "application/json": { schema } } });
 const session = [{ CourseLitSession: [] }];
 const patch = {
@@ -28,7 +33,7 @@ const previewHash = { type: "string", pattern: "^[a-f0-9]{64}$" };
 const change = {
     type: "object",
     description:
-        "ContentChange from @courselit/common-models: id, target, version, summary, patch, baseline {revision,fingerprint,snapshot,courseId,published}, preview {before,after}, previewHash, preparedBy/At, history, approvals, state, timestamps. state is discriminated by kind; applying/uncertain/applied include operationId and approval; applied includes appliedAt/appliedRevision.",
+        "ContentChange from @courselit/common-models: id, target, version, summary, patch, baseline {revision,fingerprint,snapshot,published}; page-widget baselines also retain immutable documentId, renderFingerprint, theme/typefaces and draft consequence, with frozen widget renderSettings in both preview snapshots, preview {before,after}, previewHash, preparedBy/At, history, approvals, state, timestamps. state is discriminated by kind; applying/uncertain/applied include operationId and approval; applied includes appliedAt/appliedRevision.",
     properties: {
         id: { type: "string" },
         version,
@@ -93,45 +98,58 @@ export const contentChangesApiOpenApi = {
         },
     ],
     paths: {
+        ...pageWidgetPaths,
         "/api/content-changes": {
             post: {
                 tags: ["Content Changes"],
                 operationId: "prepareContentChange",
-                summary: "Capture baseline and prepare a text lesson change",
+                summary: "Prepare a native lesson or page-field change",
                 security: session,
                 requestBody: {
                     required: true,
                     ...json({
-                        type: "object",
-                        additionalProperties: false,
-                        required: ["target", "patch", "summary"],
-                        properties: {
-                            feedbackId: { type: "string", maxLength: 128 },
-                            target: {
+                        oneOf: [
+                            {
                                 type: "object",
                                 additionalProperties: false,
-                                required: ["kind", "lessonId"],
+                                required: ["target", "patch", "summary"],
                                 properties: {
-                                    kind: { type: "string", enum: ["lesson"] },
-                                    lessonId: {
+                                    feedbackId: {
                                         type: "string",
                                         maxLength: 128,
                                     },
+                                    target: {
+                                        type: "object",
+                                        additionalProperties: false,
+                                        required: ["kind", "lessonId"],
+                                        properties: {
+                                            kind: {
+                                                type: "string",
+                                                enum: ["lesson"],
+                                            },
+                                            lessonId: {
+                                                type: "string",
+                                                maxLength: 128,
+                                            },
+                                        },
+                                    },
+                                    patch,
+                                    summary: {
+                                        type: "string",
+                                        minLength: 1,
+                                        maxLength: 2000,
+                                    },
                                 },
                             },
-                            patch,
-                            summary: {
-                                type: "string",
-                                minLength: 1,
-                                maxLength: 2000,
-                            },
-                        },
+                            pageWidgetInput,
+                        ],
                     }),
                 },
                 responses: {
                     ...responses,
                     201: {
-                        description: "Draft captured; lesson is unchanged.",
+                        description:
+                            "Proposal captured; page and lesson content are unchanged. A selected public image is retained in the native media library.",
                         ...json(detail),
                     },
                 },
@@ -178,7 +196,7 @@ export const contentChangesApiOpenApi = {
                     "Revise, approve/apply, reject, reconcile, or prepare recovery",
                 security: session,
                 description:
-                    "Approve must echo the displayed version and previewHash. Duplicate approval never applies twice. Reconcile reads the atomic receipt or fences an interrupted write without changing content. Revert only prepares a separate reverse proposal requiring its own approval; later lesson edits prevent automatic recovery.",
+                    "Approve must echo the displayed version and previewHash. Duplicate approval never applies twice. Reconcile reads the atomic receipt or fences an interrupted write without changing content. Revert only prepares a separate reverse proposal requiring its own approval; later target edits prevent automatic recovery.",
                 requestBody: {
                     required: true,
                     ...json({
@@ -187,7 +205,7 @@ export const contentChangesApiOpenApi = {
                                 "revise",
                                 {
                                     version,
-                                    patch,
+                                    patch: { oneOf: [patch, pageWidgetPatch] },
                                     summary: {
                                         type: "string",
                                         minLength: 1,

@@ -15,6 +15,8 @@ import {
 import { readMemberBilling } from "@/services/member-billing/read";
 import { prepareMemberCancellation } from "@/services/member-billing/prepare";
 import { advanceMemberCancellation } from "@/services/member-billing/advance";
+import { withAccountWrite } from "../../../../../packages/common-logic/src/account-lifecycle/gate";
+import { requireBillingMember } from "@/services/member-billing/memberships";
 
 export const dynamic = "force-dynamic";
 const id = z.string().min(1).max(128);
@@ -56,8 +58,17 @@ export async function POST(req: NextRequest) {
         const ctx = await requestContext(req);
         await limitRequest(req, ctx, "member-billing-write", 20);
         const input = command.parse(await readBoundedJson(req, 2048));
-        return input.action === "prepare"
-            ? prepareMemberCancellation(ctx, input.membershipId)
-            : advanceMemberCancellation(ctx, input);
+        requireBillingMember(ctx, true);
+        return withAccountWrite(
+            {
+                domainId: String(ctx.subdomain._id),
+                userId: ctx.user.userId,
+                purpose: "member-billing",
+            },
+            () =>
+                input.action === "prepare"
+                    ? prepareMemberCancellation(ctx, input.membershipId)
+                    : advanceMemberCancellation(ctx, input),
+        );
     });
 }

@@ -1,3 +1,4 @@
+import { nativePageBaseline, guardedNativePageSave } from "./guarded-save";
 import {
     SITE_FOOTER_WIDGET,
     SITE_HEADER_WIDGET,
@@ -159,6 +160,7 @@ export const updatePage = async ({
     if (!page) {
         return null;
     }
+    const baseline = nativePageBaseline(page);
 
     const deletedMediaIds = getDeletedMediaIds(
         JSON.stringify(page.draftLayout || ""),
@@ -236,17 +238,9 @@ export const updatePage = async ({
         }
     }
 
-    try {
-        await (page as any).save();
-    } catch (e: any) {
-        // We want to safely ignore the error where `__v` property does not
-        // match for a document as it signifies a race condition in mongoose.
-        if (!/^No matching document/.test(e.message)) {
-            throw new Error(e.message);
-        }
-    }
+    const savedPage = await guardedNativePageSave(page, baseline);
 
-    return getPageResponse(page!, ctx);
+    return getPageResponse(savedPage, ctx);
 };
 
 export const publish = async (
@@ -265,6 +259,7 @@ export const publish = async (
     if (!page) {
         return null;
     }
+    const baseline = nativePageBaseline(page);
 
     // 1. Identify all media currently in PUBLISHED state (to be potentially deleted)
     const currentPublishedMedia = extractMediaIDs(
@@ -329,9 +324,9 @@ export const publish = async (
     for (const mediaId of mediaToDelete) {
         await deleteMedia(mediaId, ctx.subdomain._id);
     }
-    await (page as any).save();
+    const savedPage = await guardedNativePageSave(page, baseline);
 
-    return getPageResponse(page!, ctx);
+    return getPageResponse(savedPage, ctx);
 };
 
 export const getPages = async (
@@ -559,6 +554,9 @@ export const deletePage = async (
 };
 
 export const deletePageInternal = async (ctx: GQLContext, id: string) => {
+    const { ContentChangeModel } = await import(
+        "@/services/content-changes/models"
+    );
     const page = (await PageModel.findOne({
         domain: ctx.subdomain._id,
         pageId: id,
@@ -566,6 +564,17 @@ export const deletePageInternal = async (ctx: GQLContext, id: string) => {
 
     if (!page) {
         throw new Error(responses.item_not_found);
+    }
+
+    if (
+        await ContentChangeModel.exists({
+            domain: ctx.subdomain._id,
+            activeTarget: `page:${(page as Page & { _id?: unknown })._id || page.id}`,
+        })
+    ) {
+        throw new Error(
+            "Reconcile the pending page change before deleting this page.",
+        );
     }
 
     const mediaToBeDeleted = extractMediaIDs(JSON.stringify(page));
@@ -601,6 +610,7 @@ export const deleteBlock = async ({
     if (!page) {
         return null;
     }
+    const baseline = nativePageBaseline(page);
 
     const block = page.draftLayout.find(
         (block: any) => block.widgetId === blockId,
@@ -623,6 +633,6 @@ export const deleteBlock = async ({
     page.draftLayout = page.draftLayout.filter(
         (block: any) => block.widgetId !== blockId,
     );
-    await (page as any).save();
-    return getPageResponse(page!, ctx);
+    const savedPage = await guardedNativePageSave(page, baseline);
+    return getPageResponse(savedPage, ctx);
 };

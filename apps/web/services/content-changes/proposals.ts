@@ -5,11 +5,18 @@ import type {
     ContentChangeInput,
     ContentChangeVersion,
     LessonTextPatch,
+    PageWidgetPatch,
 } from "@courselit/common-models";
 import type { InternalContentChange } from "@courselit/orm-models";
 import type GQLContext from "@/models/GQLContext";
 import { ContentChangeModel, FeedbackModel } from "./models";
 import { editableLesson, prepareVersion } from "./lesson-adapter";
+import {
+    editableChangeTarget,
+    prepareTargetVersion,
+    isPageRecord,
+} from "./adapters";
+import { preparePageRecovery } from "./page-recovery";
 import { requireCondition } from "./errors";
 import { requireFeedbackAdmin } from "./http";
 import { contentChangeInputSchema, lessonPatchSchema } from "./validation";
@@ -29,7 +36,7 @@ export function versionView(
         previewHash: record.previewHash,
         preparedBy: record.preparedBy,
         preparedAt: record.preparedAt,
-    };
+    } as ContentChangeVersion;
 }
 
 export function changeView(record: InternalContentChange): ContentChange {
@@ -44,7 +51,7 @@ export function changeView(record: InternalContentChange): ContentChange {
         approvals: record.approvals,
         createdAt: record.createdAt.toISOString(),
         updatedAt: record.updatedAt.toISOString(),
-    };
+    } as ContentChange;
 }
 
 export async function getChange(id: string, ctx: GQLContext) {
@@ -53,7 +60,7 @@ export async function getChange(id: string, ctx: GQLContext) {
         id,
     });
     requireCondition(record, "not_found", "Content proposal not found.", 404);
-    await editableLesson(record.target.lessonId, ctx);
+    await editableChangeTarget(record, ctx);
     return record;
 }
 
@@ -85,12 +92,13 @@ export async function createChange(
         requireCondition(feedback, "not_found", "Feedback not found.", 404);
         requireCondition(
             feedback.target.kind !== "lesson" ||
-                feedback.target.lessonId === input.target.lessonId,
+                (input.target.kind === "lesson" &&
+                    feedback.target.lessonId === input.target.lessonId),
             "target_mismatch",
             "The proposal must match the selected lesson.",
         );
     }
-    const proposed = await prepareVersion(input, 1, ctx);
+    const proposed = await prepareTargetVersion(input, 1, ctx);
     const record = await ContentChangeModel.create({
         domain: ctx.subdomain._id,
         id: randomUUID(),
@@ -106,7 +114,7 @@ export async function createChange(
 export async function reviseChange(
     id: string,
     version: number,
-    patch: LessonTextPatch,
+    patch: LessonTextPatch | PageWidgetPatch,
     summary: string,
     ctx: GQLContext,
 ): Promise<ContentChange> {
@@ -124,7 +132,7 @@ export async function reviseChange(
         "Prepare a new proposal after 20 revisions.",
         409,
     );
-    const next = await prepareVersion(
+    const next = await prepareTargetVersion(
         contentChangeInputSchema.parse({
             target: record.target,
             feedbackId: record.feedbackId,
@@ -201,6 +209,19 @@ export async function prepareRevert(
         "Only an applied change can prepare a recovery proposal.",
         409,
     );
+    if (isPageRecord(original)) {
+        const next = await preparePageRecovery(original, ctx);
+        const record = await ContentChangeModel.create({
+            domain: ctx.subdomain._id,
+            id: randomUUID(),
+            target: original.target,
+            reversesChangeId: original.id,
+            ...next,
+            state: { kind: "proposed" },
+            history: [],
+        });
+        return changeView(record);
+    }
     const lesson = await editableLesson(original.target.lessonId, ctx);
     requireCondition(
         lessonRevision(lesson) === original.state.appliedRevision &&

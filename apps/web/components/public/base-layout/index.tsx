@@ -5,6 +5,7 @@ import type { Media, State, WidgetInstance } from "@courselit/common-models";
 import { Theme } from "@courselit/page-models";
 
 interface BaseLayoutProps {
+    pageId?: string;
     title: string;
     siteInfo: any;
     layout: WidgetInstance[];
@@ -19,6 +20,7 @@ interface BaseLayoutProps {
 }
 
 export default function BaseLayout({
+    pageId,
     title,
     siteInfo,
     children,
@@ -94,6 +96,7 @@ export default function BaseLayout({
                 )}
             </Head>
             <Template
+                id={pageId}
                 layout={layout}
                 childrenOnTop={childrenOnTop}
                 pageData={pageData}

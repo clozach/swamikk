@@ -8,6 +8,7 @@ import { checkPermission } from "@courselit/utils";
 import { UIConstants } from "@courselit/common-models";
 import { ContentChangeError, requireCondition } from "./errors";
 import { consumeRateLimit } from "./rate-limit";
+import { AccountLifecycleError } from "../../../../packages/common-logic/src/account-lifecycle/gate";
 
 export function isFeedbackAdmin(ctx: GQLContext): boolean {
     return (
@@ -42,6 +43,12 @@ export async function requestContext(req: NextRequest): Promise<GQLContext> {
               active: true,
           })
         : null;
+    requireCondition(
+        !session || user,
+        "unauthorized",
+        "This signed-in account is unavailable. Sign out before continuing.",
+        401,
+    );
     return {
         subdomain: domain,
         user: user || undefined,
@@ -146,7 +153,10 @@ export async function apiResponse(
                 },
                 { status: 400 },
             );
-        if (error instanceof ContentChangeError)
+        if (
+            error instanceof ContentChangeError ||
+            error instanceof AccountLifecycleError
+        )
             return Response.json(
                 { error: { code: error.code, message: error.message } },
                 { status: error.status },

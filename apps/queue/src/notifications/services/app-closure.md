@@ -1,0 +1,11 @@
+# In-app notifications and account closure
+
+An in-app notification is personal to its actual actor and recipient. `withNotificationAccounts` holds an account write reservation for both users (one when they are the same user). Native dispatcher preference and permission filters are unchanged; the final persistence boundary also revalidates both active, same-tenant accounts through the shared lifecycle gate.
+
+`AppChannel.send` holds those reservations through record insertion and enqueue. Beginning closure blocks new reservations, and personal-data cleanup waits for existing reservations before deleting actor/recipient notification rows. A cached former or inactive user cannot create another row. New notification jobs contain only the domain and notification ID, not another copy of message metadata.
+
+The notification worker re-reads the current record. It then reserves both accounts, re-reads that same row inside the reservations, and emits the current data. An erased record or a closing/erased/inactive account makes an old queued job ineligible and it is dropped. This also protects older jobs that already contain a full payload: their queued copy is never emitted. A final delivery already holding reservations may finish while closure remains pending; an emitted browser event cannot be recalled. Crashed reservations require explicit lifecycle reconciliation, with no automatic expiry.
+
+Focused tests: `services/channels/__tests__/app-closure.test.ts` pauses real Mongo insertions across actor and recipient closure, proves cleanup waits and no row reappears, and checks inactive-user rejection plus ID-only enqueue. `worker/__tests__/notification-closure.test.ts` uses a mocked worker/emitter to prove erased queued copies are dropped, current data replaces stale copies, and cleanup cannot overtake an in-flight final delivery. No Redis, SMTP or browser event is sent by these tests.
+
+Root owns rollout. In an isolated test tenant, enqueue an in-app notification, complete actor or recipient closure before its delivery runs, then verify no notification is shown and no related row is recreated. Existing completed Redis jobs may still contain historical payloads from older versions; queue retention/cleanup is a separate operator concern and this change does not erase that history.

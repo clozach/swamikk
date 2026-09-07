@@ -31,7 +31,9 @@ export const billingCopy = {
     period: "Current billing month",
     paid: "Paid this month",
     alreadyRefunded: "Already refunded",
+    refundedBeforeRequest: "Refunded before this request",
     refund: "Refund remaining this month",
+    refundReviewed: "Amount reviewed for refund",
     fullMonth:
         "Your current paid month is refunded in full, including on its last day. An earlier refund is counted so the total does not exceed what you paid.",
     unpaidMonth:

@@ -15,6 +15,15 @@ import Invoice from "@models/Invoice";
 import Community from "@models/Community";
 
 jest.mock("@models/Domain");
+jest.mock(
+    "../../../../../../../packages/common-logic/src/account-lifecycle/gate",
+    () => ({
+        ...jest.requireActual(
+            "../../../../../../../packages/common-logic/src/account-lifecycle/gate",
+        ),
+        withAccountWrite: jest.fn((_key, operation) => operation()),
+    }),
+);
 jest.mock("@models/User");
 jest.mock("@models/Course");
 jest.mock("@models/PaymentPlan");
@@ -70,7 +79,7 @@ describe("Payment Initiate Route", () => {
                 planId: "planA",
             }),
             headers: {
-                get: jest.fn().mockResolvedValue("test.com"),
+                get: jest.fn().mockReturnValue("test.com"),
             },
         } as unknown as NextRequest;
 

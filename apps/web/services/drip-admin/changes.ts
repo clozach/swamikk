@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import { withAccountWrite } from "../../../../packages/common-logic/src/account-lifecycle/gate";
 import { releaseSettingsSignature } from "../../../../packages/common-logic/src/course-release-revision";
 import type { ScheduledGroup } from "../../../../packages/common-logic/src/drip-schedule";
 import type GQLContext from "@/models/GQLContext";
@@ -13,6 +14,7 @@ import { DripChangeModel } from "./models";
 import { prepareDripPreview } from "./preview";
 import {
     editableCourse,
+    requireDripActor,
     plain,
     revisionFilter,
     scheduleFingerprint,
@@ -73,27 +75,43 @@ async function prepareVersion(
     };
     return { ...data, previewHash: fingerprint(plain(data)) };
 }
+function withDraftWrite<T>(
+    ctx: GQLContext,
+    operation: () => Promise<T>,
+): Promise<T> {
+    requireDripActor(ctx);
+    return withAccountWrite(
+        {
+            domainId: String(ctx.subdomain._id),
+            userId: ctx.user.userId,
+            purpose: "release-draft",
+        },
+        operation,
+    );
+}
 export async function createDripChange(raw: unknown, ctx: GQLContext) {
     const { courseId, patch } = dripCreateSchema.parse(raw);
-    const prepared = await prepareVersion(courseId, patch, 1, ctx);
-    requireCondition(
-        scheduleFingerprint({
-            groups: prepared.proposedGroups,
-            published: prepared.preview.coursePublished,
-        }) !== prepared.baseline.fingerprint,
-        "no_change",
-        "Choose a schedule change before saving a draft.",
-    );
-    return dripChangeView(
-        await DripChangeModel.create({
-            domain: ctx.subdomain._id,
-            id: randomUUID(),
-            courseId,
-            ...prepared,
-            state: { kind: "draft" },
-            history: [],
-        }),
-    );
+    return withDraftWrite(ctx, async () => {
+        const prepared = await prepareVersion(courseId, patch, 1, ctx);
+        requireCondition(
+            scheduleFingerprint({
+                groups: prepared.proposedGroups,
+                published: prepared.preview.coursePublished,
+            }) !== prepared.baseline.fingerprint,
+            "no_change",
+            "Choose a schedule change before saving a draft.",
+        );
+        return dripChangeView(
+            await DripChangeModel.create({
+                domain: ctx.subdomain._id,
+                id: randomUUID(),
+                courseId,
+                ...prepared,
+                state: { kind: "draft" },
+                history: [],
+            }),
+        );
+    });
 }
 export async function refreshDripChange(
     id: string,
@@ -394,6 +412,13 @@ export async function reconcileDripChange(id: string, ctx: GQLContext) {
 }
 
 export async function restoreDripChange(
+    id: string,
+    version: number,
+    ctx: GQLContext,
+) {
+    return withDraftWrite(ctx, () => prepareRestorationDraft(id, version, ctx));
+}
+async function prepareRestorationDraft(
     id: string,
     version: number,
     ctx: GQLContext,

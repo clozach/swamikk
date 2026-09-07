@@ -23,6 +23,15 @@ import {
 
 // Mock all external dependencies
 jest.mock("@models/Domain");
+jest.mock(
+    "../../../../../../../packages/common-logic/src/account-lifecycle/gate",
+    () => ({
+        ...jest.requireActual(
+            "../../../../../../../packages/common-logic/src/account-lifecycle/gate",
+        ),
+        withAccountWrite: jest.fn((_key, operation) => operation()),
+    }),
+);
 jest.mock("@models/User");
 jest.mock("@models/Course");
 jest.mock("@models/Community");
@@ -170,7 +179,7 @@ describe("Payment Initiate Integration Tests - Included Products", () => {
                 origin: "https://test.com",
             }),
             headers: {
-                get: jest.fn().mockResolvedValue("test.com"),
+                get: jest.fn().mockReturnValue("test.com"),
             },
         } as unknown as NextRequest;
 

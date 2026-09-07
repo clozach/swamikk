@@ -11,16 +11,30 @@ import {
 } from "./models";
 import { accessAssert } from "./errors";
 import { accessDate, accessKey, accessPeriod } from "./keys";
+import { withAccountWrite } from "../account-lifecycle/gate";
 
-export async function ensureMembershipAccess({
-    domainId,
-    membership,
-    startedAt,
-}: {
+type EnsureMembershipAccessInput = {
     domainId: string;
     membership: Membership;
     startedAt?: Date;
-}): Promise<MembershipAccessPeriod> {
+};
+export async function ensureMembershipAccess(
+    input: EnsureMembershipAccessInput,
+): Promise<MembershipAccessPeriod> {
+    return withAccountWrite(
+        {
+            domainId: input.domainId,
+            userId: input.membership.userId,
+            purpose: "membership-access",
+        },
+        () => ensureAccessPeriod(input),
+    );
+}
+async function ensureAccessPeriod({
+    domainId,
+    membership,
+    startedAt,
+}: EnsureMembershipAccessInput): Promise<MembershipAccessPeriod> {
     const key: MembershipAccessKey = {
         domainId,
         userId: membership.userId,

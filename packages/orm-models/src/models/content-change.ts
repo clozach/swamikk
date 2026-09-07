@@ -1,14 +1,28 @@
-import type { ContentChange } from "@courselit/common-models";
+import type {
+    LessonContentChange,
+    PageWidgetContentChange,
+} from "@courselit/common-models";
 import mongoose from "mongoose";
 
-export interface InternalContentChange
-    extends Omit<ContentChange, "createdAt" | "updatedAt"> {
+export interface InternalContentChangeFields {
     domain: mongoose.Types.ObjectId;
     createdAt: Date;
     updatedAt: Date;
-    /** Derived lock: present only while an application has no settled outcome. */
     activeTarget?: string;
 }
+export type InternalLessonContentChange = Omit<
+    LessonContentChange,
+    "createdAt" | "updatedAt"
+> &
+    InternalContentChangeFields;
+export type InternalPageContentChange = Omit<
+    PageWidgetContentChange,
+    "createdAt" | "updatedAt"
+> &
+    InternalContentChangeFields;
+export type InternalContentChange =
+    | InternalLessonContentChange
+    | InternalPageContentChange;
 
 export const ContentChangeSchema = new mongoose.Schema<InternalContentChange>(
     {

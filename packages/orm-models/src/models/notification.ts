@@ -12,6 +12,7 @@ export interface InternalNotification
     domain: mongoose.Types.ObjectId;
     notificationId: string;
     userId: string;
+    forUserId: string;
     activityType: ActivityType;
     entityId: string;
     read: boolean;

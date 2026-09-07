@@ -1,3 +1,4 @@
+import { assertNoMemberMimicMutation } from "@/services/member-mimic/context";
 import type { NextRequest } from "next/server";
 import type { ContentChangeRouteParams } from "@courselit/common-models";
 import {
@@ -28,6 +29,7 @@ export async function GET(
     { params }: ContentChangeRouteParams,
 ) {
     return apiResponse(async () => {
+        assertNoMemberMimicMutation(req.headers);
         const ctx = await requestContext(req);
         await limitRequest(req, ctx, "content-change-read", 120);
         return { change: changeView(await getChange((await params).id, ctx)) };
@@ -39,6 +41,7 @@ export async function POST(
     { params }: ContentChangeRouteParams,
 ) {
     return apiResponse(async () => {
+        assertNoMemberMimicMutation(req.headers);
         requireSameOrigin(req);
         const ctx = await requestContext(req);
         await limitRequest(req, ctx, "content-change-action");
@@ -81,6 +84,7 @@ export async function DELETE(
     { params }: ContentChangeRouteParams,
 ) {
     return apiResponse(async () => {
+        assertNoMemberMimicMutation(req.headers);
         requireSameOrigin(req);
         const ctx = await requestContext(req);
         await limitRequest(req, ctx, "content-change-delete");

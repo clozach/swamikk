@@ -5,11 +5,6 @@ let mongod: MongoMemoryServer | null = null;
 
 jest.setTimeout(30000);
 
-function getMongoPort(basePort: number) {
-    const workerId = Number(process.env.JEST_WORKER_ID || "0");
-    return basePort + workerId;
-}
-
 // Suppress console.error during tests to reduce noise
 const originalError = console.error;
 beforeAll(() => {
@@ -27,7 +22,6 @@ beforeAll(async () => {
     mongod = await MongoMemoryServer.create({
         instance: {
             ip: "127.0.0.1",
-            port: getMongoPort(38017),
         },
     });
     const mongoUri = mongod.getUri();

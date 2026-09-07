@@ -100,6 +100,14 @@ function VerifyContent() {
                                 Go to my content
                             </Link>
                         </Button>
+                        {id && (
+                            <Link
+                                href={`/dashboard/receipts/${encodeURIComponent(id)}`}
+                                className="rounded-sm px-4 py-3 underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4"
+                            >
+                                View receipt
+                            </Link>
+                        )}
                     </>
                 ) : (
                     <>

@@ -5,6 +5,7 @@ export interface PageSelection {
     element: HTMLElement | null;
     target: FeedbackTarget;
     label: string;
+    authorTarget?: { pageId: string; widgetId: string };
 }
 
 const excluded =
@@ -74,7 +75,18 @@ export function selectionFromElement(
                   componentId: componentPath(element),
                   label,
               };
-    return { element, label, target };
+    const widget = node.closest<HTMLElement>("[data-feedback-widget]");
+    const pageId = widget?.closest<HTMLElement>("[data-feedback-page]")?.dataset
+        .feedbackPage;
+    const widgetId = widget?.dataset.feedbackWidget;
+    return {
+        element,
+        label,
+        target,
+        ...(pageId && widgetId && !lesson
+            ? { authorTarget: { pageId, widgetId } }
+            : {}),
+    };
 }
 
 export function pageChoices(path: string): PageSelection[] {

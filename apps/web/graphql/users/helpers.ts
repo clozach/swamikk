@@ -8,6 +8,9 @@ import { revokeMemberMimicForUser } from "@/services/member-mimic/cleanup";
 
 import UserModel from "@models/User";
 import { deleteUserFeedback } from "@/services/content-changes/personal-data";
+import { deleteUserRefundDrafts } from "@/services/refund-requests/cleanup";
+import { requireAccountErasureReady } from "../../../../packages/common-logic/src/account-lifecycle/gate";
+import mongoose from "mongoose";
 import { responses, internal } from "@/config/strings";
 import constants from "@/config/constants";
 import GQLContext from "@/models/GQLContext";
@@ -44,10 +47,7 @@ import ProductDiscussionReplyModel from "@models/ProductDiscussionReply";
 import ProductDiscussionLikeModel from "@models/ProductDiscussionLike";
 import ProductDiscussionSubscriberModel from "@models/ProductDiscussionSubscriber";
 import ProductDiscussionReportModel from "@models/ProductDiscussionReport";
-import {
-    cancelAndDeleteMemberships,
-    deleteCommunityPosts,
-} from "../communities/logic";
+import { deleteCommunityPosts } from "../communities/logic";
 import CommunityPostModel from "@models/CommunityPost";
 import CommunityCommentModel from "@models/CommunityComment";
 import { deleteMedia } from "@/services/medialit";
@@ -163,13 +163,6 @@ export async function migrateBusinessEntities(
             },
             { userId: deleterUser.userId },
         ),
-        EmailDeliveryModel.updateMany(
-            {
-                domain: ctx.subdomain._id,
-                userId: userToDelete.userId,
-            },
-            { userId: deleterUser.userId },
-        ),
         UserThemeModel.updateMany(
             {
                 domain: ctx.subdomain._id,
@@ -178,13 +171,6 @@ export async function migrateBusinessEntities(
             { userId: deleterUser.userId },
         ),
         PaymentPlanModel.updateMany(
-            {
-                domain: ctx.subdomain._id,
-                userId: userToDelete.userId,
-            },
-            { userId: deleterUser.userId },
-        ),
-        OngoingSequenceModel.updateMany(
             {
                 domain: ctx.subdomain._id,
                 userId: userToDelete.userId,
@@ -264,14 +250,27 @@ export async function migrateBusinessEntities(
 
 /**
  * Cleans up personal data and user-specific records.
- * This ensures GDPR compliance by removing all personal information.
+ * Financial and recovery records are retained separately; this is not backup erasure.
  */
 export async function cleanupPersonalData(
     userToDelete: InternalUser,
     ctx: GQLContext,
 ): Promise<void> {
+    await requireAccountErasureReady({
+        domainId: String(ctx.subdomain._id),
+        userId: userToDelete.userId,
+    });
     await Promise.all([
         deleteUserFeedback(String(ctx.subdomain._id), userToDelete.userId),
+        deleteUserRefundDrafts(String(ctx.subdomain._id), userToDelete.userId),
+        EmailDeliveryModel.deleteMany({
+            domain: ctx.subdomain._id,
+            userId: userToDelete.userId,
+        }),
+        OngoingSequenceModel.deleteMany({
+            domain: ctx.subdomain._id,
+            userId: userToDelete.userId,
+        }),
         deleteUserMemberAccess(String(ctx.subdomain._id), userToDelete.userId),
         deleteUserDripChanges(String(ctx.subdomain._id), userToDelete.userId),
         deleteUserContactPreferences(
@@ -396,32 +395,15 @@ export async function cleanupPersonalData(
         },
     );
 
-    // Delete memberships and cancel subscriptions
-    const memberships = await MembershipModel.find<InternalMembership>({
-        domain: ctx.subdomain._id,
-        userId: userToDelete.userId,
-    });
-
-    // for (const membership of memberships) {
-    //     // Cancel active subscriptions
-    //     if (membership.subscriptionId) {
-    //         const paymentMethod = await getPaymentMethodFromSettings(
-    //             ctx.subdomain.settings,
-    //             membership.subscriptionMethod,
-    //         );
-    //         await paymentMethod?.cancel(membership.subscriptionId);
-    //     }
-
-    //     // Delete associated invoices
-    //     await InvoiceModel.deleteMany({
-    //         domain: ctx.subdomain._id,
-    //         membershipId: membership.membershipId,
-    //     });
-
-    //     // Delete membership
-    //     await membership.deleteOne();
-    // }
-    await cancelAndDeleteMemberships(memberships, ctx);
+    // Native references remain available to receipt and provider reconciliation.
+    // Account closure has already refused unresolved provider subscriptions.
+    await MembershipModel.updateMany(
+        {
+            domain: ctx.subdomain._id,
+            userId: userToDelete.userId,
+        },
+        { $set: { status: Constants.MembershipStatus.EXPIRED } },
+    );
 
     // Remove user from sequence entrants
     await SequenceModel.updateMany(
@@ -439,9 +421,13 @@ export async function cleanupPersonalData(
         { $pull: { customers: userToDelete.userId } },
     );
 
-    await Account.deleteOne({
+    await Account.deleteMany({
         domain: ctx.subdomain._id,
         userId: userToDelete._id,
+    });
+    await mongoose.connection.collection("sessions").deleteMany({
+        domain: ctx.subdomain._id,
+        userId: { $in: [userToDelete._id, String(userToDelete._id)] },
     });
 
     if (userToDelete.avatar?.mediaId) {

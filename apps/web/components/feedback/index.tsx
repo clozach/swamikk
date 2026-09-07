@@ -4,7 +4,16 @@ import { useContext, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { Check, Copy, MessageSquare, MousePointer2 } from "lucide-react";
+import {
+    Pencil,
+    Check,
+    Copy,
+    MessageSquare,
+    MousePointer2,
+} from "lucide-react";
+import type { Profile } from "@courselit/common-models";
+import { useMemberMimic } from "@/components/member-mimic/context";
+import { pageEditCopy } from "./page-edit-copy";
 import { checkPermission } from "@courselit/utils";
 import { AddressContext, ProfileContext } from "@components/contexts";
 import { FEEDBACK_ADMIN_PERMISSIONS } from "@ui-config/constants";
@@ -21,20 +30,23 @@ import { useSelection } from "./use-selection";
 import { getPagePrompt } from "./page-prompt";
 import "./feedback.css";
 
+const PageWidgetEditor = dynamic(() => import("./page-widget-editor"));
 const CommentForm = dynamic(() => import("./comment-form"));
 
 type Panel =
     | { kind: "closed" }
+    | { kind: "edit"; target: { pageId: string; widgetId: string } }
     | { kind: "comment"; selection: PageSelection }
     | { kind: "choices"; choices: PageSelection[] }
     | { kind: "prompt"; text: string };
 
 export default function ContextualFeedback() {
     const path = usePathname() || "/";
+    const mimic = useMemberMimic();
     const { profile } = useContext(ProfileContext);
     return (
         <FeedbackSession
-            key={`${path}:${profile?.userId || "visitor"}`}
+            key={`${path}:${profile?.userId || "visitor"}:${mimic.kind}`}
             path={path}
         />
     );
@@ -43,8 +55,13 @@ export default function ContextualFeedback() {
 function FeedbackSession({ path }: { path: string }) {
     const { profile } = useContext(ProfileContext);
     const address = useContext(AddressContext);
+    const mimic = useMemberMimic();
+    const canEdit =
+        mimic.kind === "inactive" &&
+        !!profile?.permissions?.includes("site:manage");
     const admin = Boolean(
-        profile?.permissions &&
+        mimic.kind === "inactive" &&
+            profile?.permissions &&
             checkPermission(profile.permissions, FEEDBACK_ADMIN_PERMISSIONS),
     );
     const [panel, setPanel] = useState<Panel>({ kind: "closed" });
@@ -138,6 +155,21 @@ function FeedbackSession({ path }: { path: string }) {
                                 <MousePointer2 />
                                 {selected ? copy.chooseAgain : copy.select}
                             </Button>
+                            {canEdit && selected?.authorTarget && (
+                                <Button
+                                    variant="outline"
+                                    className="min-h-11 justify-start"
+                                    onClick={() =>
+                                        setPanel({
+                                            kind: "edit",
+                                            target: selected.authorTarget!,
+                                        })
+                                    }
+                                >
+                                    <Pencil />
+                                    {pageEditCopy.edit}
+                                </Button>
+                            )}
                             {admin && (
                                 <>
                                     <Button
@@ -204,6 +236,13 @@ function FeedbackSession({ path }: { path: string }) {
                     data-feedback-ui
                     className="kk-feedback-dialog max-h-[85dvh] w-[calc(100%-2rem)] overflow-y-auto rounded-xl"
                 >
+                    {panel.kind === "edit" && canEdit && profile && (
+                        <PageWidgetEditor
+                            target={panel.target}
+                            profile={profile as Profile}
+                            address={address}
+                        />
+                    )}
                     {panel.kind === "comment" && (
                         <CommentForm
                             key={`${profile?.userId || "visitor"}:${JSON.stringify(panel.selection.target)}`}

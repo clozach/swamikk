@@ -9,6 +9,8 @@ import { ThemeContext } from "@components/contexts";
 import { Button } from "@/components/ui/button";
 import { feedbackUi as copy } from "@config/strings";
 import { feedbackRequest } from "./api";
+import { isPageWidgetChange } from "@courselit/common-models";
+import PageProposalPreview from "./page-proposal-preview";
 
 export const changeStateLabel = (change: ContentChange) =>
     ({
@@ -78,40 +80,48 @@ export default function ProposalReview({
                     {change.summary}
                 </h1>
             </div>
-            <div className="grid gap-4 lg:grid-cols-2">
-                {(["before", "after"] as const).map((side) => (
-                    <section
-                        key={side}
-                        className={`min-w-0 rounded-xl border p-5 ${side === "after" ? "border-primary/50" : ""}`}
-                    >
-                        <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                            {copy[side]}
+            {isPageWidgetChange(change) ? (
+                <PageProposalPreview change={change} />
+            ) : (
+                <>
+                    <div className="grid gap-4 lg:grid-cols-2">
+                        {(["before", "after"] as const).map((side) => (
+                            <section
+                                key={side}
+                                className={`min-w-0 rounded-xl border p-5 ${side === "after" ? "border-primary/50" : ""}`}
+                            >
+                                <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                                    {copy[side]}
+                                </h2>
+                                <h3 className="mb-4 text-2xl font-semibold break-words">
+                                    {change.preview[side].title}
+                                </h3>
+                                <div className="break-words">
+                                    <TextRenderer
+                                        json={change.preview[side].content}
+                                        theme={theme.theme}
+                                    />
+                                </div>
+                            </section>
+                        ))}
+                    </div>
+                    <section className="rounded-xl border bg-muted/30 p-5 space-y-3">
+                        <h2 className="text-lg font-semibold">
+                            {copy.consequences}
                         </h2>
-                        <h3 className="mb-4 text-2xl font-semibold break-words">
-                            {change.preview[side].title}
-                        </h3>
-                        <div className="break-words">
-                            <TextRenderer
-                                json={change.preview[side].content}
-                                theme={theme.theme}
-                            />
-                        </div>
+                        <p>{copy.textScope}</p>
+                        <p>
+                            {change.baseline.published
+                                ? copy.publishedEffect
+                                : copy.draftEffect}
+                        </p>
+                        <p>{copy.undoLimit}</p>
+                        <p className="text-sm text-muted-foreground">
+                            {copy.exactApproval}
+                        </p>
                     </section>
-                ))}
-            </div>
-            <section className="rounded-xl border bg-muted/30 p-5 space-y-3">
-                <h2 className="text-lg font-semibold">{copy.consequences}</h2>
-                <p>{copy.textScope}</p>
-                <p>
-                    {change.baseline.published
-                        ? copy.publishedEffect
-                        : copy.draftEffect}
-                </p>
-                <p>{copy.undoLimit}</p>
-                <p className="text-sm text-muted-foreground">
-                    {copy.exactApproval}
-                </p>
-            </section>
+                </>
+            )}
             {"reason" in change.state && (
                 <p role="status" className="rounded-lg border p-4">
                     {change.state.reason}

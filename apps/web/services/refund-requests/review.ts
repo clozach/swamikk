@@ -16,6 +16,7 @@ import {
     type RefundRequestDependencies,
 } from "./provider";
 import { refundRequestView, refundReviewHash } from "./projection";
+import { withAccountWrite } from "../../../../packages/common-logic/src/account-lifecycle/gate";
 
 /** Save the reason before external reads so a provider failure does not erase the draft. */
 export async function prepareRefundRequest(
@@ -24,6 +25,20 @@ export async function prepareRefundRequest(
     deps: RefundRequestDependencies = refundRequestDependencies,
 ) {
     requireRefundMember(ctx);
+    return withAccountWrite(
+        {
+            domainId: String(ctx.subdomain._id),
+            userId: ctx.user.userId,
+            purpose: "refund-draft",
+        },
+        () => prepareRefundDraft(ctx, input, deps),
+    );
+}
+async function prepareRefundDraft(
+    ctx: GQLContext,
+    input: { invoiceId: string; reason: string },
+    deps: RefundRequestDependencies,
+) {
     requireCondition(
         !ctx.memberMimic,
         "mimic_read_only",

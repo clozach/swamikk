@@ -15,6 +15,7 @@ import { isFeedbackAdmin, requireFeedbackAdmin } from "./http";
 import { feedbackInputSchema } from "./validation";
 import { cursorFilter } from "./pagination";
 import { formatFeedbackPrompt } from "@/lib/feedback-prompt";
+import { withAccountWrite } from "../../../../packages/common-logic/src/account-lifecycle/gate";
 
 export function feedbackView(
     record: InternalFeedback,
@@ -36,6 +37,27 @@ export function feedbackView(
 }
 
 export async function createFeedback(
+    raw: FeedbackInput,
+    ctx: GQLContext,
+): Promise<ContextualFeedback> {
+    if (!ctx.user) return createFeedbackRecord(raw, ctx);
+    requireCondition(
+        String(ctx.user.domain) === String(ctx.subdomain._id),
+        "forbidden",
+        "Account does not belong to this site.",
+        403,
+    );
+    return withAccountWrite(
+        {
+            domainId: String(ctx.subdomain._id),
+            userId: ctx.user.userId,
+            purpose: "feedback",
+        },
+        () => createFeedbackRecord(raw, ctx),
+    );
+}
+
+async function createFeedbackRecord(
     raw: FeedbackInput,
     ctx: GQLContext,
 ): Promise<ContextualFeedback> {

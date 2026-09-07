@@ -1,27 +1,31 @@
 import type { TextEditorContent } from "./text-editor-content";
-
+import type {
+    PageWidgetTarget,
+    PageWidgetPatch,
+    PageWidgetChangeVersion,
+    PageWidgetChangeInput,
+} from "./page-content-change";
 export interface LessonTextPatch {
     title?: string;
     content?: TextEditorContent;
 }
-
 export interface LessonChangeTarget {
     kind: "lesson";
     lessonId: string;
 }
-
-export interface ContentChangeInput {
+export interface LessonContentChangeInput {
     feedbackId?: string;
     target: LessonChangeTarget;
     patch: LessonTextPatch;
     summary: string;
 }
-
+export type ContentChangeInput =
+    | LessonContentChangeInput
+    | PageWidgetChangeInput;
 export interface LessonTextSnapshot {
     title: string;
     content: TextEditorContent;
 }
-
 export interface ContentChangeBaseline {
     revision: number;
     fingerprint: string;
@@ -29,14 +33,12 @@ export interface ContentChangeBaseline {
     courseId: string;
     published: boolean;
 }
-
 export interface ContentChangeApproval {
     userId: string;
     at: string;
     version: number;
     previewHash: string;
 }
-
 export type ContentChangeState =
     | { kind: "proposed" }
     | { kind: "rejected"; userId: string; at: string }
@@ -56,8 +58,7 @@ export type ContentChangeState =
           appliedAt: string;
           appliedRevision: number;
       };
-
-export interface ContentChangeVersion {
+export interface LessonContentChangeVersion {
     version: number;
     summary: string;
     patch: LessonTextPatch;
@@ -67,10 +68,11 @@ export interface ContentChangeVersion {
     preparedBy: string;
     preparedAt: string;
 }
-
-export interface ContentChange extends ContentChangeVersion {
+export type ContentChangeVersion =
+    | LessonContentChangeVersion
+    | PageWidgetChangeVersion;
+interface ChangeMetadata {
     id: string;
-    target: LessonChangeTarget;
     feedbackId?: string;
     reversesChangeId?: string;
     state: ContentChangeState;
@@ -79,37 +81,46 @@ export interface ContentChange extends ContentChangeVersion {
     createdAt: string;
     updatedAt: string;
 }
-
+export interface LessonContentChange
+    extends LessonContentChangeVersion,
+        ChangeMetadata {
+    target: LessonChangeTarget;
+}
+export interface PageWidgetContentChange
+    extends PageWidgetChangeVersion,
+        ChangeMetadata {
+    target: PageWidgetTarget;
+}
+export type ContentChange = LessonContentChange | PageWidgetContentChange;
+export const isPageWidgetChange = (
+    change: ContentChange,
+): change is PageWidgetContentChange => change.target.kind === "page-widget";
 export type ContentChangeAction =
     | {
           action: "revise";
           version: number;
-          patch: LessonTextPatch;
+          patch: LessonTextPatch | PageWidgetPatch;
           summary: string;
       }
     | { action: "approve"; version: number; previewHash: string }
     | { action: "reject"; version: number }
     | { action: "reconcile" }
     | { action: "revert"; version: number };
-
 export interface ContentChangeRouteParams {
     params: Promise<{ id: string }>;
 }
-
 /** Server-only guard; never accepted directly from the public lesson API. */
 export interface LessonWriteGuard {
     revision: number;
     fingerprint: string;
     operationId: string;
 }
-
 export interface LessonContentChangeReceipt {
     outcome: "applied" | "cancelled";
     operationId: string;
     revision: number;
     appliedAt: string;
 }
-
 export interface ContentChangeApiError {
     error: { code: string; message: string };
 }

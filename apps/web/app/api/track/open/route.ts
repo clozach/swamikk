@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import DomainModel, { Domain } from "@models/Domain";
-import EmailEventModel from "@models/EmailEvent";
+import { recordAccountEmailEvent } from "@/services/account-closure/email-event";
 import UserModel from "@models/User";
 import SequenceModel from "@models/Sequence";
 import { Constants, Sequence, User } from "@courselit/common-models";
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
         });
         const email = sequence?.emails.find((e) => e.emailId === emailId);
         if (sequence && user && email) {
-            await EmailEventModel.create({
+            await recordAccountEmailEvent({
                 domain: domain._id,
                 sequenceId,
                 userId,

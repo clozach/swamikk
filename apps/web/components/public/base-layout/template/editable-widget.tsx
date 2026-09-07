@@ -103,7 +103,11 @@ const EditableWidget = ({
     }
 
     return (
-        <div data-feedback-id={item.widgetId} data-feedback-label={item.name}>
+        <div
+            data-feedback-id={item.widgetId}
+            data-feedback-label={item.name}
+            data-feedback-widget={item.shared ? undefined : item.widgetId}
+        >
             <WidgetByName
                 name={item.name}
                 settings={item.settings || {}}

@@ -26,6 +26,7 @@ import { DomainDocument } from "@/domain/model/domain";
 import { Liquid } from "liquidjs";
 import { logger } from "@/logger";
 import { captureError, getDomainId } from "@/observability/posthog";
+import { withAccountWrite } from "../../../../../packages/common-logic/src/account-lifecycle/gate";
 const liquidEngine = new Liquid();
 
 export async function processOngoingSequence(
@@ -77,14 +78,23 @@ export async function processOngoingSequence(
             ongoingSequence,
         );
 
-        await attemptMailSending({
-            domain,
-            creator,
-            user,
-            sequence,
-            ongoingSequence,
-            email: nextPublishedEmail,
-        });
+        // Deletion waits through SMTP and its delivery receipt; accepted mail cannot be recalled.
+        await withAccountWrite(
+            {
+                domainId: String(ongoingSequence.domain),
+                userId: user.userId,
+                purpose: "sequence-delivery",
+            },
+            () =>
+                attemptMailSending({
+                    domain,
+                    creator,
+                    user,
+                    sequence,
+                    ongoingSequence,
+                    email: nextPublishedEmail,
+                }),
+        );
 
         ongoingSequence.sentEmailIds.push(nextPublishedEmail.emailId);
         await domain.incrementEmailCount();

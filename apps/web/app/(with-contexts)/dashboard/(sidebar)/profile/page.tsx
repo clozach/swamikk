@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import ContactPreferencesPanel from "@/components/contact-preferences/panel";
+import AccountClosure from "@/components/account-closure";
 import { contactPreferencesCopy as contactCopy } from "@/config/strings";
 import { billingCopy } from "@/components/member-billing/copy";
 import { useMemberMimic } from "@components/member-mimic/context";
@@ -49,6 +50,7 @@ import { Button } from "@components/ui/button";
 const breadcrumbs = [{ label: PROFILE_PAGE_HEADER, href: "#" }];
 
 export default function Page() {
+    const [accountClosed, setAccountClosed] = useState(false);
     const isMimic = useMemberMimic().kind !== "inactive";
     const [bio, setBio] = useState("");
     const [name, setName] = useState("");
@@ -298,6 +300,22 @@ export default function Page() {
         name === initialDetailsRef.current.name &&
         bio === initialDetailsRef.current.bio;
 
+    if (accountClosed)
+        return (
+            <DashboardContent breadcrumbs={breadcrumbs}>
+                <h1 className="text-3xl font-semibold">
+                    Your account is closed
+                </h1>
+                <p className="my-6">
+                    Your private account data has been removed. Financial and
+                    recovery records are retained as described in your review.
+                </p>
+                <Link href="/" className="underline">
+                    Return home
+                </Link>
+            </DashboardContent>
+        );
+
     return (
         <DashboardContent breadcrumbs={breadcrumbs}>
             <h1 className="text-4xl font-semibold mb-2">
@@ -419,6 +437,16 @@ export default function Page() {
                 key={profile?.userId || "anonymous"}
                 readOnly={isMimic}
             />
+            {profile?.userId && (
+                <AccountClosure
+                    key={`closure:${profile.userId}`}
+                    userId={profile.userId}
+                    onClosed={() => {
+                        setAccountClosed(true);
+                        setProfile(null);
+                    }}
+                />
+            )}
             <Card className="mt-4">
                 <CardHeader>
                     <CardTitle>{PROFILE_EMAIL_PREFERENCES}</CardTitle>

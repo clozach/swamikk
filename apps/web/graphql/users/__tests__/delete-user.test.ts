@@ -3,6 +3,7 @@
  */
 
 import { deleteUser } from "../logic";
+import { AccountLifecycleModel } from "../../../../../packages/common-logic/src/account-lifecycle/model";
 import UserModel from "@models/User";
 import { MembershipAccessModel } from "../../../../../packages/common-logic/src/member-access/models";
 import { MemberMimicModel } from "@/services/member-mimic/model";
@@ -134,6 +135,7 @@ describe("deleteUser - Comprehensive Test Suite", () => {
     afterEach(async () => {
         // Clean up all collections - only this test's data
         await Promise.all([
+            AccountLifecycleModel.deleteMany({ domain: testDomain._id }),
             MemberMimicModel.deleteMany({ domain: testDomain._id }),
             MembershipAccessModel.deleteMany({ domain: testDomain._id }),
             FeedbackModel.deleteMany({ domain: testDomain._id }),
@@ -1039,7 +1041,7 @@ describe("deleteUser - Comprehensive Test Suite", () => {
             expect(reply?.likes).toContain(DU_OTHER_USER_ID);
         });
 
-        it("should delete memberships and associated invoices", async () => {
+        it("retains expired membership references and invoices for financial recovery", async () => {
             const membership = await MembershipModel.create({
                 domain: testDomain._id,
                 membershipId: "mem-123",
@@ -1067,15 +1069,18 @@ describe("deleteUser - Comprehensive Test Suite", () => {
             const memberships = await MembershipModel.find({
                 userId: targetUser.userId,
             });
-            expect(memberships).toHaveLength(0);
+            expect(memberships).toHaveLength(1);
+            expect(memberships[0].status).toBe(
+                Constants.MembershipStatus.EXPIRED,
+            );
 
             const invoices = await InvoiceModel.find({
                 membershipId: membership.membershipId,
             });
-            expect(invoices).toHaveLength(0);
+            expect(invoices).toHaveLength(1);
         });
 
-        it("should cancel active subscriptions and delete invoices", async () => {
+        it("blocks active provider subscriptions before erasure or provider changes", async () => {
             const { getPaymentMethodFromSettings } = require("@/payments-new");
             const mockCancel = jest.fn().mockResolvedValue(true);
             getPaymentMethodFromSettings.mockResolvedValue({
@@ -1106,23 +1111,23 @@ describe("deleteUser - Comprehensive Test Suite", () => {
                 status: Constants.InvoiceStatus.PAID,
             });
 
-            await deleteUser(targetUser.userId, mockCtx);
-
-            // Verify subscription was cancelled
-            expect(mockCancel).toHaveBeenCalledWith("sub_stripe_123");
+            await expect(
+                deleteUser(targetUser.userId, mockCtx),
+            ).rejects.toMatchObject({ code: "needs_review" });
+            expect(mockCancel).not.toHaveBeenCalled();
 
             // Verify membership was deleted
             const memberships = await MembershipModel.find({
                 userId: targetUser.userId,
                 membershipId: membership.membershipId,
             });
-            expect(memberships).toHaveLength(0);
+            expect(memberships).toHaveLength(1);
 
             // Verify invoices were deleted
             const invoices = await InvoiceModel.find({
                 membershipId: membership.membershipId,
             });
-            expect(invoices).toHaveLength(0);
+            expect(invoices).toHaveLength(1);
         });
 
         it("should delete user avatar media", async () => {
@@ -1303,7 +1308,7 @@ describe("deleteUser - Comprehensive Test Suite", () => {
             expect(user).toBeNull();
         });
 
-        it("should handle user with subscription cancellation", async () => {
+        it("requires subscription review before deleting account data", async () => {
             await MembershipModel.create({
                 domain: testDomain._id,
                 membershipId: "mem-123",
@@ -1317,15 +1322,16 @@ describe("deleteUser - Comprehensive Test Suite", () => {
                 subscriptionMethod: "stripe",
             });
 
-            await deleteUser(targetUser.userId, mockCtx);
-
+            await expect(
+                deleteUser(targetUser.userId, mockCtx),
+            ).rejects.toMatchObject({ code: "needs_review" });
             const { getPaymentMethodFromSettings } = require("@/payments-new");
-            expect(getPaymentMethodFromSettings).toHaveBeenCalled();
+            expect(getPaymentMethodFromSettings).not.toHaveBeenCalled();
 
             const memberships = await MembershipModel.find({
                 userId: targetUser.userId,
             });
-            expect(memberships).toHaveLength(0);
+            expect(memberships).toHaveLength(1);
         });
     });
 });

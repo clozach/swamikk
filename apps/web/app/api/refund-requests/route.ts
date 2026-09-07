@@ -16,6 +16,8 @@ import { prepareRefundRequest } from "@/services/refund-requests/review";
 import { submitRefundRequest } from "@/services/refund-requests/actions";
 import { applyRefundRequest } from "@/services/refund-requests/apply";
 import { memberRefundInput } from "./input";
+import { withAccountWrite } from "../../../../../packages/common-logic/src/account-lifecycle/gate";
+import { requireRefundMember } from "@/services/refund-requests/receipts";
 export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
     return apiResponse(async () => {
@@ -40,14 +42,26 @@ export async function POST(req: NextRequest) {
         const ctx = await requestContext(req);
         await limitRequest(req, ctx, "refund-requests-write", 20);
         const input = memberRefundInput.parse(await readBoundedJson(req, 4096));
-        if (input.action === "prepare") return prepareRefundRequest(ctx, input);
-        if (input.action === "submit") return submitRefundRequest(ctx, input);
-        return applyRefundRequest(
-            ctx,
-            input.requestId,
-            false,
-            undefined,
-            input.reviewHash,
+        requireRefundMember(ctx);
+        return withAccountWrite(
+            {
+                domainId: String(ctx.subdomain._id),
+                userId: ctx.user.userId,
+                purpose: "member-refund",
+            },
+            async () => {
+                if (input.action === "prepare")
+                    return prepareRefundRequest(ctx, input);
+                if (input.action === "submit")
+                    return submitRefundRequest(ctx, input);
+                return applyRefundRequest(
+                    ctx,
+                    input.requestId,
+                    false,
+                    undefined,
+                    input.reviewHash,
+                );
+            },
         );
     });
 }

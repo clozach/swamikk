@@ -1,3 +1,4 @@
+import type { PageContentChangeReceipt } from "@courselit/common-models";
 import mongoose from "mongoose";
 import { WidgetSchema } from "./widget";
 import {
@@ -15,6 +16,7 @@ export interface InternalPage extends PublicPage {
     domain: mongoose.Types.ObjectId;
     draftLayout: WidgetInstance[];
     creatorId: string;
+    contentChangeReceipt?: PageContentChangeReceipt;
     draftTitle?: string;
     draftDescription?: string;
     draftSocialImage?: Media | null;
@@ -51,6 +53,7 @@ export const PageSchema = new mongoose.Schema<InternalPage>(
         draftSocialImage: MediaSchema,
         draftRobotsAllowed: Boolean,
         deleted: { type: Boolean, default: false },
+        contentChangeReceipt: { type: mongoose.Schema.Types.Mixed },
     },
     {
         timestamps: true,

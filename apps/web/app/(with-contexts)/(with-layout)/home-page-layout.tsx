@@ -30,6 +30,7 @@ export default function HomepageLayout({
 
     return (
         <BaseLayout
+            pageId={siteInfo!.page.pageId}
             layout={siteInfo!.page.layout}
             title={siteInfo!.page.title || ""}
             siteInfo={siteinfo}

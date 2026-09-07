@@ -10,6 +10,8 @@ import { hasMemberMimicCookie } from "@/services/member-mimic/constants";
 import { resolveMemberReadContext } from "@/services/member-mimic/context";
 import { prepareMimicQuery } from "@/services/member-mimic/graphql";
 import { readBoundedJson } from "@/services/content-changes/http";
+import { withGraphqlAccountWrites } from "@/services/account-closure/graphql-write";
+import { AccountLifecycleError } from "../../../../../packages/common-logic/src/account-lifecycle/gate";
 
 async function updateLastActive(user: any) {
     const dateNow = new Date();
@@ -76,9 +78,18 @@ export async function POST(req: NextRequest) {
             active: true,
         });
 
-        if (user && !hasMemberMimicCookie(req.headers)) {
-            updateLastActive(user);
-        }
+        if (!user)
+            return Response.json(
+                {
+                    errors: [
+                        {
+                            message:
+                                "This signed-in account is unavailable. Sign out before continuing.",
+                        },
+                    ],
+                },
+                { status: 401, headers: { "Cache-Control": "no-store" } },
+            );
     }
 
     let query, variables;
@@ -136,14 +147,35 @@ export async function POST(req: NextRequest) {
             );
         }
     }
-    const response = await graphql({
-        schema,
-        source: query,
-        rootValue: null,
-        contextValue,
-        variableValues: variables,
-    });
-    return Response.json(response, {
-        headers: { "Cache-Control": "no-store" },
-    });
+    try {
+        const response = await withGraphqlAccountWrites(
+            {
+                source: query,
+                variables,
+                operationName: input.operationName,
+                ctx: contextValue as any,
+            },
+            async () => {
+                if (user && !hasMemberMimicCookie(req.headers))
+                    await updateLastActive(user);
+                return graphql({
+                    schema,
+                    source: query,
+                    rootValue: null,
+                    contextValue,
+                    variableValues: variables,
+                    operationName: input.operationName,
+                });
+            },
+        );
+        return Response.json(response, {
+            headers: { "Cache-Control": "no-store" },
+        });
+    } catch (error) {
+        if (!(error instanceof AccountLifecycleError)) throw error;
+        return Response.json(
+            { errors: [{ message: error.message }] },
+            { status: error.status, headers: { "Cache-Control": "no-store" } },
+        );
+    }
 }

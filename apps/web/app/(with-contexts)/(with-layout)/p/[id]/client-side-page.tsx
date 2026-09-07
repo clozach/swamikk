@@ -47,6 +47,7 @@ export default function ClientSidePage({
     return (
         <>
             <BaseLayout
+                pageId={page.pageId}
                 layout={layoutWithoutHeaderFooter}
                 title={page.title || page.pageData?.title}
                 pageData={page.pageData}

@@ -72,7 +72,11 @@ export function CancellationReview({
                     </dd>
                     <dt>{copy.paid}</dt>
                     <dd>{money(quote.paidAmount, quote.currency, true)}</dd>
-                    <dt>{copy.alreadyRefunded}</dt>
+                    <dt>
+                        {isQuote
+                            ? copy.alreadyRefunded
+                            : copy.refundedBeforeRequest}
+                    </dt>
                     <dd>
                         {money(
                             quote.alreadyRefundedAmount,
@@ -80,7 +84,9 @@ export function CancellationReview({
                             true,
                         )}
                     </dd>
-                    <dt className="font-semibold">{copy.refund}</dt>
+                    <dt className="font-semibold">
+                        {isQuote ? copy.refund : copy.refundReviewed}
+                    </dt>
                     <dd className="font-semibold">
                         {money(quote.refundAmount, quote.currency, true)}
                     </dd>

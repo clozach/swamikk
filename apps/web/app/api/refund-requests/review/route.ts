@@ -16,6 +16,7 @@ import { decideRefundRequest } from "@/services/refund-requests/actions";
 import { applyRefundRequest } from "@/services/refund-requests/apply";
 import { verifyRefundClassBooking } from "@/services/refund-requests/booking";
 import { operatorRefundInput, receiptQueryId } from "../input";
+import { withRefundOperatorWrite } from "@/services/refund-requests/account-write";
 export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
     return apiResponse(async () => {
@@ -37,18 +38,20 @@ export async function POST(req: NextRequest) {
         const input = operatorRefundInput.parse(
             await readBoundedJson(req, 4096),
         );
-        if (input.action === "verify-class")
-            return verifyRefundClassBooking(ctx, input);
-        if (input.action === "review")
-            return refreshRefundReview(ctx, input.requestId, true);
-        if (input.action === "reconcile")
-            return applyRefundRequest(
-                ctx,
-                input.requestId,
-                true,
-                undefined,
-                input.reviewHash,
-            );
-        return decideRefundRequest(ctx, input);
+        return withRefundOperatorWrite(ctx, input, async () => {
+            if (input.action === "verify-class")
+                return verifyRefundClassBooking(ctx, input);
+            if (input.action === "review")
+                return refreshRefundReview(ctx, input.requestId, true);
+            if (input.action === "reconcile")
+                return applyRefundRequest(
+                    ctx,
+                    input.requestId,
+                    true,
+                    undefined,
+                    input.reviewHash,
+                );
+            return decideRefundRequest(ctx, input);
+        });
     });
 }

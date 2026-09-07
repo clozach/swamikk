@@ -59,21 +59,52 @@ export const lessonPatchSchema = z
         "Include a title or text change.",
     );
 
-export const contentChangeInputSchema = z
+export const pageWidgetTargetSchema = z
     .object({
-        feedbackId: id.optional(),
-        target: z.object({ kind: z.literal("lesson"), lessonId: id }).strict(),
-        patch: lessonPatchSchema,
-        summary: z.string().trim().min(1).max(2000),
+        kind: z.literal("page-widget"),
+        pageId: id,
+        widgetId: id,
+        field: z.string().min(1).max(80),
     })
     .strict();
+export const pageWidgetPatchSchema = z.discriminatedUnion("kind", [
+    z.object({ kind: z.literal("text"), text: z.string().max(20000) }).strict(),
+    z.object({ kind: z.literal("rich-text"), content }).strict(),
+    z
+        .object({
+            kind: z.literal("image"),
+            mediaId: id,
+            alt: z.string().max(1000),
+        })
+        .strict(),
+]);
+export const contentChangeInputSchema = z.union([
+    z
+        .object({
+            feedbackId: id.optional(),
+            target: z
+                .object({ kind: z.literal("lesson"), lessonId: id })
+                .strict(),
+            patch: lessonPatchSchema,
+            summary: z.string().trim().min(1).max(2000),
+        })
+        .strict(),
+    z
+        .object({
+            feedbackId: id.optional(),
+            target: pageWidgetTargetSchema,
+            patch: pageWidgetPatchSchema,
+            summary: z.string().trim().min(1).max(2000),
+        })
+        .strict(),
+]);
 
 export const contentChangeActionSchema = z.discriminatedUnion("action", [
     z
         .object({
             action: z.literal("revise"),
             version: z.number().int().positive(),
-            patch: lessonPatchSchema,
+            patch: z.union([lessonPatchSchema, pageWidgetPatchSchema]),
             summary: z.string().trim().min(1).max(2000),
         })
         .strict(),

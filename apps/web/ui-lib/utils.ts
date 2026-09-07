@@ -75,6 +75,7 @@ export const constructThumbnailUrlFromFileUrl = (url: string) =>
 
 type FrontEndPage = Pick<
     Page,
+    | "pageId"
     | "name"
     | "type"
     | "title"
@@ -90,6 +91,7 @@ export const getPage = cache(
             ? `
     query {
         page: getPage(id: "${id}") {
+            pageId
             type,
             name,
             title,
@@ -108,6 +110,7 @@ export const getPage = cache(
             : `
     query {
         page: getPage {
+            pageId
             type,
             title,
             layout,
@@ -205,6 +208,7 @@ export const getFullSiteSetup = cache(
                 }
             }
             page: getPage(id: $id) {
+                pageId
                 type,
                 name,
                 title,

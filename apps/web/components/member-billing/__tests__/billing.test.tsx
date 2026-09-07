@@ -173,6 +173,9 @@ test("review exposes full-month and access consequences before sending the froze
         within(screen.getByRole("dialog")).getByText(copy.refundPending),
     ).toBeInTheDocument();
     expect(screen.queryByText(copy.refundSucceeded)).not.toBeInTheDocument();
+    expect(screen.queryByText(copy.refund)).not.toBeInTheDocument();
+    expect(screen.getByText(copy.refundReviewed)).toBeInTheDocument();
+    expect(screen.getByText(copy.refundedBeforeRequest)).toBeInTheDocument();
     fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
     expect(screen.getByText(copy.farewellTitle)).toBeInTheDocument();
 });

@@ -77,7 +77,10 @@ const Template = (props: TemplateProps) => {
     );
 
     return (
-        <div className="flex flex-col bg-background courselit-theme">
+        <div
+            className="flex flex-col bg-background courselit-theme"
+            data-feedback-page={editing ? undefined : props.id}
+        >
             {header && (
                 <EditableWidget
                     item={header}

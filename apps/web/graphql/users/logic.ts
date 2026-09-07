@@ -58,11 +58,6 @@ import CertificateModel from "@models/Certificate";
 import CertificateTemplateModel, {
     CertificateTemplate,
 } from "@models/CertificateTemplate";
-import {
-    validateUserDeletion,
-    migrateBusinessEntities,
-    cleanupPersonalData,
-} from "./helpers";
 const { permissions } = UIConstants;
 import { sealMedia } from "@/services/medialit";
 import { seedNotificationPreferencesForUser } from "../notifications/logic";
@@ -323,11 +318,18 @@ export const deleteUser = async (
             userId: ctx.user.userId,
         })) || (ctx.user as InternalUser);
 
-    await validateUserDeletion(userToDelete, ctx);
-
-    await migrateBusinessEntities(userToDelete, deleterUser, ctx);
-
-    await cleanupPersonalData(userToDelete, ctx);
+    const { eraseAccount } = await import("@/services/account-closure/erase");
+    const { withAccountWrite } = await import(
+        "../../../../packages/common-logic/src/account-lifecycle/gate"
+    );
+    await withAccountWrite(
+        {
+            domainId: String(ctx.subdomain._id),
+            userId: ctx.user.userId,
+            purpose: "admin-account-closure",
+        },
+        () => eraseAccount(userToDelete, deleterUser, ctx),
+    );
 
     return true;
 };
