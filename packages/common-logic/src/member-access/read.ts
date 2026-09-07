@@ -11,7 +11,9 @@ import {
     MembershipAccessModel,
 } from "./models";
 import { accessDate, accessPeriod } from "./keys";
-import { subscriptionEndCutoff } from "./subscription";
+import { subscriptionEndBoundary } from "./subscription";
+import type { ProviderEndBoundary } from "../../../common-models/src/stripe-lifecycle";
+import { frozenSnapshotWithinProviderEnd } from "./provider-boundary";
 
 export async function getMemberCourseReadScope({
     domainId,
@@ -38,9 +40,12 @@ export async function getMemberCourseReadScope({
         entityId: courseId,
         entityType: Constants.MembershipEntityType.COURSE,
     }).lean();
-    const providerCutoffs = new Map<string, Date>();
+    const providerCutoffs = new Map<string, ProviderEndBoundary>();
     for (const membership of memberships) {
-        const cutoff = await subscriptionEndCutoff({ domainId, ...membership });
+        const cutoff = await subscriptionEndBoundary({
+            domainId,
+            ...membership,
+        });
         if (cutoff)
             providerCutoffs.set(
                 `${membership.membershipId}:${membership.sessionId}`,
@@ -131,7 +136,11 @@ export async function getMemberCourseReadScope({
                         `${period.membershipId}:${period.membershipSessionId}` ===
                             key &&
                         period.state.kind === "ended" &&
-                        new Date(period.state.snapshot.cutoff) <= cutoff,
+                        frozenSnapshotWithinProviderEnd(
+                            period,
+                            period.state,
+                            cutoff,
+                        ),
                 ),
         );
     let startedAt: Date | undefined, lastRelativeReleaseAt: Date | undefined;
@@ -140,7 +149,7 @@ export async function getMemberCourseReadScope({
             providerCutoffs.get(
                 `${period.membershipId}:${period.membershipSessionId}`,
             ) ||
-            (await subscriptionEndCutoff({
+            (await subscriptionEndBoundary({
                 domainId,
                 userId,
                 membershipId: period.membershipId,
@@ -152,7 +161,10 @@ export async function getMemberCourseReadScope({
         );
         if (period.state.kind === "ended" || period.state.kind === "prepared") {
             // A newly verified earlier end must not expose an older, wider snapshot.
-            if (cutoff && new Date(period.state.snapshot.cutoff) > cutoff)
+            if (
+                cutoff &&
+                !frozenSnapshotWithinProviderEnd(period, period.state, cutoff)
+            )
                 continue;
             period.state.snapshot.retainedLessonIds.forEach((id) =>
                 retained.add(id),

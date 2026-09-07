@@ -79,6 +79,14 @@ export interface MembershipAccessPeriod extends MembershipAccessKey {
     revision: number;
     createdAt: Date;
     updatedAt: Date;
+    /** Private immutable preimages retained when a verified provider end narrows a boundary. */
+    retentionHistory?: Array<{
+        state: Extract<MembershipAccessState, { kind: "prepared" | "ended" }>;
+        preservedAt: Date;
+        reason: "provider-earlier-end" | "verified-preimage-recovery";
+        evidenceHash?: string;
+        recoveryHash?: string;
+    }>;
     reopenedOperations: Array<{
         operationId: string;
         evidenceId: string;

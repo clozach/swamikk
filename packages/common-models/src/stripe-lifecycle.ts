@@ -1,3 +1,15 @@
+/** Exact local cancellation evidence; never a license to round a new release timestamp. */
+export interface NativeSubscriptionEndProof {
+    operationId: string;
+    cutoff: Date;
+    targets: Array<{ membershipId: string; courseId: string }>;
+}
+
+export interface ProviderEndBoundary {
+    cutoff: Date;
+    nativeCancellation?: NativeSubscriptionEndProof;
+}
+
 /** Financial correlation only. Never contains an email, payment method, or webhook body. */
 export interface StripeSubscriptionBinding {
     subscriptionId: string;
@@ -12,12 +24,13 @@ export interface StripeSubscriptionBinding {
     includedMembershipIds: string[];
     state:
         | { kind: "observed"; status: string; cancelAtPeriodEnd: boolean }
-        | { kind: "ending"; cutoff: Date; operationId: string }
+        | ({ kind: "ending"; operationId: string } & ProviderEndBoundary)
         | {
               kind: "ended";
               cutoff: Date;
               operationId: string;
               unknownReleaseCount: number;
+              nativeCancellation?: NativeSubscriptionEndProof;
           };
     /** No automatic expiry: an old worker must not keep writing after a takeover. */
     claim?: { id: string; eventId: string; startedAt: Date };

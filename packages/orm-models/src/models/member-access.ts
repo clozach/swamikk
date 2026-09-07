@@ -23,6 +23,7 @@ export const MembershipAccessSchema =
         createdAt: { type: Date, required: true },
         updatedAt: { type: Date, required: true },
         reopenedOperations: { type: mongoose.Schema.Types.Mixed, default: [] },
+        retentionHistory: { type: mongoose.Schema.Types.Mixed, default: [] },
     });
 MembershipAccessSchema.index(
     { domain: 1, membershipId: 1, membershipSessionId: 1 },

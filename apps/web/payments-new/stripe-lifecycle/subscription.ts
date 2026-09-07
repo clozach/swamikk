@@ -11,6 +11,7 @@ import { confirmProviderMembershipEnd } from "../../../../packages/common-logic/
 import { AccountLifecycleError } from "../../../../packages/common-logic/src/account-lifecycle/gate";
 import { MembershipAccessModel } from "../../../../packages/common-logic/src/member-access/models";
 import { capBoundPeriods } from "./cap";
+import { nativeCancellationProof } from "./native-end-proof";
 
 async function announceEnd(
     binding: InternalStripeSubscriptionBinding,
@@ -31,20 +32,42 @@ async function announceEnd(
     for (let attempt = 0; attempt < 8; attempt++) {
         const current = await Binding.findById(binding._id).lean();
         requireStripeFact(current, "subscription-binding-unavailable");
+        const effectiveCutoff =
+            current.state.kind !== "observed" &&
+            new Date(current.state.cutoff) < cutoff
+                ? new Date(current.state.cutoff)
+                : cutoff;
+        const nativeCancellation = await nativeCancellationProof(
+            current,
+            effectiveCutoff,
+        );
         if (
             current.state.kind !== "observed" &&
-            new Date(current.state.cutoff) <= cutoff
+            new Date(current.state.cutoff) <= cutoff &&
+            (!nativeCancellation ||
+                JSON.stringify(current.state.nativeCancellation) ===
+                    JSON.stringify(nativeCancellation))
         )
             return current;
         const changed = await Binding.findOneAndUpdate(
             { _id: current._id, revision: current.revision },
             {
                 $set: {
-                    state: {
-                        kind: "ending",
-                        cutoff,
-                        operationId: `stripe-end:${current.mode}:${current.subscriptionId}`,
-                    },
+                    state:
+                        current.state.kind !== "observed" &&
+                        new Date(current.state.cutoff) <= cutoff
+                            ? {
+                                  ...current.state,
+                                  nativeCancellation,
+                              }
+                            : {
+                                  kind: "ending",
+                                  cutoff: effectiveCutoff,
+                                  operationId: `stripe-end:${current.mode}:${current.subscriptionId}`,
+                                  ...(nativeCancellation
+                                      ? { nativeCancellation }
+                                      : {}),
+                              },
                 },
                 $inc: { revision: 1 },
             },
@@ -55,7 +78,10 @@ async function announceEnd(
     throw new StripeLifecycleError("subscription-changed-concurrently", true);
 }
 
-async function finishEnd(binding: InternalStripeSubscriptionBinding) {
+async function finishEnd(
+    binding: InternalStripeSubscriptionBinding,
+    attempt = 0,
+): Promise<void> {
     if (binding.state.kind === "observed") return;
     const { cutoff, operationId } = binding.state;
     const targets = (
@@ -111,6 +137,7 @@ async function finishEnd(binding: InternalStripeSubscriptionBinding) {
                     membershipSessionId: binding.membershipSessionId,
                     operationId,
                     cutoff: new Date(cutoff),
+                    nativeCancellation: binding.state.nativeCancellation,
                 });
                 unknownReleaseCount += result.snapshot.unknownReleaseCount;
             } catch (error) {
@@ -134,8 +161,32 @@ async function finishEnd(binding: InternalStripeSubscriptionBinding) {
             { $set: { status: Constants.MembershipStatus.EXPIRED } },
         );
     }
-    await Binding.updateOne(
-        { _id: binding._id, "state.kind": "ending", "state.cutoff": cutoff },
+    const latest = await Binding.findById(binding._id).lean();
+    requireStripeFact(latest, "subscription-binding-unavailable");
+    if (latest.revision !== binding.revision) {
+        if (attempt >= 8)
+            throw new StripeLifecycleError(
+                "subscription-changed-concurrently",
+                true,
+            );
+        return finishEnd(latest, attempt + 1);
+    }
+    if (
+        binding.state.kind === "ended" &&
+        binding.state.unknownReleaseCount === unknownReleaseCount
+    )
+        return;
+    const settled = await Binding.updateOne(
+        {
+            _id: binding._id,
+            revision: binding.revision,
+            "state.kind": { $in: ["ending", "ended"] },
+            "state.cutoff": cutoff,
+            $or: [
+                { "state.kind": "ending" },
+                { "state.unknownReleaseCount": { $ne: unknownReleaseCount } },
+            ],
+        },
         {
             $set: {
                 state: {
@@ -143,11 +194,27 @@ async function finishEnd(binding: InternalStripeSubscriptionBinding) {
                     cutoff,
                     operationId,
                     unknownReleaseCount,
+                    ...(binding.state.nativeCancellation
+                        ? {
+                              nativeCancellation:
+                                  binding.state.nativeCancellation,
+                          }
+                        : {}),
                 },
             },
             $inc: { revision: 1 },
         },
     );
+    if (!settled.modifiedCount) {
+        const current = await Binding.findById(binding._id).lean();
+        requireStripeFact(current, "subscription-binding-unavailable");
+        if (attempt >= 8)
+            throw new StripeLifecycleError(
+                "subscription-changed-concurrently",
+                true,
+            );
+        return finishEnd(current, attempt + 1);
+    }
 }
 
 /** Terminal evidence is written before claiming so a stuck writer cannot keep reads/drip open. */

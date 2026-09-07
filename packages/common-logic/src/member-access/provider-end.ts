@@ -13,10 +13,18 @@ import { accessDate, accessKey, accessPeriod } from "./keys";
 import { accessAssert, MemberAccessError } from "./errors";
 import { snapshotRetention } from "./snapshot";
 import { withAccountWrite } from "../account-lifecycle/gate";
+import type { ProviderEndBoundary } from "../../../common-models/src/stripe-lifecycle";
+import {
+    frozenSnapshotWithinProviderEnd,
+    preservedSnapshot,
+} from "./provider-boundary";
+
+type ProviderMembershipEndInput = PrepareRetentionInput &
+    Pick<ProviderEndBoundary, "nativeCancellation">;
 
 /** Internal verified-provider hook. It never widens a member's earlier cancellation cap. */
 export async function confirmProviderMembershipEnd(
-    input: PrepareRetentionInput,
+    input: ProviderMembershipEndInput,
 ): Promise<RetentionResult> {
     return withAccountWrite(
         {
@@ -28,7 +36,7 @@ export async function confirmProviderMembershipEnd(
     );
 }
 async function applyProviderEnd(
-    input: PrepareRetentionInput,
+    input: ProviderMembershipEndInput,
 ): Promise<RetentionResult> {
     const cutoff = accessDate(input.cutoff);
     accessAssert(
@@ -117,9 +125,71 @@ async function applyProviderEnd(
         const effectiveCutoff = oldCutoff < cutoff ? oldCutoff : cutoff;
         const operationId =
             state.kind === "active" ? input.operationId : state.operationId;
+        const boundary = {
+            cutoff: effectiveCutoff,
+            nativeCancellation: input.nativeCancellation,
+        };
+        // A provider event may have arrived before native confirmation was saved. Recover
+        // its preserved exact operation proof; never recreate IDs from today's content.
+        const original =
+            input.nativeCancellation && state.kind !== "active"
+                ? period.retentionHistory?.find(
+                      (item) =>
+                          item.state.operationId === state.operationId &&
+                          item.state.operationId ===
+                              input.nativeCancellation!.operationId &&
+                          new Date(item.state.snapshot.cutoff).getTime() ===
+                              new Date(
+                                  input.nativeCancellation!.cutoff,
+                              ).getTime() &&
+                          frozenSnapshotWithinProviderEnd(
+                              period,
+                              item.state,
+                              boundary,
+                          ),
+                  )
+                : undefined;
+        if (
+            original &&
+            (state.kind === "freezing" ||
+                (state.kind !== "active" &&
+                    JSON.stringify(state.snapshot) !==
+                        JSON.stringify(original.state.snapshot)))
+        ) {
+            const restoredState =
+                original.state.kind === "ended"
+                    ? original.state
+                    : {
+                          kind: "ended" as const,
+                          operationId,
+                          snapshot: original.state.snapshot,
+                          endedAt: new Date(),
+                      };
+            const damaged = preservedSnapshot(
+                state,
+                "verified-preimage-recovery",
+            );
+            const restored = await MembershipAccessModel.updateOne(
+                { ...filter, revision: period.revision },
+                {
+                    $set: { state: restoredState, updatedAt: new Date() },
+                    $inc: { revision: 1 },
+                    ...(damaged
+                        ? { $push: { retentionHistory: damaged } }
+                        : {}),
+                },
+            );
+            if (restored.modifiedCount)
+                return {
+                    kind: "ended",
+                    periodId: period.id,
+                    snapshot: restoredState.snapshot,
+                };
+            continue;
+        }
         if (
             (state.kind === "prepared" || state.kind === "ended") &&
-            oldCutoff <= cutoff
+            frozenSnapshotWithinProviderEnd(period, state, boundary)
         ) {
             if (state.kind === "ended")
                 return {
@@ -163,6 +233,9 @@ async function applyProviderEnd(
                     updatedAt: new Date(),
                 },
                 $inc: { revision: 1 },
+                ...(preservedSnapshot(state)
+                    ? { $push: { retentionHistory: preservedSnapshot(state) } }
+                    : {}),
             },
             { new: true },
         ).lean();

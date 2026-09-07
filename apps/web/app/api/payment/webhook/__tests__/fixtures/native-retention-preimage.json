@@ -1,0 +1,50 @@
+{
+    "_id": {
+        "$oid": "6a9e5afa0fdbb58215a97ad8"
+    },
+    "membershipSessionId": "4D5OyBFeoUeNbWIcKkP6G",
+    "domain": {
+        "$oid": "6a56ccf069d7867441ff2864"
+    },
+    "courseId": "Wru9sVHXfUR_kLF3obmPW",
+    "membershipId": "ywjeReE5mThu7OEiuQlYj",
+    "userId": "58QO6LWdhE21VQOIpQCZY",
+    "__v": 0,
+    "createdAt": {
+        "$date": "2026-09-07T06:34:34.473Z"
+    },
+    "deliveries": [],
+    "groupReleases": [],
+    "id": "90fb682b-3838-42e4-9146-11f9dad24536",
+    "reopenedOperations": [],
+    "revision": 3,
+    "start": {
+        "kind": "recorded",
+        "at": {
+            "$date": "2026-09-07T06:34:34.450Z"
+        }
+    },
+    "state": {
+        "kind": "ended",
+        "operationId": "07ecc4d2-7831-405f-b1f9-a92a6b9cac5e",
+        "snapshot": {
+            "cutoff": {
+                "$date": "2026-09-07T06:51:51.451Z"
+            },
+            "visibleLessonIds": [
+                "AI3U41y4NxT3FUFwhU6uV",
+                "MXN-9c8Y5zEzJ4ZJa8ff2",
+                "OH5wC5v14ERyJmRW3Y4zr",
+                "_UAE78t4igKWe2czMZ8j6"
+            ],
+            "retainedLessonIds": ["OH5wC5v14ERyJmRW3Y4zr"],
+            "unknownReleaseCount": 0
+        },
+        "endedAt": {
+            "$date": "2026-09-07T06:51:52.197Z"
+        }
+    },
+    "updatedAt": {
+        "$date": "2026-09-07T06:51:52.197Z"
+    }
+}

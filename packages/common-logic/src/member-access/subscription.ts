@@ -3,7 +3,10 @@ import {
     StripeSubscriptionBindingSchema,
     type InternalStripeSubscriptionBinding,
 } from "../../../orm-models/src/models/stripe-lifecycle";
-import type { SubscriptionAccessSubject } from "../../../common-models/src/stripe-lifecycle";
+import type {
+    SubscriptionAccessSubject,
+    ProviderEndBoundary,
+} from "../../../common-models/src/stripe-lifecycle";
 
 const Binding =
     (mongoose.models.StripeSubscriptionBinding as
@@ -18,6 +21,12 @@ const Binding =
 export async function subscriptionEndCutoff(
     subject: SubscriptionAccessSubject,
 ): Promise<Date | null> {
+    return (await subscriptionEndBoundary(subject))?.cutoff || null;
+}
+
+export async function subscriptionEndBoundary(
+    subject: SubscriptionAccessSubject,
+): Promise<ProviderEndBoundary | null> {
     const alternatives: Record<string, unknown>[] = [
         { membershipId: subject.membershipId },
         { includedMembershipIds: subject.membershipId },
@@ -34,7 +43,12 @@ export async function subscriptionEndCutoff(
         .sort({ "state.cutoff": 1 })
         .lean();
     return binding && binding.state.kind !== "observed"
-        ? new Date(binding.state.cutoff)
+        ? {
+              cutoff: new Date(binding.state.cutoff),
+              ...(binding.state.nativeCancellation
+                  ? { nativeCancellation: binding.state.nativeCancellation }
+                  : {}),
+          }
         : null;
 }
 
