@@ -1,3 +1,7 @@
+import {
+    externalLinkProps,
+    ExternalLinkLabel,
+} from "@courselit/components-library";
 import React, {
     useCallback,
     useEffect,
@@ -265,6 +269,7 @@ function FlyoutItem({
         <li className="relative m-0 list-none p-0" {...handlers}>
             <a
                 href={item.href || "#"}
+                {...externalLinkProps(item.href || "#")}
                 className={clsx(
                     FLYOUT_LINK,
                     hasChildren && "flex items-center justify-between gap-2",
@@ -275,7 +280,13 @@ function FlyoutItem({
                 aria-haspopup={hasChildren || undefined}
                 aria-expanded={hasChildren ? isOpen : undefined}
             >
-                {item.label}
+                <ExternalLinkLabel
+                    newTab={
+                        externalLinkProps(item.href || "#").target === "_blank"
+                    }
+                >
+                    {item.label}
+                </ExternalLinkLabel>
                 {hasChildren && <Chevron direction="right" />}
             </a>
             {hasChildren && (
@@ -331,6 +342,7 @@ export default function DesktopNavItem({ item }: { item: MenuItem }) {
             <a
                 ref={triggerRef}
                 href={item.href || "#"}
+                {...externalLinkProps(item.href || "#")}
                 className={clsx(NAV_LINK, NAV_LINK_METRICS)}
                 aria-haspopup={hasChildren || undefined}
                 aria-expanded={hasChildren ? open : undefined}
@@ -348,7 +360,13 @@ export default function DesktopNavItem({ item }: { item: MenuItem }) {
                         : undefined
                 }
             >
-                {item.label}
+                <ExternalLinkLabel
+                    newTab={
+                        externalLinkProps(item.href || "#").target === "_blank"
+                    }
+                >
+                    {item.label}
+                </ExternalLinkLabel>
             </a>
             {hasChildren && (
                 <Flyout

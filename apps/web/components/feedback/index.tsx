@@ -27,8 +27,10 @@ import {
 } from "@/components/ui/dialog";
 import { PageSelection, pageChoices, pageSelection } from "./targets";
 import { useSelection } from "./use-selection";
-import { FeedbackControlPlacement } from "./placement";
+import { FeedbackControlPlacement, FeedbackOutline } from "./placement";
 import { getPagePrompt } from "./page-prompt";
+import { SelectionTools } from "./selection-tools";
+import { useVisualViewport } from "./viewport";
 import { SelectionChoices } from "./selection-choices";
 import "./feedback.css";
 
@@ -46,6 +48,7 @@ export default function ContextualFeedback() {
     const path = usePathname() || "/";
     const mimic = useMemberMimic();
     const { profile } = useContext(ProfileContext);
+    if (mimic.kind !== "inactive") return null;
     return (
         <FeedbackSession
             key={`${path}:${profile?.userId || "visitor"}:${mimic.kind}`}
@@ -74,6 +77,12 @@ function FeedbackSession({ path }: { path: string }) {
         panel.kind !== "closed",
     );
     const expanded = mode.kind !== "closed";
+    const viewport = useVisualViewport();
+    const composer = panel.kind === "comment";
+    const fullComposer =
+        composer &&
+        !!viewport &&
+        (viewport.width <= 640 || viewport.height <= 480);
 
     async function copyPrompt() {
         setCopying(true);
@@ -121,126 +130,101 @@ function FeedbackSession({ path }: { path: string }) {
                     </span>
                 </button>
             </FeedbackControlPlacement>
-            {rect && panel.kind === "closed" && (
+            {rect && panel.kind === "closed" && <FeedbackOutline rect={rect} />}
+            {notice && (
                 <div
-                    aria-hidden="true"
-                    className="kk-feedback-outline"
-                    style={{
-                        left: rect.left,
-                        top: rect.top,
-                        width: rect.width,
-                        height: rect.height,
-                    }}
-                />
+                    data-feedback-ui
+                    className="kk-feedback-notice border bg-background text-foreground shadow-lg"
+                    role="status"
+                >
+                    {notice}
+                </div>
             )}
-            <aside
-                data-feedback-ui
-                className="kk-feedback-tools text-foreground"
-                aria-label={copy.open}
-            >
-                {notice && (
-                    <div
-                        className="rounded-xl border bg-background px-4 py-3 text-sm shadow-lg"
-                        role="status"
+            {expanded && (
+                <SelectionTools
+                    target={selected ? rect : null}
+                    label={selected?.label || copy.select}
+                >
+                    <Button
+                        size="icon"
+                        aria-label={copy.comment}
+                        title={copy.comment}
+                        onClick={() =>
+                            setPanel({
+                                kind: "comment",
+                                selection: selected || pageSelection(path),
+                            })
+                        }
                     >
-                        {notice}
-                    </div>
-                )}
-                {expanded && (
-                    <div className="kk-feedback-dock rounded-2xl border bg-background p-4 shadow-xl">
-                        <p className="mb-1 text-sm font-semibold truncate">
-                            {selected?.label || copy.select}
-                        </p>
-                        {!selected && (
-                            <p className="mb-3 text-sm text-muted-foreground">
-                                {copy.selectHelp}
-                            </p>
-                        )}
-                        <div className="grid gap-1">
+                        <MessageSquare />
+                    </Button>
+                    <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label={selected ? copy.chooseAgain : copy.select}
+                        title={selected ? copy.chooseAgain : copy.select}
+                        onClick={() =>
+                            setPanel({
+                                kind: "choices",
+                                choices: pageChoices(path),
+                            })
+                        }
+                    >
+                        <MousePointer2 />
+                    </Button>
+                    {canEdit && selected?.authorTarget && (
+                        <Button
+                            size="icon"
+                            variant="outline"
+                            aria-label={pageEditCopy.edit}
+                            title={pageEditCopy.edit}
+                            onClick={() =>
+                                setPanel({
+                                    kind: "edit",
+                                    target: selected.authorTarget!,
+                                })
+                            }
+                        >
+                            <Pencil />
+                        </Button>
+                    )}
+                    {admin && (
+                        <>
                             <Button
-                                variant="outline"
-                                className="min-h-11 justify-between"
-                                onClick={() => {
-                                    setMode({ kind: "closed" });
-                                    setNotice("");
-                                }}
-                            >
-                                {copy.close}
-                                <kbd className="text-xs">Esc</kbd>
-                            </Button>
-                            <Button
-                                className="min-h-11 justify-start"
-                                onClick={() =>
-                                    setPanel({
-                                        kind: "comment",
-                                        selection:
-                                            selected || pageSelection(path),
-                                    })
-                                }
-                            >
-                                <MessageSquare />
-                                {copy.comment}
-                            </Button>
-                            <Button
+                                size="icon"
                                 variant="ghost"
-                                className="min-h-11 justify-start"
-                                onClick={() =>
-                                    setPanel({
-                                        kind: "choices",
-                                        choices: pageChoices(path),
-                                    })
-                                }
+                                disabled={copying}
+                                aria-label={copying ? copy.loading : copy.copy}
+                                aria-describedby="kk-feedback-copy-boundary"
+                                title={copy.copy}
+                                onClick={copyPrompt}
                             >
-                                <MousePointer2 />
-                                {selected ? copy.chooseAgain : copy.select}
+                                <Copy />
                             </Button>
-                            {canEdit && selected?.authorTarget && (
-                                <Button
-                                    variant="outline"
-                                    className="min-h-11 justify-start"
-                                    onClick={() =>
-                                        setPanel({
-                                            kind: "edit",
-                                            target: selected.authorTarget!,
-                                        })
-                                    }
+                            <span
+                                id="kk-feedback-copy-boundary"
+                                className="sr-only"
+                            >
+                                {copy.copyPageScope} {copy.copyHandoff}{" "}
+                                {copy.copyPrivacy}
+                            </span>
+                            <Button
+                                size="icon"
+                                variant="ghost"
+                                asChild
+                                title={copy.review}
+                            >
+                                <Link
+                                    href="/dashboard/changes"
+                                    aria-label={copy.review}
                                 >
-                                    <Pencil />
-                                    {pageEditCopy.edit}
-                                </Button>
-                            )}
-                            {admin && (
-                                <>
-                                    <Button
-                                        variant="ghost"
-                                        disabled={copying}
-                                        className="min-h-11 justify-start"
-                                        onClick={copyPrompt}
-                                    >
-                                        <Copy />
-                                        {copying ? copy.loading : copy.copy}
-                                    </Button>
-                                    <div className="px-3 text-xs text-muted-foreground space-y-2">
-                                        <p>{copy.copyPageScope}</p>
-                                        <p>{copy.copyHandoff}</p>
-                                        <p>{copy.copyPrivacy}</p>
-                                    </div>
-                                    <Button
-                                        variant="ghost"
-                                        asChild
-                                        className="min-h-11 justify-start"
-                                    >
-                                        <Link href="/dashboard/changes">
-                                            <Check />
-                                            {copy.review}
-                                        </Link>
-                                    </Button>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                )}
-            </aside>
+                                    <Check />
+                                </Link>
+                            </Button>
+                        </>
+                    )}
+                </SelectionTools>
+            )}
             <Dialog
                 open={panel.kind !== "closed"}
                 onOpenChange={(open) => {
@@ -249,7 +233,36 @@ function FeedbackSession({ path }: { path: string }) {
             >
                 <DialogContent
                     data-feedback-ui
-                    className="kk-feedback-dialog max-h-[85dvh] w-[calc(100%-2rem)] overflow-y-auto rounded-xl"
+                    className={`kk-feedback-dialog ${composer ? "kk-feedback-composer" : `max-h-[85dvh] w-[calc(100%-2rem)] overflow-y-auto rounded-xl ${panel.kind === "choices" ? "kk-feedback-choices" : ""}`}`}
+                    data-full-viewport={fullComposer || undefined}
+                    style={
+                        viewport
+                            ? {
+                                  left: fullComposer
+                                      ? viewport.left
+                                      : viewport.left + viewport.width / 2,
+                                  top: fullComposer
+                                      ? viewport.top
+                                      : viewport.top + viewport.height / 2,
+                                  width: fullComposer
+                                      ? viewport.width
+                                      : Math.min(
+                                            composer ? 560 : 512,
+                                            viewport.width - 32,
+                                        ),
+                                  maxWidth: viewport.width,
+                                  height: composer
+                                      ? fullComposer
+                                          ? viewport.height
+                                          : Math.min(700, viewport.height - 32)
+                                      : undefined,
+                                  maxHeight: fullComposer
+                                      ? viewport.height
+                                      : viewport.height - 32,
+                                  transform: fullComposer ? "none" : undefined,
+                              }
+                            : undefined
+                    }
                 >
                     {panel.kind === "edit" && canEdit && profile && (
                         <PageWidgetEditor
@@ -265,6 +278,7 @@ function FeedbackSession({ path }: { path: string }) {
                             profile={profile}
                             address={address}
                             admin={admin}
+                            onClose={() => setPanel({ kind: "closed" })}
                             onSent={() => {
                                 setPanel({ kind: "closed" });
                                 setNotice(copy.sent);
@@ -273,8 +287,10 @@ function FeedbackSession({ path }: { path: string }) {
                     )}
                     {panel.kind === "choices" && (
                         <>
-                            <DialogTitle>{copy.select}</DialogTitle>
-                            <DialogDescription>
+                            <DialogTitle className="sr-only">
+                                {copy.select}
+                            </DialogTitle>
+                            <DialogDescription className="sr-only">
                                 {copy.selectHelp}
                             </DialogDescription>
                             <SelectionChoices

@@ -1,4 +1,5 @@
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { X } from "lucide-react";
 import { MediaSelector } from "@courselit/components-library";
 import type {
     Address,
@@ -18,12 +19,14 @@ export default function CommentForm({
     address,
     admin,
     onSent,
+    onClose,
 }: {
     selection: PageSelection;
     profile: Partial<Profile> | null;
     address: Address;
     admin: boolean;
     onSent: () => void;
+    onClose?: () => void;
 }) {
     const storageKey = `kk-comment:${profile?.userId || "visitor"}:${JSON.stringify(selection.target)}`;
     const [text, setText] = useState(() => {
@@ -50,8 +53,7 @@ export default function CommentForm({
         }
     }, [storageKey, text]);
 
-    const submit = async (event: FormEvent) => {
-        event.preventDefault();
+    const submit = async () => {
         if (!text.trim() || status.kind === "sending") return;
         setStatus({ kind: "sending" });
         try {
@@ -81,10 +83,41 @@ export default function CommentForm({
     };
 
     return (
-        <>
-            <DialogTitle>{copy.comment}</DialogTitle>
-            <DialogDescription>{selection.label}</DialogDescription>
-            <form onSubmit={submit} className="grid gap-4">
+        <form
+            onSubmit={(event) => event.preventDefault()}
+            className="kk-comment-form"
+        >
+            <DialogTitle className="sr-only">{copy.comment}</DialogTitle>
+            <DialogDescription className="sr-only">
+                {selection.label}
+            </DialogDescription>
+            <header className="kk-comment-header border-b">
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label={copy.close}
+                    onClick={onClose}
+                >
+                    <X />
+                </Button>
+                <span className="min-w-0 flex-1 break-words text-sm">
+                    {copy.comment}
+                </span>
+                <Button
+                    type="button"
+                    onClick={submit}
+                    aria-label={
+                        status.kind === "sending"
+                            ? copy.sending
+                            : copy.sendLabel
+                    }
+                    disabled={!text.trim() || status.kind === "sending"}
+                >
+                    {status.kind === "sending" ? copy.sending : copy.send}
+                </Button>
+            </header>
+            <div className="kk-comment-body">
                 <label className="grid gap-2 text-sm font-medium">
                     {copy.commentLabel}
                     <textarea
@@ -128,15 +161,8 @@ export default function CommentForm({
                     >
                         {copy.clear}
                     </Button>
-                    <Button
-                        type="submit"
-                        className="min-h-11"
-                        disabled={!text.trim() || status.kind === "sending"}
-                    >
-                        {status.kind === "sending" ? copy.sending : copy.send}
-                    </Button>
                 </div>
-            </form>
-        </>
+            </div>
+        </form>
     );
 }

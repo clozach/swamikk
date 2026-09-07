@@ -80,19 +80,17 @@ const css = `
     margin: 0 auto 55px;
 }
 .${ROOT}__grid {
-    display: grid;
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 20px;
     align-items: start;
     width: 100%;
 }
-@media (min-width: 768px) {
-    .${ROOT}__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (min-width: 960px) {
-    .${ROOT}__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
+
 .${ROOT}__card {
+    flex: 0 1 100%;
+    max-width: 100%;
     display: flex;
     flex-direction: column;
     min-width: 0;
@@ -101,6 +99,12 @@ const css = `
     color: inherit;
     text-decoration: none;
     border-radius: 4px;
+}
+@media (min-width: 768px) {
+    .${ROOT}__card { flex-basis: calc((100% - 20px) / 2); max-width: calc((100% - 20px) / 2); }
+}
+@media (min-width: 960px) {
+    .${ROOT}__card { flex-basis: calc((100% - 60px) / 4); max-width: calc((100% - 60px) / 4); }
 }
 /* Interactive affordances apply only to cards that actually navigate, so a
    card with no link never falsely signals clickability. The affordance is a

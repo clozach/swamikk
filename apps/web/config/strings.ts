@@ -187,7 +187,8 @@ export const feedbackUi = {
     commentLabel: "What would you like us to know?",
     privacy:
         "Comments go privately to the support team. Please leave out passwords, payment details and sensitive health information.",
-    send: "Send comment",
+    send: "Send",
+    sendLabel: "Send comment",
     sending: "Sending…",
     sent: "Comment received. Thank you — the support team can now review it.",
     photo: "Attach a photo (admin)",

@@ -1,3 +1,7 @@
+import {
+    externalLinkProps,
+    ExternalLinkLabel,
+} from "@courselit/components-library";
 import React from "react";
 import clsx from "clsx";
 import { TopBarItem } from "../settings";
@@ -28,8 +32,19 @@ export default function TopBar({
                 <ul className="m-0 flex list-none flex-wrap items-center gap-x-5 gap-y-1 p-0">
                     {left.map((item) => (
                         <li key={item.id} className="m-0 list-none p-0">
-                            <a href={item.href || "#"} className={TOP_BAR_LINK}>
-                                {item.label}
+                            <a
+                                href={item.href || "#"}
+                                {...externalLinkProps(item.href || "#")}
+                                className={TOP_BAR_LINK}
+                            >
+                                <ExternalLinkLabel
+                                    newTab={
+                                        externalLinkProps(item.href || "#")
+                                            .target === "_blank"
+                                    }
+                                >
+                                    {item.label}
+                                </ExternalLinkLabel>
                             </a>
                         </li>
                     ))}
@@ -47,8 +62,19 @@ export default function TopBar({
                 <ul className="m-0 max-[767px]:hidden list-none items-center gap-x-5 p-0 pt-[5px] md:flex">
                     {right.map((item) => (
                         <li key={item.id} className="m-0 list-none p-0">
-                            <a href={item.href || "#"} className={TOP_BAR_LINK}>
-                                {item.label}
+                            <a
+                                href={item.href || "#"}
+                                {...externalLinkProps(item.href || "#")}
+                                className={TOP_BAR_LINK}
+                            >
+                                <ExternalLinkLabel
+                                    newTab={
+                                        externalLinkProps(item.href || "#")
+                                            .target === "_blank"
+                                    }
+                                >
+                                    {item.label}
+                                </ExternalLinkLabel>
                             </a>
                         </li>
                     ))}

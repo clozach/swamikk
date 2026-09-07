@@ -24,13 +24,13 @@ import {
  * ------------------------------------------------------------------ */
 
 const PANEL =
-    "absolute right-0 top-[calc(100%+8px)] z-[10001] w-[300px] max-w-[calc(100vw-24px)] rounded-b-[8px] border-t-[5px] border-solid border-t-[var(--nav-panel-border)] bg-[var(--nav-panel-bg)] p-[16px] text-left shadow-[0_8px_26px_rgba(0,0,0,0.18)]";
+    "absolute right-0 top-[calc(100%+8px)] z-[42] box-border w-max min-w-[min(400px,calc(100vw-24px))] max-w-[calc(100vw-24px)] max-h-[calc(100dvh-88px)] overflow-auto overscroll-contain rounded-b-[8px] border-t-[5px] border-solid border-t-[var(--nav-panel-border)] bg-[var(--nav-panel-bg)] p-[32px] text-left shadow-[0_8px_26px_rgba(0,0,0,0.18)]";
 const HEADING =
-    "mb-[12px] text-[14px] font-semibold leading-[1.35] text-[var(--nav-fg)]";
+    "mb-[12px] whitespace-normal [overflow-wrap:anywhere] text-[14px] font-semibold leading-[1.35] text-[var(--nav-fg)]";
 const INPUT =
     "w-full rounded-[6px] border border-solid border-[#cdb98e] bg-transparent px-[12px] py-[10px] text-[14px] text-[var(--nav-fg)] outline-none transition-colors placeholder:text-[color-mix(in_srgb,var(--nav-fg)_50%,transparent)] focus:border-[var(--nav-fg-hover)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--nav-fg-hover)_28%,transparent)]";
 const SUBMIT =
-    "mt-[10px] w-full rounded-[6px] bg-[#ff9900] px-[16px] py-[10px] text-[14px] font-bold text-[#312110] transition-colors duration-100 ease-in hover:bg-[#ffbf00] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ffbf00]";
+    "mt-[40px] w-full rounded-[6px] bg-[#ff9900] px-[16px] py-[10px] text-[14px] font-bold text-[#312110] transition-colors duration-100 ease-in hover:bg-[#ffbf00] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ffbf00]";
 
 async function postJson(
     url: string,
@@ -67,6 +67,60 @@ export default function LoginPanel({ panelId }: { panelId?: string }) {
     const [error, setError] = useState("");
     const emailRef = useRef<HTMLInputElement | null>(null);
     const codeRef = useRef<HTMLInputElement | null>(null);
+    const panelRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        const panel = panelRef.current;
+        if (!panel) return;
+        const measure = () => {
+            const anchor = panel.parentElement?.getBoundingClientRect();
+            if (!anchor) return;
+            const viewport = window.visualViewport;
+            const left = viewport?.offsetLeft || 0;
+            const top = viewport?.offsetTop || 0;
+            const width =
+                viewport?.width ||
+                document.documentElement.clientWidth ||
+                window.innerWidth;
+            const height = viewport?.height || window.innerHeight;
+            panel.style.maxWidth = `${Math.max(0, width - 24)}px`;
+            panel.style.minWidth = `${Math.min(400, Math.max(0, width - 24))}px`;
+            const desiredRight = Math.min(anchor.right, left + width - 12);
+            const right = Math.max(desiredRight, left + 12 + panel.offsetWidth);
+            panel.style.transform = `translateX(${right - anchor.right}px)`;
+            // If scrolling/panning moves the anchor out of view, keep an
+            // operable portion of the panel inside the visible viewport.
+            const available = Math.max(0, height - 24);
+            const panelTop = Math.max(
+                top + 12,
+                Math.min(
+                    anchor.bottom + 8,
+                    top + height - 12 - Math.min(128, available),
+                ),
+            );
+            const panelHeight = Math.max(0, top + height - 12 - panelTop);
+            panel.style.top = `${panelTop - anchor.top}px`;
+            panel.style.maxHeight = `${panelHeight}px`;
+            panel.style.padding = panelHeight < 128 ? "12px" : "32px";
+        };
+        measure();
+        const observer =
+            typeof ResizeObserver === "undefined"
+                ? null
+                : new ResizeObserver(measure);
+        observer?.observe(panel);
+        window.addEventListener("resize", measure);
+        window.addEventListener("scroll", measure, { passive: true });
+        window.visualViewport?.addEventListener("resize", measure);
+        window.visualViewport?.addEventListener("scroll", measure);
+        return () => {
+            observer?.disconnect();
+            window.removeEventListener("resize", measure);
+            window.removeEventListener("scroll", measure);
+            window.visualViewport?.removeEventListener("resize", measure);
+            window.visualViewport?.removeEventListener("scroll", measure);
+        };
+    }, []);
 
     useEffect(() => {
         // Focus the field for the current stage when it appears.
@@ -115,7 +169,13 @@ export default function LoginPanel({ panelId }: { panelId?: string }) {
     };
 
     return (
-        <div id={panelId} role="dialog" aria-label="Sign in" className={PANEL}>
+        <div
+            ref={panelRef}
+            id={panelId}
+            role="dialog"
+            aria-label="Sign in"
+            className={PANEL}
+        >
             {error && (
                 <p className="mb-[10px] text-[12.5px] leading-[1.4] text-[var(--nav-fg-hover)]">
                     {error}
@@ -127,10 +187,12 @@ export default function LoginPanel({ panelId }: { panelId?: string }) {
                     <input
                         ref={emailRef}
                         type="email"
+                        aria-label="Email address"
                         required
                         autoComplete="email"
                         placeholder="you@example.com"
                         value={email}
+                        size={Math.max(20, email.length + 2)}
                         onChange={(e) => setEmail(e.target.value)}
                         className={INPUT}
                     />
@@ -147,6 +209,7 @@ export default function LoginPanel({ panelId }: { panelId?: string }) {
                     <input
                         ref={codeRef}
                         type="text"
+                        aria-label="Sign-in code"
                         inputMode="numeric"
                         autoComplete="one-time-code"
                         required

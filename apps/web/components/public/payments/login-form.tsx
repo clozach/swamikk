@@ -287,7 +287,10 @@ export function LoginForm({
 
                         {loginStep === "otp" && (
                             <>
-                                <Text1 className="mb-2" theme={theme.theme}>
+                                <Text1
+                                    className="mb-2 [overflow-wrap:anywhere]"
+                                    theme={theme.theme}
+                                >
                                     {LOGIN_CODE_INTIMATION_MESSAGE}
                                 </Text1>
                                 <FormField

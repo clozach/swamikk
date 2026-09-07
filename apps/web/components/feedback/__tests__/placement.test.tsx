@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import ContextualFeedback from "..";
 import { FeedbackControlSlot, FeedbackPlacementProvider } from "../placement";
 import { ProfileContext } from "@components/contexts";
@@ -56,49 +56,46 @@ beforeEach(() => {
     } as typeof ResizeObserver;
 });
 
-test("one compact control lives in the header; the closed fixed dock has no controls", () => {
+test("one compact control stays outside headers; opening shows concise accessible actions", () => {
     const { container } = render(<Fixture />);
     expect(
         screen.getAllByRole("button", { name: "Comment on this page" }),
     ).toHaveLength(1);
     expect(
-        within(screen.getByRole("banner")).getByRole("button", {
-            name: "Comment on this page",
-        }),
-    ).toBeInTheDocument();
-    expect(container.querySelector(".kk-feedback-tools button")).toBeNull();
+        screen
+            .getByRole("button", { name: "Comment on this page" })
+            .closest("header"),
+    ).toBeNull();
+    expect(
+        screen
+            .getByRole("button", { name: "Comment on this page" })
+            .closest(".kk-feedback-corner"),
+    ).not.toBeNull();
+    expect(screen.queryByRole("toolbar")).toBeNull();
     expect(container.querySelector(".kk-feedback-fallback")).toBeNull();
     fireEvent.click(
         screen.getByRole("button", { name: "Comment on this page" }),
     );
-    expect(
-        screen.getByRole("button", { name: "Close Esc" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
     fireEvent.keyDown(window, { key: "Escape" });
-    expect(container.querySelector(".kk-feedback-tools button")).toBeNull();
+    expect(screen.queryByRole("toolbar")).toBeNull();
 });
 
-test("closure and route transitions remove the old slot and preserve a working page-flow fallback", () => {
+test("closure and route transitions retain one viewport control and clear stale selection", () => {
     const { rerender, container } = render(<Fixture />);
     fireEvent.keyDown(window, { key: "?" });
-    expect(
-        screen.getByRole("button", { name: "Close Esc" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
     mockPath = "/dashboard/profile";
     rerender(<Fixture header={false} userId="" />);
     expect(screen.queryByRole("banner")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Close Esc" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Close" })).toBeNull();
     expect(
-        within(
-            container.querySelector(".kk-feedback-fallback") as HTMLElement,
-        ).getByRole("button", { name: "Comment on this page" }),
-    ).toBeInTheDocument();
+        screen.getAllByRole("button", { name: "Comment on this page" }),
+    ).toHaveLength(1);
     fireEvent.click(
         screen.getByRole("button", { name: "Comment on this page" }),
     );
-    expect(
-        screen.getByRole("button", { name: "Close Esc" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
     rerender(<Fixture />);
     expect(container.querySelector(".kk-feedback-fallback")).toBeNull();
     expect(
@@ -106,7 +103,7 @@ test("closure and route transitions remove the old slot and preserve a working p
     ).toHaveLength(1);
 });
 
-test("slot registration does not remount unrelated page state", () => {
+test("legacy shell slots do not remount unrelated page state", () => {
     const mounts = jest.fn();
     function Content() {
         const [header, setHeader] = useState(false);
@@ -155,7 +152,7 @@ test("Mimic leaves no phantom header slot or public feedback controls", () => {
 });
 
 test.each([{ permissions: [] }, { permissions: ["site:manage"] }])(
-    "header placement preserves admin-only Copy prompt (%j)",
+    "viewport placement preserves admin-only Copy prompt (%j)",
     ({ permissions }) => {
         render(<Fixture permissions={permissions} />);
         fireEvent.keyDown(window, { key: "?" });

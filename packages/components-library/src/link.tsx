@@ -1,6 +1,6 @@
 import * as React from "react";
 import NextLink from "next/link";
-import { useRouter } from "next/navigation";
+import { externalLinkProps, ExternalLinkLabel } from "./external-link";
 
 interface LinkProps {
     href: string;
@@ -9,20 +9,25 @@ interface LinkProps {
     style?: Record<string, string>;
     className?: string;
     onClick?: () => void;
+    download?: boolean | string;
 }
 
 export default function Link({
     href,
     children,
-    openInSameTab = true,
+    openInSameTab,
     style,
     className = "",
     onClick,
+    download,
 }: LinkProps) {
     const isInternal =
-        href && href.startsWith("/") && !href.startsWith("/dashboard");
+        href &&
+        href.startsWith("/") &&
+        !href.startsWith("//") &&
+        !href.startsWith("/dashboard");
     const isInPageNavigation = href && href.startsWith("#");
-    const router = useRouter();
+    const destination = externalLinkProps(href, { openInSameTab, download });
 
     if (isInPageNavigation) {
         return (
@@ -37,39 +42,30 @@ export default function Link({
         );
     }
 
-    return isInternal ? (
+    const label = (
+        <ExternalLinkLabel newTab={destination.target === "_blank"}>
+            {children}
+        </ExternalLinkLabel>
+    );
+    return isInternal && !destination.target && download === undefined ? (
         <NextLink
             href={href}
             style={{ ...style }}
-            onClick={() => {
-                router.push(href.toString());
-                if (onClick) {
-                    onClick();
-                }
-            }}
+            onClick={onClick}
             className={className}
         >
-            {children}
+            {label}
         </NextLink>
     ) : (
         <a
             href={href}
             style={{ ...style }}
             className={className}
-            onClick={(e) => {
-                e.preventDefault();
-
-                if (openInSameTab) {
-                    window.location.href = href;
-                } else {
-                    window.open(href, "_blank");
-                }
-                if (onClick) {
-                    onClick();
-                }
-            }}
+            {...destination}
+            download={download}
+            onClick={onClick}
         >
-            {children}
+            {label}
         </a>
     );
 }

@@ -389,14 +389,18 @@ export default function AdminWidget({
                     />
                 </Form>
                 <div className="flex items-center justify-between">
-                    <PageBuilderPropertyHeader label="Open in a new tab" />
+                    <PageBuilderPropertyHeader label="Open internal links in a new tab" />
                     <Checkbox
+                        aria-label="Open internal links in a new tab"
                         checked={buttonOpensInNewTab}
                         onChange={(value: boolean) =>
                             setButtonOpensInNewTab(value)
                         }
                     />
                 </div>
+                <p className="text-sm text-muted-foreground">
+                    External website links always open in a new tab.
+                </p>
             </AdminWidgetPanel>
 
             <AdminWidgetPanel title="Images" value="images">

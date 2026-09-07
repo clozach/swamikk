@@ -401,7 +401,10 @@ export const LessonViewer = ({
                             lesson.type &&
                             lesson.media?.file && (
                                 <div>
-                                    <Link href={lesson.media.file}>
+                                    <Link
+                                        href={lesson.media.file}
+                                        openInSameTab
+                                    >
                                         <Button
                                             theme={theme.theme}
                                             className="flex gap-1 items-center"

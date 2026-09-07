@@ -62,12 +62,12 @@ export const HEADER_CONTAINER =
    it and simply scrolls away, so only the band below the cocoa strip pins.
    z-20 matches this codebase's other sticky header (packages/page-blocks
    header block) — comfortably above ordinary in-flow page content, and
-   nowhere near the mobile drawer's z-[9999]/z-[10000] or the nav flyout's
-   z-[10001]. Deliberately applied to this inner band, not the outer
+   below the mobile drawer's z-40/z-[41] and standard dialog z-50.
+   Local account/flyout panels use z-[42]. Deliberately applied to this inner band, not the outer
    <header>: position: sticky/fixed always opens a new stacking context, and
    the drawer/flyout are read as *descendants* of <header> — keeping the
-   drawer OUTSIDE this band (see widget/index.tsx) means its own very high
-   z-index still compares directly against the rest of the page instead of
+   drawer OUTSIDE this band (see widget/index.tsx) means its own
+   z-index compares directly against the rest of the page instead of
    being capped at this band's z-20. The flyout stays nested inside the band
    (it has to, for its hover anchor), so it's still capped at z-20 relative
    to later page content — comfortably enough to clear ordinary sections,
@@ -134,7 +134,7 @@ export const NAV_LINK_METRICS =
    Same --nav-panel-* / --nav-fg-* variables as NAV_LINK, inherited from the
    band, so the flyout automatically matches whichever mode set them. */
 export const FLYOUT_PANEL =
-    "absolute z-[10001] min-w-[140px] max-w-[280px] border-t-[5px] border-solid border-t-[var(--nav-panel-border)] bg-[var(--nav-panel-bg)] p-[10px] text-left shadow-[0_3px_10px_rgba(0,0,0,0.1)] transition-[opacity,transform] duration-200 ease-out";
+    "absolute z-[42] min-w-[140px] max-w-[280px] border-t-[5px] border-solid border-t-[var(--nav-panel-border)] bg-[var(--nav-panel-bg)] p-[10px] text-left shadow-[0_3px_10px_rgba(0,0,0,0.1)] transition-[opacity,transform] duration-200 ease-out";
 export const FLYOUT_LINK =
     "block px-[10px] py-[6px] text-[14px] uppercase leading-[1.4] text-[var(--nav-fg)] no-underline transition-colors duration-100 ease-in hover:text-[var(--nav-fg-hover)] focus-visible:text-[var(--nav-fg-hover)] active:text-[var(--nav-fg-active)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--nav-fg-hover)]";
 
@@ -188,7 +188,7 @@ export const ACCOUNT_AVATAR =
    viewport — the trigger already sits against the band's right padding, so the
    panel only ever grows leftward and downward. */
 export const ACCOUNT_MENU =
-    "absolute right-0 top-[calc(100%+8px)] z-[10001] w-[250px] border-t-[5px] border-solid border-t-[var(--nav-panel-border)] bg-[var(--nav-panel-bg)] p-[8px] text-left shadow-[0_8px_26px_rgba(0,0,0,0.16)]";
+    "absolute right-0 top-[calc(100%+8px)] z-[42] w-[250px] border-t-[5px] border-solid border-t-[var(--nav-panel-border)] bg-[var(--nav-panel-bg)] p-[8px] text-left shadow-[0_8px_26px_rgba(0,0,0,0.16)]";
 /* Menu rows are sentence-case actions (not uppercase nav labels), matching the
    dashboard's own account menu so a member meets the same vocabulary in both
    places. Rust/saffron icon + hover, inherited from --nav-fg-hover. */

@@ -34,10 +34,15 @@ export function useSelection(path: string, suspended: boolean) {
         if (highlighted?.element) observer.observe(highlighted.element);
         window.addEventListener("scroll", update, true);
         window.addEventListener("resize", update);
+        const viewport = window.visualViewport;
+        viewport?.addEventListener("scroll", update);
+        viewport?.addEventListener("resize", update);
         return () => {
             observer.disconnect();
             window.removeEventListener("scroll", update, true);
             window.removeEventListener("resize", update);
+            viewport?.removeEventListener("scroll", update);
+            viewport?.removeEventListener("resize", update);
         };
     }, [highlighted]);
 

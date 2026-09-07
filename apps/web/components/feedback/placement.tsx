@@ -1,64 +1,20 @@
 "use client";
 
-import {
-    createContext,
-    ReactNode,
-    useCallback,
-    useContext,
-    useMemo,
-    useRef,
-    useState,
-} from "react";
+import { ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { useMemberMimic } from "@/components/member-mimic/context";
+import { usePortalHost, useVisualViewport } from "./viewport";
 
-type Placement = {
-    host: HTMLElement | null;
-    register: (host: HTMLElement) => () => void;
-};
-
-const PlacementContext = createContext<Placement | null>(null);
-
-/** Live shells explicitly offer a slot; native previews never register one. */
+/** Compatibility seams for existing shells; the control now belongs to the viewport. */
 export function FeedbackPlacementProvider({
     children,
 }: {
     children: ReactNode;
 }) {
-    const [hosts, setHosts] = useState<HTMLElement[]>([]);
-    const register = useCallback((host: HTMLElement) => {
-        setHosts((current) => [
-            ...current.filter((item) => item !== host),
-            host,
-        ]);
-        return () =>
-            setHosts((current) => current.filter((item) => item !== host));
-    }, []);
-    const value = useMemo(
-        () => ({ host: hosts[0] ?? null, register }),
-        [hosts, register],
-    );
-    return (
-        <PlacementContext.Provider value={value}>
-            {children}
-        </PlacementContext.Provider>
-    );
+    return <>{children}</>;
 }
 
 export function FeedbackControlSlot() {
-    const placement = useContext(PlacementContext);
-    const mimic = useMemberMimic();
-    const cleanup = useRef<(() => void) | undefined>(undefined);
-    const register = placement?.register;
-    const ref = useCallback(
-        (node: HTMLSpanElement | null) => {
-            cleanup.current?.();
-            cleanup.current = node && register ? register(node) : undefined;
-        },
-        [register],
-    );
-    if (!register || mimic.kind !== "inactive") return null;
-    return <span ref={ref} data-feedback-ui className="kk-feedback-slot" />;
+    return null;
 }
 
 export function FeedbackControlPlacement({
@@ -66,12 +22,50 @@ export function FeedbackControlPlacement({
 }: {
     children: ReactNode;
 }) {
-    const placement = useContext(PlacementContext);
-    return placement?.host ? (
-        createPortal(children, placement.host)
-    ) : (
-        <div data-feedback-ui className="kk-feedback-fallback">
+    const host = usePortalHost();
+    const viewport = useVisualViewport();
+    if (!host) return null;
+    return createPortal(
+        <div
+            data-feedback-ui
+            className="kk-feedback-corner"
+            style={
+                viewport
+                    ? {
+                          left: viewport.left,
+                          top: viewport.top,
+                          width: viewport.width,
+                          height: viewport.height,
+                      }
+                    : undefined
+            }
+        >
             {children}
-        </div>
+        </div>,
+        host,
     );
+}
+
+/** Keep highlight geometry outside transformed/overflow-clipped page ancestors too. */
+export function FeedbackOutline({
+    rect,
+}: {
+    rect: Pick<DOMRect, "left" | "top" | "width" | "height">;
+}) {
+    const host = usePortalHost();
+    return host
+        ? createPortal(
+              <div
+                  aria-hidden="true"
+                  className="kk-feedback-outline"
+                  style={{
+                      left: rect.left,
+                      top: rect.top,
+                      width: rect.width,
+                      height: rect.height,
+                  }}
+              />,
+              host,
+          )
+        : null;
 }

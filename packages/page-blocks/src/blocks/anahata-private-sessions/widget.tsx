@@ -5,6 +5,10 @@ import { Section } from "@courselit/page-primitives";
 import { ThemeStyle } from "@courselit/page-models";
 import Settings, { Bullet, resolveImageSource } from "./settings";
 import * as defaults from "./defaults";
+import {
+    externalLinkProps,
+    ExternalLinkLabel,
+} from "@courselit/components-library";
 
 /**
  * Anahata "Private Sessions" callout.
@@ -91,6 +95,9 @@ export default function Widget({
     } as React.CSSProperties;
 
     const hasButton = Boolean(buttonCaption && buttonAction);
+    const buttonDestination = externalLinkProps(buttonAction, {
+        openInSameTab: buttonOpensInNewTab ? false : undefined,
+    });
 
     return (
         <Section
@@ -164,14 +171,7 @@ export default function Widget({
                         {hasButton && (
                             <a
                                 href={buttonAction}
-                                target={
-                                    buttonOpensInNewTab ? "_blank" : undefined
-                                }
-                                rel={
-                                    buttonOpensInNewTab
-                                        ? "noopener noreferrer"
-                                        : undefined
-                                }
+                                {...buttonDestination}
                                 onClick={
                                     editing
                                         ? (e) => e.preventDefault()
@@ -190,7 +190,13 @@ export default function Widget({
                                     "active:bg-[var(--ayr-btn-bg-hover)] active:text-[var(--ayr-btn-fg-hover)] active:translate-y-[1px] active:brightness-90",
                                 )}
                             >
-                                {buttonCaption}
+                                <ExternalLinkLabel
+                                    newTab={
+                                        buttonDestination.target === "_blank"
+                                    }
+                                >
+                                    {buttonCaption}
+                                </ExternalLinkLabel>
                             </a>
                         )}
                     </div>

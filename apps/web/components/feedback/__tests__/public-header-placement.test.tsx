@@ -57,7 +57,7 @@ const layout = [
     { widgetId: "body", name: "fullText", settings: {} },
 ];
 
-test("native public rendering offers one common masthead slot, including checkout children", () => {
+test("public checkout has one viewport control outside the masthead and payment content", () => {
     const { container } = render(
         <FeedbackPlacementProvider>
             <FeedbackControlPlacement>
@@ -77,7 +77,8 @@ test("native public rendering offers one common masthead slot, including checkou
     );
     const button = screen.getByRole("button", { name: "Comment" });
     expect(screen.getAllByRole("button", { name: "Comment" })).toHaveLength(1);
-    expect(button.closest("header")).not.toBeNull();
+    expect(button.closest("header")).toBeNull();
+    expect(button.closest(".kk-feedback-corner")).not.toBeNull();
     for (let node = button.parentElement; node; node = node.parentElement) {
         expect(node.className).not.toMatch(
             /(?:max-\[767px\]:hidden|md:hidden|hidden)/,
@@ -87,7 +88,7 @@ test("native public rendering offers one common masthead slot, including checkou
     expect(container.querySelector(".kk-feedback-fallback")).toBeNull();
 });
 
-test("the editor preview cannot steal its real toolbar slot even when supplied a utility", () => {
+test("editor previews and legacy header utilities cannot duplicate or capture the control", () => {
     const { container } = render(
         <FeedbackPlacementProvider>
             <FeedbackControlPlacement>
@@ -105,13 +106,15 @@ test("the editor preview cannot steal its real toolbar slot even when supplied a
             />
         </FeedbackPlacementProvider>,
     );
-    expect(container.querySelectorAll(".kk-feedback-slot")).toHaveLength(1);
+    expect(container.querySelectorAll(".kk-feedback-slot")).toHaveLength(0);
     expect(
-        screen.getByRole("button", { name: "Comment" }).closest("header"),
-    ).toHaveAttribute("aria-label", "Editor toolbar");
+        screen
+            .getByRole("button", { name: "Comment" })
+            .closest(".kk-feedback-corner"),
+    ).not.toBeNull();
 });
 
-test("standalone native previews have no utility, leaving a shellless route's fallback available", () => {
+test("standalone previews do not alter the shellless viewport control", () => {
     const { container } = render(
         <FeedbackPlacementProvider>
             <FeedbackControlPlacement>
@@ -131,6 +134,6 @@ test("standalone native previews have no utility, leaving a shellless route's fa
     expect(
         screen
             .getByRole("button", { name: "Comment" })
-            .closest(".kk-feedback-fallback"),
+            .closest(".kk-feedback-corner"),
     ).not.toBeNull();
 });

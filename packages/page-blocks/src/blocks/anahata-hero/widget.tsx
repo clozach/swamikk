@@ -1,21 +1,20 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useLayoutEffect, useMemo, useRef } from "react";
 import { WidgetProps } from "@courselit/common-models";
 import { Link } from "@courselit/components-library";
 import { Section } from "@courselit/page-primitives";
 import { ThemeStyle } from "@courselit/page-models";
 import clsx from "clsx";
 import Settings, {
-    BannerMode,
     CtaStyle,
     HeroImage,
     HeroParagraph,
     ImageSource,
 } from "./settings";
 import * as defaults from "./defaults";
-import { useSocialRotation } from "./use-social-rotation";
-import { networkLabel } from "./network-label";
+import SharedImage, { sharedImageCss, staticImageCss } from "./shared-image";
+import { useImageScroll } from "./use-image-scroll";
 
 /** CSS-safe scope token derived from the widget instance id (stable across SSR). */
 function toScope(id: string | undefined): string {
@@ -59,7 +58,7 @@ function useHeaderHeightVar(
     ref: React.RefObject<HTMLElement | null>,
     enabled: boolean,
 ): void {
-    useEffect(() => {
+    useLayoutEffect(() => {
         // Read `.current` inside the effect, not as a render-time argument:
         // on first mount the ref attaches during commit, after this render's
         // hook call has already read it — reading it here instead means the
@@ -225,6 +224,7 @@ export default function Widget({
     },
     state: { theme },
     nextTheme,
+    editing,
 }: WidgetProps<Settings>) {
     const overiddenTheme: ThemeStyle = JSON.parse(JSON.stringify(theme.theme));
     overiddenTheme.structure.page.width =
@@ -239,23 +239,21 @@ export default function Widget({
     const isFullScreenBanner = bannerHeightMode === "full-screen";
 
     const scope = useMemo(() => toScope(id), [id]);
-    const bannerRef = useRef<HTMLDivElement | null>(null);
-    useHeaderHeightVar(bannerRef, isFullScreenBanner && Boolean(bannerSrc));
-
-    /* Social rotation, opt-in per block. When active but the pool isn't ready
-       (fetching, empty, disabled, or unreachable) we fall straight back to the
-       stored static banner — the hero is never blank or broken by a feed. */
-    const rotation = useSocialRotation(bannerMode.kind === "social-rotation");
-    const rotationActive =
-        bannerMode.kind === "social-rotation" && rotation.ready;
-    /* The a11y name follows the SHOWN pool photo's caption; when the static
-       fallback is what's visible (no loaded pool photo) it's the stored
-       banner's alt (empty = decorative, as before). Tied to `current` so the
-       label always matches the image on screen. */
-    const bannerAlt =
-        rotationActive && rotation.current
-            ? rotation.current.alt
-            : bannerImage.alt;
+    const rootRef = useRef<HTMLDivElement>(null);
+    const bannerRef = useRef<HTMLDivElement>(null);
+    const destinationRef = useRef<HTMLDivElement>(null);
+    const imageRef = useRef<HTMLDivElement>(null);
+    const sharedSrc = bannerSrc || photoSrc;
+    useHeaderHeightVar(rootRef, isFullScreenBanner && Boolean(bannerSrc));
+    useImageScroll(
+        {
+            root: rootRef,
+            cover: bannerRef,
+            destination: destinationRef,
+            image: imageRef,
+        },
+        !editing && Boolean(bannerSrc),
+    );
 
     /* Two `height` declarations, not one: a browser that doesn't understand
        `100svh` treats the whole second declaration as invalid and ignores
@@ -293,6 +291,8 @@ export default function Widget({
 
     return (
         <div
+            ref={rootRef}
+            data-image-motion={editing || !bannerSrc ? "static" : "scroll"}
             id={cssId}
             data-anahata-hero={scope}
             className="anahata-hero w-full"
@@ -301,177 +301,90 @@ export default function Widget({
                     backgroundColor: groundColor,
                     "--anahata-link": linkColor,
                     "--anahata-link-hover": linkHoverColor,
+                    "--anahata-cover-h":
+                        "max(220px, calc(100svh - var(--anahata-hero-header-h, 150px)))",
                 } as React.CSSProperties
             }
         >
+            <style>
+                {sharedImageCss}
+                {fullScreenBannerCss}
+            </style>
+            <noscript
+                dangerouslySetInnerHTML={{
+                    __html: `<style>${staticImageCss.split('[data-image-motion="static"]').join("")}</style>`,
+                }}
+            />
             {bannerSrc && (
-                /* The credit is a SIBLING AFTER the banner div (not a child) so
-                   it is not swallowed by the div's `role="img"` subtree and
-                   reads AFTER the image description (§4). `relative` anchors the
-                   credit's absolute position to the band. */
-                <div className="relative">
-                    <div
-                        ref={bannerRef}
-                        className={clsx(
-                            "relative w-full overflow-hidden",
-                            isFullScreenBanner &&
-                                "anahata-hero__banner--full-screen",
-                            /* An arbitrary duration utility is ambiguous under
-                               tailwindcss-animate (it matches both the
-                               transition and animation scales) and silently
-                               fails to compile, so the animation duration is
-                               written as a bare CSS property instead. */
-                            animation === "fade" &&
-                                "animate-in fade-in [animation-duration:600ms] motion-reduce:animate-none",
-                        )}
-                        /* An empty alt marks the band decorative; a non-empty
-                           one has to be exposed as an image role, because a CSS
-                           background carries no implicit img semantics. In
-                           rotation the label tracks the current photo. */
-                        role={bannerAlt ? "img" : undefined}
-                        aria-label={bannerAlt || undefined}
-                        style={{
-                            /* "fixed" mode sizes the band off its own width via
-                               aspect-ratio; "full-screen" mode sets an explicit
-                               height (the CSS above), which makes aspect-ratio a
-                               no-op anyway, but omitting it here keeps the
-                               applied style honest about which mode is live. */
-                            ...(isFullScreenBanner
-                                ? {}
-                                : { aspectRatio: bannerAspectRatio }),
-                            minHeight: `${bannerMinHeight}px`,
-                            backgroundImage: `url("${bannerSrc}")`,
-                            backgroundSize: bannerFit,
-                            backgroundPosition: bannerPosition,
-                            backgroundRepeat: "no-repeat",
-                            backgroundColor: groundColor,
-                        }}
-                    >
-                        {isFullScreenBanner && (
-                            <style>{fullScreenBannerCss}</style>
-                        )}
-                        {/* Two crossfading layers over the static banner (which
-                            stays as the underlay + permanent fallback). The
-                            next image is preloaded before the swap, so a
-                            half-loaded hero never paints; reduced-motion
-                            freezes on frame 0 (no transition). */}
-                        {rotationActive && (
-                            <>
-                                <div
-                                    aria-hidden="true"
-                                    className="absolute inset-0 bg-no-repeat transition-opacity duration-700 ease-in-out motion-reduce:transition-none"
-                                    style={{
-                                        backgroundImage: rotation.layerA
-                                            ? `url("${rotation.layerA}")`
-                                            : undefined,
-                                        backgroundSize: bannerFit,
-                                        backgroundPosition: bannerPosition,
-                                        opacity: rotation.showA ? 1 : 0,
-                                    }}
-                                />
-                                <div
-                                    aria-hidden="true"
-                                    className="absolute inset-0 bg-no-repeat transition-opacity duration-700 ease-in-out motion-reduce:transition-none"
-                                    style={{
-                                        backgroundImage: rotation.layerB
-                                            ? `url("${rotation.layerB}")`
-                                            : undefined,
-                                        backgroundSize: bannerFit,
-                                        backgroundPosition: bannerPosition,
-                                        opacity: rotation.showA ? 0 : 1,
-                                    }}
-                                />
-                            </>
-                        )}
-                        {wordmarkSrc && (
-                            /* Flex-centred rather than offset-positioned, and
-                               capped on BOTH axes, so the wordmark can never
-                               overflow the band or widen the page. */
-                            <div className="absolute inset-0 flex items-center justify-center px-[5%] py-[5%]">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                    src={wordmarkSrc}
-                                    alt={wordmark.alt}
-                                    className="w-full h-auto max-h-full object-contain"
-                                    style={{
-                                        maxWidth: `${wordmarkMaxWidth}px`,
-                                    }}
-                                />
-                            </div>
-                        )}
-                    </div>
-                    {/* Photo credit. A real anchor, in DOM AFTER the banner (so
-                        a screen reader reads the image description THEN this
-                        credit link). Small, gray, non-underlined small-print
-                        bottom-right; a soft text-shadow keeps it legible over
-                        any photo. Rendered ONLY when a loaded pool photo is
-                        shown (`current`), so it is HIDDEN whenever the static
-                        fallback is what's visible — the credit can never
-                        mislabel the image. */}
-                    {rotationActive && rotation.current && (
-                        <a
-                            href={rotation.current.postUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={clsx(
-                                "absolute bottom-2 right-3 z-10 cursor-pointer no-underline",
-                                "text-xs text-white/70 hover:text-white/90",
-                                "[text-shadow:0_1px_2px_rgba(0,0,0,0.55)]",
-                                "transition-colors duration-150 ease-in motion-reduce:transition-none",
-                                "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
-                            )}
-                        >
-                            Photo from{" "}
-                            {networkLabel(rotation.current.networkDomain)}
-                        </a>
+                <div
+                    ref={bannerRef}
+                    aria-hidden="true"
+                    className={clsx(
+                        "anahata-hero__cover w-full",
+                        isFullScreenBanner &&
+                            "anahata-hero__banner--full-screen",
                     )}
-                </div>
+                    style={{
+                        ...(isFullScreenBanner
+                            ? {}
+                            : { aspectRatio: bannerAspectRatio }),
+                        minHeight: `${bannerMinHeight}px`,
+                    }}
+                />
             )}
 
             <Section
                 theme={overiddenTheme}
                 background={background}
                 nextTheme={nextTheme as "dark" | "light"}
-                className="bg-transparent"
+                className="anahata-hero__welcome bg-transparent"
             >
-                <div className="flex flex-col md:flex-row md:gap-x-[35px] gap-y-8">
-                    {photoSrc && (
-                        /* `min-w-0` defeats the flex `min-width: auto` floor:
-                           two 50% columns plus a 35px gap exceed 100%, and
-                           without it a wide child could push the row — and the
-                           page — past the viewport. */
-                        <div className="w-full min-w-0 md:w-1/2">
-                            {/* The two 32px spacers of the original sit above
-                                the photo on desktop only; on mobile the column
-                                stacks and the offset would read as dead space. */}
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                                src={photoSrc}
-                                alt={photo.alt}
-                                loading="lazy"
-                                className="block w-full h-auto md:mt-[var(--anahata-photo-offset)]"
-                                style={
-                                    {
-                                        "--anahata-photo-offset": `${photoOffsetTop}px`,
-                                    } as React.CSSProperties
+                {heading && (
+                    <h2
+                        className="relative z-[2] font-playfair-display text-[32px] font-normal leading-[1.2] text-center pb-8 mt-0"
+                        style={{
+                            color: headingColor,
+                            backgroundColor: groundColor,
+                        }}
+                    >
+                        {heading}
+                    </h2>
+                )}
+                <div className="flex flex-col items-start md:flex-row md:gap-x-[35px] gap-y-8">
+                    {sharedSrc && (
+                        <div
+                            ref={destinationRef}
+                            className="anahata-hero__image-slot w-full min-w-0 md:w-1/2 md:mt-[var(--anahata-photo-offset)]"
+                            style={
+                                {
+                                    "--anahata-photo-offset": `${photoOffsetTop}px`,
+                                } as React.CSSProperties
+                            }
+                        >
+                            <SharedImage
+                                frameRef={imageRef}
+                                source={sharedSrc}
+                                alt={bannerSrc ? bannerImage.alt : photo.alt}
+                                fit={bannerFit}
+                                position={bannerPosition}
+                                mode={
+                                    bannerSrc ? bannerMode : { kind: "static" }
                                 }
+                                wordmark={wordmark}
+                                wordmarkSrc={wordmarkSrc}
+                                wordmarkWidth={wordmarkMaxWidth}
+                                editing={editing}
+                                animation={animation}
                             />
                         </div>
                     )}
                     <div
                         className={clsx(
-                            "w-full min-w-0",
-                            photoSrc ? "md:w-1/2" : "md:w-full",
+                            "relative z-[2] w-full min-w-0",
+                            sharedSrc ? "md:w-1/2" : "md:w-full",
                         )}
+                        style={{ backgroundColor: groundColor }}
                     >
-                        {heading && (
-                            <h2
-                                className="font-playfair-display text-[32px] font-normal leading-[1.2] text-left pb-[15px] mt-0"
-                                style={{ color: headingColor }}
-                            >
-                                {heading}
-                            </h2>
-                        )}
                         {paragraphs.map((paragraph, index) => (
                             <p
                                 key={`${index}-${paragraph.text.slice(0, 24)}`}

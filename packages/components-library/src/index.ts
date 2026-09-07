@@ -1,5 +1,6 @@
 import "./styles.css";
 export * from "./media-player";
+export * from "./external-link";
 
 // TODO: Rename Menu2, Dialog2 to Menu and Dialog respectively.
 

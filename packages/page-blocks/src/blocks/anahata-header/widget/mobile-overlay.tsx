@@ -1,3 +1,7 @@
+import {
+    externalLinkProps,
+    ExternalLinkLabel,
+} from "@courselit/components-library";
 import React, { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { Profile } from "@courselit/common-models";
@@ -31,11 +35,19 @@ function MobileBranch({
             <div className="flex items-stretch justify-between">
                 <a
                     href={item.href || "#"}
+                    {...externalLinkProps(item.href || "#")}
                     onClick={onNavigate}
                     className={clsx(MOBILE_LINK, "grow")}
                     style={{ paddingLeft: `${20 + depth * 16}px` }}
                 >
-                    {item.label}
+                    <ExternalLinkLabel
+                        newTab={
+                            externalLinkProps(item.href || "#").target ===
+                            "_blank"
+                        }
+                    >
+                        {item.label}
+                    </ExternalLinkLabel>
                 </a>
                 {hasChildren && (
                     <button
@@ -114,10 +126,8 @@ export default function MobileOverlay({
         return () => window.removeEventListener("resize", onResize);
     }, [open, onClose]);
 
-    /* Focus containment. While the overlay is up it owns the keyboard:
-       Escape and Tab are consumed in the capture phase, every other
-       keystroke aimed outside the panel is swallowed, and focus is pulled
-       back if anything steals it — nothing reaches the page beneath. */
+    /* Keep the menu contained, but let a higher modal own focus/keyboard
+       while it is open (for example a comment, upload or confirmation). */
     useEffect(() => {
         if (!open || typeof window === "undefined") {
             return;
@@ -137,7 +147,27 @@ export default function MobileOverlay({
 
         focusables()[0]?.focus();
 
+        const higherModalOpen = () =>
+            Array.from(
+                document.querySelectorAll<HTMLElement>(
+                    '[role="dialog"], [role="alertdialog"]',
+                ),
+            ).some((dialog) => {
+                if (
+                    dialog === panel ||
+                    panel.contains(dialog) ||
+                    dialog.dataset.state === "closed" ||
+                    !dialog.getClientRects().length
+                )
+                    return false;
+                const style = window.getComputedStyle(dialog);
+                return (
+                    style.visibility !== "hidden" && Number(style.zIndex) > 41
+                );
+            });
+
         const onKeyDown = (event: KeyboardEvent) => {
+            if (higherModalOpen()) return;
             if (event.key === "Escape") {
                 event.preventDefault();
                 event.stopImmediatePropagation();
@@ -167,6 +197,7 @@ export default function MobileOverlay({
         };
 
         const onFocusIn = (event: FocusEvent) => {
+            if (higherModalOpen()) return;
             if (!panel.contains(event.target as Node)) {
                 focusables()[0]?.focus();
             }
@@ -195,7 +226,7 @@ export default function MobileOverlay({
                 aria-hidden="true"
                 onClick={onClose}
                 className={clsx(
-                    "fixed inset-0 z-[9999] bg-black transition-opacity duration-300 ease-in-out",
+                    "fixed inset-0 z-40 bg-black transition-opacity duration-300 ease-in-out",
                     entered ? "opacity-60" : "opacity-0",
                 )}
             />
@@ -207,7 +238,7 @@ export default function MobileOverlay({
                 className={clsx(
                     // Full-screen on phones; a 360px drawer from 480px up,
                     // where there is room for a clickable backdrop.
-                    "fixed inset-y-0 right-0 z-[10000] flex w-full max-w-full flex-col overflow-y-auto overscroll-contain pb-[30px] transition-transform duration-300 ease-in-out min-[480px]:w-[360px]",
+                    "fixed inset-y-0 right-0 z-[41] flex w-full max-w-full flex-col overflow-y-auto overscroll-contain pb-[30px] transition-transform duration-300 ease-in-out min-[480px]:w-[360px]",
                     entered ? "translate-x-0" : "translate-x-full",
                 )}
                 style={{ backgroundColor: DRAWER, fontFamily: FONT_BODY }}
@@ -247,11 +278,19 @@ export default function MobileOverlay({
                             <li key={item.id} className="m-0 list-none p-0">
                                 <a
                                     href={item.href || "#"}
+                                    {...externalLinkProps(item.href || "#")}
                                     onClick={onClose}
                                     className={MOBILE_LINK}
                                     style={{ paddingLeft: "20px" }}
                                 >
-                                    {item.label}
+                                    <ExternalLinkLabel
+                                        newTab={
+                                            externalLinkProps(item.href || "#")
+                                                .target === "_blank"
+                                        }
+                                    >
+                                        {item.label}
+                                    </ExternalLinkLabel>
                                 </a>
                             </li>
                         ))}

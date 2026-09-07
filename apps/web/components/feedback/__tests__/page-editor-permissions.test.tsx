@@ -28,6 +28,14 @@ jest.mock("@/components/ui/dialog", () => ({
     DialogTitle: () => null,
     DialogDescription: () => null,
 }));
+beforeEach(() => {
+    global.ResizeObserver = class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+    } as typeof ResizeObserver;
+});
+
 test.each([
     [[], "inactive", false],
     [["course:manage_any"], "inactive", false],

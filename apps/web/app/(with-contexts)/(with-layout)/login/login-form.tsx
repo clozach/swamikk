@@ -283,7 +283,7 @@ export default function LoginForm({
                                     <div>
                                         <Text1
                                             theme={theme.theme}
-                                            className="mb-4 text-center"
+                                            className="mb-4 text-center [overflow-wrap:anywhere]"
                                         >
                                             {LOGIN_CODE_INTIMATION_MESSAGE}{" "}
                                             <strong>{email}</strong>
