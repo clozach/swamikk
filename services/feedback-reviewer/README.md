@@ -1,6 +1,8 @@
-# Explicit, one-shot feedback reviewer
+# Optional one-shot feedback review experiment
 
-This client claims at most one eligible saved comment, requests at most one model response for plain text, and submits an ordinary unapproved proposal or a human-review note. It does not approve, apply, publish, send email, change a schedule or operate a browser. The site independently enforces the restricted grant and native proposal boundaries. Running the image or CLI without configuration exits unconfigured; no model, provider, credential, cadence or scheduler is supplied.
+This experiment is outside the membership MVP and is not a required provider/model/cadence setup step. The supported workflow is Admin Copy prompt, human inspection/editing and deliberate submission through ChatGPT (Codex) or Claude.app (Code mode) on macOS, followed by separate approval of the native proposal. Deploying the site does not invoke this client.
+
+If separately authorized and configured, this client claims at most one eligible saved comment, requests at most one model response for plain text, and submits an ordinary unapproved proposal or a human-review note. It does not approve, apply, publish, send email, change a schedule or operate a browser. The site independently enforces the restricted grant and native proposal boundaries. Running the image or CLI without configuration exits unconfigured; no model, provider, credential, cadence or scheduler is supplied.
 
 The model receives only a bounded comment and the current eligible plain-text field. Comment strings may themselves contain information a visitor typed; public target eligibility is not a claim that every submitted sentence is free of personal information. The model receives no site grant, model key, administrator session, selectors, photos, private lesson body or executable tools. Feedback and current text are untrusted data. Rich text, private/ambiguous targets and unsupported requests use the human authoring path. A syntactically valid proposal still needs a human to judge truth and meaning and approve its exact native preview.
 
@@ -80,4 +82,4 @@ node --test services/feedback-reviewer/*.test.mjs
 
 Tests cover strict configuration and private-file boundaries, no default work, destination redirects, exact bounded model payload/results, response failures, deterministic lost-response retry without another inference, durable journal/lock behavior and the HTTP protocol using isolated fixtures. They perform no provider inference, grant issuance, live site mutation or scheduling.
 
-The backend protocol and native authority remain documented in [Restricted feedback review backend](../../apps/web/services/feedback-review/README.md). Enabling a recurring runner remains a separate explicit operational decision; this command runs once.
+The backend protocol and native authority remain documented in [Restricted feedback review backend](../../apps/web/services/feedback-review/README.md). The experiment is disconnected from the current site interface and worker startup. Any future runner use requires separate explicit authorization; this command runs once.

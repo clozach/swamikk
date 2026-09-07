@@ -58,7 +58,7 @@ test.each([
         ).toBe(visible);
         if (kind !== "inactive")
             expect(
-                screen.queryByRole("button", { name: "Copy page prompt" }),
+                screen.queryByRole("button", { name: "Copy prompt" }),
             ).not.toBeInTheDocument();
     },
 );

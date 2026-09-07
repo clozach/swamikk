@@ -220,6 +220,11 @@ function FeedbackSession({ path }: { path: string }) {
                                         <Copy />
                                         {copying ? copy.loading : copy.copy}
                                     </Button>
+                                    <div className="px-3 text-xs text-muted-foreground space-y-2">
+                                        <p>{copy.copyPageScope}</p>
+                                        <p>{copy.copyHandoff}</p>
+                                        <p>{copy.copyPrivacy}</p>
+                                    </div>
                                     <Button
                                         variant="ghost"
                                         asChild

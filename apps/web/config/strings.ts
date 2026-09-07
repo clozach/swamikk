@@ -189,8 +189,13 @@ export const feedbackUi = {
     sending: "Sending…",
     sent: "Comment received. Thank you — the support team can now review it.",
     photo: "Attach a photo (admin)",
-    copy: "Copy page prompt",
-    copied: "Page feedback copied. Paste it into your development chat.",
+    copy: "Copy prompt",
+    copied: "Prompt copied. Inspect and edit it on your Mac before sharing.",
+    copyPageScope: "Copies all saved open comments for this page.",
+    copyHandoff:
+        "Inspect/edit the text, then submit it in ChatGPT (Codex) or Claude.app (Code mode) on macOS.",
+    copyPrivacy:
+        "Photo IDs are included; image files and signed URLs are not. Share private files separately, only when you choose.",
     noComments: "There are no saved comments for this page yet.",
     copyFailed:
         "Clipboard access was unavailable. The prompt is ready below for you to select and copy.",
@@ -217,7 +222,7 @@ export const feedbackUi = {
         "No products yet. Ask your development agent to prepare the first one from your material.",
     previous: "Previous",
     next: "Next",
-    guide: "Hold Ctrl or ⌘. Add comments for the model. Copy the page prompt. Paste it into your development chat.",
+    guide: "Add comments in context. Choose Copy prompt, inspect/edit the text, then submit it in ChatGPT (Codex) or Claude.app (Code mode) on macOS.",
     approvalGuide:
         "Ask the model to prepare a proposal. Review its effects here before you approve it. Failed attempts keep their drafts and offer recovery.",
     legacy: "Legacy builder",
@@ -259,7 +264,7 @@ export const feedbackUi = {
     return: "Back to all changes",
     closeComment: "Mark handled",
     reopenComment: "Reopen",
-    savedPrompt: "Development prompt",
+    savedPrompt: "Copy prompt",
     photoCount: "Admin photo attachments",
     actionFailed:
         "The action did not finish. Refresh to check its result before trying again.",

@@ -159,7 +159,7 @@ test.each([{ permissions: [] }, { permissions: ["site:manage"] }])(
     ({ permissions }) => {
         render(<Fixture permissions={permissions} />);
         fireEvent.keyDown(window, { key: "?" });
-        const copy = screen.queryByRole("button", { name: "Copy page prompt" });
+        const copy = screen.queryByRole("button", { name: "Copy prompt" });
         expect(Boolean(copy)).toBe(permissions.length > 0);
     },
 );

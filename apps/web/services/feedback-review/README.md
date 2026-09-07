@@ -1,6 +1,8 @@
-# Restricted feedback review backend
+# Optional feedback review experiment
 
-This backend is disabled by absence of a grant. It contains no scheduler, model inference, provider integration, email delivery or automatic approval. Deployment alone does not start reviews. Root must deliberately issue a grant and separately approve/configure a bounded runner and cadence. Existing CourseLit general API keys are neither accepted nor reused.
+This optional experiment is outside the membership MVP. The supported authoring path is Admin Copy prompt, human inspection/editing, then deliberate submission in ChatGPT (Codex) or Claude.app (Code mode) on macOS. Photo IDs in copied text do not transfer files or authorize private media access; the human chooses any files to share separately. The later native proposal approval/recovery flow remains independent.
+
+This backend is disabled without an active grant. It contains no scheduler, model inference, provider integration, email delivery or automatic approval. Deployment alone does not start reviews. Any future use requires separate explicit authorization and configuration; it is not pending MVP setup. Existing CourseLit general API keys are neither accepted nor reused.
 
 ## Authority
 
@@ -34,7 +36,7 @@ Result acceptance first writes the complete result intent and deterministic `rev
 
 Marking feedback handled after acceptance does not cancel that retained intent: result retry/claim recovery completes its receipt while leaving the feedback closed. Closed feedback never receives a fresh lease or exposes context again. Deleting the Feedback row prevents later recovery from recreating it; an already inserted proposal remains under the existing audit policy.
 
-A failed admitted result stores only a sanitized failure code/time; raw provider/database errors are never retained or returned. The existing administrator feedback response exposes review status, escalation summary/proposal ID and last failure, while member/visitor responses omit them. The Changes inbox now renders these sanitized fields beside each saved comment for administrators only. It distinguishes no recorded review, review started without a recorded result, an accepted result awaiting confirmation, a retained draft with its exact native proposal link, human-review summaries and failure guidance. A recorded lease does not claim a worker is still running; a pending intent does not claim its draft has been inserted. Refresh uses the existing feedback read, and Development prompt remains available for manual review. Public/member and Mimic views render none of this operational status. Runner scheduling and model execution remain separate release work.
+A failed admitted result stores only a sanitized failure code/time; raw provider/database errors are never retained or returned. The existing administrator feedback response retains review status, escalation summary/proposal ID and last failure for audit, while member/visitor responses omit them. The current Changes inbox does not render the experimental status panel or imply that a reviewer is waiting or running. Ordinary retained proposals still appear in Proposed changes and use the same exact preview, approval and recovery. The unused `components/feedback-review-status` module is a removable presentation seam for this experiment, not part of the supported human handoff.
 
 `claim` also completes an already accepted `submitting` intent before leasing new work. A newly authorized grant may finish that accepted intent after the original credential was revoked; its original provenance and identity remain intact. The output contains only the receipt, not the saved text again. It does not authorize a different result or revive a deleted Feedback row. An accepted intent is a retained proposal instruction, not a publication approval. Administrator audit and ordinary database backups follow existing retention policy; this feature does not promise backup or external-model erasure.
 
@@ -46,9 +48,9 @@ Isolated Mongo and direct-route tests cover grants/hash redaction, tenant/role/a
 
 Ordinary account erasure calls `deleteUserFeedbackReviewGrants` after the actual issuer account reservations drain. It removes that issuer’s credential/hash/name records; stale issuance cannot recreate them. Accepted public-content proposal/recovery audit keeps the existing retention policy. The offline `deleteTenantFeedbackReviewGrants(domainId)` helper first stops new admissions for existing grants, refuses erasure while admitted work remains, and deletes only that tenant’s grants. Stop all tenant traffic and grant issuance before invoking it. The legacy `packages/scripts/src/cleanup-domain.ts` CLI does not yet integrate this or the other app-local private-service cleanup helpers; tenant-wide teardown is a separate operator integration, not an exposed destructive endpoint.
 
-## Status UI verification
+## Human handoff verification
 
-In Changes, load a saved comment with a sanitized review status and choose Refresh after that server status changes. A confirmed text proposal links to `/dashboard/changes?id=<exact proposal ID>` and the existing native proposal detail read. Human-review notes remain plain text. No grant/retry/approval/scheduler controls are added to this status panel. Isolated client tests cover every displayed state, private metadata omission, public/member/Mimic refusal, the exact detail route, and the existing Development prompt clipboard behavior. Root owns rendered local/hosted proof and the Changes reveal before release; the source integration does not assert native deployment.
+In Changes, saved feedback offers Copy prompt and ordinary proposed changes keep their existing detail links. Copy writes only text to the clipboard; no external assistant request is sent. Inspect/edit the text before sharing it in the chosen desktop assistant. Public/member and Mimic views have no Copy prompt. The current inbox renders no automatic-review status or setup controls. Isolated integration checks cover this presentation boundary, retained proposal reads, Refresh, clipboard fallback and the existing permission gate. Browser clipboard proof and retained native approval/recovery evidence are separate from these mocked component tests.
 
 ## Optional one-shot client
 
