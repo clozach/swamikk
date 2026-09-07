@@ -16,6 +16,8 @@ test("the assembled API includes feedback delivery, cancellation and read-only r
         "/api/publication-observations",
         "/api/account-closure",
         "/api/content-changes/page-widget",
+        "/api/class-checkout",
+        "/api/class-checkout/status",
     ])
         assert.ok(paths[path]?.get, `${path} GET must be documented`);
     assert.ok(paths["/api/member-billing"].post);
@@ -24,6 +26,15 @@ test("the assembled API includes feedback delivery, cancellation and read-only r
     assert.ok(paths["/api/refund-requests/review"].post);
     assert.ok(paths["/api/publication-observations"].post);
     assert.ok(paths["/api/account-closure"].delete);
+});
+
+test("public class choices and private checkout status retain separate authority", () => {
+    const { paths } = buildOpenApiRoutes();
+    assert.deepEqual(paths["/api/class-checkout"].get.security, []);
+    assert.deepEqual(paths["/api/class-checkout/status"].get.security, [
+        { CourseLitSession: [] },
+    ]);
+    assert.equal(paths["/api/class-checkout/status"].post, undefined);
 });
 
 test("reviewer authority stays separate from administrator session routes", () => {

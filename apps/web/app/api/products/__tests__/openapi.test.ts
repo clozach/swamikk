@@ -189,6 +189,22 @@ describe("Products OpenAPI", () => {
             routes.components.schemas.SectionDripInput.properties.type.enum,
         ).toEqual(["relative-date", "exact-date"]);
         expect(
+            routes.components.schemas.SectionDripInput.properties.delayInMillis
+                .minimum,
+        ).toBe(0);
+        expect(
+            routes.components.schemas.SectionDripInput.properties.delayInMillis
+                .description,
+        ).toContain("supply days");
+        expect(
+            routes.components.schemas.SectionDripInput.properties.delayInMillis
+                .description,
+        ).toContain("NOT stored milliseconds");
+        expect(
+            routes.components.schemas.SectionDripInput.properties.delayInMillis
+                .description,
+        ).toContain("10 years");
+        expect(
             routes.paths["/api/products/{productId}/lessons"].post,
         ).toMatchObject({
             tags: ["Product Content"],

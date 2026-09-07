@@ -1,4 +1,5 @@
 import { deleteCourseDripChanges } from "@/services/drip-admin/cleanup";
+import { relativeDripDelayInMillis } from "./drip-input";
 import { revisionFilter } from "@/services/drip-admin/guard";
 import { releaseSettingsSignature } from "../../../../packages/common-logic/src/course-release-revision";
 import { deleteCourseMemberAccess } from "@/services/member-access";
@@ -949,8 +950,10 @@ export const updateGroup = async ({
                 );
             }
             if (typeof drip.delayInMillis === "number") {
-                $set["groups.$.drip.delayInMillis"] =
-                    drip.delayInMillis * constants.relativeDripUnitInMillis;
+                $set["groups.$.drip.delayInMillis"] = relativeDripDelayInMillis(
+                    drip.delayInMillis,
+                    constants.relativeDripUnitInMillis,
+                );
             }
             if (drip.type === Constants.dripType[0]) {
                 $set["groups.$.drip.dateInUTC"] = null;
@@ -968,8 +971,10 @@ export const updateGroup = async ({
             if (drip.type === Constants.dripType[1]) {
                 $set["groups.$.drip.delayInMillis"] = null;
             } else if (typeof drip.delayInMillis === "number") {
-                $set["groups.$.drip.delayInMillis"] =
-                    drip.delayInMillis * constants.relativeDripUnitInMillis;
+                $set["groups.$.drip.delayInMillis"] = relativeDripDelayInMillis(
+                    drip.delayInMillis,
+                    constants.relativeDripUnitInMillis,
+                );
             }
             if (typeof drip.dateInUTC === "number") {
                 $set["groups.$.drip.dateInUTC"] = drip.dateInUTC;

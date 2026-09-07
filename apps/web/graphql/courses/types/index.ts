@@ -89,7 +89,11 @@ const dripInputType = new GraphQLInputObjectType({
     fields: {
         type: { type: dripTypeType },
         status: { type: GraphQLBoolean },
-        delayInMillis: { type: GraphQLFloat },
+        delayInMillis: {
+            type: GraphQLFloat,
+            description:
+                "Legacy input name: supply days (configured relative-drip units), not stored milliseconds. For example, 7 stores 604800000 ms with the default day unit. Duration must be 0–10 years at whole-millisecond precision; convert returned milliseconds before replaying this input.",
+        },
         dateInUTC: { type: GraphQLFloat },
         email: { type: dripEmailInput },
     },
@@ -100,7 +104,11 @@ const dripType = new GraphQLObjectType({
     fields: {
         type: { type: new GraphQLNonNull(dripTypeType) },
         status: { type: new GraphQLNonNull(GraphQLBoolean) },
-        delayInMillis: { type: GraphQLFloat },
+        delayInMillis: {
+            type: GraphQLFloat,
+            description:
+                "Stored duration in milliseconds. The legacy updateGroup input with the same name instead accepts configured relative-drip units (days by default).",
+        },
         dateInUTC: { type: GraphQLFloat },
         email: { type: dripEmail },
     },

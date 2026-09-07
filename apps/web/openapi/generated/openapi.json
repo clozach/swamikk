@@ -71,6 +71,18 @@
         {
             "name": "Newsletter",
             "description": "Explicit newsletter opt-out, separate from service and activity notification preferences."
+        },
+        {
+            "name": "Publication observations",
+            "description": "Verified publication upper bounds distinct from true first-publication dates."
+        },
+        {
+            "name": "Account closure",
+            "description": "Own-account consequence review and fenced erasure, with financial/recovery references retained."
+        },
+        {
+            "name": "Class checkout",
+            "description": "Opt-in dated class choices and owned checkout status. No roster data."
         }
     ],
     "paths": {
@@ -2989,11 +3001,91 @@
                 }
             }
         },
+        "/api/content-changes/page-widget": {
+            "get": {
+                "tags": ["Content Changes"],
+                "operationId": "getEditablePageWidget",
+                "summary": "Read supported fields from one published native page block",
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "description": "Requires active site:manage and no Member Mimic. Existing non-shared blocks only. Returns resolved text/image fields and whether they come from native defaults. This does not create/publish a page draft. Prepare a proposal through POST /api/content-changes; image IDs must resolve to same-tenant public native images. Unknown/shared/structural fields are rejected. Recovery settings cannot be submitted directly.",
+                "parameters": [
+                    {
+                        "name": "pageId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128,
+                            "pattern": "^[a-zA-Z0-9_-]+$"
+                        }
+                    },
+                    {
+                        "name": "widgetId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128,
+                            "pattern": "^[a-zA-Z0-9_-]+$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Resolved fields and authoritative page/widget IDs. Each field has field, kind (text, rich-text or image), label, value and defaultDerived.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "target",
+                                        "widgetName",
+                                        "fields"
+                                    ],
+                                    "properties": {
+                                        "target": {
+                                            "type": "object"
+                                        },
+                                        "widgetName": {
+                                            "type": "string"
+                                        },
+                                        "fields": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Unsupported target or invalid query."
+                    },
+                    "403": {
+                        "description": "Site editor permission required; Member Mimic cannot author."
+                    },
+                    "404": {
+                        "description": "Page not found in this tenant."
+                    },
+                    "429": {
+                        "description": "Rate limited."
+                    }
+                }
+            }
+        },
         "/api/content-changes": {
             "post": {
                 "tags": ["Content Changes"],
                 "operationId": "prepareContentChange",
-                "summary": "Capture baseline and prepare a text lesson change",
+                "summary": "Prepare a native lesson, page-field change or new unpublished text page",
                 "security": [
                     {
                         "CourseLitSession": []
@@ -3004,66 +3096,310 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "type": "object",
-                                "additionalProperties": false,
-                                "required": ["target", "patch", "summary"],
-                                "properties": {
-                                    "feedbackId": {
-                                        "type": "string",
-                                        "maxLength": 128
-                                    },
-                                    "target": {
+                                "oneOf": [
+                                    {
                                         "type": "object",
                                         "additionalProperties": false,
-                                        "required": ["kind", "lessonId"],
+                                        "required": [
+                                            "target",
+                                            "patch",
+                                            "summary"
+                                        ],
                                         "properties": {
-                                            "kind": {
-                                                "type": "string",
-                                                "enum": ["lesson"]
-                                            },
-                                            "lessonId": {
+                                            "feedbackId": {
                                                 "type": "string",
                                                 "maxLength": 128
-                                            }
-                                        }
-                                    },
-                                    "patch": {
-                                        "type": "object",
-                                        "additionalProperties": false,
-                                        "minProperties": 1,
-                                        "properties": {
-                                            "title": {
-                                                "type": "string",
-                                                "minLength": 1,
-                                                "maxLength": 240
                                             },
-                                            "content": {
+                                            "target": {
                                                 "type": "object",
                                                 "additionalProperties": false,
-                                                "required": ["type", "content"],
+                                                "required": [
+                                                    "kind",
+                                                    "lessonId"
+                                                ],
                                                 "properties": {
-                                                    "type": {
+                                                    "kind": {
                                                         "type": "string",
-                                                        "enum": ["doc"]
+                                                        "enum": ["lesson"]
+                                                    },
+                                                    "lessonId": {
+                                                        "type": "string",
+                                                        "maxLength": 128
+                                                    }
+                                                }
+                                            },
+                                            "patch": {
+                                                "type": "object",
+                                                "additionalProperties": false,
+                                                "minProperties": 1,
+                                                "properties": {
+                                                    "title": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 240
                                                     },
                                                     "content": {
-                                                        "type": "array",
-                                                        "maxItems": 1000,
-                                                        "items": {
-                                                            "type": "object"
-                                                        }
+                                                        "type": "object",
+                                                        "additionalProperties": false,
+                                                        "required": [
+                                                            "type",
+                                                            "content"
+                                                        ],
+                                                        "properties": {
+                                                            "type": {
+                                                                "type": "string",
+                                                                "enum": ["doc"]
+                                                            },
+                                                            "content": {
+                                                                "type": "array",
+                                                                "maxItems": 1000,
+                                                                "items": {
+                                                                    "type": "object"
+                                                                }
+                                                            }
+                                                        },
+                                                        "description": "Safe ProseMirror text structure. Existing opaque/media nodes must be retained unchanged; new HTML/media is rejected."
                                                     }
-                                                },
-                                                "description": "Safe ProseMirror text structure. Existing opaque/media nodes must be retained unchanged; new HTML/media is rejected."
+                                                }
+                                            },
+                                            "summary": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 2000
                                             }
                                         }
                                     },
-                                    "summary": {
-                                        "type": "string",
-                                        "minLength": 1,
-                                        "maxLength": 2000
+                                    {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": [
+                                            "target",
+                                            "patch",
+                                            "summary"
+                                        ],
+                                        "properties": {
+                                            "feedbackId": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 128,
+                                                "pattern": "^[a-zA-Z0-9_-]+$"
+                                            },
+                                            "target": {
+                                                "type": "object",
+                                                "additionalProperties": false,
+                                                "required": [
+                                                    "kind",
+                                                    "pageId",
+                                                    "widgetId",
+                                                    "field"
+                                                ],
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": ["page-widget"]
+                                                    },
+                                                    "pageId": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 128,
+                                                        "pattern": "^[a-zA-Z0-9_-]+$"
+                                                    },
+                                                    "widgetId": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 128,
+                                                        "pattern": "^[a-zA-Z0-9_-]+$"
+                                                    },
+                                                    "field": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 80
+                                                    }
+                                                }
+                                            },
+                                            "patch": {
+                                                "oneOf": [
+                                                    {
+                                                        "type": "object",
+                                                        "additionalProperties": false,
+                                                        "required": [
+                                                            "kind",
+                                                            "text"
+                                                        ],
+                                                        "properties": {
+                                                            "kind": {
+                                                                "type": "string",
+                                                                "enum": ["text"]
+                                                            },
+                                                            "text": {
+                                                                "type": "string",
+                                                                "maxLength": 20000
+                                                            }
+                                                        }
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "additionalProperties": false,
+                                                        "required": [
+                                                            "kind",
+                                                            "content"
+                                                        ],
+                                                        "properties": {
+                                                            "kind": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "rich-text"
+                                                                ]
+                                                            },
+                                                            "content": {
+                                                                "type": "object",
+                                                                "additionalProperties": false,
+                                                                "required": [
+                                                                    "type",
+                                                                    "content"
+                                                                ],
+                                                                "properties": {
+                                                                    "type": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "doc"
+                                                                        ]
+                                                                    },
+                                                                    "content": {
+                                                                        "type": "array",
+                                                                        "maxItems": 1000,
+                                                                        "items": {
+                                                                            "type": "object"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "additionalProperties": false,
+                                                        "required": [
+                                                            "kind",
+                                                            "mediaId",
+                                                            "alt"
+                                                        ],
+                                                        "properties": {
+                                                            "kind": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "image"
+                                                                ]
+                                                            },
+                                                            "mediaId": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 128,
+                                                                "pattern": "^[a-zA-Z0-9_-]+$"
+                                                            },
+                                                            "alt": {
+                                                                "type": "string",
+                                                                "maxLength": 1000
+                                                            }
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            "summary": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 2000
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": [
+                                            "target",
+                                            "patch",
+                                            "summary"
+                                        ],
+                                        "properties": {
+                                            "target": {
+                                                "type": "object",
+                                                "additionalProperties": false,
+                                                "required": ["kind", "pageId"],
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": ["page-create"]
+                                                    },
+                                                    "pageId": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 128,
+                                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                                        "description": "Exact new /p/ route. Existing routes and removed- reserved prefix are rejected; no automatic suffix."
+                                                    }
+                                                }
+                                            },
+                                            "patch": {
+                                                "type": "object",
+                                                "additionalProperties": false,
+                                                "required": [
+                                                    "kind",
+                                                    "title",
+                                                    "content",
+                                                    "intent",
+                                                    "materials"
+                                                ],
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": ["page-create"]
+                                                    },
+                                                    "title": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 240
+                                                    },
+                                                    "intent": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 4000
+                                                    },
+                                                    "materials": {
+                                                        "type": "string",
+                                                        "maxLength": 20000
+                                                    },
+                                                    "content": {
+                                                        "type": "object",
+                                                        "additionalProperties": false,
+                                                        "required": [
+                                                            "type",
+                                                            "content"
+                                                        ],
+                                                        "properties": {
+                                                            "type": {
+                                                                "type": "string",
+                                                                "enum": ["doc"]
+                                                            },
+                                                            "content": {
+                                                                "type": "array",
+                                                                "maxItems": 1000,
+                                                                "items": {
+                                                                    "type": "object"
+                                                                }
+                                                            }
+                                                        },
+                                                        "description": "Safe text structure and links only. No new HTML, scripts, assets or opaque embeds."
+                                                    }
+                                                }
+                                            },
+                                            "summary": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 2000
+                                            }
+                                        }
                                     }
-                                }
+                                ]
                             }
                         }
                     }
@@ -3078,7 +3414,7 @@
                                     "properties": {
                                         "change": {
                                             "type": "object",
-                                            "description": "ContentChange from @courselit/common-models: id, target, version, summary, patch, baseline {revision,fingerprint,snapshot,courseId,published}, preview {before,after}, previewHash, preparedBy/At, history, approvals, state, timestamps. state is discriminated by kind; applying/uncertain/applied include operationId and approval; applied includes appliedAt/appliedRevision.",
+                                            "description": "ContentChange from @courselit/common-models: id, target, version, summary, patch, baseline {revision,fingerprint,snapshot,published}; page-widget baselines also retain immutable documentId, renderFingerprint, theme/typefaces and draft consequence, with frozen widget renderSettings in both preview snapshots, preview {before,after}, previewHash, preparedBy/At, history, approvals, state, timestamps. page-create retains prompt/materials, frozen native text layout, exact title/path, immutable result documentId and appearance fingerprint; approval creates only a hidden native draft. Creation result identities remain erased tombstones after cancellation/deletion. page-publish is prepared only from an applied creation or refreshed publication: it retains the current draft, immutable document ID/revision/fingerprint, appearance fingerprint and global draft flags. Separate explicit approval calls native publication and atomically records its receipt; pending shared/theme/font drafts block it. state is discriminated by kind; applying/uncertain/applied include operationId and approval; applied includes appliedAt/appliedRevision.",
                                             "properties": {
                                                 "id": {
                                                     "type": "string"
@@ -3117,7 +3453,7 @@
                         }
                     },
                     "201": {
-                        "description": "Draft captured; lesson is unchanged.",
+                        "description": "Proposal captured; page and lesson content are unchanged. A selected public image is retained in the native media library.",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -3125,7 +3461,7 @@
                                     "properties": {
                                         "change": {
                                             "type": "object",
-                                            "description": "ContentChange from @courselit/common-models: id, target, version, summary, patch, baseline {revision,fingerprint,snapshot,courseId,published}, preview {before,after}, previewHash, preparedBy/At, history, approvals, state, timestamps. state is discriminated by kind; applying/uncertain/applied include operationId and approval; applied includes appliedAt/appliedRevision.",
+                                            "description": "ContentChange from @courselit/common-models: id, target, version, summary, patch, baseline {revision,fingerprint,snapshot,published}; page-widget baselines also retain immutable documentId, renderFingerprint, theme/typefaces and draft consequence, with frozen widget renderSettings in both preview snapshots, preview {before,after}, previewHash, preparedBy/At, history, approvals, state, timestamps. page-create retains prompt/materials, frozen native text layout, exact title/path, immutable result documentId and appearance fingerprint; approval creates only a hidden native draft. Creation result identities remain erased tombstones after cancellation/deletion. page-publish is prepared only from an applied creation or refreshed publication: it retains the current draft, immutable document ID/revision/fingerprint, appearance fingerprint and global draft flags. Separate explicit approval calls native publication and atomically records its receipt; pending shared/theme/font drafts block it. state is discriminated by kind; applying/uncertain/applied include operationId and approval; applied includes appliedAt/appliedRevision.",
                                             "properties": {
                                                 "id": {
                                                     "type": "string"
@@ -3207,7 +3543,7 @@
                                             "type": "array",
                                             "items": {
                                                 "type": "object",
-                                                "description": "ContentChange from @courselit/common-models: id, target, version, summary, patch, baseline {revision,fingerprint,snapshot,courseId,published}, preview {before,after}, previewHash, preparedBy/At, history, approvals, state, timestamps. state is discriminated by kind; applying/uncertain/applied include operationId and approval; applied includes appliedAt/appliedRevision.",
+                                                "description": "ContentChange from @courselit/common-models: id, target, version, summary, patch, baseline {revision,fingerprint,snapshot,published}; page-widget baselines also retain immutable documentId, renderFingerprint, theme/typefaces and draft consequence, with frozen widget renderSettings in both preview snapshots, preview {before,after}, previewHash, preparedBy/At, history, approvals, state, timestamps. page-create retains prompt/materials, frozen native text layout, exact title/path, immutable result documentId and appearance fingerprint; approval creates only a hidden native draft. Creation result identities remain erased tombstones after cancellation/deletion. page-publish is prepared only from an applied creation or refreshed publication: it retains the current draft, immutable document ID/revision/fingerprint, appearance fingerprint and global draft flags. Separate explicit approval calls native publication and atomically records its receipt; pending shared/theme/font drafts block it. state is discriminated by kind; applying/uncertain/applied include operationId and approval; applied includes appliedAt/appliedRevision.",
                                                 "properties": {
                                                     "id": {
                                                         "type": "string"
@@ -3300,7 +3636,7 @@
                                     "properties": {
                                         "change": {
                                             "type": "object",
-                                            "description": "ContentChange from @courselit/common-models: id, target, version, summary, patch, baseline {revision,fingerprint,snapshot,courseId,published}, preview {before,after}, previewHash, preparedBy/At, history, approvals, state, timestamps. state is discriminated by kind; applying/uncertain/applied include operationId and approval; applied includes appliedAt/appliedRevision.",
+                                            "description": "ContentChange from @courselit/common-models: id, target, version, summary, patch, baseline {revision,fingerprint,snapshot,published}; page-widget baselines also retain immutable documentId, renderFingerprint, theme/typefaces and draft consequence, with frozen widget renderSettings in both preview snapshots, preview {before,after}, previewHash, preparedBy/At, history, approvals, state, timestamps. page-create retains prompt/materials, frozen native text layout, exact title/path, immutable result documentId and appearance fingerprint; approval creates only a hidden native draft. Creation result identities remain erased tombstones after cancellation/deletion. page-publish is prepared only from an applied creation or refreshed publication: it retains the current draft, immutable document ID/revision/fingerprint, appearance fingerprint and global draft flags. Separate explicit approval calls native publication and atomically records its receipt; pending shared/theme/font drafts block it. state is discriminated by kind; applying/uncertain/applied include operationId and approval; applied includes appliedAt/appliedRevision.",
                                             "properties": {
                                                 "id": {
                                                     "type": "string"
@@ -3364,13 +3700,13 @@
             "post": {
                 "tags": ["Content Changes"],
                 "operationId": "actOnContentChange",
-                "summary": "Revise, approve/apply, reject, reconcile, or prepare recovery",
+                "summary": "Revise, approve/apply, reject, reconcile, or prepare recovery/publication",
                 "security": [
                     {
                         "CourseLitSession": []
                     }
                 ],
-                "description": "Approve must echo the displayed version and previewHash. Duplicate approval never applies twice. Reconcile reads the atomic receipt or fences an interrupted write without changing content. Revert only prepares a separate reverse proposal requiring its own approval; later lesson edits prevent automatic recovery.",
+                "description": "Approve must echo the displayed version and previewHash. Duplicate approval never applies twice. Reconcile reads the atomic receipt or fences an interrupted write without changing content. Revert only prepares a separate reverse proposal requiring its own approval; later target edits prevent automatic recovery. prepare-publication on an applied page creation returns a separate deterministic publication review; on a settled publication it refreshes the current native draft as a new version. It never publishes. No raw page-publish target is accepted by the creation endpoint.",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -3396,38 +3732,191 @@
                                                 "minimum": 1
                                             },
                                             "patch": {
-                                                "type": "object",
-                                                "additionalProperties": false,
-                                                "minProperties": 1,
-                                                "properties": {
-                                                    "title": {
-                                                        "type": "string",
-                                                        "minLength": 1,
-                                                        "maxLength": 240
+                                                "oneOf": [
+                                                    {
+                                                        "type": "object",
+                                                        "additionalProperties": false,
+                                                        "minProperties": 1,
+                                                        "properties": {
+                                                            "title": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 240
+                                                            },
+                                                            "content": {
+                                                                "type": "object",
+                                                                "additionalProperties": false,
+                                                                "required": [
+                                                                    "type",
+                                                                    "content"
+                                                                ],
+                                                                "properties": {
+                                                                    "type": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "doc"
+                                                                        ]
+                                                                    },
+                                                                    "content": {
+                                                                        "type": "array",
+                                                                        "maxItems": 1000,
+                                                                        "items": {
+                                                                            "type": "object"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "description": "Safe ProseMirror text structure. Existing opaque/media nodes must be retained unchanged; new HTML/media is rejected."
+                                                            }
+                                                        }
                                                     },
-                                                    "content": {
+                                                    {
+                                                        "oneOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "additionalProperties": false,
+                                                                "required": [
+                                                                    "kind",
+                                                                    "text"
+                                                                ],
+                                                                "properties": {
+                                                                    "kind": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "text"
+                                                                        ]
+                                                                    },
+                                                                    "text": {
+                                                                        "type": "string",
+                                                                        "maxLength": 20000
+                                                                    }
+                                                                }
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "additionalProperties": false,
+                                                                "required": [
+                                                                    "kind",
+                                                                    "content"
+                                                                ],
+                                                                "properties": {
+                                                                    "kind": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "rich-text"
+                                                                        ]
+                                                                    },
+                                                                    "content": {
+                                                                        "type": "object",
+                                                                        "additionalProperties": false,
+                                                                        "required": [
+                                                                            "type",
+                                                                            "content"
+                                                                        ],
+                                                                        "properties": {
+                                                                            "type": {
+                                                                                "type": "string",
+                                                                                "enum": [
+                                                                                    "doc"
+                                                                                ]
+                                                                            },
+                                                                            "content": {
+                                                                                "type": "array",
+                                                                                "maxItems": 1000,
+                                                                                "items": {
+                                                                                    "type": "object"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "additionalProperties": false,
+                                                                "required": [
+                                                                    "kind",
+                                                                    "mediaId",
+                                                                    "alt"
+                                                                ],
+                                                                "properties": {
+                                                                    "kind": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "image"
+                                                                        ]
+                                                                    },
+                                                                    "mediaId": {
+                                                                        "type": "string",
+                                                                        "minLength": 1,
+                                                                        "maxLength": 128,
+                                                                        "pattern": "^[a-zA-Z0-9_-]+$"
+                                                                    },
+                                                                    "alt": {
+                                                                        "type": "string",
+                                                                        "maxLength": 1000
+                                                                    }
+                                                                }
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
                                                         "type": "object",
                                                         "additionalProperties": false,
                                                         "required": [
-                                                            "type",
-                                                            "content"
+                                                            "kind",
+                                                            "title",
+                                                            "content",
+                                                            "intent",
+                                                            "materials"
                                                         ],
                                                         "properties": {
-                                                            "type": {
+                                                            "kind": {
                                                                 "type": "string",
-                                                                "enum": ["doc"]
+                                                                "enum": [
+                                                                    "page-create"
+                                                                ]
+                                                            },
+                                                            "title": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 240
+                                                            },
+                                                            "intent": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 4000
+                                                            },
+                                                            "materials": {
+                                                                "type": "string",
+                                                                "maxLength": 20000
                                                             },
                                                             "content": {
-                                                                "type": "array",
-                                                                "maxItems": 1000,
-                                                                "items": {
-                                                                    "type": "object"
-                                                                }
+                                                                "type": "object",
+                                                                "additionalProperties": false,
+                                                                "required": [
+                                                                    "type",
+                                                                    "content"
+                                                                ],
+                                                                "properties": {
+                                                                    "type": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "doc"
+                                                                        ]
+                                                                    },
+                                                                    "content": {
+                                                                        "type": "array",
+                                                                        "maxItems": 1000,
+                                                                        "items": {
+                                                                            "type": "object"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "description": "Safe text structure and links only. No new HTML, scripts, assets or opaque embeds."
                                                             }
-                                                        },
-                                                        "description": "Safe ProseMirror text structure. Existing opaque/media nodes must be retained unchanged; new HTML/media is rejected."
+                                                        }
                                                     }
-                                                }
+                                                ]
                                             },
                                             "summary": {
                                                 "type": "string",
@@ -3499,6 +3988,21 @@
                                                 "minimum": 1
                                             }
                                         }
+                                    },
+                                    {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": ["action", "version"],
+                                        "properties": {
+                                            "action": {
+                                                "type": "string",
+                                                "enum": ["prepare-publication"]
+                                            },
+                                            "version": {
+                                                "type": "integer",
+                                                "minimum": 1
+                                            }
+                                        }
                                     }
                                 ]
                             }
@@ -3515,7 +4019,7 @@
                                     "properties": {
                                         "change": {
                                             "type": "object",
-                                            "description": "ContentChange from @courselit/common-models: id, target, version, summary, patch, baseline {revision,fingerprint,snapshot,courseId,published}, preview {before,after}, previewHash, preparedBy/At, history, approvals, state, timestamps. state is discriminated by kind; applying/uncertain/applied include operationId and approval; applied includes appliedAt/appliedRevision.",
+                                            "description": "ContentChange from @courselit/common-models: id, target, version, summary, patch, baseline {revision,fingerprint,snapshot,published}; page-widget baselines also retain immutable documentId, renderFingerprint, theme/typefaces and draft consequence, with frozen widget renderSettings in both preview snapshots, preview {before,after}, previewHash, preparedBy/At, history, approvals, state, timestamps. page-create retains prompt/materials, frozen native text layout, exact title/path, immutable result documentId and appearance fingerprint; approval creates only a hidden native draft. Creation result identities remain erased tombstones after cancellation/deletion. page-publish is prepared only from an applied creation or refreshed publication: it retains the current draft, immutable document ID/revision/fingerprint, appearance fingerprint and global draft flags. Separate explicit approval calls native publication and atomically records its receipt; pending shared/theme/font drafts block it. state is discriminated by kind; applying/uncertain/applied include operationId and approval; applied includes appliedAt/appliedRevision.",
                                             "properties": {
                                                 "id": {
                                                     "type": "string"
@@ -3783,7 +4287,7 @@
                                     "returnTo": {
                                         "type": "string",
                                         "maxLength": 1024,
-                                        "description": "Only /dashboard/users plus its filter query is accepted."
+                                        "description": "Only the same-site Users, Subscribers, Transactions, cohort roster, and product Customers/Transactions paths plus their query are accepted; invalid values fall back to /dashboard/users."
                                     }
                                 }
                             }
@@ -3960,7 +4464,7 @@
             "post": {
                 "tags": ["Payment callbacks"],
                 "summary": "Reconcile a signed payment notification",
-                "description": "Stripe requires a configured signing secret and validates the unmodified request body. Completed paid checkouts and paid renewals settle one tenant-scoped invoice per provider object. Old and current Stripe invoice metadata shapes are accepted. Cancellation/refund notifications are not yet handled by this route.",
+                "description": "Stripe verifies the unchanged UTF-8 body (maximum 1 MiB) with the tenant signing secret. Paid checkout/renewal and subscription.updated/deleted callbacks reconcile exact tenant, mode, provider and membership-session bindings. Actual subscription ending caps and freezes retained access; scheduled cancellation and attention states do not imply ending. Completed event IDs deduplicate; unsupported signed events are ignored. Refund.created/updated/failed and charge.refunded callbacks record current refund status through an exact charge-to-native-invoice proof, without changing paid settlement, approving requests or changing access.",
                 "security": [],
                 "parameters": [
                     {
@@ -3988,8 +4492,11 @@
                     "200": {
                         "description": "Payment recorded and membership reconciled, or recorded without activating an inactive subscription."
                     },
+                    "202": {
+                        "description": "Verified event retained for review because correlation or account state is unavailable; no guessed access activation."
+                    },
                     "400": {
-                        "description": "Invalid signature, unpaid/unsupported notification, malformed data or unsuccessful reconciliation; no success acknowledged."
+                        "description": "Invalid signature, mode mismatch, malformed or oversized body."
                     },
                     "404": {
                         "description": "Tenant or matching membership not found."
@@ -3998,7 +4505,7 @@
                         "description": "Notification belongs to a different subscription."
                     },
                     "503": {
-                        "description": "Stripe signing secret is missing; no payment data changed."
+                        "description": "Signing configuration unavailable or reconciliation is retryable/in progress. Replay the signed event; do not create another payment."
                     }
                 }
             }
@@ -4203,7 +4710,7 @@
         "/api/member-billing": {
             "get": {
                 "summary": "Read the signed-in member's billing and cancellation status",
-                "description": "Tenant-scoped, read-only billing projection. Member Mimic receives the subject's safe view. No provider credentials or identifiers, payment mutations or access initialization occur.",
+                "description": "Refund summaries report separately observed money status without altering original paid receipt amounts or access. Tenant-scoped, read-only billing projection. Member Mimic receives the subject's safe view. No provider credentials or identifiers, payment mutations or access initialization occur.",
                 "responses": {
                     "200": {
                         "description": "MemberBillingView: memberships, settled invoice summaries and cancellation/consequence state."
@@ -4286,7 +4793,7 @@
         "/api/member-receipts/{invoiceId}": {
             "get": {
                 "summary": "Read a native payment receipt without changing payments or access",
-                "description": "Tenant and member ownership are checked through the native membership, including historical sessions. Member Mimic receives the approved subject's read-only view. No provider IDs, credentials, card data or external receipt URLs are exposed. A missing historical payment date stays unknown.",
+                "description": "Refund summaries report separately observed money status without altering original paid receipt amounts or access. Tenant and member ownership are checked through the native membership, including historical sessions. Member Mimic receives the approved subject's read-only view. No provider IDs, credentials, card data or external receipt URLs are exposed. A missing historical payment date stays unknown.",
                 "parameters": [
                     {
                         "name": "invoiceId",
@@ -5234,7 +5741,7 @@
         "/api/refund-requests": {
             "get": {
                 "summary": "Read the member's purchases, receipts and refund requests",
-                "description": "Read-only tenant/subject projection; Member Mimic cannot see unsubmitted private drafts. No provider calls or access mutations.",
+                "description": "Refund summaries report separately observed money status without altering original paid receipt amounts or access. Read-only tenant/subject projection; Member Mimic cannot see unsubmitted private drafts. No provider calls or access mutations.",
                 "responses": {
                     "200": {
                         "description": "MemberRefundRequestsView"
@@ -5358,6 +5865,1014 @@
                     },
                     "503": {
                         "description": "Unable to confirm; retry/reconcile."
+                    }
+                }
+            }
+        },
+        "/api/publication-observations": {
+            "get": {
+                "tags": ["Publication observations"],
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "operationId": "readPublicationObservationCandidates",
+                "summary": "Review published lessons and existing observation evidence",
+                "parameters": [
+                    {
+                        "name": "courseId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128,
+                            "pattern": "^[a-zA-Z0-9_-]+$"
+                        }
+                    },
+                    {
+                        "name": "cursor",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128,
+                            "pattern": "^[a-zA-Z0-9_-]+$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Read-only {courseId,published,releaseRevision,candidates,hasMore,nextCursor}. Up to 100 published candidates include lessonId,title,groupId,hasFirstPublicationDate,publishedBy,availabilityWitnessCurrent."
+                    },
+                    "400": {
+                        "description": "Invalid or excessive identifiers/JSON; caller-supplied evidence is rejected."
+                    },
+                    "403": {
+                        "description": "Administrator and same-origin writes required. Member Mimic is refused."
+                    },
+                    "404": {
+                        "description": "Course unavailable in this tenant and ownership scope."
+                    },
+                    "429": {
+                        "description": "Observation rate limit exceeded."
+                    },
+                    "503": {
+                        "description": "Result unavailable. Read persisted evidence before retrying."
+                    }
+                }
+            },
+            "post": {
+                "tags": ["Publication observations"],
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "operationId": "observePublishedLessons",
+                "summary": "Record bounded server-authored observations of selected published lessons",
+                "description": "Records MongoDB timestamps and a guarded joint lesson/course witness. Never writes firstPublishedAt or grants membership/retained access. Course races can retain publication-only evidence; lesson races skip the stale observation. Each item has an explicit result, not an assumed batch success.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["courseId", "lessonIds"],
+                                "properties": {
+                                    "courseId": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 128,
+                                        "pattern": "^[a-zA-Z0-9_-]+$"
+                                    },
+                                    "lessonIds": {
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "maxItems": 100,
+                                        "uniqueItems": true,
+                                        "items": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 128,
+                                            "pattern": "^[a-zA-Z0-9_-]+$"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "{courseId,results}: per-lesson recorded/already-recorded/publication-only with publishedBy and witnessAt, skipped with reason, or uncertain. None asserts that an earlier membership's unknown history has been repaired."
+                    },
+                    "400": {
+                        "description": "Invalid or excessive identifiers/JSON; caller-supplied evidence is rejected."
+                    },
+                    "403": {
+                        "description": "Administrator and same-origin writes required. Member Mimic is refused."
+                    },
+                    "404": {
+                        "description": "Course unavailable in this tenant and ownership scope."
+                    },
+                    "429": {
+                        "description": "Observation rate limit exceeded."
+                    },
+                    "503": {
+                        "description": "Result unavailable. Read persisted evidence before retrying."
+                    }
+                }
+            }
+        },
+        "/api/account-closure": {
+            "get": {
+                "tags": ["Account closure"],
+                "operationId": "reviewAccountClosure",
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "summary": "Review own account closure",
+                "description": "No-store. Reads a persisted Better Auth session with cookie cache bypassed. Reports recent identity, blockers, review hash and pending write count. No provider action or erasure.",
+                "responses": {
+                    "200": {
+                        "description": "Current consequence review.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "kind",
+                                        "blockers",
+                                        "reviewHash",
+                                        "state",
+                                        "pendingWrites",
+                                        "recentIdentity"
+                                    ],
+                                    "properties": {
+                                        "kind": {
+                                            "type": "string",
+                                            "enum": ["review"]
+                                        },
+                                        "blockers": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "required": [
+                                                    "kind",
+                                                    "message",
+                                                    "href"
+                                                ],
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "membership",
+                                                            "financial",
+                                                            "owner",
+                                                            "checkout"
+                                                        ]
+                                                    },
+                                                    "message": {
+                                                        "type": "string"
+                                                    },
+                                                    "href": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "reviewHash": {
+                                            "type": "string",
+                                            "pattern": "^[a-f0-9]{64}$"
+                                        },
+                                        "state": {
+                                            "type": "string",
+                                            "enum": [
+                                                "active",
+                                                "closing",
+                                                "erasing",
+                                                "erased"
+                                            ]
+                                        },
+                                        "pendingWrites": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                        },
+                                        "recentIdentity": {
+                                            "type": "boolean"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid confirmation."
+                    },
+                    "401": {
+                        "description": "Persisted account session required."
+                    },
+                    "403": {
+                        "description": "Recent real sign-in and same-origin request required; Mimic cannot close accounts."
+                    },
+                    "409": {
+                        "description": "A financial action, changed review, or durable in-flight write requires attention. Erasure has not been declared complete."
+                    },
+                    "429": {
+                        "description": "Too many requests."
+                    },
+                    "503": {
+                        "description": "Check the account's state with support before retrying."
+                    }
+                }
+            },
+            "delete": {
+                "tags": ["Account closure"],
+                "operationId": "closeOwnAccount",
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "summary": "Confirm own account closure",
+                "description": "Requires the matching server review and a persisted sign-in created in the last ten minutes. No provider cancellation/refund is invoked. Pending checkout/subscription/financial actions and in-flight writes stop erasure. Receipts, submitted financial audit, unresolved operation locks and minimal erased-account fences remain. Backups and already-delivered email are not erased.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["reviewHash", "confirmation"],
+                                "properties": {
+                                    "reviewHash": {
+                                        "type": "string",
+                                        "pattern": "^[a-f0-9]{64}$"
+                                    },
+                                    "confirmation": {
+                                        "type": "string",
+                                        "enum": ["CLOSE"]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Account and private records erased; linked authentication accounts/sessions removed.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "kind": {
+                                            "type": "string",
+                                            "enum": ["closed"]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid confirmation."
+                    },
+                    "401": {
+                        "description": "Persisted account session required."
+                    },
+                    "403": {
+                        "description": "Recent real sign-in and same-origin request required; Mimic cannot close accounts."
+                    },
+                    "409": {
+                        "description": "A financial action, changed review, or durable in-flight write requires attention. Erasure has not been declared complete."
+                    },
+                    "429": {
+                        "description": "Too many requests."
+                    },
+                    "503": {
+                        "description": "Check the account's state with support before retrying."
+                    }
+                }
+            },
+            "patch": {
+                "tags": ["Account closure"],
+                "operationId": "keepOwnAccount",
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "summary": "Keep an account before erasure starts",
+                "description": "Reopens only the closing state. Cannot undo erasing/erased states or clear unresolved write reservations.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["action"],
+                                "properties": {
+                                    "action": {
+                                        "type": "string",
+                                        "enum": ["keep"]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Account remains open."
+                    },
+                    "400": {
+                        "description": "Invalid confirmation."
+                    },
+                    "401": {
+                        "description": "Persisted account session required."
+                    },
+                    "403": {
+                        "description": "Recent real sign-in and same-origin request required; Mimic cannot close accounts."
+                    },
+                    "409": {
+                        "description": "A financial action, changed review, or durable in-flight write requires attention. Erasure has not been declared complete."
+                    },
+                    "429": {
+                        "description": "Too many requests."
+                    },
+                    "503": {
+                        "description": "Check the account's state with support before retrying."
+                    }
+                }
+            }
+        },
+        "/api/admin-overview": {
+            "get": {
+                "summary": "Read the native membership overview and support diagnostics",
+                "description": "Requires an active tenant administrator with manageSettings; Member Mimic, including expired cookies, is refused. Read-only business projection from existing records, with no grants, provider calls, mail or content writes. Native paid receipts are grouped by test/live/unknown mode and currency; amounts use major currency units. Original paid amounts remain separate from latest recorded successful refund evidence. Each source reports availability, selection limits and its latest recorded timestamp. Operational attention covers unresolved records independent of payment period; paid-without-active-access is explicitly an inference, not a grant instruction. No emails, message bodies, error bodies, provider IDs, tokens or payment details are returned. At most 500 selected records per source, 50 attention items and 25 current paid membership/product access checks. This is not a collector, heartbeat or complete health result. Responses are not cached; reads are limited to 30 per minute per tenant actor.",
+                "parameters": [
+                    {
+                        "name": "days",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "enum": [7, 30],
+                            "default": 7
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Native snapshot with payment groups, membership/access record counts, attention, read coverage and freshness. Unavailable sources stay explicit, never inferred healthy."
+                    },
+                    "400": {
+                        "description": "Unsupported payment period."
+                    },
+                    "401": {
+                        "description": "The signed-in tenant account is unavailable."
+                    },
+                    "403": {
+                        "description": "Site settings authority is missing or Member Mimic is present."
+                    },
+                    "404": {
+                        "description": "Site not found."
+                    },
+                    "429": {
+                        "description": "Read rate limit reached."
+                    },
+                    "503": {
+                        "description": "Snapshot could not be read; no health conclusion."
+                    }
+                }
+            }
+        },
+        "/api/feedback-review/claim": {
+            "post": {
+                "tags": ["Feedback Review"],
+                "operationId": "claimFeedbackReview",
+                "summary": "Claim one feedback lease or complete a previously accepted intent",
+                "security": [
+                    {
+                        "feedbackReviewer": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Bounded review claim/context/result. No-store; no administrator identity or approval authority."
+                    },
+                    "400": {
+                        "description": "Unknown, unsafe or invalid input."
+                    },
+                    "401": {
+                        "description": "Grant/issuer unavailable, expired, revoked or wrong tenant."
+                    },
+                    "403": {
+                        "description": "Mimic or administrator permission refusal."
+                    },
+                    "409": {
+                        "description": "Stale/expired lease, conflicting output, escalation required or account closure."
+                    },
+                    "413": {
+                        "description": "Body exceeds 64 KiB or context complexity limit."
+                    },
+                    "429": {
+                        "description": "Rate limit."
+                    },
+                    "503": {
+                        "description": "Retain and retry the same result; never infer publication."
+                    }
+                }
+            }
+        },
+        "/api/feedback-review/context": {
+            "post": {
+                "tags": ["Feedback Review"],
+                "operationId": "readFeedbackReviewContext",
+                "summary": "Read one freshly verified public text field or escalation-only context",
+                "security": [
+                    {
+                        "feedbackReviewer": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                    "feedbackId",
+                                    "generation",
+                                    "leaseId",
+                                    "inputHash"
+                                ],
+                                "properties": {
+                                    "feedbackId": {
+                                        "type": "string"
+                                    },
+                                    "generation": {
+                                        "type": "integer",
+                                        "minimum": 1
+                                    },
+                                    "leaseId": {
+                                        "type": "string"
+                                    },
+                                    "inputHash": {
+                                        "type": "string",
+                                        "pattern": "^[a-f0-9]{64}$"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Bounded review claim/context/result. No-store; no administrator identity or approval authority."
+                    },
+                    "400": {
+                        "description": "Unknown, unsafe or invalid input."
+                    },
+                    "401": {
+                        "description": "Grant/issuer unavailable, expired, revoked or wrong tenant."
+                    },
+                    "403": {
+                        "description": "Mimic or administrator permission refusal."
+                    },
+                    "409": {
+                        "description": "Stale/expired lease, conflicting output, escalation required or account closure."
+                    },
+                    "413": {
+                        "description": "Body exceeds 64 KiB or context complexity limit."
+                    },
+                    "429": {
+                        "description": "Rate limit."
+                    },
+                    "503": {
+                        "description": "Retain and retry the same result; never infer publication."
+                    }
+                }
+            }
+        },
+        "/api/feedback-review/result": {
+            "post": {
+                "tags": ["Feedback Review"],
+                "operationId": "submitFeedbackReviewResult",
+                "summary": "Retain one unapproved text proposal or escalation; never apply or publish",
+                "security": [
+                    {
+                        "feedbackReviewer": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                    "feedbackId",
+                                    "generation",
+                                    "leaseId",
+                                    "inputHash",
+                                    "result"
+                                ],
+                                "properties": {
+                                    "feedbackId": {
+                                        "type": "string"
+                                    },
+                                    "generation": {
+                                        "type": "integer",
+                                        "minimum": 1
+                                    },
+                                    "leaseId": {
+                                        "type": "string"
+                                    },
+                                    "inputHash": {
+                                        "type": "string",
+                                        "pattern": "^[a-f0-9]{64}$"
+                                    },
+                                    "result": {
+                                        "oneOf": [
+                                            {
+                                                "type": "object",
+                                                "additionalProperties": false,
+                                                "required": [
+                                                    "kind",
+                                                    "summary",
+                                                    "replacement"
+                                                ],
+                                                "properties": {
+                                                    "kind": {
+                                                        "enum": [
+                                                            "text-proposal"
+                                                        ]
+                                                    },
+                                                    "summary": {
+                                                        "type": "string",
+                                                        "maxLength": 2000
+                                                    },
+                                                    "replacement": {
+                                                        "oneOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "additionalProperties": false,
+                                                                "required": [
+                                                                    "kind",
+                                                                    "text"
+                                                                ],
+                                                                "properties": {
+                                                                    "kind": {
+                                                                        "enum": [
+                                                                            "text"
+                                                                        ]
+                                                                    },
+                                                                    "text": {
+                                                                        "type": "string",
+                                                                        "minLength": 1,
+                                                                        "maxLength": 20000
+                                                                    }
+                                                                }
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "additionalProperties": false,
+                                                                "required": [
+                                                                    "kind",
+                                                                    "content"
+                                                                ],
+                                                                "properties": {
+                                                                    "kind": {
+                                                                        "enum": [
+                                                                            "rich-text"
+                                                                        ]
+                                                                    },
+                                                                    "content": {
+                                                                        "type": "object",
+                                                                        "additionalProperties": false,
+                                                                        "required": [
+                                                                            "type",
+                                                                            "content"
+                                                                        ],
+                                                                        "properties": {
+                                                                            "type": {
+                                                                                "enum": [
+                                                                                    "doc"
+                                                                                ]
+                                                                            },
+                                                                            "content": {
+                                                                                "type": "array",
+                                                                                "maxItems": 1000,
+                                                                                "items": {
+                                                                                    "type": "object"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "type": "object",
+                                                "additionalProperties": false,
+                                                "required": [
+                                                    "kind",
+                                                    "summary",
+                                                    "reason"
+                                                ],
+                                                "properties": {
+                                                    "kind": {
+                                                        "enum": ["escalation"]
+                                                    },
+                                                    "summary": {
+                                                        "type": "string",
+                                                        "maxLength": 2000
+                                                    },
+                                                    "reason": {
+                                                        "enum": [
+                                                            "human-review",
+                                                            "private-or-access",
+                                                            "payment-or-policy",
+                                                            "structure-or-media",
+                                                            "ambiguous-target"
+                                                        ]
+                                                    }
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Bounded review claim/context/result. No-store; no administrator identity or approval authority."
+                    },
+                    "400": {
+                        "description": "Unknown, unsafe or invalid input."
+                    },
+                    "401": {
+                        "description": "Grant/issuer unavailable, expired, revoked or wrong tenant."
+                    },
+                    "403": {
+                        "description": "Mimic or administrator permission refusal."
+                    },
+                    "409": {
+                        "description": "Stale/expired lease, conflicting output, escalation required or account closure."
+                    },
+                    "413": {
+                        "description": "Body exceeds 64 KiB or context complexity limit."
+                    },
+                    "429": {
+                        "description": "Rate limit."
+                    },
+                    "503": {
+                        "description": "Retain and retry the same result; never infer publication."
+                    }
+                }
+            }
+        },
+        "/api/feedback-review/grants": {
+            "get": {
+                "tags": ["Feedback Review"],
+                "operationId": "listFeedbackReviewGrants",
+                "summary": "Settings administrator lists redacted grant metadata",
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Bounded review claim/context/result. No-store; no administrator identity or approval authority."
+                    },
+                    "400": {
+                        "description": "Unknown, unsafe or invalid input."
+                    },
+                    "401": {
+                        "description": "Grant/issuer unavailable, expired, revoked or wrong tenant."
+                    },
+                    "403": {
+                        "description": "Mimic or administrator permission refusal."
+                    },
+                    "409": {
+                        "description": "Stale/expired lease, conflicting output, escalation required or account closure."
+                    },
+                    "413": {
+                        "description": "Body exceeds 64 KiB or context complexity limit."
+                    },
+                    "429": {
+                        "description": "Rate limit."
+                    },
+                    "503": {
+                        "description": "Retain and retry the same result; never infer publication."
+                    }
+                }
+            },
+            "post": {
+                "tags": ["Feedback Review"],
+                "operationId": "issueFeedbackReviewGrant",
+                "summary": "Settings administrator explicitly issues a tenant-bound restricted credential",
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["name", "scopes", "expiresInDays"],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 80
+                                    },
+                                    "scopes": {
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "maxItems": 2,
+                                        "uniqueItems": true,
+                                        "items": {
+                                            "enum": [
+                                                "public-page-text",
+                                                "public-lesson-text"
+                                            ]
+                                        }
+                                    },
+                                    "expiresInDays": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "maximum": 30
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Bounded review claim/context/result. No-store; no administrator identity or approval authority."
+                    },
+                    "201": {
+                        "description": "Raw credential returned exactly once in this no-store response; persist it outside model context/logs."
+                    },
+                    "400": {
+                        "description": "Unknown, unsafe or invalid input."
+                    },
+                    "401": {
+                        "description": "Grant/issuer unavailable, expired, revoked or wrong tenant."
+                    },
+                    "403": {
+                        "description": "Mimic or administrator permission refusal."
+                    },
+                    "409": {
+                        "description": "Stale/expired lease, conflicting output, escalation required or account closure."
+                    },
+                    "413": {
+                        "description": "Body exceeds 64 KiB or context complexity limit."
+                    },
+                    "429": {
+                        "description": "Rate limit."
+                    },
+                    "503": {
+                        "description": "Retain and retry the same result; never infer publication."
+                    }
+                }
+            }
+        },
+        "/api/feedback-review/grants/{id}": {
+            "parameters": [
+                {
+                    "in": "path",
+                    "name": "id",
+                    "required": true,
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "post": {
+                "tags": ["Feedback Review"],
+                "operationId": "revokeFeedbackReviewGrant",
+                "summary": "Stop new grant admissions; report any admitted operations still finishing",
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["action"],
+                                "properties": {
+                                    "action": {
+                                        "enum": ["revoke"]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Bounded review claim/context/result. No-store; no administrator identity or approval authority."
+                    },
+                    "400": {
+                        "description": "Unknown, unsafe or invalid input."
+                    },
+                    "401": {
+                        "description": "Grant/issuer unavailable, expired, revoked or wrong tenant."
+                    },
+                    "403": {
+                        "description": "Mimic or administrator permission refusal."
+                    },
+                    "409": {
+                        "description": "Stale/expired lease, conflicting output, escalation required or account closure."
+                    },
+                    "413": {
+                        "description": "Body exceeds 64 KiB or context complexity limit."
+                    },
+                    "429": {
+                        "description": "Rate limit."
+                    },
+                    "503": {
+                        "description": "Retain and retry the same result; never infer publication."
+                    }
+                }
+            }
+        },
+        "/api/class-checkout": {
+            "get": {
+                "tags": ["Class checkout"],
+                "operationId": "getClassCheckoutChoices",
+                "summary": "Read currently open public class dates",
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "courseId",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "planId",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "No-store ordinary offer or bounded dated choices. An all-closed class offer returns an empty choices list.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "required": ["kind"],
+                                            "properties": {
+                                                "kind": {
+                                                    "enum": ["ordinary"]
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "type": "object",
+                                            "required": ["kind", "choices"],
+                                            "properties": {
+                                                "kind": {
+                                                    "enum": ["class"]
+                                                },
+                                                "choices": {
+                                                    "type": "array",
+                                                    "maxItems": 100,
+                                                    "items": {
+                                                        "type": "object",
+                                                        "additionalProperties": false,
+                                                        "required": [
+                                                            "cohortId",
+                                                            "fingerprint",
+                                                            "name",
+                                                            "startAt"
+                                                        ],
+                                                        "properties": {
+                                                            "cohortId": {
+                                                                "type": "string"
+                                                            },
+                                                            "fingerprint": {
+                                                                "type": "string",
+                                                                "pattern": "^[a-f0-9]{64}$"
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "maxLength": 180
+                                                            },
+                                                            "startAt": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Unknown or invalid query fields."
+                    },
+                    "404": {
+                        "description": "Offer unavailable in this tenant."
+                    },
+                    "409": {
+                        "description": "Listing needs human review."
+                    }
+                }
+            }
+        },
+        "/api/class-checkout/status": {
+            "get": {
+                "tags": ["Class checkout"],
+                "operationId": "getOwnClassCheckoutStatus",
+                "summary": "Read own saved booking attempt",
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "courseId",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "No-store none, pending (reference), ready (reference, planId, opaque choice) paid-review (reference, frozen selectedStart and actual membership state), or completed (reference and frozen selectedStart). Never a checkout URL, roster or provider ID."
+                    },
+                    "400": {
+                        "description": "Unknown or invalid query fields."
+                    },
+                    "401": {
+                        "description": "Current active member session required."
+                    },
+                    "403": {
+                        "description": "Mimic cannot operate checkout."
+                    },
+                    "409": {
+                        "description": "Account unavailable."
                     }
                 }
             }
@@ -5826,7 +7341,8 @@
                     },
                     "delayInMillis": {
                         "type": "number",
-                        "description": "Delay in milliseconds for `relative-date` drip. The input accepts a number interpreted as days (e.g. 3 = three days), but the value is persisted in millisecond equivalent (e.g. 259200000). The endpoint output always returns the stored millisecond value."
+                        "minimum": 0,
+                        "description": "Legacy input name: supply days (configured relative-drip units), NOT stored milliseconds. For example, 3 stores 259200000 ms with the default day unit. The converted duration must be no greater than 10 years (3650 default days), nonnegative and at whole-millisecond precision. Output always returns stored milliseconds; convert that value before replaying it in this input."
                     },
                     "dateInUTC": {
                         "type": "number",
@@ -6521,6 +8037,11 @@
                 "in": "cookie",
                 "name": "courselit.session_token",
                 "description": "Existing CourseLit browser session (secure cookie may have __Secure- prefix). Writes require same-origin Origin and application/json."
+            },
+            "feedbackReviewer": {
+                "type": "http",
+                "scheme": "bearer",
+                "description": "Dedicated fbr_ grant; accepted only on feedback-review claim/context/result, never a general API key or administrator session."
             },
             "ApiKeyAuth": {
                 "type": "apiKey",

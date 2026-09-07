@@ -1039,8 +1039,9 @@ export const productsApiOpenApi = {
                     status: { type: "boolean" },
                     delayInMillis: {
                         type: "number",
+                        minimum: 0,
                         description:
-                            "Delay in milliseconds for `relative-date` drip. The input accepts a number interpreted as days (e.g. 3 = three days), but the value is persisted in millisecond equivalent (e.g. 259200000). The endpoint output always returns the stored millisecond value.",
+                            "Legacy input name: supply days (configured relative-drip units), NOT stored milliseconds. For example, 3 stores 259200000 ms with the default day unit. The converted duration must be no greater than 10 years (3650 default days), nonnegative and at whole-millisecond precision. Output always returns stored milliseconds; convert that value before replaying it in this input.",
                     },
                     dateInUTC: {
                         type: "number",

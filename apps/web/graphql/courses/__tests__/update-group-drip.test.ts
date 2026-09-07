@@ -404,4 +404,93 @@ describe("updateGroup drip status updates", () => {
         }).lean();
         expect(updatedCourse?.groups?.[0]?.drip?.email).toEqual(existingEmail);
     });
+    async function delayFixture() {
+        return CourseModel.create({
+            domain: testDomain._id,
+            courseId: id("unit-course"),
+            title: id("unit-title"),
+            creatorId: adminUser.userId,
+            groups: [
+                {
+                    _id: id("unit-group"),
+                    name: "Week 2",
+                    rank: 1000,
+                    collapsed: true,
+                    lessonsOrder: [],
+                    drip: {
+                        status: true,
+                        type: Constants.dripType[0],
+                        delayInMillis: 7 * 86400000,
+                    },
+                },
+            ],
+            lessons: [],
+            type: "course",
+            privacy: "unlisted",
+            costType: "free",
+            cost: 0,
+            slug: id("unit-slug"),
+        });
+    }
+
+    it.each([604800000, -1, Infinity, NaN, 3651, 0.0000001])(
+        "rejects invalid or millisecond-shaped day input %s before any course field or revision changes",
+        async (delay) => {
+            const course = await delayFixture();
+            const before = await CourseModel.findById(course._id).lean();
+            await expect(
+                updateGroup({
+                    id: id("unit-group"),
+                    courseId: course.courseId,
+                    name: "Must not be saved",
+                    drip: {
+                        status: true,
+                        type: Constants.dripType[0],
+                        delayInMillis: delay,
+                    },
+                    ctx: {
+                        subdomain: testDomain,
+                        user: adminUser,
+                        address: "",
+                    },
+                }),
+            ).rejects.toThrow("Relative drip delay must use days");
+            expect(await CourseModel.findById(course._id).lean()).toEqual(
+                before,
+            );
+        },
+    );
+
+    it.each([0, 0.5, 7, 3650])(
+        "accepts %s days and preserves the ordinary editor round-trip",
+        async (delay) => {
+            const course = await delayFixture();
+            const save = (value: number) =>
+                updateGroup({
+                    id: id("unit-group"),
+                    courseId: course.courseId,
+                    drip: {
+                        status: true,
+                        type: Constants.dripType[0],
+                        delayInMillis: value,
+                    },
+                    ctx: {
+                        subdomain: testDomain,
+                        user: adminUser,
+                        address: "",
+                    },
+                });
+            const first = await save(delay);
+            expect(first.groups?.[0]?.drip?.delayInMillis).toBe(
+                delay * constants.relativeDripUnitInMillis,
+            );
+            const second = await save(
+                first.groups![0].drip!.delayInMillis! /
+                    constants.relativeDripUnitInMillis,
+            );
+            expect(second.groups?.[0]?.drip?.delayInMillis).toBe(
+                first.groups?.[0]?.drip?.delayInMillis,
+            );
+        },
+    );
 });
