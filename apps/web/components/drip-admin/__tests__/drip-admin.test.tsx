@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+    fireEvent,
+    render,
+    screen,
+    waitFor,
+    within,
+} from "@testing-library/react";
 import DripAdmin from "../drip-admin";
 import { dripAdminUi as copy } from "@/config/strings";
 import type { DripChange, DripCourseView } from "@courselit/common-models";
@@ -114,6 +120,60 @@ beforeEach(() => {
         });
 });
 afterEach(() => jest.restoreAllMocks());
+it.each([
+    [true, false, copy.notificationOn, copy.notificationOff],
+    [false, true, copy.notificationOff, copy.notificationOn],
+])(
+    "exposes the saved notification transition %s to %s before approval",
+    async (before, after, currentText, proposedText) => {
+        const notificationChange: DripChange = {
+            ...change,
+            patch: {
+                ...change.patch,
+                rule: section.rule,
+                notificationEnabled: after,
+            },
+            preview: {
+                ...change.preview,
+                before: [
+                    {
+                        ...section,
+                        notification: {
+                            ...section.notification,
+                            enabled: before,
+                        },
+                    },
+                ],
+                after: [
+                    {
+                        ...section,
+                        notification: {
+                            ...section.notification,
+                            enabled: after,
+                        },
+                    },
+                ],
+            },
+        };
+        course.changes = [notificationChange];
+        await select();
+        fireEvent.click(
+            screen.getByRole("button", {
+                name: /Version 1.*Awaiting approval/,
+            }),
+        );
+        const row = screen.getByRole("row", { name: /1\. First practice/ });
+        const cells = within(row).getAllByRole("cell");
+        expect(cells[1]).toHaveTextContent(currentText);
+        expect(cells[2]).toHaveTextContent(proposedText);
+        expect(cells[1]).toHaveTextContent("After a delay: 1 days");
+        expect(cells[2]).toHaveTextContent("After a delay: 1 days");
+        expect(
+            screen.getByRole("button", { name: copy.approve }),
+        ).toBeDisabled();
+        expect(post).not.toHaveBeenCalled();
+    },
+);
 async function select() {
     render(<DripAdmin />);
     fireEvent.click(

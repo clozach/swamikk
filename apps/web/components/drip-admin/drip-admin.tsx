@@ -10,6 +10,7 @@ import type {
 } from "@courselit/common-models";
 import { dripAdminUi as copy } from "@/config/strings";
 import { Button } from "@/components/ui/button";
+import ReviewTable from "./review-table";
 
 const DAY = 86400000;
 const inputStyle = "w-full rounded border bg-background p-2 text-foreground";
@@ -604,59 +605,10 @@ export default function DripAdmin() {
                                 <p>{draft.state.reason}</p>
                             )}
                             {dirty && <p role="status">{copy.changed}</p>}
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm">
-                                    <thead>
-                                        <tr>
-                                            <th className="p-2">
-                                                {copy.section}
-                                            </th>
-                                            <th className="p-2">
-                                                {copy.before}
-                                            </th>
-                                            <th className="p-2">
-                                                {copy.after}
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {draft.preview.after.map(
-                                            (section, index) => (
-                                                <tr
-                                                    key={section.id}
-                                                    className="border-t"
-                                                >
-                                                    <td className="p-2">
-                                                        {index + 1}.{" "}
-                                                        {section.name}
-                                                    </td>
-                                                    <td className="p-2">
-                                                        {describeReleaseRule(
-                                                            draft.preview.before.find(
-                                                                (item) =>
-                                                                    item.id ===
-                                                                    section.id,
-                                                            )!.rule,
-                                                        )}{" "}
-                                                        (#
-                                                        {draft.preview.before.findIndex(
-                                                            (item) =>
-                                                                item.id ===
-                                                                section.id,
-                                                        ) + 1}
-                                                        )
-                                                    </td>
-                                                    <td className="p-2">
-                                                        {describeReleaseRule(
-                                                            section.rule,
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            ),
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
+                            <ReviewTable
+                                preview={draft.preview}
+                                describeRule={describeReleaseRule}
+                            />
                             <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                                 {(
                                     [

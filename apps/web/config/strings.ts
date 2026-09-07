@@ -335,6 +335,9 @@ export const dripAdminUi = {
         "Available now opens this section to active members. It is not a pause control. Moving a date later does not remove a section already released.",
     timezone: "Dates use UTC. Your local time is shown alongside exact dates.",
     notification: "Send the existing section message on release",
+    notificationOn: "Release message: on",
+    notificationOff: "Release message: off",
+    notificationUnprepared: "Release message: not prepared",
     notificationHelp:
         "Turning notifications off holds pending messages. Turning them on can resume pending work. A message already being sent cannot be recalled. Available now does not create a release email.",
     noMessage:
@@ -355,8 +358,8 @@ export const dripAdminUi = {
     discard: "Discard draft",
     reconcile: "Check what happened",
     restore: "Prepare restoration draft",
-    before: "Current rule",
-    after: "Proposed rule",
+    before: "Current settings",
+    after: "Proposed settings",
     retained:
         "Canceled members keep their frozen retained lessons. This schedule does not add future drops or pre-start archive to their access. Unknown legacy publication dates remain unknown.",
     inFlight:
