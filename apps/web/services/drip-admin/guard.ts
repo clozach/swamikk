@@ -5,7 +5,15 @@ import { requireCondition } from "../content-changes/errors";
 import { hasMemberMimicCookie } from "../member-mimic/constants";
 import { fingerprint } from "../content-changes/stable";
 import type { InternalCourse } from "@courselit/orm-models";
+import { Constants } from "@courselit/common-models";
 import type { DripChangeReceipt } from "../../../../packages/common-models/src/drip-change";
+
+// Only native lesson-bearing product types participate in release scheduling.
+// A converted blog may retain empty groups, so group presence is not eligibility.
+export const releaseCourseTypes = [
+    Constants.CourseType.COURSE,
+    Constants.CourseType.DOWNLOAD,
+];
 
 export type ScheduleCourse = Omit<InternalCourse, "groups"> & {
     groups: NonNullable<InternalCourse["groups"]>;
@@ -53,6 +61,7 @@ export async function editableCourse(
     const course = (await CourseModel.findOne({
         domain: ctx.subdomain._id,
         courseId,
+        type: { $in: releaseCourseTypes },
     }).lean()) as ScheduleCourse | null;
     requireCondition(
         course && canManageCourseInContext(course, ctx),

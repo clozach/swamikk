@@ -6,14 +6,22 @@ import { AccessMembershipModel } from "../../../../packages/common-logic/src/mem
 import { AccessLessonModel } from "../../../../packages/common-logic/src/member-access/models";
 import type { InternalLesson } from "@courselit/orm-models";
 import type { DripCourseView } from "../../../../packages/common-models/src/drip-change";
-import { editableCourse, requireDripActor, type ScheduleCourse } from "./guard";
+import {
+    editableCourse,
+    requireDripActor,
+    releaseCourseTypes,
+    type ScheduleCourse,
+} from "./guard";
 import { DripChangeModel } from "./models";
 import { sectionViews } from "./schedule";
 import { dripChangeView } from "./changes";
 
 export async function listDripCourses(ctx: GQLContext) {
     requireDripActor(ctx);
-    const courses = (await CourseModel.find({ domain: ctx.subdomain._id })
+    const courses = (await CourseModel.find({
+        domain: ctx.subdomain._id,
+        type: { $in: releaseCourseTypes },
+    })
         .select("courseId title published creatorId")
         .sort({ title: 1 })
         .lean()) as ScheduleCourse[];
