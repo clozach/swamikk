@@ -14,6 +14,10 @@
     ],
     "exports": {
         ".": "./dist/index.mjs",
+        "./render": {
+            "types": "./dist/render.d.ts",
+            "default": "./dist/render.mjs"
+        },
         "./styles.css": "./dist/index.css",
         "./blocks": "./dist/blocks"
     },

@@ -3,8 +3,24 @@ import { render, pretty } from "@react-email/render";
 import { Html, Head, Preview, Body, Container } from "@react-email/components";
 import type { Email, EmailBlock } from "../types/email-editor";
 import type { LinkBlockSettings } from "@/blocks/link/types";
-import type { BlockRegistry } from "../types/block-registry";
-import { Text, Link as LinkBlock, Separator, Image } from "@/blocks";
+import type { BlockComponent } from "../types/block-registry";
+import { TextBlock } from "../blocks/text/block";
+import { LinkBlock } from "../blocks/link/block";
+import { SeparatorBlock } from "../blocks/separator/block";
+import { ImageBlock } from "../blocks/image/block";
+
+// Rendering must not import the editor's settings components: this module is
+// also used by server routes when reviewing a release notification.
+type RenderBlock = Pick<BlockComponent, "block"> & {
+    metadata: Pick<BlockComponent["metadata"], "name">;
+};
+type RenderRegistry = Record<string, RenderBlock>;
+const defaultBlocks: RenderBlock[] = [
+    { block: TextBlock, metadata: { name: "text" } },
+    { block: LinkBlock, metadata: { name: "link" } },
+    { block: SeparatorBlock, metadata: { name: "separator" } },
+    { block: ImageBlock, metadata: { name: "image" } },
+];
 
 export interface UtmParams {
     source: string;
@@ -49,7 +65,7 @@ export function EmailTemplate({
 }: {
     email: Email;
     utmParams?: UtmParams;
-    blockRegistry: BlockRegistry;
+    blockRegistry: RenderRegistry;
 }) {
     // Function to render a block based on its type
     const renderBlock = (block: EmailBlock) => {
@@ -136,14 +152,13 @@ export async function renderEmailToHtml({
 }: {
     email: Email;
     utmParams?: UtmParams;
-    blocks?: any[];
+    blocks?: RenderBlock[];
 }): Promise<string> {
     try {
         // Create block registry from blocks or use defaults
-        const blockRegistry: BlockRegistry = {};
-        const defaultBlocks = blocks || [Text, LinkBlock, Separator, Image];
+        const blockRegistry: RenderRegistry = {};
 
-        for (const block of defaultBlocks) {
+        for (const block of blocks || defaultBlocks) {
             blockRegistry[block.metadata.name] = block;
         }
 

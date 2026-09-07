@@ -29,7 +29,7 @@ import { POST, GET } from "../route";
 import { POST as action } from "../[id]/route";
 
 jest.mock("@/auth", () => ({ auth: { api: { getSession: jest.fn() } } }));
-jest.mock("@courselit/email-editor", () => ({
+jest.mock("@courselit/email-editor/render", () => ({
     renderEmailToHtml: jest
         .fn()
         .mockResolvedValue("<p>Time to practice {{ subscriber.name }}</p>"),

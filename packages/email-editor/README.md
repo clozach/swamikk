@@ -54,3 +54,16 @@ export default App() {
     return (<EmailEditor  />)
 }
 ```
+
+Server routes that render a notification for review use the rendering entry:
+
+```ts
+import { renderEmailToHtml } from "@courselit/email-editor/render";
+
+const html = await renderEmailToHtml({ email });
+```
+
+This entry shares the email blocks with the editor without loading its controls.
+The package root remains available for browser editors and existing consumers.
+Verify the boundary with the web production build; notification-rendering tests
+also exercise the same renderer used by the delivery worker.

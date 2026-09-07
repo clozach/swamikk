@@ -4,7 +4,7 @@ import type {
     DripSectionView,
 } from "../../../../packages/common-models/src/drip-change";
 import { scheduleGroupId } from "../../../../packages/common-logic/src/drip-schedule";
-import { renderEmailToHtml } from "@courselit/email-editor";
+import { renderEmailToHtml } from "@courselit/email-editor/render";
 import type { InternalLesson } from "@courselit/orm-models";
 import { requireCondition } from "../content-changes/errors";
 import { plain, type ScheduleCourse } from "./guard";
