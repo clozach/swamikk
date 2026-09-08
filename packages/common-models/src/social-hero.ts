@@ -102,6 +102,9 @@ export interface CachedSocialHeroPhoto extends SocialHeroPhoto {
 
 /** The cached, stale-while-revalidate pool, stored on the domain settings. */
 export interface SocialHeroPoolCache {
+    /** SERVER-ONLY: hash of the source configuration used to build this pool.
+     * Legacy pools without this evidence must be rebuilt before serving. */
+    sourceKey?: string;
     /** ISO timestamp the pool was last built. */
     builtAt: string;
     photos: CachedSocialHeroPhoto[];

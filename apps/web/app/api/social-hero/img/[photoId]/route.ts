@@ -1,7 +1,9 @@
 import { NextRequest } from "next/server";
 import { getCachedDomain } from "@/lib/domain-cache";
+import { getCurrentPoolPhoto } from "@/lib/social-hero/pool";
 
 export const dynamic = "force-dynamic";
+const headers = { "Cache-Control": "no-store" };
 
 /**
  * Image proxy for network photos whose upstream (CDN) URLs expire. The client
@@ -21,24 +23,32 @@ export async function GET(
     const domainName = req.headers.get("domain");
     const domain = domainName ? await getCachedDomain(domainName) : null;
     if (!domain) {
-        return new Response("Not found", { status: 404 });
+        return new Response("Not found", { status: 404, headers });
     }
 
-    const photo = domain.settings?.socialHeroPool?.photos?.find(
-        (p) => p.id === photoId,
-    );
-    if (!photo?.upstreamUrl) {
-        return new Response("Not found", { status: 404 });
+    const admitted = await getCurrentPoolPhoto(domain, photoId);
+    const photo = admitted?.photo;
+    if (!admitted || !photo?.upstreamUrl) {
+        return new Response("Not found", { status: 404, headers });
     }
 
     let upstream: Response;
     try {
-        upstream = await fetch(photo.upstreamUrl);
+        upstream = await fetch(photo.upstreamUrl, { cache: "no-store" });
     } catch {
-        return new Response("Upstream fetch failed", { status: 502 });
+        return new Response("Upstream fetch failed", { status: 502, headers });
     }
     if (!upstream.ok || !upstream.body) {
-        return new Response("Upstream error", { status: 502 });
+        return new Response("Upstream error", { status: 502, headers });
+    }
+
+    const current = await getCurrentPoolPhoto(domain, photoId);
+    if (
+        current?.sourceKey !== admitted.sourceKey ||
+        current?.photo.upstreamUrl !== photo.upstreamUrl
+    ) {
+        await upstream.body.cancel();
+        return new Response("Not found", { status: 404, headers });
     }
 
     return new Response(upstream.body, {
@@ -46,8 +56,7 @@ export async function GET(
         headers: {
             "Content-Type":
                 upstream.headers.get("content-type") ?? "image/jpeg",
-            "Cache-Control":
-                "public, max-age=3600, stale-while-revalidate=86400",
+            ...headers,
         },
     });
 }

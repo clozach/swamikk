@@ -4,6 +4,7 @@ import type {
     SocialHeroPhoto,
 } from "@courselit/common-models";
 import { fetchFacebook, fetchInstagram, fetchManual } from "./adapters";
+import { createHash } from "crypto";
 
 /**
  * Pure pool-building core — no DB, no I/O, no environment assumptions, so it
@@ -13,6 +14,16 @@ import { fetchFacebook, fetchInstagram, fetchManual } from "./adapters";
 
 /** Hard ceiling on pooled photos, applied after dedupe + shuffle. */
 export const POOL_CAP = 50;
+
+/** Private cache identity: source edits invalidate photos; cadence edits do not. */
+export function sourceKey(config: SocialHeroConfig): string {
+    const sources = config.sources.map((source) =>
+        Object.fromEntries(
+            Object.entries(source).sort(([a], [b]) => a.localeCompare(b)),
+        ),
+    );
+    return createHash("sha256").update(JSON.stringify(sources)).digest("hex");
+}
 
 /** The public shape returned by the pool endpoint. */
 export interface ServedPool {

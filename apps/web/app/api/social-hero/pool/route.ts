@@ -6,8 +6,8 @@ export const dynamic = "force-dynamic";
 
 /**
  * Public, sanitized photo pool for the hero. Contains ZERO config/token
- * internals — only `{ enabled, rotationSeconds, photos }`. Cacheable at the
- * edge (short s-maxage + SWR); the client fetches it once per page view.
+ * internals — only `{ enabled, rotationSeconds, photos }`. Each page view must
+ * consult current configuration; edge/browser reuse could retain removed sources.
  */
 export async function GET(req: NextRequest) {
     // The `domain` header is injected by proxy.ts (matcher covers /api/*),
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
     if (!domain) {
         return Response.json(
             { enabled: false, rotationSeconds: 60, photos: [] },
-            { status: 200 },
+            { status: 200, headers: { "Cache-Control": "no-store" } },
         );
     }
 
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     return Response.json(pool, {
         status: 200,
         headers: {
-            "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+            "Cache-Control": "no-store",
         },
     });
 }
