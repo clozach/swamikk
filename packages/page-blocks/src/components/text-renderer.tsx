@@ -56,6 +56,47 @@ export function TextRenderer({ json, className, theme }: TextRendererProps) {
         content,
         options: {
             nodeMapping: {
+                text: ({ node, parent }) => {
+                    const text = node.text ?? "";
+                    const link = node.marks.find(
+                        (mark) => mark.type.name === "link",
+                    );
+                    if (
+                        !link ||
+                        !/↗\s*$/.test(text) ||
+                        parent?.type.spec.code ||
+                        parent?.type.name === "codeMirror" ||
+                        node.marks.some((mark) => mark.type.name === "code")
+                    )
+                        return text;
+
+                    // Marks wrap this text node, preserving bold/italic and links.
+                    // A following run in the same link makes this arrow mid-label.
+                    let follows = false;
+                    let continues = false;
+                    parent?.forEach((sibling) => {
+                        if (follows) {
+                            continues = sibling.marks.some(
+                                (mark) =>
+                                    mark.type.name === "link" &&
+                                    mark.attrs.href === link.attrs.href,
+                            );
+                            follows = false;
+                        }
+                        if (sibling === node) follows = true;
+                    });
+                    if (continues) return text;
+                    const arrow = text.lastIndexOf("↗");
+                    return (
+                        <>
+                            {text.slice(0, arrow).trimEnd()}
+                            <sup className="ml-[0.18em] inline-block align-super text-[0.65em] leading-none">
+                                ↗
+                            </sup>
+                            {text.slice(arrow + 1)}
+                        </>
+                    );
+                },
                 paragraph: ({ children }) => {
                     if (theme) {
                         return (
