@@ -248,15 +248,8 @@ export function privateSessionsHomeDraft(
             type: "doc",
             content: [
                 heading("Take a tour of Anahata"),
-                {
-                    type: "image",
-                    attrs: {
-                        src: "/anahata/hp-hero-bg.jpg",
-                        alt: "Sunrise and prayer flags at Anahata Yoga Retreat",
-                    },
-                },
                 paragraph(
-                    "A view from Anahata Yoga Retreat. Explore the retreat in the interactive tour on Anahata’s separate website.",
+                    "Explore Anahata Yoga Retreat in the interactive tour on its separate website.",
                 ),
                 link(
                     "Open Anahata’s virtual tour ↗",
