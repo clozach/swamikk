@@ -106,8 +106,13 @@ function MotionHarness({ enabled = true }: { enabled?: boolean }) {
     return (
         <div ref={root} data-testid="root">
             <div ref={source} data-testid="cover" />
-            <div ref={destination} data-testid="destination">
-                <div ref={image} data-testid="image" />
+            <div
+                data-testid="row"
+                style={{ display: "flex", flexDirection: "row" }}
+            >
+                <div ref={destination} data-testid="destination">
+                    <div ref={image} data-testid="image" />
+                </div>
             </div>
         </div>
     );
@@ -126,6 +131,23 @@ describe("scroll lifecycle", () => {
         Object.defineProperty(window, "innerHeight", {
             configurable: true,
             value: 900,
+        });
+        Object.defineProperty(window, "innerWidth", {
+            configurable: true,
+            value: 1280,
+            writable: true,
+        });
+        Object.defineProperty(navigator, "userAgent", {
+            configurable: true,
+            value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+        });
+        Object.defineProperty(navigator, "platform", {
+            configurable: true,
+            value: "MacIntel",
+        });
+        Object.defineProperty(navigator, "maxTouchPoints", {
+            configurable: true,
+            value: 0,
         });
         Object.defineProperty(window, "scrollY", {
             configurable: true,
@@ -227,4 +249,119 @@ describe("scroll lifecycle", () => {
             expect(frames.size).toBe(0);
         },
     );
+    it.each([
+        ["Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)", "iPhone", 5],
+        ["Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X)", "iPad", 5],
+        [
+            "Mozilla/5.0 (iPod touch; CPU iPhone OS 15_0 like Mac OS X)",
+            "iPod",
+            5,
+        ],
+        ["Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", "MacIntel", 5],
+    ])(
+        "keeps iOS static even with desktop-width layout (%s)",
+        (userAgent, platform, maxTouchPoints) => {
+            Object.defineProperty(navigator, "userAgent", {
+                configurable: true,
+                value: userAgent,
+            });
+            Object.defineProperty(navigator, "platform", {
+                configurable: true,
+                value: platform,
+            });
+            Object.defineProperty(navigator, "maxTouchPoints", {
+                configurable: true,
+                value: maxTouchPoints,
+            });
+            const { unmount } = render(<MotionHarness />);
+            expect(screen.getByTestId("root")).toHaveAttribute(
+                "data-image-motion",
+                "static",
+            );
+            expect(screen.getByTestId("image").style.transform).toBe("");
+            expect(reads).not.toHaveBeenCalled();
+            window.scrollY = 600;
+            fireEvent.scroll(window);
+            fireEvent.resize(window);
+            expect(frames.size).toBe(0);
+            unmount();
+        },
+    );
+    it("clears a pending desktop pose when resized into a stacked phone layout, then resumes desktop", () => {
+        render(<MotionHarness />);
+        window.scrollY = 500;
+        fireEvent.scroll(window);
+        expect(frames.size).toBe(1);
+        window.innerWidth = 390;
+        screen.getByTestId("row").style.flexDirection = "column";
+        fireEvent.resize(window);
+        flush();
+        expect(screen.getByTestId("root")).toHaveAttribute(
+            "data-image-motion",
+            "static",
+        );
+        expect(screen.getByTestId("image")).not.toHaveAttribute("style");
+        fireEvent.scroll(window);
+        expect(frames.size).toBe(0);
+        window.innerWidth = 1280;
+        screen.getByTestId("row").style.flexDirection = "row";
+        fireEvent.resize(window);
+        flush();
+        expect(screen.getByTestId("root")).toHaveAttribute(
+            "data-image-motion",
+            "scroll",
+        );
+        expect(screen.getByTestId("image").style.transform).toContain(
+            "translate3d",
+        );
+    });
+    it.each([767, 768, 800])(
+        "uses the viewport breakpoint without excluding padded side-by-side rows at %spx",
+        (width) => {
+            window.innerWidth = width;
+            render(<MotionHarness />);
+            expect(screen.getByTestId("root")).toHaveAttribute(
+                "data-image-motion",
+                width < 768 ? "static" : "scroll",
+            );
+            window.scrollY = 300;
+            fireEvent.scroll(window);
+            expect(frames.size).toBe(width < 768 ? 0 : 1);
+            flush();
+            expect(Boolean(screen.getByTestId("image").style.transform)).toBe(
+                width >= 768,
+            );
+        },
+    );
+    it("stops when the actual welcome row stacks even on a wide viewport", () => {
+        render(<MotionHarness />);
+        screen.getByTestId("row").style.flexDirection = "column";
+        act(() => resize());
+        flush();
+        expect(screen.getByTestId("root")).toHaveAttribute(
+            "data-image-motion",
+            "static",
+        );
+        expect(screen.getByTestId("image")).not.toHaveAttribute("style");
+        fireEvent.scroll(window);
+        expect(frames.size).toBe(0);
+    });
+    it("falls back without leaving a stale pose when an endpoint becomes unmeasurable", () => {
+        const { unmount } = render(<MotionHarness />);
+        const start = screen.getByTestId("cover");
+        jest.spyOn(start, "getBoundingClientRect").mockReturnValue({
+            ...cover,
+            height: 0,
+        } as DOMRect);
+        act(() => resize());
+        flush();
+        expect(screen.getByTestId("root")).toHaveAttribute(
+            "data-image-motion",
+            "static",
+        );
+        expect(screen.getByTestId("image")).not.toHaveAttribute("style");
+        unmount();
+        expect(frames.size).toBe(0);
+        expect(disconnect).toHaveBeenCalled();
+    });
 });

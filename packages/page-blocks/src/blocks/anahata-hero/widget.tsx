@@ -292,7 +292,7 @@ export default function Widget({
     return (
         <div
             ref={rootRef}
-            data-image-motion={editing || !bannerSrc ? "static" : "scroll"}
+            data-image-motion="static"
             id={cssId}
             data-anahata-hero={scope}
             className="anahata-hero w-full"

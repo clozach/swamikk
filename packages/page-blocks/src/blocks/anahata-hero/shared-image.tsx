@@ -39,7 +39,7 @@ export const sharedImageCss = `
 .anahata-hero__image-slot { aspect-ratio: 4 / 3; }
 .anahata-hero__shared-image {
     position: absolute; left: 0; top: calc(-1 * var(--anahata-cover-h));
-    width: 100%; height: var(--anahata-cover-h); z-index: 3; overflow: hidden;
+    width: 100%; height: var(--anahata-cover-h); z-index: 1; overflow: hidden;
     transform-origin: center; will-change: transform, clip-path;
 }
 .anahata-hero__wordmark { opacity: calc(1 - var(--image-progress, 0)); }
@@ -49,6 +49,9 @@ export const sharedImageCss = `
 }
 ${staticImageCss}
 @media (prefers-reduced-motion: reduce) {
+    ${staticImageCss.split('[data-image-motion="static"]').join("")}
+}
+@media (max-width: 767.98px) {
     ${staticImageCss.split('[data-image-motion="static"]').join("")}
 }
 `;

@@ -21,8 +21,13 @@ export function useImageScroll(refs: ImageScrollRefs, enabled: boolean): void {
         const end = destination.current;
         const frame = image.current;
         if (!host || !start || !end || !frame) return;
-        if (!enabled || !window.matchMedia || !window.ResizeObserver) {
+        // iPadOS requests desktop pages with a Mac platform and user agent.
+        const isIOS =
+            /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+        if (!enabled || isIOS || !window.matchMedia || !window.ResizeObserver) {
             host.dataset.imageMotion = "static";
+            frame.removeAttribute("style");
             return;
         }
         const preference = window.matchMedia(
@@ -33,12 +38,34 @@ export function useImageScroll(refs: ImageScrollRefs, enabled: boolean): void {
         let disposed = false;
         let needsMeasure = true;
         let lastProgress = -1;
+        const makeStatic = () => {
+            host.dataset.imageMotion = "static";
+            frame.removeAttribute("style");
+            geometry = null;
+            lastProgress = -1;
+        };
         const paint = () => {
             scheduled = 0;
-            if (disposed || preference.matches) return;
+            if (disposed) return;
             if (needsMeasure) {
                 needsMeasure = false;
                 lastProgress = -1;
+                const row = end.parentElement;
+                // Match the welcome row's md breakpoint and actual layout.
+                if (
+                    preference.matches ||
+                    window.innerWidth < 768 ||
+                    !row ||
+                    !["row", "row-reverse"].includes(
+                        window.getComputedStyle(row).flexDirection,
+                    )
+                ) {
+                    makeStatic();
+                    return;
+                }
+                // The static fallback hides the cover. Restore it only once
+                // this layout is eligible, before reading its endpoints.
+                host.dataset.imageMotion = "scroll";
                 const a = start.getBoundingClientRect();
                 const b = end.getBoundingClientRect();
                 const scrollY = window.scrollY;
@@ -57,7 +84,10 @@ export function useImageScroll(refs: ImageScrollRefs, enabled: boolean): void {
                     },
                     window.innerHeight,
                 );
-                if (!geometry) return;
+                if (!geometry) {
+                    makeStatic();
+                    return;
+                }
                 frame.style.width = `${a.width}px`;
                 frame.style.height = `${a.height}px`;
                 frame.style.top = `${-a.height}px`;
@@ -83,7 +113,7 @@ export function useImageScroll(refs: ImageScrollRefs, enabled: boolean): void {
             );
         };
         const schedule = () => {
-            if (!preference.matches && !scheduled)
+            if (!scheduled && (needsMeasure || geometry))
                 scheduled = requestAnimationFrame(paint);
         };
         const measure = () => {
@@ -93,18 +123,13 @@ export function useImageScroll(refs: ImageScrollRefs, enabled: boolean): void {
         const configure = () => {
             cancelAnimationFrame(scheduled);
             scheduled = 0;
-            host.dataset.imageMotion = preference.matches ? "static" : "scroll";
-            if (preference.matches) {
-                frame.removeAttribute("style");
-                geometry = null;
-            } else {
-                needsMeasure = true;
-                paint();
-            }
+            needsMeasure = true;
+            paint();
         };
         const observer = new ResizeObserver(measure);
         observer.observe(start);
         observer.observe(end);
+        if (end.parentElement) observer.observe(end.parentElement);
         // Content above the widget may settle after fonts/images load.
         observer.observe(document.body);
         window.addEventListener("scroll", schedule, { passive: true });
@@ -121,7 +146,7 @@ export function useImageScroll(refs: ImageScrollRefs, enabled: boolean): void {
             window.removeEventListener("scroll", schedule);
             window.removeEventListener("resize", measure);
             preference.removeEventListener("change", configure);
-            frame.removeAttribute("style");
+            makeStatic();
         };
     }, [root, cover, destination, image, enabled]);
 }
