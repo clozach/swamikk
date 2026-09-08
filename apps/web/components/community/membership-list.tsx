@@ -14,12 +14,11 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import {
     Dialog,
-    DialogContent,
     DialogDescription,
-    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { ViewportDialog } from "@/components/ui/viewport-dialog";
 import {
     Table,
     TableBody,
@@ -518,43 +517,51 @@ export function MembershipList({ id }: { id: string }) {
                 </div>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Reject Membership Request</DialogTitle>
-                        <DialogDescription>
-                            Please provide a reason for rejecting this
-                            membership request.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid gap-4">
-                            <Label htmlFor="rejection-reason">Reason</Label>
-                            <Textarea
-                                id="rejection-reason"
-                                value={rejectionReason}
-                                onChange={(e) =>
-                                    setRejectionReason(e.target.value)
-                                }
-                            />
+                {isDialogOpen && (
+                    <ViewportDialog kind="review">
+                        <div className="kk-viewport-dialog-actions">
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={() => setIsDialogOpen(false)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                onClick={handleDialogConfirm}
+                                disabled={!rejectionReason}
+                            >
+                                Confirm Rejection
+                            </Button>
                         </div>
-                    </div>
-                    <DialogFooter>
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={() => setIsDialogOpen(false)}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="submit"
-                            onClick={handleDialogConfirm}
-                            disabled={!rejectionReason}
-                        >
-                            Confirm Rejection
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
+                        <div className="kk-viewport-dialog-body" tabIndex={0}>
+                            <DialogHeader>
+                                <DialogTitle>
+                                    Reject Membership Request
+                                </DialogTitle>
+                                <DialogDescription>
+                                    Please provide a reason for rejecting this
+                                    membership request.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <div className="grid gap-4">
+                                    <Label htmlFor="rejection-reason">
+                                        Reason
+                                    </Label>
+                                    <Textarea
+                                        id="rejection-reason"
+                                        value={rejectionReason}
+                                        onChange={(e) =>
+                                            setRejectionReason(e.target.value)
+                                        }
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </ViewportDialog>
+                )}
             </Dialog>
         </div>
     );

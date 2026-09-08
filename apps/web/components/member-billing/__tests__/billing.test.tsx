@@ -5,7 +5,9 @@ import {
     render,
     screen,
     within,
+    waitFor,
 } from "@testing-library/react";
+import { useState } from "react";
 import type { MemberMimicView } from "@courselit/common-models";
 import type {
     BillingCancellationView,
@@ -307,6 +309,67 @@ test("a changed Mimic subject removes former billing data and discards a late co
     expect(screen.getByRole("button", { name: copy.cancel })).toBeDisabled();
 });
 
+test.each(["close", "escape", "replaced"] as const)(
+    "delayed billing review returns to its originating control or card after %s",
+    async (mode) => {
+        fetchMock.mockResolvedValueOnce(response(view()));
+        render(<MemberBilling />);
+        await screen.findByRole("heading", { name: "Members Library" });
+        const opener = screen.getByRole("button", { name: copy.cancel });
+        const card = opener.closest("article")!;
+        const pending = deferred();
+        fetchMock.mockReturnValueOnce(pending.promise);
+        // A pointer can activate a button without focusing it (e.g. Safari).
+        fireEvent.click(opener);
+        expect(opener).toBeDisabled();
+        expect(document.activeElement).toBe(document.body);
+        await act(async () => {
+            pending.resolve(
+                response({ kind: "operation", operation: operation() }),
+            );
+        });
+        if (mode === "replaced") {
+            fetchMock.mockResolvedValueOnce(
+                response({
+                    kind: "operation",
+                    operation: operation({
+                        phase: "canceled",
+                        access: "ended",
+                        canConfirm: false,
+                    }),
+                }),
+            );
+            fireEvent.click(screen.getByRole("button", { name: copy.confirm }));
+            await screen.findByRole("heading", {
+                name: copy.cancelled,
+                level: 2,
+            });
+            expect(opener).not.toBeInTheDocument();
+        }
+        if (mode === "escape")
+            fireEvent.keyDown(document.activeElement!, { key: "Escape" });
+        else
+            fireEvent.click(
+                within(
+                    screen
+                        .getByRole("dialog")
+                        .querySelector<HTMLElement>(
+                            ".kk-viewport-dialog-actions",
+                        )!,
+                ).getByRole("button", {
+                    name: mode === "replaced" ? copy.close : copy.keep,
+                }),
+            );
+        await waitFor(() =>
+            expect(mode === "replaced" ? card : opener).toHaveFocus(),
+        );
+        expect(card).toHaveAttribute("tabindex", "-1");
+        expect(
+            fetchMock.mock.calls.filter(([, init]) => init.method === "POST"),
+        ).toHaveLength(mode === "replaced" ? 2 : 1);
+    },
+);
+
 test("a quote expiring while open disables confirmation", () => {
     jest.useFakeTimers();
     const quote = operation();
@@ -363,3 +426,180 @@ test("formats Stripe charge units independently of native invoice units", () => 
     expect(money(1100, "isk", true)).toEqual(money(11, "isk"));
     expect(money(-1, "nzd", true)).toBe(copy.amountUnavailable);
 });
+
+test.each(["quoted", "canceled"] as const)(
+    "%s review keeps its actions outside the keyboard-scrollable consequences",
+    (phase) => {
+        const close = jest.fn(),
+            confirm = jest.fn();
+        render(
+            <CancellationReview
+                operation={operation({ phase, canConfirm: phase === "quoted" })}
+                productName="Members Library"
+                busy={false}
+                readOnly={false}
+                onClose={close}
+                onConfirm={confirm}
+                onReconcile={jest.fn()}
+            />,
+        );
+        const dialog = screen.getByRole("dialog");
+        const body = dialog.querySelector<HTMLElement>(
+            ".kk-viewport-dialog-body",
+        )!;
+        const actions = dialog.querySelector<HTMLElement>(
+            ".kk-viewport-dialog-actions",
+        )!;
+        expect(body).toHaveAttribute("tabindex", "0");
+        expect(body).toContainElement(screen.getByText(copy.archive));
+        expect(body).not.toContainElement(actions);
+        expect(actions.nextElementSibling).toBe(body);
+        const keep = within(actions as HTMLElement).getByRole("button", {
+            name: phase === "quoted" ? copy.keep : copy.close,
+        });
+        expect(actions.firstElementChild).toBe(keep);
+        fireEvent.click(keep);
+        expect(close).toHaveBeenCalledTimes(1);
+        expect(confirm).not.toHaveBeenCalled();
+    },
+);
+
+test("open review follows a narrowed, raised visual viewport without changing the quote", () => {
+    const original = window.visualViewport;
+    const viewport = Object.assign(new EventTarget(), {
+        width: 390,
+        height: 844,
+        offsetLeft: 0,
+        offsetTop: 0,
+    });
+    Object.defineProperty(window, "visualViewport", {
+        configurable: true,
+        value: viewport,
+    });
+    try {
+        render(
+            <CancellationReview
+                operation={operation()}
+                productName="Library"
+                busy={false}
+                readOnly={false}
+                onClose={jest.fn()}
+                onConfirm={jest.fn()}
+                onReconcile={jest.fn()}
+            />,
+        );
+        expect(screen.getByRole("dialog")).toHaveStyle({
+            width: "390px",
+            height: "844px",
+            top: "0px",
+        });
+        act(() => {
+            Object.assign(viewport, {
+                width: 260,
+                height: 320,
+                offsetLeft: 12,
+                offsetTop: 48,
+            });
+            viewport.dispatchEvent(new Event("resize"));
+        });
+        expect(screen.getByRole("dialog")).toHaveStyle({
+            width: "260px",
+            height: "320px",
+            left: "12px",
+            top: "48px",
+            transform: "none",
+        });
+        expect(
+            screen.getByRole("button", { name: copy.confirm }),
+        ).toBeEnabled();
+        expect(screen.getByText(copy.count(3))).toBeInTheDocument();
+    } finally {
+        cleanup();
+        Object.defineProperty(window, "visualViewport", {
+            configurable: true,
+            value: original,
+        });
+    }
+});
+
+test.each([
+    "close",
+    "escape",
+    "route",
+    "intentional",
+    "other-dialog",
+    "hidden",
+] as const)(
+    "review focus return respects the %s close lifecycle",
+    async (mode) => {
+        const originalUrl = window.location.href;
+        function Fixture() {
+            const [open, setOpen] = useState(false);
+            return (
+                <>
+                    <button onClick={() => setOpen(true)}>First opener</button>
+                    <button onClick={() => setOpen(true)}>Second opener</button>
+                    <button id="intentional-focus">Other destination</button>
+                    {open && (
+                        <CancellationReview
+                            operation={operation()}
+                            productName="Library"
+                            busy={false}
+                            readOnly={false}
+                            onClose={() => setOpen(false)}
+                            onConfirm={jest.fn()}
+                            onReconcile={jest.fn()}
+                        />
+                    )}
+                </>
+            );
+        }
+        render(<Fixture />);
+        const opener = screen.getByRole("button", { name: "First opener" });
+        opener.focus();
+        fireEvent.click(opener);
+        expect(screen.getByRole("button", { name: copy.keep })).toHaveFocus();
+        let otherDialog: HTMLElement | undefined;
+        try {
+            if (mode === "route")
+                window.history.replaceState(null, "", "/next-page");
+            if (mode === "hidden") opener.hidden = true;
+            if (mode === "other-dialog") {
+                otherDialog = document.createElement("div");
+                otherDialog.setAttribute("role", "dialog");
+                document.body.append(otherDialog);
+            }
+            if (mode === "escape")
+                fireEvent.keyDown(document.activeElement!, { key: "Escape" });
+            else
+                fireEvent.click(
+                    screen.getByRole("button", { name: copy.keep }),
+                );
+            if (mode === "intentional")
+                document.getElementById("intentional-focus")!.focus();
+            // Radix releases the closing FocusScope on the next task.
+            await act(() => new Promise((resolve) => setTimeout(resolve, 20)));
+            if (mode === "close" || mode === "escape") {
+                await waitFor(() => expect(opener).toHaveFocus());
+                const second = screen.getByRole("button", {
+                    name: "Second opener",
+                });
+                second.focus();
+                fireEvent.click(second);
+                fireEvent.click(
+                    screen.getByRole("button", { name: copy.keep }),
+                );
+                await waitFor(() => expect(second).toHaveFocus());
+            } else {
+                expect(opener).not.toHaveFocus();
+                if (mode === "intentional")
+                    expect(
+                        document.getElementById("intentional-focus"),
+                    ).toHaveFocus();
+            }
+        } finally {
+            otherDialog?.remove();
+            window.history.replaceState(null, "", originalUrl);
+        }
+    },
+);

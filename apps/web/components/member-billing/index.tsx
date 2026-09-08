@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import { useState, type MouseEvent } from "react";
+import type { DialogFocusOrigin } from "@/components/ui/viewport-dialog";
 import { Button } from "@/components/ui/button";
 import { useMemberMimic } from "@/components/member-mimic/context";
 import { billingCopy as copy } from "./copy";
@@ -23,6 +25,16 @@ export default function MemberBilling() {
 }
 
 function BillingForIdentity({ mimicReadOnly }: { mimicReadOnly: boolean }) {
+    const [reviewFocus, setReviewFocus] = useState<DialogFocusOrigin | null>(
+        null,
+    );
+    function rememberReviewOrigin(event: MouseEvent<HTMLButtonElement>) {
+        setReviewFocus({
+            element: event.currentTarget,
+            fallback: event.currentTarget.closest("article"),
+            url: window.location.href,
+        });
+    }
     const {
         state,
         review,
@@ -117,7 +129,8 @@ function BillingForIdentity({ mimicReadOnly }: { mimicReadOnly: boolean }) {
                         membership={membership}
                         readOnly={readOnly}
                         busy={busy !== null}
-                        onPrepare={() =>
+                        onPrepare={(event) => {
+                            rememberReviewOrigin(event);
                             void command(
                                 {
                                     action: "prepare",
@@ -125,9 +138,10 @@ function BillingForIdentity({ mimicReadOnly }: { mimicReadOnly: boolean }) {
                                 },
                                 membership.membershipId,
                                 membership.productName,
-                            )
-                        }
-                        onReview={() => {
+                            );
+                        }}
+                        onReview={(event) => {
+                            rememberReviewOrigin(event);
                             if (membership.cancellation)
                                 setReview({
                                     membershipId: membership.membershipId,
@@ -135,7 +149,8 @@ function BillingForIdentity({ mimicReadOnly }: { mimicReadOnly: boolean }) {
                                     operation: membership.cancellation,
                                 });
                         }}
-                        onReconcile={() => {
+                        onReconcile={(event) => {
+                            rememberReviewOrigin(event);
                             if (membership.cancellation)
                                 void command(
                                     {
@@ -156,6 +171,7 @@ function BillingForIdentity({ mimicReadOnly }: { mimicReadOnly: boolean }) {
             {review && (
                 <CancellationReview
                     operation={review.operation}
+                    focusOrigin={reviewFocus}
                     productName={review.productName}
                     busy={busy !== null}
                     readOnly={readOnly}

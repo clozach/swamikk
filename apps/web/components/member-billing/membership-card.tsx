@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Fragment } from "react";
+import { Fragment, type MouseEventHandler } from "react";
 import RefundSummary from "@/components/refund-summary";
 import { Button } from "@/components/ui/button";
 import type { BillingMembershipView } from "@/services/member-billing/types";
@@ -18,13 +18,14 @@ export function MembershipCard({
     membership: BillingMembershipView;
     readOnly: boolean;
     busy: boolean;
-    onPrepare: () => void;
-    onReview: () => void;
-    onReconcile: () => void;
+    onPrepare: MouseEventHandler<HTMLButtonElement>;
+    onReview: MouseEventHandler<HTMLButtonElement>;
+    onReconcile: MouseEventHandler<HTMLButtonElement>;
 }) {
     const operation = membership.cancellation;
     return (
         <article
+            tabIndex={-1}
             className="space-y-6 rounded-2xl border bg-card p-5 sm:p-7"
             data-feedback-id={`membership-${membership.membershipId}`}
         >

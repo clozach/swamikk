@@ -6,7 +6,8 @@ import { AddressContext, ProfileContext } from "@components/contexts";
 import { checkPermission } from "@courselit/utils";
 import { FEEDBACK_ADMIN_PERMISSIONS } from "@ui-config/constants";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
+import { ViewportDialog } from "@/components/ui/viewport-dialog";
 import type { PageSelection } from "@/components/feedback/targets";
 import { billingCopy as copy } from "./copy";
 const CommentForm = dynamic(() => import("@/components/feedback/comment-form"));
@@ -62,18 +63,18 @@ export function ClosingGift({ readOnly }: { readOnly: boolean }) {
                 </Link>
             </div>
             <Dialog open={open && !readOnly} onOpenChange={setOpen}>
-                <DialogContent
-                    data-feedback-ui
-                    className="max-h-[85dvh] overflow-y-auto"
-                >
-                    <CommentForm
-                        selection={selection}
-                        profile={profile}
-                        address={address}
-                        admin={admin}
-                        onSent={() => setOpen(false)}
-                    />
-                </DialogContent>
+                {open && !readOnly && (
+                    <ViewportDialog kind="comment">
+                        <CommentForm
+                            selection={selection}
+                            profile={profile}
+                            address={address}
+                            admin={admin}
+                            onClose={() => setOpen(false)}
+                            onSent={() => setOpen(false)}
+                        />
+                    </ViewportDialog>
+                )}
             </Dialog>
         </section>
     );
