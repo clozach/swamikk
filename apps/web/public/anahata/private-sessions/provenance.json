@@ -1,0 +1,82 @@
+{
+    "reviewedOn": "2026-09-07",
+    "authorization": "User requested independent local copies of the Private Sessions resources; the scoped homepage remote-resource audit includes the same asset mechanism.",
+    "sourcePage": "https://www.anahata-retreat.org.nz/stay/private-sessions",
+    "transform": "Downloaded original public bytes, without image editing.",
+    "assets": [
+        {
+            "path": "/anahata/private-sessions/session-photo.jpg",
+            "sourceUrl": "https://www.anahata-retreat.org.nz/wp-content/uploads/2024/09/Karuna-5-1024x683.jpg",
+            "bytes": 166099,
+            "sha256": "f8e8eef739e884c076e57f80246809c298f874e5c2afb08496c6ecf76ae240b0",
+            "width": 1024,
+            "height": 683,
+            "mimeType": "image/jpeg"
+        },
+        {
+            "path": "/anahata/private-sessions/60-minute-prices.png",
+            "sourceUrl": "https://www.anahata-retreat.org.nz/wp-content/uploads/2024/12/60-minute-graphic.png",
+            "bytes": 76571,
+            "sha256": "bd5e9ac9734cfc0b05ece6a57c652916e05d9e3979b7ef239efa0804f4376475",
+            "width": 1080,
+            "height": 1080,
+            "mimeType": "image/png"
+        },
+        {
+            "path": "/anahata/private-sessions/90-minute-prices.png",
+            "sourceUrl": "https://www.anahata-retreat.org.nz/wp-content/uploads/2024/12/90-minute-graphic.png",
+            "bytes": 81000,
+            "sha256": "7112130d8cb6eb517b593a4ccb46bed4d457edf9e197dd70b8f42e9d32748567",
+            "width": 1080,
+            "height": 1080,
+            "mimeType": "image/png"
+        },
+        {
+            "path": "/anahata/private-sessions/neti.jpg",
+            "sourceUrl": "https://www.anahata-retreat.org.nz/wp-content/uploads/2024/09/neti-300x300.jpg",
+            "bytes": 60907,
+            "sha256": "924156de1a434d5afa613f23109b15cfef16f527465bb15d9d18a4ad2cba482b",
+            "width": 300,
+            "height": 300,
+            "mimeType": "image/jpeg"
+        },
+        {
+            "path": "/anahata/private-sessions/karuna-portrait.jpg",
+            "sourceUrl": "https://www.anahata-retreat.org.nz/wp-content/uploads/2024/09/456688742_2637462813308446_654383628753361520_n-300x300.jpg",
+            "bytes": 19614,
+            "sha256": "af2fa74872bcfce3ad735836682d2d67ae2ea1cd2de15963c5eb20cf5f0acfad",
+            "width": 300,
+            "height": 300,
+            "mimeType": "image/jpeg"
+        },
+        {
+            "path": "/anahata/post-roasted-vegetable-salad.jpg",
+            "sourceUrl": "https://www.anahata-retreat.org.nz/wp-content/uploads/2026/04/images-4.jpg",
+            "bytes": 59562,
+            "sha256": "70a18b67c12b1e65f9125c9f29a52cf1d66bfcbde6054b8294a3b598fc84a87b",
+            "width": 468,
+            "height": 655,
+            "mimeType": "image/jpeg"
+        },
+        {
+            "path": "/anahata/social/ilovelife-3d-logo.png",
+            "sourceUrl": "https://ilovelife.com/images/ilovelife-3D-logo.png",
+            "bytes": 132862,
+            "sha256": "f9ba1ba40e5f47f012ae89b9c4aae2d07936532c6c9b227c29f38a9d3b998c94",
+            "width": 310,
+            "height": 329,
+            "mimeType": "image/png"
+        }
+    ],
+    "existingTourPreview": {
+        "path": "/anahata/hp-hero-bg.jpg",
+        "sha256": "fbb2075ccaedef06aaaf240b2c9e1ed989149493e4ed7ce3489dd3832771201d",
+        "description": "Existing site-owned Anahata view, reused as a still image; not an interactive tour."
+    },
+    "creditCorrection": {
+        "before": "https://ilovelifecom/",
+        "after": "https://ilovelife.com/",
+        "verifiedSource": "https://ilovelife.com/"
+    },
+    "blogAssetIdentity": "The Roasted Vegetable Salad source file matches the existing local public blog Media bytes. A static site-relative path is kept so hosted promotion needs no local Media ID or localhost URL."
+}
