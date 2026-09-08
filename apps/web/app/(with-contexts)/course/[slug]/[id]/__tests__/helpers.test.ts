@@ -77,4 +77,10 @@ describe("course helpers formatCourse", () => {
 
         expect(formatted.isPreview).toBe(true);
     });
+
+    it("retains the actual public page ID rather than deriving it from the viewer slug", () => {
+        expect(
+            formatCourse({ ...makeCourse(), pageId: "distinct-offer" }).pageId,
+        ).toBe("distinct-offer");
+    });
 });

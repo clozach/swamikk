@@ -8,7 +8,7 @@ import PageModel, { Page } from "@/models/Page";
 import Course from "@/models/Course";
 import CommunityModel from "@/models/Community";
 import constants from "@/config/constants";
-import { deleteMedia, sealMedia } from "@/services/medialit";
+import { deleteMedia, sealMedia, getMedia } from "@/services/medialit";
 import GQLContext from "@/models/GQLContext";
 import { responses } from "@/config/strings";
 import { invalidateDomainCache } from "@/lib/domain-cache";
@@ -17,6 +17,7 @@ jest.mock("@/lib/domain-cache", () => ({
     invalidateDomainCache: jest.fn(),
 }));
 jest.mock("@/services/medialit", () => ({
+    getMedia: jest.fn(),
     deleteMedia: jest.fn().mockResolvedValue(true),
     sealMedia: jest.fn().mockImplementation((id) =>
         Promise.resolve({
@@ -289,6 +290,82 @@ describe("getPage entity validation", () => {
     });
 
     describe("product page validation", () => {
+        it("returns only a revalidated public audio preview in the anonymous product page data", async () => {
+            const course = await Course.create({
+                courseId: "audio-offer",
+                domain: ctx.subdomain._id,
+                published: true,
+                title: "Audio offer",
+                creatorId: "creator-1",
+                slug: "audio-offer",
+                type: "download",
+                privacy: "public",
+                costType: "paid",
+                cost: 9,
+                previewAudio: {
+                    mediaId: "public-sample",
+                    access: "public",
+                    mimeType: "audio/mpeg",
+                    size: 100,
+                    originalFileName: "sample.mp3",
+                },
+            });
+            const page = await PageModel.create({
+                domain: ctx.subdomain._id,
+                pageId: "audio-offer",
+                type: constants.product,
+                entityId: course.courseId,
+                creatorId: "creator-1",
+                name: "Audio offer",
+                layout: [makeHeaderWidget(), makeFooterWidget()],
+            });
+            const sourceBefore = await Course.findById(course._id).lean();
+            const media = {
+                mediaId: "public-sample",
+                group: ctx.subdomain.name,
+                access: "public",
+                mimeType: "audio/mpeg",
+                file: "https://media.example/sample.mp3",
+                creatorId: "private-provider-metadata",
+            };
+            (getMedia as jest.Mock).mockResolvedValue(media);
+            const result = await getPage({ id: page.pageId, ctx });
+            expect(result?.pageData?.previewAudio).toEqual({
+                mediaId: media.mediaId,
+                file: media.file,
+                mimeType: media.mimeType,
+                access: media.access,
+            });
+            expect(getMedia).toHaveBeenCalledWith("public-sample");
+
+            // The saved selection cannot retain playback after the provider
+            // changes its access, tenant, type or playable URL.
+            for (const drift of [
+                { access: "private" },
+                { group: "another-site" },
+                { mimeType: "video/mp4" },
+                { file: "javascript:alert(1)" },
+            ]) {
+                (getMedia as jest.Mock).mockResolvedValue({
+                    ...media,
+                    ...drift,
+                });
+                expect(
+                    (await getPage({ id: page.pageId, ctx }))?.pageData
+                        ?.previewAudio,
+                ).toBeNull();
+            }
+            (getMedia as jest.Mock).mockRejectedValue(new Error("unavailable"));
+            expect(
+                (await getPage({ id: page.pageId, ctx }))?.pageData
+                    ?.previewAudio,
+            ).toBeNull();
+            expect(await Course.findById(course._id).lean()).toEqual(
+                sourceBefore,
+            );
+            expect(sealMedia).not.toHaveBeenCalled();
+        });
+
         it("returns the page when course exists and is published", async () => {
             const courseId = "test-course-id";
 
@@ -319,6 +396,8 @@ describe("getPage entity validation", () => {
 
             expect(result).toBeDefined();
             expect(result?.pageId).toBe(page.pageId);
+            expect(result?.pageData?.previewAudio).toBeNull();
+            expect(getMedia).not.toHaveBeenCalled();
         });
 
         it("includes the course description in pageData", async () => {

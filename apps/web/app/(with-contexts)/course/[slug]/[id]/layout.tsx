@@ -8,6 +8,7 @@ import LayoutWithSidebar from "./layout-with-sidebar";
 import LeanDownloadLayout from "./lean-download-layout";
 import { getProduct } from "./helpers";
 import { getAddressFromHeaders } from "@/app/actions";
+import { auth } from "@/auth";
 import {
     COURSE_VIEWER_CURRENT_URL_HEADER,
     appendCourseViewerSessionParamsToHref,
@@ -126,6 +127,19 @@ export default async function Layout(props: {
     }
 
     if (product.type === Constants.CourseType.DOWNLOAD) {
+        // A public locked lesson should return to the offer in one hop,
+        // without entering the member viewer's lesson-to-intro redirect.
+        // Only the server's effective preview state can bypass this boundary.
+        if (
+            !product.isPreview &&
+            !(await auth.api.getSession({ headers: requestHeaders }))
+        ) {
+            redirect(
+                product.pageId
+                    ? `/p/${encodeURIComponent(product.pageId)}`
+                    : `/checkout?type=course&id=${encodeURIComponent(id)}`,
+            );
+        }
         // One lean page, no intro/lesson split: bounce lesson deep-links back
         // to the intro. redirect() must stay outside the try/catch above —
         // it throws NEXT_REDIRECT, which the catch would turn into a 404.

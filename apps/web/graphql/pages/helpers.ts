@@ -4,6 +4,7 @@ import GQLContext from "../../models/GQLContext";
 import PageModel, { Page } from "../../models/Page";
 import { getCommunity } from "../communities/logic";
 import { getCourse } from "../courses/logic";
+import { resolvePreviewAudio } from "../courses/preview-audio";
 import { generateUniqueId, slugify } from "@courselit/utils";
 import { getPlans } from "../paymentplans/logic";
 import mongoose from "mongoose";
@@ -91,6 +92,7 @@ export async function getPageResponse(
         case constants.product:
             const course = await getCourse(page.entityId!, ctx, false, true);
             if (course) {
+                const previewAudio = await resolvePreviewAudio(course, ctx);
                 pageData = {
                     pageType: Constants.PageType.PRODUCT,
                     title: course.title,
@@ -100,6 +102,16 @@ export async function getPageResponse(
                     type: course.type,
                     tags: course.tags,
                     featuredImage: course.featuredImage,
+                    // Page data is JSON, so explicitly retain only the public
+                    // playback fields that the catalog requests from GraphQL.
+                    previewAudio: previewAudio
+                        ? {
+                              mediaId: previewAudio.mediaId,
+                              file: previewAudio.file,
+                              mimeType: previewAudio.mimeType,
+                              access: previewAudio.access,
+                          }
+                        : null,
                     courseId: course.courseId,
                     leadMagnet: course.leadMagnet,
                     defaultPaymentPlan: course.defaultPaymentPlan,

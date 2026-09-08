@@ -1,12 +1,20 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { ProductCard } from "../../../../../packages/page-blocks/src/components/product-card";
+import { Constants } from "@courselit/common-models";
 import {
     catalogProductKind,
     catalogProductPrice,
 } from "../../../../../packages/page-blocks/src/components/catalog-product";
 
+// Exercise the package's real renderer without applying the web app's
+// stricter compiler settings to this separately checked package source.
+const Banner =
+    require("../../../../../packages/page-blocks/src/blocks/banner/widget").default;
+
 jest.mock("@courselit/components-library", () => ({
+    useToast: () => ({ toast: jest.fn() }),
+    getSymbolFromCurrency: () => "NZD ",
     Image: ({ alt }: any) => <span>{alt}</span>,
     Link: ({ href, children, ...props }: any) => (
         <a href={href} {...props}>
@@ -22,6 +30,10 @@ jest.mock("@courselit/components-library", () => ({
     ),
 }));
 jest.mock("@courselit/page-primitives", () => ({
+    Section: ({ children }: any) => <section>{children}</section>,
+    Header1: ({ children }: any) => <h1>{children}</h1>,
+    Preheader: ({ children }: any) => <span>{children}</span>,
+    Button: ({ children }: any) => <button>{children}</button>,
     Badge: ({ children }: any) => <span>{children}</span>,
     PageCardHeader: ({ children }: any) => <h2>{children}</h2>,
     Subheader1: ({ children }: any) => <span>{children}</span>,
@@ -29,6 +41,84 @@ jest.mock("@courselit/page-primitives", () => ({
     PageCard: ({ children }: any) => <article>{children}</article>,
     PageCardImage: ({ alt }: any) => <img alt={alt} />,
 }));
+jest.mock("../../../../../packages/page-blocks/src/components", () => ({
+    TextRenderer: () => <p>About this practice</p>,
+}));
+
+describe("public product banner preview", () => {
+    const bannerProps = (previewAudio?: unknown) =>
+        ({
+            settings: { alignment: "left", editingViewShowSuccess: "0" },
+            state: {
+                theme: {
+                    theme: {
+                        structure: {
+                            page: { width: "full" },
+                            section: { padding: { y: "md" } },
+                        },
+                    },
+                },
+                siteinfo: { currencyISOCode: "NZD" },
+            },
+            pageData: {
+                pageType: Constants.PageType.PRODUCT,
+                title: "Natural breathing",
+                courseId: "breathing",
+                description: JSON.stringify({ type: "doc" }),
+                paymentPlans: [],
+                previewAudio,
+            },
+            editing: false,
+        }) as any;
+
+    it("offers the shared audio sample separately from Buy now without autoplay", () => {
+        const { container } = render(
+            <Banner
+                {...bannerProps({
+                    file: "https://media.example/sample.mp3",
+                    access: "public",
+                    mimeType: "audio/mpeg",
+                })}
+            />,
+        );
+        expect(
+            screen.getByRole("group", {
+                name: "Audio preview: Natural breathing",
+            }),
+        ).toBeVisible();
+        const buy = screen.getByRole("link", { name: "Buy now" });
+        expect(buy).toHaveAttribute(
+            "href",
+            "/checkout?type=course&id=breathing",
+        );
+        const navigate = jest.fn();
+        buy.addEventListener("click", navigate);
+        fireEvent.click(screen.getByRole("button", { name: "Play sample" }));
+        expect(navigate).not.toHaveBeenCalled();
+        expect(container.querySelector("audio")).not.toHaveAttribute(
+            "autoplay",
+        );
+        expect(container.querySelector("audio")?.closest("a")).toBeNull();
+    });
+
+    it.each([
+        undefined,
+        {
+            file: "https://media.example/full.mp3",
+            access: "private",
+            mimeType: "audio/mpeg",
+        },
+        {
+            file: "https://media.example/movie.mp4",
+            access: "public",
+            mimeType: "video/mp4",
+        },
+    ])("omits unavailable or ineligible samples: %p", (preview) => {
+        const { container } = render(<Banner {...bannerProps(preview)} />);
+        expect(container.querySelector("audio")).toBeNull();
+        expect(screen.getByRole("link", { name: "Buy now" })).toBeVisible();
+    });
+});
 
 it("keeps sample controls outside the product link", () => {
     const onNavigate = jest.fn();

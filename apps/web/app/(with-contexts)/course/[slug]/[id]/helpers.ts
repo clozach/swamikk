@@ -24,6 +24,7 @@ type CourseWithoutGroups = Pick<
     | "tags"
     | "paymentPlans"
     | "defaultPaymentPlan"
+    | "pageId"
 >;
 
 export const getProduct = async (
@@ -50,6 +51,7 @@ export const getProduct = async (
                         slug,
                         cost,
                         courseId,
+                        pageId,
                         type,
                         isPreview,
                         discussions,
@@ -135,6 +137,7 @@ export function formatCourse(
         slug: post.slug,
         cost: post.cost,
         courseId: post.courseId,
+        pageId: post.pageId,
         // GraphQL serializes the course-type enum by NAME ("DOWNLOAD");
         // normalize once at the boundary so every consumer can compare
         // against the lowercase Constants.CourseType values.

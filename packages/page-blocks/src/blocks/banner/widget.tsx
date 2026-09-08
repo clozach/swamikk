@@ -4,12 +4,15 @@ import {
     Media,
     TextEditorContent,
     WidgetProps,
+    mediaPlayerUi,
+    catalogMediaUi,
 } from "@courselit/common-models";
 import {
     Image,
     Link,
     useToast,
     getSymbolFromCurrency,
+    MediaPlayer,
 } from "@courselit/components-library";
 import { TextRenderer } from "../../components";
 import { FetchBuilder, getPlanPrice } from "@courselit/utils";
@@ -136,6 +139,7 @@ export default function Widget({
         type === Constants.PageType.SITE
             ? state.siteinfo.logo
             : (product.featuredImage as Partial<Media>);
+    const previewAudio = product.previewAudio as Partial<Media> | undefined;
 
     const onSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -258,6 +262,23 @@ export default function Widget({
                                 </Subheader1>
                             </div>
                         )}
+                        {type === Constants.PageType.PRODUCT &&
+                            previewAudio?.file &&
+                            previewAudio.access === "public" &&
+                            previewAudio.mimeType?.startsWith("audio/") && (
+                                <div className="w-full pb-4 text-left">
+                                    <p className="text-xs font-medium mb-2">
+                                        {catalogMediaUi.preview}
+                                    </p>
+                                    <MediaPlayer
+                                        kind="audio"
+                                        compact
+                                        src={previewAudio.file}
+                                        title={`${catalogMediaUi.preview}: ${titleText}`}
+                                        labels={mediaPlayerUi}
+                                    />
+                                </div>
+                            )}
                         {type === Constants.PageType.PRODUCT &&
                             isLeadMagnet && (
                                 <div>
