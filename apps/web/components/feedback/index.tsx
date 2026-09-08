@@ -32,6 +32,7 @@ import { getPagePrompt } from "./page-prompt";
 import { SelectionTools } from "./selection-tools";
 import { useVisualViewport } from "./viewport";
 import { SelectionChoices } from "./selection-choices";
+import { usePanelFocusReturn } from "./focus-return";
 import "./feedback.css";
 
 const PageWidgetEditor = dynamic(() => import("./page-widget-editor"));
@@ -72,6 +73,7 @@ function FeedbackSession({ path }: { path: string }) {
     const [panel, setPanel] = useState<Panel>({ kind: "closed" });
     const [notice, setNotice] = useState("");
     const [copying, setCopying] = useState(false);
+    const focusReturn = usePanelFocusReturn(panel.kind !== "closed");
     const { mode, setMode, selected, rect } = useSelection(
         path,
         panel.kind !== "closed",
@@ -106,6 +108,7 @@ function FeedbackSession({ path }: { path: string }) {
         <>
             <FeedbackControlPlacement>
                 <button
+                    ref={focusReturn.help}
                     type="button"
                     className={`kk-feedback-toggle ${expanded ? "is-open" : ""}`}
                     aria-label={expanded ? copy.close : copy.open}
@@ -146,15 +149,17 @@ function FeedbackSession({ path }: { path: string }) {
                     label={selected?.label || copy.select}
                 >
                     <Button
+                        ref={focusReturn.comment}
                         size="icon"
                         aria-label={copy.comment}
                         title={copy.comment}
-                        onClick={() =>
+                        onClick={(event) => {
+                            focusReturn.remember(event.currentTarget);
                             setPanel({
                                 kind: "comment",
                                 selection: selected || pageSelection(path),
-                            })
-                        }
+                            });
+                        }}
                     >
                         <MessageSquare />
                     </Button>
@@ -163,12 +168,13 @@ function FeedbackSession({ path }: { path: string }) {
                         variant="ghost"
                         aria-label={selected ? copy.chooseAgain : copy.select}
                         title={selected ? copy.chooseAgain : copy.select}
-                        onClick={() =>
+                        onClick={(event) => {
+                            focusReturn.remember(event.currentTarget);
                             setPanel({
                                 kind: "choices",
                                 choices: pageChoices(path),
-                            })
-                        }
+                            });
+                        }}
                     >
                         <MousePointer2 />
                     </Button>
@@ -178,12 +184,13 @@ function FeedbackSession({ path }: { path: string }) {
                             variant="outline"
                             aria-label={pageEditCopy.edit}
                             title={pageEditCopy.edit}
-                            onClick={() =>
+                            onClick={(event) => {
+                                focusReturn.remember(event.currentTarget);
                                 setPanel({
                                     kind: "edit",
                                     target: selected.authorTarget!,
-                                })
-                            }
+                                });
+                            }}
                         >
                             <Pencil />
                         </Button>
@@ -197,7 +204,10 @@ function FeedbackSession({ path }: { path: string }) {
                                 aria-label={copying ? copy.loading : copy.copy}
                                 aria-describedby="kk-feedback-copy-boundary"
                                 title={copy.copy}
-                                onClick={copyPrompt}
+                                onClick={(event) => {
+                                    focusReturn.remember(event.currentTarget);
+                                    void copyPrompt();
+                                }}
                             >
                                 <Copy />
                             </Button>
@@ -232,6 +242,7 @@ function FeedbackSession({ path }: { path: string }) {
                 }}
             >
                 <DialogContent
+                    onCloseAutoFocus={focusReturn.restore}
                     data-feedback-ui
                     className={`kk-feedback-dialog ${composer ? "kk-feedback-composer" : `max-h-[85dvh] w-[calc(100%-2rem)] overflow-y-auto rounded-xl ${panel.kind === "choices" ? "kk-feedback-choices" : ""}`}`}
                     data-full-viewport={fullComposer || undefined}
