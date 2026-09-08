@@ -8,6 +8,7 @@ import { changeView, getChange, versionView } from "./proposals";
 import { requirePageEditor } from "./page-adapter";
 import { requireCondition } from "./errors";
 import { pageFingerprint, pageRevision } from "./page-guard";
+import type { EditablePage } from "./page-types";
 import { fingerprint } from "./stable";
 import { validateTextEdit } from "./text-safety";
 import { isPageCreationRecord } from "./page-creation-types";
@@ -74,12 +75,12 @@ export async function preparePublicationReview(
                 pageId: target.pageId,
                 deleted: { $ne: true },
                 draftOnly: true,
-            });
+            }).lean<(EditablePage & { _id: unknown }) | null>();
             requireCondition(
                 page &&
                     page.creationReceipt?.changeId ===
                         target.creationChangeId &&
-                    page.creationReceipt.outcome === "created" &&
+                    page.creationReceipt?.outcome === "created" &&
                     page.type === "site",
                 "stale",
                 "This original unpublished page is no longer available. A reused address is a different page.",

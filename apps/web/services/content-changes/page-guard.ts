@@ -39,9 +39,18 @@ export function pageWriteFilter(page: EditablePage) {
             pageRevision(page) === 0
                 ? { $or: [{ __v: 0 }, { __v: { $exists: false } }] }
                 : { __v: pageRevision(page) },
-            ...pageMutableFields.map((key) => ({
-                [key]: { $eq: page[key] ?? null },
-            })),
         ],
+        // A path-first comparison lets Mongoose cast embedded arrays again,
+        // adding widget defaults/IDs that are absent in legacy stored BSON.
+        // Literal-first expressions preserve the complete captured value,
+        // including nested IDs/order and absent versus explicit-null fields.
+        $expr: {
+            $and: pageMutableFields.map((key) =>
+                Object.prototype.hasOwnProperty.call(page, key) &&
+                page[key] !== undefined
+                    ? { $eq: [{ $literal: page[key] }, `$${key}`] }
+                    : { $eq: [{ $type: `$${key}` }, "missing"] },
+            ),
+        },
     };
 }

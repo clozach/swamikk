@@ -289,8 +289,11 @@ test("unavailable recovery retains the lock and never retries native publication
     const spy = jest
         .spyOn(native, "publish")
         .mockRejectedValueOnce(new Error("Interrupted"));
-    jest.spyOn(PageModel, "findOne").mockRejectedValueOnce(
-        new Error("Read unavailable"),
+    jest.spyOn(PageModel, "findOne").mockImplementationOnce(
+        () =>
+            ({
+                lean: () => Promise.reject(new Error("Read unavailable")),
+            }) as any,
     );
     expect((await approve(change)).state.kind).toBe("uncertain");
     expect((await getChange(change.id, ctx)).activeTarget).toBe(
@@ -299,6 +302,42 @@ test("unavailable recovery retains the lock and never retries native publication
     expect((await reconcileChange(change.id, ctx)).state.kind).toBe("failed");
     expect(spy).toHaveBeenCalledTimes(1);
 });
+test.each([false, true])(
+    "legacy raw draft publication/recovery retains its exact baseline (interrupted=%s)",
+    async (interrupted) => {
+        const creation = await created();
+        const page: any = await PageModel.collection.findOne({
+            _id: (await PageModel.findById(creation.baseline.documentId))._id,
+        });
+        const draftLayout = page.draftLayout.map(
+            ({ _id, ...widget }: any) => widget,
+        );
+        await PageModel.collection.updateOne(
+            { _id: page._id },
+            { $set: { draftLayout } },
+        );
+        const change = await preparePublicationReview(creation.id, 1, ctx);
+        if (!isPagePublication(change)) throw Error("Expected publication");
+        if (interrupted)
+            jest.spyOn(native, "publish").mockRejectedValueOnce(
+                Error("Interrupted before native save"),
+            );
+        expect((await approve(change)).state.kind).toBe(
+            interrupted ? "failed" : "applied",
+        );
+        const after: any = await PageModel.collection.findOne({
+            _id: page._id,
+        });
+        expect(after.__v).toBe(page.__v + 1);
+        expect(after.publicationReceipt.outcome).toBe(
+            interrupted ? "cancelled" : "applied",
+        );
+        if (interrupted) {
+            expect(after.draftLayout).toEqual(draftLayout);
+            expect(after.layout).toEqual([]);
+        }
+    },
+);
 test("deleted result and reused route cannot publish a replacement", async () => {
     const change = await prepare();
     await native.deletePageInternal(ctx, "welcome");

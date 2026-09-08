@@ -6,6 +6,7 @@ import { ContentChangeModel } from "./models";
 import { changeView, getChange } from "./proposals";
 import { requirePageEditor } from "./page-adapter";
 import { pageRevision, pageWriteFilter } from "./page-guard";
+import type { EditablePage } from "./page-types";
 import { ContentChangeError, requireCondition } from "./errors";
 import { settle } from "./settle";
 import {
@@ -32,7 +33,7 @@ export async function reconcilePagePublication(
         const page = await PageModel.findOne({
             domain: ctx.subdomain._id,
             _id: record.baseline.documentId,
-        });
+        }).lean<EditablePage | null>();
         const receipt = page?.publicationReceipt;
         if (
             receipt?.changeId === record.id &&

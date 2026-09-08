@@ -173,7 +173,7 @@ export const updatePage = async ({
         ...expectedPageIdentity(documentId),
         domain: ctx.subdomain._id,
         deleted: { $ne: true },
-    });
+    }).lean<Page | null>();
 
     if (!page) {
         return null;
@@ -276,7 +276,7 @@ const publishNative = async (
         ...expectedPageIdentity(documentId),
         domain: ctx.subdomain._id,
         deleted: { $ne: true },
-    });
+    }).lean<Page | null>();
 
     if (!page) {
         return null;
@@ -309,7 +309,7 @@ const publishNative = async (
         (id) => !nextPublishedMedia.has(id),
     );
 
-    if (page.draftLayout.length) {
+    if (page.draftLayout?.length) {
         page.layout = page.draftLayout;
         // page.draftLayout = [];
     }
@@ -699,14 +699,14 @@ export const deleteBlock = async ({
         ...expectedPageIdentity(documentId),
         domain: ctx.subdomain._id,
         deleted: { $ne: true },
-    });
+    }).lean<Page | null>();
 
     if (!page) {
         return null;
     }
     const baseline = nativePageBaseline(page);
 
-    const block = page.draftLayout.find(
+    const block = page.draftLayout?.find(
         (block: any) => block.widgetId === blockId,
     );
     if (!block) {
