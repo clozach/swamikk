@@ -67,9 +67,28 @@
             max(16px, env(safe-area-inset-bottom)) + 60px
     );
     max-width: min(340px, calc(100vw - 32px));
-    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 8px 8px 12px;
     border-radius: 12px;
     font-size: 14px;
+}
+.kk-feedback-notice > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.kk-feedback-notice > button {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+}
+.kk-feedback-notice > button:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: -2px;
 }
 .kk-feedback-outline {
     position: fixed;

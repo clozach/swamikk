@@ -1,6 +1,7 @@
 "use client";
 
 import { useContext, useState } from "react";
+import { FeedbackNotice, useFeedbackNotice } from "./notice";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -71,7 +72,7 @@ function FeedbackSession({ path }: { path: string }) {
             checkPermission(profile.permissions, FEEDBACK_ADMIN_PERMISSIONS),
     );
     const [panel, setPanel] = useState<Panel>({ kind: "closed" });
-    const [notice, setNotice] = useState("");
+    const [notice, setNotice] = useFeedbackNotice();
     const [copying, setCopying] = useState(false);
     const focusReturn = usePanelFocusReturn(panel.kind !== "closed");
     const { mode, setMode, selected, rect } = useSelection(
@@ -135,13 +136,10 @@ function FeedbackSession({ path }: { path: string }) {
             </FeedbackControlPlacement>
             {rect && panel.kind === "closed" && <FeedbackOutline rect={rect} />}
             {notice && (
-                <div
-                    data-feedback-ui
-                    className="kk-feedback-notice border bg-background text-foreground shadow-lg"
-                    role="status"
-                >
-                    {notice}
-                </div>
+                <FeedbackNotice
+                    message={notice}
+                    onDismiss={() => setNotice("")}
+                />
             )}
             {expanded && (
                 <SelectionTools

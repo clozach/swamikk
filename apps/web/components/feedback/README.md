@@ -89,3 +89,12 @@ even though both rectangles were inside the visible viewport. The placement
 regressions cover compact public and wider admin tools, short and panned
 viewports, and a purchase-bar-raised button. This correction must also pass the
 same native center hit check after rollout; it is not an actual-phone claim.
+
+Successful comment and Copy prompt confirmations now disappear after five seconds.
+Every notice also has a visible 44px Close target; no hover or second visit to the
+feedback control is needed. Errors stay until dismissed so they remain readable.
+A replacement notice cancels the old timer, including repeated identical success
+messages. Check on a phone: send a comment, tap Close on its confirmation, then
+send another and leave it alone for five seconds. The page stays usable and no
+confirmation remains. Mocked component tests exercise sending without posting
+real feedback; physical Safari verification follows hosted publication.

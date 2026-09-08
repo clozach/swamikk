@@ -4,6 +4,7 @@ import {
     render,
     screen,
     waitFor,
+    within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ContextualFeedback from "..";
@@ -218,4 +219,27 @@ test("a nested private attachment dialog takes focus and returns it to the compo
     await waitFor(() => expect(trigger).toHaveFocus());
     expect(screen.getByRole("textbox")).toHaveValue("Unsent attachment draft");
     expect(feedbackRequest).not.toHaveBeenCalled();
+});
+
+test("successful comment closes the phone composer and its confirmation can be dismissed", async () => {
+    (feedbackRequest as jest.Mock).mockResolvedValue({
+        feedback: { id: "sent" },
+    });
+    render(<ContextualFeedback />);
+    open();
+    fireEvent.change(screen.getByRole("textbox"), {
+        target: { value: "A test comment" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Send comment" }));
+    await waitFor(() =>
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    fireEvent.click(
+        within(screen.getByRole("status").parentElement!).getByRole("button", {
+            name: "Close",
+        }),
+    );
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(feedbackRequest).toHaveBeenCalledTimes(1);
 });
