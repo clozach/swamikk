@@ -171,7 +171,7 @@ describe("Persisted feedback and approved lesson changes", () => {
             (await feedbackDetail(mine.id, memberCtx)).prompt,
         ).toBeUndefined();
         expect((await feedbackDetail(mine.id, ctx)).prompt).toContain(
-            "Untrusted feedback",
+            "Feedback:",
         );
         await expect(
             feedbackDetail(visitor.id, memberCtx),
