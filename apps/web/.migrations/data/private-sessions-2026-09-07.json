@@ -1,0 +1,95 @@
+{
+    "pageId": "private-sessions",
+    "title": "Private Sessions with Swami Karma Karuna",
+    "sourceUrl": "https://www.anahata-retreat.org.nz/stay/private-sessions",
+    "sourceReviewedOn": "2026-09-07",
+    "enquiryEmail": "omsatyam@anahata-retreat.org.nz",
+    "introduction": [
+        "Swami Karma Karuna utilises wisdom and techniques drawn from an integral Yogic Therapy approach as well as Integrative Somatic Trauma Therapy Training Program, alongside years of experience, to guide you through a transformative personal process. She draws on the experience of teaching and mentoring people from around the world, including yoga and meditation teachers and has expertise in Chakra Psychology, Women’s Health and working with the Nervous System."
+    ],
+    "sessionForms": [
+        "A carefully curated personal program",
+        "An opportunity to ask questions about your health, life, spiritual path",
+        "A Somatic Trauma Therapy Session to explore and shift past traumas stored in the body and nervous system",
+        "Yogic Health and Lifestyle Coaching",
+        "Mentorship for Yoga and Meditation teachers"
+    ],
+    "personalized": [
+        "In a session with Swami Karma Karuna, you have the freedom to choose the direction that best suits your needs and aspirations. Each session is tailored to provide you with comprehensive guidance through dialog, various practices and take away resources to align with your unique personality, body type, health challenges, and energy flow.  Practices are given according to individual needs to treat imbalances or enhance desired mental, emotional, physical, and energetic states for optimal well-being."
+    ],
+    "practices": [
+        "Hatha or Restorative Yoga",
+        "Cleansing Techniques",
+        "Breathing Exercises",
+        "Yoga Nidra",
+        "Relaxation and Meditation Techniques",
+        "Lifestyle Applications",
+        "Self-reflection practices and home takeaways",
+        "Articles, MP3 practices and more"
+    ],
+    "benefitsIntroduction": [
+        "Yogic and Somatic Trauma Therapy practices are powerful aids in the support and treatment of various conditions and life changes, including:"
+    ],
+    "benefits": [
+        "Transitions such as menopause",
+        "Trauma management",
+        "Stress-related imbalances",
+        "Anxiety",
+        "Depression",
+        "Insomnia",
+        "Digestive issues",
+        "Chronic fatigue",
+        "Asthma",
+        "Diabetes",
+        "Structural imbalances",
+        "Blood pressure and heart problems",
+        "Healthy Ageing",
+        "More"
+    ],
+    "prices": [
+        {
+            "minutes": 60,
+            "singleNzd": 120,
+            "fiveSessionNzd": 575,
+            "includedGuidedMp3s": 3,
+            "card": "/anahata/private-sessions/60-minute-prices.png"
+        },
+        {
+            "minutes": 90,
+            "singleNzd": 155,
+            "fiveSessionNzd": 750,
+            "includedGuidedMp3s": 3,
+            "card": "/anahata/private-sessions/90-minute-prices.png"
+        }
+    ],
+    "cleansing": [
+        "Shatkarmas are a part of Hatha Yoga. ‘Shat’ means six, and karma means ‘action’; hence traditionally they encompass six different types of purification practices. Shatkarmas help to harmonise and balance the energetic flows in the body and to purify the body of toxins on a physical, mental, emotional and spiritual level."
+    ],
+    "biography": [
+        "Swami Karma Karuna Saraswati is an engaging, intuitive yoga and meditation teacher, inspirational speaker, writer and IAYT Certified Yoga Therapist with 30 years of experience in the yoga field including significant training in Nepal and India and ongoing training in the ashram with her teachers.",
+        "She is also certified by Yoga Alliance and is a senior teacher of Yoga Australia/New Zealand. A Bachelor of Arts in Interpersonal Communications with a minor in Psychology determined an early interest in working with groups and individuals. Swami Karma Karuna specialises in a range of areas such as Yoga Nidra, Restorative Yoga, Prana, Chakras, Yoga Psychology and Women’s Health.",
+        "She is also a co-founder and director of Anahata Yoga Retreat, New Zealand and travels throughout the world, leading workshops, training yoga teachers, presenting at international events, guiding spiritual sadhana retreats and offering therapeutic one to one yoga sessions. Swami Karma Karuna is passionate about sharing an authentic and down to earth approach, weaving together the ancient practices with a touch of psychology and brain science aimed at motivating people to live their yoga here and now. Several guided practice MP3 tracks including Hatha Yoga classes, Yoga Nidra and Meditation techniques are available through Anahata Yoga Retreat web-site and articles on a variety of subjects can be read in the Australian Yoga Life Magazine."
+    ],
+    "images": [
+        {
+            "after": "introduction",
+            "src": "/anahata/private-sessions/session-photo.jpg",
+            "alt": "Swami Karma Karuna during a private session"
+        },
+        {
+            "after": "cleansing",
+            "src": "/anahata/private-sessions/neti.jpg",
+            "alt": "Neti cleansing practice at Anahata"
+        },
+        {
+            "after": "biography",
+            "src": "/anahata/private-sessions/karuna-portrait.jpg",
+            "alt": "Swami Karma Karuna outdoors"
+        }
+    ],
+    "notes": [
+        "Pricing transcribed from the two published image cards; package figures are totals for five sessions, not per-session rates.",
+        "NZD including GST, as stated on the published source page. No availability or booking calendar is supplied.",
+        "Enquiry opens the visitor’s mail app. It does not submit, reserve, charge, or confirm a session."
+    ]
+}
