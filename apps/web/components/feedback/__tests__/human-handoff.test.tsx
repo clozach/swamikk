@@ -25,6 +25,11 @@ test("page Copy prompt exports only matching open comments, without scraping pri
         '<div data-feedback-lesson="visible-lesson">Private account text stays here</div>';
     jest.mocked(allFeedbackPages).mockResolvedValue([
         base,
+        {
+            ...base,
+            id: "separator-comment",
+            text: "A body with\n---\nits own separator line",
+        },
         { ...base, id: "closed-comment", state: "closed" },
         {
             ...base,
@@ -54,6 +59,13 @@ test("page Copy prompt exports only matching open comments, without scraping pri
     expect(prompt).toContain(`Site: ${window.location.origin}/p/welcome`);
     expect(prompt).toContain("Feedback ID: page-comment");
     expect(prompt).toContain("Feedback ID: visible-lesson-comment");
+    expect(prompt).toContain(
+        "Feedback:\n<feedback>\nHuman-entered feedback\n</feedback>",
+    );
+    expect(prompt).toContain(
+        "<feedback>\nA body with\n---\nits own separator line\n</feedback>",
+    );
+    expect(prompt.split("\n\n---\n\n")).toHaveLength(3);
     expect(prompt).not.toMatch(
         /closed-comment|other-page|other-lesson|Private account text|private-member/,
     );

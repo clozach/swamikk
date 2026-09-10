@@ -14,6 +14,7 @@ const push = jest.fn();
 jest.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 jest.mock("../api", () => ({ feedbackRequest: jest.fn() }));
 jest.mock("@courselit/components-library", () => ({
+    useMediaLit: () => ({ uploadFile: jest.fn(), isUploading: false }),
     MediaSelector: (props) => (
         <button
             type="button"

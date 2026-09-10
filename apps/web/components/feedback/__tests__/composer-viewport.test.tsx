@@ -14,6 +14,7 @@ import { feedbackRequest } from "../api";
 jest.mock("next/navigation", () => ({ usePathname: () => "/practice" }));
 jest.mock("../api", () => ({ feedbackRequest: jest.fn() }));
 jest.mock("@courselit/components-library", () => ({
+    useMediaLit: () => ({ uploadFile: jest.fn(), isUploading: false }),
     MediaSelector: () => {
         const {
             AlertDialog,

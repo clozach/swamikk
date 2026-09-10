@@ -5,7 +5,12 @@ import { pageSelection } from "../targets";
 import { feedbackRequest } from "../api";
 
 jest.mock("../api", () => ({ feedbackRequest: jest.fn() }));
+const mockUploadFile = jest.fn();
 jest.mock("@courselit/components-library", () => ({
+    useMediaLit: (options) => ({
+        isUploading: false,
+        uploadFile: (file, metadata) => mockUploadFile(file, metadata, options),
+    }),
     MediaSelector: ({ onSelection, onRemove }) => (
         <div>
             Admin attachment control
@@ -153,4 +158,94 @@ test("a nested attachment button cannot implicitly submit a drafted comment", as
     expect(screen.getByRole("textbox")).toHaveValue(
         "Keep this draft while removing its photo",
     );
+});
+
+const pngFile = () =>
+    new File([new Uint8Array([137, 80, 78, 71])], "", { type: "image/png" });
+
+test("an admin pasting an image uploads it privately and attaches it to the comment", async () => {
+    mockUploadFile.mockImplementation(async (file, metadata, options) => {
+        const media = {
+            mediaId: "pasted-photo",
+            originalFileName: file.name,
+            thumbnail: "",
+        };
+        options.onUploadComplete(media);
+        return media;
+    });
+    jest.mocked(feedbackRequest).mockResolvedValue({
+        feedback: { id: "sent" },
+    });
+    const onSent = jest.fn();
+    render(
+        <CommentForm
+            selection={pageSelection("/practice")}
+            profile={{ userId: "admin" }}
+            address={{ backend: "https://site.test" } as any}
+            admin
+            onSent={onSent}
+        />,
+    );
+    const textarea = screen.getByRole("textbox");
+    fireEvent.change(textarea, { target: { value: "See the screenshot" } });
+    fireEvent.paste(textarea, { clipboardData: { files: [pngFile()] } });
+    await waitFor(() => expect(mockUploadFile).toHaveBeenCalledTimes(1));
+    const [file, metadata, options] = mockUploadFile.mock.calls[0];
+    expect(file.type).toBe("image/png");
+    expect(file.name).toBe("pasted-image.png");
+    expect(metadata).toEqual({ caption: "", type: "page" });
+    expect(options).toMatchObject({
+        access: "private",
+        signatureEndpoint: "https://site.test/api/media/presigned",
+    });
+    expect(textarea).toHaveValue("See the screenshot");
+    fireEvent.click(screen.getByRole("button", { name: "Send comment" }));
+    await waitFor(() => expect(onSent).toHaveBeenCalledTimes(1));
+    expect(feedbackRequest).toHaveBeenLastCalledWith("/api/feedback", {
+        text: "See the screenshot",
+        target: pageSelection("/practice").target,
+        photoMediaIds: ["pasted-photo"],
+    });
+});
+
+test("a failed pasted-image upload reports itself and keeps the text draft", async () => {
+    mockUploadFile.mockRejectedValue(new Error("Failed to obtain signature"));
+    render(
+        <CommentForm
+            selection={pageSelection("/practice")}
+            profile={{ userId: "admin" }}
+            address={{ backend: "https://site.test" } as any}
+            admin
+            onSent={jest.fn()}
+        />,
+    );
+    const textarea = screen.getByRole("textbox");
+    fireEvent.change(textarea, { target: { value: "Draft stays" } });
+    fireEvent.paste(textarea, { clipboardData: { files: [pngFile()] } });
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+        "The pasted image did not upload. Your text is kept.",
+    );
+    expect(textarea).toHaveValue("Draft stays");
+    expect(feedbackRequest).not.toHaveBeenCalled();
+});
+
+test("members and visitors cannot attach by pasting; text pastes are untouched", async () => {
+    render(
+        <CommentForm
+            selection={pageSelection("/practice")}
+            profile={{ userId: "member" }}
+            address={{ backend: "https://site.test" } as any}
+            admin={false}
+            onSent={jest.fn()}
+        />,
+    );
+    const textarea = screen.getByRole("textbox");
+    fireEvent.paste(textarea, { clipboardData: { files: [pngFile()] } });
+    expect(mockUploadFile).not.toHaveBeenCalled();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(
+        screen.queryByText(
+            "Or paste an image from the clipboard while typing.",
+        ),
+    ).not.toBeInTheDocument();
 });

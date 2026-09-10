@@ -25,6 +25,12 @@ test("human export leads with the build instruction and ends with the raw feedba
     const prompt = formatFeedbackPrompt(feedback);
     expect(prompt.startsWith("Build this CourseLit change")).toBe(true);
     expect(prompt.endsWith(`Feedback:\n${feedback.text}`)).toBe(true);
+    expect(prompt).not.toContain("<feedback>");
+    expect(
+        formatFeedbackPrompt(feedback, { delimited: true }).endsWith(
+            `Feedback:\n<feedback>\n${feedback.text}\n</feedback>`,
+        ),
+    ).toBe(true);
     expect(prompt).not.toContain(JSON.stringify(feedback.text));
     expect(prompt).toContain(JSON.stringify(feedback.target));
     expect(prompt).toContain('["private-photo-reference"]');

@@ -21,5 +21,5 @@ export async function getPagePrompt(path: string): Promise<string> {
                 : lessons.has(comment.target.lessonId)),
     );
     if (!comments.length) throw new Error(copy.noComments);
-    return `Site: ${window.location.origin}${path}\n\n${comments.map(formatFeedbackPrompt).join("\n\n---\n\n")}`;
+    return `Site: ${window.location.origin}${path}\n\n${comments.map((comment) => formatFeedbackPrompt(comment, { delimited: true })).join("\n\n---\n\n")}`;
 }

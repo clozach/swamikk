@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ClipboardEvent } from "react";
 import { X } from "lucide-react";
-import { MediaSelector } from "@courselit/components-library";
+import { MediaSelector, useMediaLit } from "@courselit/components-library";
 import type {
     Address,
     ContextualFeedback,
@@ -39,6 +39,40 @@ export default function CommentForm({
         }
     });
     const [photo, setPhoto] = useState<Media | null>(null);
+    const canAttach = admin && !!profile?.userId;
+    const [paste, setPaste] = useState<
+        | { kind: "idle" }
+        | { kind: "uploading" }
+        | { kind: "error"; message: string }
+    >({ kind: "idle" });
+    // Same private library upload the picker dialog uses; a pasted image
+    // becomes the attached photo without opening that dialog.
+    const { uploadFile } = useMediaLit({
+        signatureEndpoint: `${address.backend}/api/media/presigned`,
+        access: "private",
+        onUploadComplete: (media) => setPhoto(media as unknown as Media),
+    });
+    const pasteImage = async (event: ClipboardEvent<HTMLTextAreaElement>) => {
+        if (!canAttach || paste.kind === "uploading") return;
+        const image = Array.from(event.clipboardData?.files || []).find(
+            (file) => file.type.startsWith("image/"),
+        );
+        if (!image) return; // Ordinary text pastes into the draft as usual.
+        event.preventDefault();
+        setPaste({ kind: "uploading" });
+        try {
+            const extension = image.type.split("/")[1] || "png";
+            const file = image.name
+                ? image
+                : new File([image], `pasted-image.${extension}`, {
+                      type: image.type,
+                  });
+            await uploadFile(file, { caption: "", type: "page" });
+            setPaste({ kind: "idle" });
+        } catch {
+            setPaste({ kind: "error", message: copy.pasteFailed });
+        }
+    };
     const [status, setStatus] = useState<
         | { kind: "ready" }
         | { kind: "sending" }
@@ -54,7 +88,12 @@ export default function CommentForm({
     }, [storageKey, text]);
 
     const submit = async () => {
-        if (!text.trim() || status.kind === "sending") return;
+        if (
+            !text.trim() ||
+            status.kind === "sending" ||
+            paste.kind === "uploading"
+        )
+            return;
         setStatus({ kind: "sending" });
         try {
             await feedbackRequest<{ feedback: ContextualFeedback }>(
@@ -112,7 +151,11 @@ export default function CommentForm({
                             ? copy.sending
                             : copy.sendLabel
                     }
-                    disabled={!text.trim() || status.kind === "sending"}
+                    disabled={
+                        !text.trim() ||
+                        status.kind === "sending" ||
+                        paste.kind === "uploading"
+                    }
                 >
                     {status.kind === "sending" ? copy.sending : copy.send}
                 </Button>
@@ -127,11 +170,12 @@ export default function CommentForm({
                         rows={6}
                         value={text}
                         onChange={(event) => setText(event.target.value)}
+                        onPaste={pasteImage}
                         className="w-full rounded-lg border bg-background p-3 text-base font-normal focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                     />
                 </label>
                 <p className="text-sm text-muted-foreground">{copy.privacy}</p>
-                {admin && profile?.userId && (
+                {canAttach && (
                     <MediaSelector
                         title={copy.photo}
                         src={photo?.thumbnail || ""}
@@ -145,6 +189,21 @@ export default function CommentForm({
                         access="private"
                         type="page"
                     />
+                )}
+                {canAttach && paste.kind === "uploading" && (
+                    <p role="status" className="text-sm text-muted-foreground">
+                        {copy.pasting}
+                    </p>
+                )}
+                {canAttach && paste.kind === "error" && (
+                    <p role="alert" className="text-sm text-destructive">
+                        {paste.message}
+                    </p>
+                )}
+                {canAttach && paste.kind === "idle" && (
+                    <p className="text-sm text-muted-foreground">
+                        {copy.pasteHint}
+                    </p>
                 )}
                 {status.kind === "error" && (
                     <p role="alert" className="text-sm text-destructive">

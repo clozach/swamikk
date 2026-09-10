@@ -15,6 +15,7 @@ jest.mock("next-themes", () => ({
 }));
 jest.mock("@/lib/theme-styles", () => ({ generateThemeStyles: () => "" }));
 jest.mock("@courselit/components-library", () => ({
+    useMediaLit: () => ({ uploadFile: jest.fn(), isUploading: false }),
     Toaster: () => null,
     Tooltip: ({ children }: { children: React.ReactNode }) => children,
 }));

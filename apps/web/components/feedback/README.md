@@ -18,9 +18,16 @@ target remains the dialog's accessible description. Enter in the textarea adds a
 newline; keyboard activation of the focused Send button submits normally.
 
 Public and member comments remain text-only. Admin photos use the existing
-private upload flow. Copy prompt retains the human handoff: inspect/edit the
-copied text on Mac, submit it deliberately to a desktop assistant, and choose
-private attachments separately. Photo IDs do not include image bytes or signed
+private upload flow; an admin can also paste an image from the clipboard into
+the textarea, which uploads it through that same private path and attaches it
+(Send waits for the upload; a failed upload reports itself and keeps the text).
+Members and visitors pasting an image get nothing but their text. Copy prompt
+retains the human handoff: inspect/edit the copied text on Mac, submit it
+deliberately to a desktop assistant, and choose private attachments separately.
+The copied text opens with the build instruction and ends with the comment body
+unquoted under `Feedback:`; the page-level prompt wraps each body in
+`<feedback>` tags so a body containing its own `---` line cannot run into the
+next comment. Photo IDs do not include image bytes or signed
 URLs and do not authorize an assistant to fetch them. Member Mimic hides this
 interface. Per-target tab drafts survive closing and failed sends; Clear draft
 remains an explicit action. This layout does not change proposal approval,
