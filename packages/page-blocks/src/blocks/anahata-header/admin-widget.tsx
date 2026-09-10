@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import type { Address, Media, Profile } from "@courselit/common-models";
+import type { Address, Profile } from "@courselit/common-models";
 import type { Theme } from "@courselit/page-models";
 import {
     Accordion,
@@ -14,17 +14,19 @@ import {
     Form,
     FormField,
     IconButton,
-    MediaSelector,
     PageBuilderPropertyHeader,
 } from "@courselit/components-library";
 import { generateUniqueId } from "@courselit/utils";
 import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
 import Settings, { MenuItem, TopBarItem } from "./settings";
+import type { ImageSource } from "../../components/image-source";
+import { ImageSourceField } from "../../components/image-source-field";
+import { headerLogoSource } from "./logo-source";
 import {
+    brandName as defaultBrandName,
     homeHref as defaultHomeHref,
     logoAlt as defaultLogoAlt,
     logoHeight as defaultLogoHeight,
-    logoSrc as defaultLogoSrc,
     logoWidth as defaultLogoWidth,
     menu as defaultMenu,
     mobileCloseLabel as defaultMobileCloseLabel,
@@ -115,7 +117,7 @@ function RowControls({
 }
 
 /* ------------------------------------------------------------------ *
- * Flat editor — the cocoa utility strip (Cart / Search / Menu / Contact)
+ * Flat editor — the utility strip (Cart / Search / Menu / Contact)
  * ------------------------------------------------------------------ */
 function TopBarItemsEditor({
     items,
@@ -377,11 +379,17 @@ export default function AdminWidget({
     address,
     profile,
 }: AdminWidgetProps): JSX.Element {
-    const [logoMedia, setLogoMedia] = useState<Partial<Media>>(
-        settings.logoMedia || {},
+    // Seeded through the same reader the widget uses, so a layout saved
+    // before the union opens on its legacy logoSrc/logoMedia mark rather than
+    // on the default well; saving then writes `logoSource` and the legacy
+    // pair is no longer read.
+    const [logoSource, setLogoSource] = useState<ImageSource>(() =>
+        headerLogoSource(settings),
     );
-    const [logoSrc, setLogoSrc] = useState(settings.logoSrc ?? defaultLogoSrc);
     const [logoAlt, setLogoAlt] = useState(settings.logoAlt ?? defaultLogoAlt);
+    const [brandName, setBrandName] = useState(
+        settings.brandName ?? defaultBrandName,
+    );
     const [logoWidth, setLogoWidth] = useState(
         settings.logoWidth ?? defaultLogoWidth,
     );
@@ -421,11 +429,11 @@ export default function AdminWidget({
 
     useEffect(() => {
         onChange({
-            logoMedia,
-            logoSrc,
+            logoSource,
             logoAlt,
             logoWidth,
             logoHeight,
+            brandName,
             homeHref,
             showTopBar,
             sticky,
@@ -440,11 +448,11 @@ export default function AdminWidget({
             cssId,
         });
     }, [
-        logoMedia,
-        logoSrc,
+        logoSource,
         logoAlt,
         logoWidth,
         logoHeight,
+        brandName,
         homeHref,
         showTopBar,
         sticky,
@@ -465,16 +473,28 @@ export default function AdminWidget({
             defaultValue={["branding", "menu"]}
         >
             <AdminWidgetPanel title="Branding" value="branding">
+                {/* Outside the <Form> below: the field renders its own form
+                    for the URL / description arms, and forms do not nest. */}
+                <ImageSourceField
+                    label="Logo"
+                    tooltip="The 40 × 40 mark beside the brand name. Placeholder renders the waiting-for-asset well until the real mark is uploaded."
+                    value={logoSource}
+                    onChange={setLogoSource}
+                    urlPlaceholder="/anahata/mark.svg"
+                    profile={profile}
+                    address={address}
+                />
                 <Form className="flex flex-col gap-2">
                     <FormField
-                        label="Logo path"
-                        value={logoSrc}
-                        tooltip="A path served from /public, e.g. /swami-kk-logo.png. A logo picked below overrides this."
-                        onChange={(e: any) => setLogoSrc(e.target.value)}
+                        label="Brand name"
+                        value={brandName}
+                        tooltip="Typeset beside the mark. Hidden on phones narrower than 480px, where the mark alone carries the brand. Leave empty for a mark-only header."
+                        onChange={(e: any) => setBrandName(e.target.value)}
                     />
                     <FormField
-                        label="Logo alt text"
+                        label="Home link label"
                         value={logoAlt}
+                        tooltip="The accessible name of the logo link, e.g. “Swami Karma Karuna — home”."
                         onChange={(e: any) => setLogoAlt(e.target.value)}
                     />
                     <FormField
@@ -499,23 +519,6 @@ export default function AdminWidget({
                         onChange={(e: any) => setHomeHref(e.target.value)}
                     />
                 </Form>
-                <PageBuilderPropertyHeader
-                    label="Logo from media library"
-                    tooltip="Optional. Overrides the logo path above."
-                />
-                <MediaSelector
-                    title=""
-                    src={logoMedia?.thumbnail}
-                    srcTitle={logoMedia?.originalFileName}
-                    profile={profile}
-                    address={address}
-                    onSelection={(media: Media) => media && setLogoMedia(media)}
-                    onRemove={() => setLogoMedia({})}
-                    strings={{}}
-                    access="public"
-                    mediaId={logoMedia?.mediaId}
-                    type="page"
-                />
             </AdminWidgetPanel>
 
             <AdminWidgetPanel title="Top bar" value="topbar">
@@ -534,7 +537,7 @@ export default function AdminWidget({
                 </p>
                 <PageBuilderPropertyHeader
                     label="Left group"
-                    tooltip="Shown on the left of the cocoa strip"
+                    tooltip="Shown on the left of the strip"
                 />
                 <TopBarItemsEditor
                     items={topBarLeftItems}

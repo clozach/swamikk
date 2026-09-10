@@ -1,30 +1,46 @@
+import { FONT_BODY, FONT_DISPLAY, PALETTE } from "../../components/palette";
 import type { ImageSource, PhotoPosition } from "./settings";
 
 /* ------------------------------------------------------------------
-   Anahata content, verbatim. These are the DEFAULTS the page builder
-   seeds a fresh block with; every one of them is editable in the
-   admin panel.
+   Copy — homepage-redesign-spec.md § 3, verbatim. These are the
+   DEFAULTS the page builder seeds a fresh block with; every one of
+   them is editable in the admin panel.
    ------------------------------------------------------------------ */
 
+/**
+ * The photograph has not arrived yet: the block ships a placeholder whose
+ * description (spec § 3) renders as a waiting-for-asset well in the exact
+ * 3:2 box the final image will occupy.
+ */
 export const photo: ImageSource = {
-    kind: "url",
-    url: "/anahata/swami-kk-bio.jpg",
+    kind: "placeholder",
+    description:
+        "Swami Karma Karuna with one student, seated facing each other in conversation. Soft light. Relaxed, attentive.",
 };
-export const photoAlt = "Swami Karma Karuna";
-/** Natural size of swami-kk-bio.jpg — 2048 x 1365 (3:2). */
-export const photoWidth = 2048;
-export const photoHeight = 1365;
+/** Decorative by default; the well carries its own description as its name. */
+export const photoAlt = "";
+/**
+ * The 3:2 box the well (and later the photograph) occupies. Update these to
+ * the real asset's natural size when it lands so the crop follows it.
+ */
+export const photoWidth = 1536;
+export const photoHeight = 1024;
 
+/** Legacy ornament, hidden by default in the Forest & Bone layout. */
 export const decorImage: ImageSource = {
     kind: "url",
     url: "/anahata/testimonial-bg.jpg",
 };
-export const showDecorImage = true;
+export const showDecorImage = false;
+
+export const heading = "Work with Swami one to one";
 
 export const lead =
     "Private yoga training, consultations and yogic cleansing practices with Swami Karma Karuna are offered online and in-person by appointment.";
 
+/** The mentoring bullet (Al's brief) first, then the six verbatim from the site. */
 export const bulletTexts: string[] = [
+    "Mentoring and coaching for yoga teachers, space-holders, and anyone bringing the practices into daily life.",
     "Find out which yoga, breathing and meditation practices suit your personality, health challenges and energy flow.",
     "Build your at-home yoga practice with a personalised yoga programme to support yourself emotionally, physically and spiritually.",
     "Ask questions about your spiritual path.",
@@ -34,42 +50,40 @@ export const bulletTexts: string[] = [
 ];
 
 export const buttonCaption = "Private Sessions";
-export const buttonAction = "#";
+export const buttonAction = "/p/private-sessions";
 export const buttonOpensInNewTab = false;
 
 /* ------------------------------------------------------------------
-   Palette — anahata-design-system/tokens.css. No invented colours.
+   Palette — swamikk-design-system/tokens.css v1.0 (Forest & Bone), via
+   components/palette.ts. No invented colours. Ratios measured with the
+   WCAG relative-luminance formula.
    ------------------------------------------------------------------ */
 
-/** --marigold: the testimonial / callout ground. */
-export const panelColor = "#f6d36a";
-/** --rust: authority; the h4 lead line (5.11:1 on marigold). */
-export const leadColor = "#993300";
-/** --ink: body copy (5.21:1 on marigold). */
-export const textColor = "#545454";
-/** --saffron: button ground. */
-export const buttonColor = "#ff9900";
-/** --rust again: the 100ms hover ground. */
-export const buttonHoverColor = "#993300";
-/**
- * White-on-saffron was the original pairing (2.14:1 — fails AA). Cocoa on
- * saffron measures 7.24:1, so that is now the rest-state button text.
- */
-export const buttonTextColor = "#312110";
-/**
- * Once the background moves to `buttonHoverColor` (rust) — on hover AND on
- * :active, which the widget pins to the same ground — white text reaches
- * 7.43:1 (9.79:1 once the pressed-state brightness dip is applied).
- */
-export const buttonHoverTextColor = "#ffffff";
+/** bone: the panel is the page ground — no callout panel any more. */
+export const panelColor = PALETTE.bone;
+/** pine: heading, lead line and bullet markers (7.76:1 on bone). */
+export const leadColor = PALETTE.pine;
+/** ink: bullet copy (11.63:1 on bone). */
+export const textColor = PALETTE.ink;
+/** pine: button rest ground. */
+export const buttonColor = PALETTE.pine;
+/** pine-deep: the hover / pressed ground. */
+export const buttonHoverColor = PALETTE.pineDeep;
+/** bone on pine: 7.76:1. */
+export const buttonTextColor = PALETTE.bone;
+/** bone on pine-deep: 10.67:1 (hover AND :active, which the widget pins together). */
+export const buttonHoverTextColor = PALETTE.bone;
+/** pine: the focus ring, as the design system's global `:focus-visible`. */
+export const focusColor = PALETTE.pine;
 
-/** --font-body: Open Sans. (The source CSS names Lato/PT Sans but never loads them.) */
-export const fontBody =
-    'var(--font-open-sans), "Open Sans", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif';
+/** Playfair Display, through the app's next/font variable when present. */
+export const fontDisplay = `var(--font-playfair-display), ${FONT_DISPLAY}`;
+/** Open Sans, through the app's next/font variable when present. */
+export const fontBody = `var(--font-open-sans), ${FONT_BODY}`;
 
 export const photoPosition: PhotoPosition = "left";
 
-/** Closest step on CourseLit's padding scale to the source row's 20px. */
-export const verticalPadding = "py-6" as const;
-/** Closest step to the source container's 1212px. */
+/** The design's breath-paced rest: 96px between sections. */
+export const verticalPadding = "py-24" as const;
+/** 1152px — the design's container width. */
 export const maxWidth = "max-w-6xl" as const;

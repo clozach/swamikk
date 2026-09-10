@@ -1,16 +1,12 @@
-import { Media, WidgetDefaultSettings } from "@courselit/common-models";
+import { WidgetDefaultSettings } from "@courselit/common-models";
+import type { ImageSource } from "../../components/image-source";
 
 /**
- * Where a picture comes from.
- *
- * A picture is EITHER a hand-typed URL (the staged Anahata assets live at
- * same-origin `/anahata/<file>`) OR an item picked from the media library —
- * never both, and never neither. Modelling it as a tagged union keeps the
- * "url set but media also set" state unrepresentable.
+ * Where a picture comes from — the shared tagged union (URL · media-library
+ * item · placeholder-with-description). Re-exported so existing imports of
+ * `ImageSource` from this block keep resolving.
  */
-export type ImageSource =
-    | { kind: "url"; url: string }
-    | { kind: "media"; media: Partial<Media> };
+export type { ImageSource };
 
 export interface HeroImage {
     source: ImageSource;
@@ -68,8 +64,17 @@ export type HeroAnimation = "none" | "fade";
  */
 export type BannerMode = { kind: "static" } | { kind: "social-rotation" };
 
-/** The three real button recipes from the Anahata stylesheet. */
-export type CtaStyle = "saffron" | "saffron-big" | "white";
+/**
+ * Button recipes. `pine` (primary: pine fill, bone text) and `moss`
+ * (secondary: moss fill, ink text, pine edge) are the swamikk v1.0 pair.
+ * The three older Anahata names still resolve — `saffron` and `saffron-big`
+ * now paint the pine recipe (regular / large), `white` the outline recipe —
+ * so a stored layout keeps rendering without ever showing the old palette.
+ */
+export type CtaStyle = "saffron" | "saffron-big" | "white" | "pine" | "moss";
+
+/** Which side of the welcome text the photo column sits on (md and up). */
+export type PhotoPosition = "left" | "right";
 
 export default interface Settings extends WidgetDefaultSettings {
     /* ---- full-bleed banner band ---- */
@@ -90,29 +95,42 @@ export default interface Settings extends WidgetDefaultSettings {
     wordmarkMaxWidth?: number;
     animation?: HeroAnimation;
 
-    /* ---- "Welcome to Anahata" row ---- */
+    /* ---- welcome row ---- */
+    /** Small-caps line above the heading, e.g. "with Swami Karma Karuna". */
+    kicker?: string;
     heading?: string;
+    /**
+     * The strip under the heading — one word per entry, typeset as a
+     * wrapping dotted line ("Mentoring · Coaching · …"). Empty hides it.
+     */
+    offerings?: string[];
     paragraphs?: HeroParagraph[];
+    /**
+     * Index into `paragraphs` of the one set as the display lede (Playfair,
+     * larger, in the heading colour). Out of range or negative = none.
+     */
+    ledeParagraphIndex?: number;
     photo?: HeroImage;
+    /** Which side the photo column sits on at md and up. Stacked on phones. */
+    photoPosition?: PhotoPosition;
     /** Top offset (px) of the photo column on desktop only. */
     photoOffsetTop?: number;
     ctaCaption?: string;
     ctaAction?: string;
     ctaStyle?: CtaStyle;
+    /** Second button, always the moss recipe. Empty caption hides it. */
+    secondaryCtaCaption?: string;
+    secondaryCtaAction?: string;
 
     /* ---- design ---- */
-    /** Page ground behind the whole block. Anahata cream by default. */
+    /** Page ground behind the whole block. Bone by default. */
     groundColor?: string;
     headingColor?: string;
     bodyColor?: string;
     /**
-     * Inline links in the body copy.
-     *
-     * The site's own saffron (#ff9900) scores only 1.95:1 against the cream
-     * ground — under the WCAG AA 4.5:1 floor for body text, and still under
-     * the 3:1 large-text floor, so no size makes it compliant here. The
-     * default is now rust (#993300, 6.75:1); this stays a setting so an
-     * admin can still dial in the literal site colour if they choose.
+     * Inline links in the body copy. Pine by default (8.22:1 on bone); links
+     * are always underlined because pine against ink is only 1.5:1, so colour
+     * alone could never carry them.
      */
     linkColor?: string;
     linkHoverColor?: string;

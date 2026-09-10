@@ -4,3 +4,7 @@ export * from "./text-renderer";
 export * from "./truncate-text-editor-content";
 export * from "./sandboxed-embed";
 export * from "./video-with-preview";
+export * from "./palette";
+export * from "./image-source";
+export * from "./waiting-for-asset";
+export * from "./image-source-field";

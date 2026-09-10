@@ -118,3 +118,163 @@
     border-radius: 0.5rem;
     margin: 1rem auto;
 }
+
+/* ------------------------------------------------------------------ *
+ * Waiting-for-asset well — components/waiting-for-asset.tsx
+ *
+ * The well is the image's box before the image exists, so it is a size
+ * container and takes both dimensions from outside (fill / width+height /
+ * aspect-ratio / a sizing class). Colours come from the component's inline
+ * `--ayr-well-*-default` custom properties (palette.ts, v1.0); a parent
+ * overrides one by setting `--ayr-well-<x>` on any ancestor. The dashed
+ * edge is an outline drawn inward so it never changes the box.
+ * Size tiers (container queries, hand-written — Tailwind 3 has no
+ * `@container`): ≥168×84 tag + glyph + description · ≥100×44 tag + glyph ·
+ * smaller glyph only. The description is always in aria-label + title.
+ * ------------------------------------------------------------------ */
+.ayr-well {
+    position: relative;
+    box-sizing: border-box;
+    display: block;
+    overflow: hidden;
+    container-type: size;
+    margin: 0;
+    padding: 0;
+    background: var(--ayr-well-ground, var(--ayr-well-ground-default));
+    color: var(--ayr-well-text, var(--ayr-well-text-default));
+    outline: 2px dashed var(--ayr-well-edge, var(--ayr-well-edge-default));
+    outline-offset: -2px;
+    border-radius: 4px;
+    font-family: var(--ayr-well-font, var(--ayr-well-font-default));
+    font-size: 13px;
+    line-height: 1.35;
+    font-weight: 400;
+    letter-spacing: normal;
+    text-transform: none;
+    text-align: center;
+    -webkit-font-smoothing: antialiased;
+}
+
+.ayr-well--fill {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.ayr-well__tag {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    box-sizing: border-box;
+    max-width: 100%;
+    padding: 4px 6px;
+    background: var(--ayr-well-tag-bg, var(--ayr-well-tag-bg-default));
+    color: var(--ayr-well-tag-text, var(--ayr-well-tag-text-default));
+    border-bottom-right-radius: 4px;
+    font-size: 10px;
+    line-height: 1.1;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.ayr-well__body {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 24px 12px 12px; /* top clears the corner tag */
+    min-height: 0;
+}
+
+.ayr-well__glyph {
+    flex: none;
+    width: 24px;
+    height: 24px;
+    max-width: 60%;
+    max-height: 60%;
+    color: var(--ayr-well-edge, var(--ayr-well-edge-default));
+}
+
+.ayr-well__desc {
+    flex: 0 1 auto;
+    min-height: 0;
+    margin: 0;
+    max-width: 42ch;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 6;
+}
+
+/* Compact: narrower than 168 or shorter than 84 → tag + glyph. */
+@container (max-width: 167.99px) {
+    .ayr-well__desc {
+        display: none;
+    }
+    .ayr-well__body {
+        padding: 26px 6px 6px;
+    }
+    .ayr-well__glyph {
+        width: 20px;
+        height: 20px;
+    }
+    .ayr-well__tag {
+        font-size: 9px;
+        letter-spacing: 0.04em;
+        padding: 3px 5px;
+    }
+}
+@container (max-height: 83.99px) {
+    .ayr-well__desc {
+        display: none;
+    }
+    .ayr-well__body {
+        padding: 26px 6px 6px;
+    }
+    .ayr-well__glyph {
+        width: 20px;
+        height: 20px;
+    }
+    .ayr-well__tag {
+        font-size: 9px;
+        letter-spacing: 0.04em;
+        padding: 3px 5px;
+    }
+}
+
+/* Tiny: narrower than 100 or shorter than 44 → glyph only. */
+@container (max-width: 99.99px) {
+    .ayr-well__tag {
+        display: none;
+    }
+    .ayr-well__body {
+        padding: 2px;
+    }
+    .ayr-well__glyph {
+        width: 18px;
+        height: 18px;
+    }
+}
+@container (max-height: 43.99px) {
+    .ayr-well__tag {
+        display: none;
+    }
+    .ayr-well__body {
+        padding: 2px;
+    }
+    .ayr-well__glyph {
+        width: 18px;
+        height: 18px;
+    }
+}

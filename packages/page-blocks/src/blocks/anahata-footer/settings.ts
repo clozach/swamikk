@@ -1,4 +1,5 @@
 import { WidgetDefaultSettings } from "@courselit/common-models";
+import type { ImageSource } from "../../components/image-source";
 
 /**
  * Anahata footer — settings model.
@@ -30,8 +31,8 @@ export interface SocialLink {
 }
 
 /**
- * A column of uppercase menu links separated by the ocean hairline —
- * "Anahata Site" and "Gatherings" on the real site.
+ * A column of uppercase menu links separated by the footer hairline —
+ * "Anahata Site" and "Gatherings".
  */
 export interface LinksColumn {
     kind: "links";
@@ -50,12 +51,17 @@ export interface ContactColumn {
     kind: "contact";
     id: string;
     title: string;
-    logoUrl: string;
+    /** Where the 150 × 168 mark comes from: a URL, a media-library item, or
+     *  a placeholder (the waiting-for-asset well) — the shared tagged union.
+     *  Absent on columns saved before the union, which read `logoUrl`. */
+    logoSource?: ImageSource;
+    /** Legacy — static logo path. Read only when `logoSource` is absent. */
+    logoUrl?: string;
     logoAlt: string;
-    /** Natural pixel size of the footer logo (150 x 168 on the real site). */
+    /** Natural pixel size of the footer logo (150 × 168), image or well. */
     logoWidth: number;
     logoHeight: number;
-    /** 18px, sentence case — "Anahata Yoga Retreat". */
+    /** 18px, sentence case — "Swami Karma Karuna". */
     heading: string;
     /** One physical line each; rendered <br>-separated. */
     addressLines: string[];
@@ -85,14 +91,18 @@ export default interface Settings extends WidgetDefaultSettings {
     columns?: FooterColumn[];
 
     /* --- ground --- */
-    /** Ocean. The one cool place in the palette. */
+    /** Pine-dark — the palette's dark close. */
     groundColor?: string;
-    /** White, on the ocean ground. */
+    /** Footer text (bone) on the pine-dark ground. */
     textColor?: string;
-    /** Lightened ocean used for the menu-list rules. */
+    /** Footer-edge, for the menu-list rules. */
     hairlineColor?: string;
+    /** Moss-light: link hover/active text and every focus ring. */
+    linkHoverColor?: string;
 
     /* --- decorative edges --- */
+    /** Empty by default: the old side ornaments are gone. Set a URL to
+     *  paint one back in. */
     decorLeftUrl?: string;
     decorRightUrl?: string;
 

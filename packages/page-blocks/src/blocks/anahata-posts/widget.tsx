@@ -3,91 +3,119 @@ import type { WidgetProps } from "@courselit/common-models";
 import type { ThemeStyle } from "@courselit/page-models";
 import { Section } from "@courselit/page-primitives";
 import { Image, Link } from "@courselit/components-library";
+import { isWaiting, resolveImageSrc } from "../../components/image-source";
+import { PALETTE } from "../../components/palette";
+import { WaitingForAsset } from "../../components/waiting-for-asset";
 import Settings, { Post } from "./settings";
+import { normalizePostThumbnail } from "./thumbnail";
 import {
-    buttonAction as defaultButtonAction,
-    buttonCaption as defaultButtonCaption,
     heading as defaultHeading,
     headingLink as defaultHeadingLink,
+    moreLink as defaultMoreLink,
     posts as defaultPosts,
-    showDivider as defaultShowDivider,
-    thumbnailSize as defaultThumbnailSize,
-    thumbnailSrc,
     verticalPadding as defaultVerticalPadding,
 } from "./defaults";
 
 /**
- * Anahata "Recent Posts".
+ * "Writing and recipes" — Forest & Bone's 3-up cards on wide screens
+ * (`02-forest-and-bone.html § 5`), Slate & Sage's ruled article rows on
+ * phones (`04-slate-and-sage.html § 5`).
  *
- * Fidelity notes, all traceable to the child theme (`25_all.css`):
- *  - ground `#f8ecdb`, section bottom padding 30px on the grid wrapper (:517, :521)
- *  - heading uppercase Playfair 32px/400 rust, centered by an inline style (:519)
- *  - divider 200px wide, 2px rust, centered, 55px below (:153)
- *  - cards are HORIZONTAL: `.vcex-blog-entry-inner { display: flex }` (:525)
- *  - title Playfair 16px/700 ink, margin-bottom 0 (:531); date 14px ink italic (:533)
- *  - `.match-height-content` 10px bottom padding + 1px dashed `#d7cdbf` (:529)
- *  - card border removed outright (:523)
- *  - 3-up >= 768px, 2-up 480-767px, 1-up <= 479px (span_1_of_3 / _pl / _pp)
+ *  - ≥768px: card ground, 1px edge border, 6px radius, the 3:2 well on top,
+ *    Playfair title in pine, date in ink-soft (`.card`, `.card__body`, `.meta`)
+ *  - ≤767px: rows — 120px 3:2 thumb left, text right, a hairline edge
+ *    between rows (`.rows`, `.row--post`)
+ *  - the section carries the reference's top hairline (`.section--bordered`)
  *
- * Card heights equalise per flex row via `flex-1` on the details column, which
- * replaces the theme's `.match-height-content` JavaScript.
+ * Colours are v1.0 palette roles, delivered as `--ayr-posts-*` custom
+ * properties so the class strings stay literal for Tailwind's scanner while
+ * the values come from `PALETTE`. Only links react to hover; the well and the
+ * card never do.
  */
 
-const CARD_TITLE_CLASSES =
-    "block font-playfair-display text-[16px] font-bold leading-[1.4] text-[#545454] no-underline mb-0 " +
-    "transition-colors duration-100 ease-in hover:text-[#993300] " +
-    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#993300]";
+const PALETTE_VARS = {
+    "--ayr-posts-ground": PALETTE.bone,
+    "--ayr-posts-card": PALETTE.card,
+    "--ayr-posts-ink": PALETTE.ink,
+    "--ayr-posts-ink-soft": PALETTE.inkSoft,
+    "--ayr-posts-pine": PALETTE.pine,
+    "--ayr-posts-pine-deep": PALETTE.pineDeep,
+    "--ayr-posts-edge": PALETTE.edge,
+} as React.CSSProperties;
 
-/**
- * White-on-saffron (rest) was 2.14:1 — under AA. Cocoa-on-saffron is 7.24:1,
- * so that carries rest; hover/active move the ground to rust/rust-pressed,
- * where white text is 7.43:1 / 9.79:1. `active:text-white` is explicit
- * (not inherited from `:hover`) because a keyboard Enter/Space press
- * triggers `:active` without `:hover`, and cocoa-on-rust-pressed is 1.58:1.
- */
-const BUTTON_CLASSES =
-    "inline-block cursor-pointer no-underline border-none text-center capitalize " +
-    "bg-[#ff9900] text-[#312110] font-open-sans text-[14px] font-bold leading-[1.65] " +
-    "min-w-[200px] px-[23px] py-[8px] rounded-[10px] " +
-    // The source rule is `transition: 0.1s ease-in` — all properties, so the
-    // active-state nudge eases alongside the colour change.
-    "transition-all duration-100 ease-in hover:bg-[#993300] hover:text-white " +
-    "active:bg-[#7a2900] active:text-white active:translate-y-[1px] " +
-    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#993300]";
+/** The reference's `:focus-visible { outline: 3px solid pine; offset 3px }`. */
+const FOCUS_RING =
+    "focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-[var(--ayr-posts-pine)]";
 
-function PostCard({ post }: { post: Post }) {
-    const src = thumbnailSrc(post.thumbnail);
-    const alt = post.thumbnail.alt || post.title;
+/** Pine at rest, pine-deep on hover and on a keyboard-driven `:active`. */
+const LINK_STATES =
+    "text-[var(--ayr-posts-pine)] transition-colors duration-100 ease-in " +
+    "hover:text-[var(--ayr-posts-pine-deep)] active:text-[var(--ayr-posts-pine-deep)] " +
+    FOCUS_RING;
 
+/** Card/row title: no underline at rest, a 2px one on hover/active (`.card__body h3 a`). */
+const TITLE_LINK_CLASSES =
+    "no-underline hover:underline active:underline decoration-2 underline-offset-[0.16em] " +
+    LINK_STATES;
+
+/** Body link: 1px underline at rest, 2px on hover/active (the reference's `a`). */
+const TEXT_LINK_CLASSES =
+    "underline decoration-1 hover:decoration-2 active:decoration-2 underline-offset-[0.16em] " +
+    LINK_STATES;
+
+function PostThumb({ post }: { post: Post }) {
+    const { source, alt } = normalizePostThumbnail(post.thumbnail);
+    const src = resolveImageSrc(source);
+
+    // The 3:2 box is the one CSS box the picture will occupy; the well fills
+    // it exactly, so layout is judged with the real geometry.
     return (
-        <div className="flex flex-col w-full min-[480px]:w-1/2 min-[768px]:w-1/3 px-[10px] mb-[20px]">
-            <div className="flex flex-1 gap-[15px]">
+        <div className="relative w-full aspect-[3/2] overflow-hidden md:rounded-t-[6px]">
+            {isWaiting(source) ? (
+                <WaitingForAsset fill description={source.description} />
+            ) : src ? (
                 <Link
                     href={post.href}
-                    className="shrink-0 block overflow-hidden w-[var(--anahata-thumb-sm)] h-[var(--anahata-thumb-sm)] min-[768px]:w-[var(--anahata-thumb)] min-[768px]:h-[var(--anahata-thumb)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#993300]"
+                    className={`absolute inset-0 block ${FOCUS_RING}`}
                 >
                     <Image
                         src={src}
-                        alt={alt}
+                        alt={alt || post.title}
                         objectFit="cover"
                         width="w-full"
                         height="h-full"
-                        sizes="15vw"
-                        noDefaultImage={!src}
+                        sizes="(min-width: 768px) 33vw, 40vw"
+                        noDefaultImage
                     />
                 </Link>
-                <div className="flex flex-1 flex-col min-w-0">
-                    <div className="flex-1 pb-[10px] border-b border-dashed border-[#d7cdbf]">
-                        <Link href={post.href} className={CARD_TITLE_CLASSES}>
-                            {post.title}
-                        </Link>
-                        <div className="text-[14px] italic leading-[1.65] text-[#545454]">
-                            {post.date}
-                        </div>
-                    </div>
-                </div>
-            </div>
+            ) : null}
         </div>
+    );
+}
+
+function PostCard({ post }: { post: Post }) {
+    return (
+        <li
+            className={
+                // ≤767px: a ruled row — thumb column, text column, hairline below.
+                "grid grid-cols-[120px_minmax(0,1fr)] gap-4 items-start py-[22px] " +
+                "border-b border-solid border-[var(--ayr-posts-edge)] " +
+                // ≥768px: a card — ground, full 1px edge, radius, well on top.
+                "md:block md:py-0 md:border md:rounded-[6px] md:overflow-hidden md:bg-[var(--ayr-posts-card)]"
+            }
+        >
+            <PostThumb post={post} />
+            <div className="min-w-0 md:px-5 md:pt-5 md:pb-6">
+                <h3 className="m-0 font-playfair-display font-normal text-[20px] md:text-[22px] leading-[1.25]">
+                    <Link href={post.href} className={TITLE_LINK_CLASSES}>
+                        {post.title}
+                    </Link>
+                </h3>
+                <p className="m-0 mt-[6px] text-[14px] leading-[1.5] text-[var(--ayr-posts-ink-soft)]">
+                    {post.date}
+                </p>
+            </div>
+        </li>
     );
 }
 
@@ -95,11 +123,10 @@ export default function Widget({
     settings: {
         heading = defaultHeading,
         headingLink = defaultHeadingLink,
-        showDivider = defaultShowDivider,
         posts = defaultPosts,
-        thumbnailSize = defaultThumbnailSize,
-        buttonCaption = defaultButtonCaption,
-        buttonAction = defaultButtonAction,
+        moreLink,
+        buttonCaption,
+        buttonAction,
         cssId,
         verticalPadding,
         maxWidth,
@@ -116,15 +143,16 @@ export default function Widget({
         defaultVerticalPadding ||
         theme.theme.structure.section.padding.y;
 
-    // Below 768px the columns go 2-up; a full-size thumbnail would leave almost
-    // no room for the title there, so the thumbnail shrinks with the layout.
-    const thumbStyle = {
-        "--anahata-thumb": `${thumbnailSize}px`,
-        "--anahata-thumb-sm": `${Math.min(thumbnailSize, 100)}px`,
-    } as React.CSSProperties;
+    // `moreLink` wins; a pre-redesign layout's `buttonCaption`/`buttonAction`
+    // pair still renders; otherwise the default.
+    const link =
+        moreLink ??
+        (buttonCaption && buttonAction
+            ? { label: buttonCaption, href: buttonAction }
+            : defaultMoreLink);
 
     const headingClasses =
-        "font-playfair-display text-[32px] font-normal leading-[1.2] uppercase text-[#993300] text-center pb-[15px] m-0";
+        "m-0 mb-10 font-playfair-display font-normal text-[28px] md:text-[36px] leading-[1.15] tracking-[-0.01em] text-[var(--ayr-posts-pine)]";
 
     return (
         <Section
@@ -132,18 +160,16 @@ export default function Widget({
             id={cssId}
             background={background}
             nextTheme={nextTheme as "dark" | "light"}
-            className="bg-[#f8ecdb] text-[#545454] font-open-sans"
+            className="font-open-sans bg-[var(--ayr-posts-ground)] text-[var(--ayr-posts-ink)] border-t border-solid border-[var(--ayr-posts-edge)]"
+            style={PALETTE_VARS}
         >
-            <div className="flex flex-col" style={thumbStyle}>
+            <div className="flex flex-col">
                 {heading &&
                     (headingLink ? (
                         <h2 className={headingClasses}>
                             <Link
                                 href={headingLink}
-                                /* Rest is rust (inherited, 6.37:1 on the apricot
-                                   ground); saffron hover was 1.84:1 — under AA —
-                                   so hover deepens to rust-pressed (8.40:1) instead. */
-                                className="text-inherit no-underline transition-colors duration-100 ease-in hover:text-[#7a2900] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#993300]"
+                                className={`no-underline ${LINK_STATES}`}
                             >
                                 {heading}
                             </Link>
@@ -152,29 +178,20 @@ export default function Widget({
                         <h2 className={headingClasses}>{heading}</h2>
                     ))}
 
-                {showDivider && (
-                    <hr
-                        aria-hidden="true"
-                        className="w-[80%] max-w-[200px] h-0 mx-auto mb-[55px] border-0 border-b-2 border-solid border-[#993300]"
-                    />
-                )}
-
                 {posts.length > 0 && (
-                    <div className="pb-[30px]">
-                        <div className="flex flex-wrap -mx-[10px]">
-                            {posts.map((post) => (
-                                <PostCard key={post.id} post={post} />
-                            ))}
-                        </div>
-                    </div>
+                    <ul className="list-none m-0 p-0 border-t border-solid border-[var(--ayr-posts-edge)] md:border-0 md:grid md:grid-cols-3 md:gap-6">
+                        {posts.map((post) => (
+                            <PostCard key={post.id} post={post} />
+                        ))}
+                    </ul>
                 )}
 
-                {buttonCaption && buttonAction && (
-                    <div className="text-center">
-                        <Link href={buttonAction} className={BUTTON_CLASSES}>
-                            {buttonCaption}
+                {link.label && link.href && (
+                    <p className="m-0 mt-8 text-[16px] font-semibold">
+                        <Link href={link.href} className={TEXT_LINK_CLASSES}>
+                            {link.label}
                         </Link>
-                    </div>
+                    </p>
                 )}
             </div>
         </Section>

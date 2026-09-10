@@ -1,3 +1,5 @@
+import { placeholderSource } from "../../components/image-source";
+import { PALETTE } from "../../components/palette";
 import type { BackToTop, FooterColumn } from "./settings";
 
 /* ------------------------------------------------------------------
@@ -11,22 +13,24 @@ export const FONT_BODY =
     'var(--font-open-sans), "Open Sans", -apple-system, "Segoe UI", sans-serif';
 
 /* ------------------------------------------------------------------
-   Palette — anahata-design-system/tokens.css
+   Palette — swamikk design-system v1.0 (components/palette.ts), AA-checked
+   with the WCAG relative-luminance formula against the exact hexes:
+     bone on pine-dark 12.44:1 (text) · moss-light on pine-dark 9.37:1
+     (link hover, focus ring) · footer-edge on pine-dark 3.93:1 (hairlines,
+     non-text floor 3:1) · bone on strip 14.35:1 · moss-light on strip
+     10.81:1 · back-to-top: pine on bone 7.76:1, bone on pine 7.76:1,
+     bone on pine-deep 10.67:1.
    ------------------------------------------------------------------ */
-/** --ocean: footer ground. */
-export const OCEAN = "#216097";
-/** --navy: copyright strip. */
-export const NAVY = "#012772";
-/**
- * Lightened ocean, used only for the footer menu hairlines. The original
- * `#5988b1` measured 1.75:1 against the ocean ground — under the 3:1
- * non-text/UI-component floor these rules act as list-item boundaries for.
- * `#9ac1dc` reaches 3.47:1 while staying in the same lightened-ocean family.
- */
-export const OCEAN_HAIRLINE = "#9ac1dc";
-export const WHITE = "#ffffff";
-/** --ink, resting colour of the back-to-top glyph. */
-export const INK = "#545454";
+/** --pine-dark: footer ground, the palette's dark close. */
+export const GROUND = PALETTE.pineDark;
+/** --strip: copyright strip, one step darker than the ground. */
+export const STRIP = PALETTE.strip;
+/** --footer-text: bone, on the pine-dark ground. */
+export const TEXT = PALETTE.footerText;
+/** --footer-edge: the menu-list rules. */
+export const HAIRLINE = PALETTE.footerEdge;
+/** --moss-light: link hover/active text and every focus ring. */
+export const LINK_HOVER = PALETTE.mossLight;
 
 /* ------------------------------------------------------------------
    Measure & rhythm — read out of the site's own stylesheet.
@@ -54,11 +58,15 @@ export const BACK_TO_TOP_SIZE = 35;
 export const BACK_TO_TOP_OFFSET = 25;
 
 /* ------------------------------------------------------------------
-   Decorative edges. Staged under apps/web/public/anahata/.
+   Decorative edges. The two side ornaments (`footer-bg-left/right.png`)
+   carried the old brand's colour baked into the raster, so they ship off:
+   an empty URL renders nothing. An editor can paint one back in from the
+   Decorative edges panel.
    ------------------------------------------------------------------ */
-export const decorLeftUrl = "/anahata/footer-bg-left.png";
-export const decorRightUrl = "/anahata/footer-bg-right.png";
-/** Natural sizes, used as the decorative columns' widths. */
+export const decorLeftUrl = "";
+export const decorRightUrl = "";
+/** Natural sizes of the old ornaments, used as the decorative columns'
+    widths when a URL is set. */
 export const DECOR_LEFT_WIDTH = 322;
 export const DECOR_RIGHT_WIDTH = 387;
 
@@ -146,12 +154,19 @@ export const columns: FooterColumn[] = [
         kind: "contact",
         id: "col-contact",
         title: "",
-        logoUrl: "/anahata/footer-logo-2021.png",
-        logoAlt: "Anahata Yoga Retreat",
+        // The mark has not been drawn yet, so the 150 × 168 slot renders as
+        // a waiting-for-asset well on the dark ground (spec § 7) until a real
+        // file is uploaded. Columns still storing the legacy `logoUrl` keep
+        // rendering it.
+        logoSource: placeholderSource(
+            "Swami Karma Karuna mark, larger — the same lotus or monogram as the header, reversed for a dark ground.",
+        ),
+        logoAlt: "Swami Karma Karuna",
         logoWidth: 150,
         logoHeight: 168,
-        heading: "Anahata Yoga Retreat",
+        heading: "Swami Karma Karuna",
         addressLines: [
+            "Anahata Yoga Retreat",
             "PO Box 155,",
             "Takaka, Golden Bay,",
             "New Zealand 7142",

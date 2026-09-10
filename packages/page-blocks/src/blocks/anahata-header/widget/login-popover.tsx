@@ -23,14 +23,19 @@ import {
  * reCAPTCHA-guarded path is never bypassed (this panel has no key).
  * ------------------------------------------------------------------ */
 
+/* Same card / dark-panel ground and 1px edge as the nav flyout and the
+   account menu (see ./tokens FLYOUT_PANEL). */
 const PANEL =
-    "absolute right-0 top-[calc(100%+8px)] z-[42] box-border w-max min-w-[min(400px,calc(100vw-24px))] max-w-[calc(100vw-24px)] max-h-[calc(100dvh-88px)] overflow-auto overscroll-contain rounded-b-[8px] border-t-[5px] border-solid border-t-[var(--nav-panel-border)] bg-[var(--nav-panel-bg)] p-[32px] text-left shadow-[0_8px_26px_rgba(0,0,0,0.18)]";
+    "absolute right-0 top-[calc(100%+8px)] z-[42] box-border w-max min-w-[min(400px,calc(100vw-24px))] max-w-[calc(100vw-24px)] max-h-[calc(100dvh-88px)] overflow-auto overscroll-contain rounded-[6px] border border-solid border-[var(--nav-panel-border)] bg-[var(--nav-panel-bg)] p-[32px] text-left shadow-[0_8px_26px_rgba(0,0,0,0.18)]";
 const HEADING =
     "mb-[12px] whitespace-normal [overflow-wrap:anywhere] text-[14px] font-semibold leading-[1.35] text-[var(--nav-fg)]";
 const INPUT =
-    "w-full rounded-[6px] border border-solid border-[#cdb98e] bg-transparent px-[12px] py-[10px] text-[14px] text-[var(--nav-fg)] outline-none transition-colors placeholder:text-[color-mix(in_srgb,var(--nav-fg)_50%,transparent)] focus:border-[var(--nav-fg-hover)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--nav-fg-hover)_28%,transparent)]";
+    "w-full rounded-[6px] border border-solid border-[var(--nav-edge)] bg-transparent px-[12px] py-[10px] text-[14px] text-[var(--nav-fg)] outline-none transition-colors placeholder:text-[color-mix(in_srgb,var(--nav-fg)_50%,transparent)] focus:border-[var(--nav-fg-hover)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--nav-fg-hover)_28%,transparent)]";
+/* The accent fill: pine with bone text (7.76:1) on the light panel, moss-light
+   with ink text (8.76:1) on the dark one; pressed/hover steps to the active
+   accent. The ring sits 2px outside the fill, on the panel ground. */
 const SUBMIT =
-    "mt-[40px] w-full rounded-[6px] bg-[#ff9900] px-[16px] py-[10px] text-[14px] font-bold text-[#312110] transition-colors duration-100 ease-in hover:bg-[#ffbf00] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ffbf00]";
+    "mt-[40px] w-full rounded-[6px] bg-[var(--nav-fg-hover)] px-[16px] py-[10px] text-[14px] font-bold text-[var(--nav-accent-fg)] transition-colors duration-100 ease-in hover:bg-[var(--nav-fg-active)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--nav-fg-hover)]";
 
 async function postJson(
     url: string,

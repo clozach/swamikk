@@ -7,6 +7,7 @@ import {
 import { defaultState } from "@/components/default-state";
 import WidgetByName from "@/components/public/base-layout/template/widget-by-name";
 import { generateThemeStyles } from "@/lib/theme-styles";
+import { waitingDescription } from "@/services/content-changes/page-registry";
 import type {
     State,
     Profile,
@@ -61,6 +62,7 @@ export default function PageProposalPreview({
                             ? { bannerMode: { kind: "static" } }
                             : {}),
                     };
+                    const waiting = waitingDescription(snapshot.fieldValue);
                     return (
                         <section
                             key={side}
@@ -72,6 +74,17 @@ export default function PageProposalPreview({
                             {typeof snapshot.fieldValue === "string" && (
                                 <p className="whitespace-pre-wrap break-words border-b bg-muted/30 px-5 py-4">
                                     {snapshot.fieldValue || "(Empty text)"}
+                                </p>
+                            )}
+                            {waiting !== undefined && (
+                                <p
+                                    className="whitespace-pre-wrap break-words border-b bg-muted/30 px-5 py-4"
+                                    data-asset="waiting"
+                                >
+                                    <span className="font-semibold">
+                                        Waiting for asset:
+                                    </span>{" "}
+                                    {waiting || "(No description)"}
                                 </p>
                             )}
                             <div

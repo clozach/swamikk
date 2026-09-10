@@ -6,15 +6,16 @@ import { Link } from "@courselit/components-library";
 import { Section } from "@courselit/page-primitives";
 import { ThemeStyle } from "@courselit/page-models";
 import clsx from "clsx";
-import Settings, {
-    CtaStyle,
-    HeroImage,
-    HeroParagraph,
-    ImageSource,
-} from "./settings";
+import Settings, { CtaStyle, HeroImage, HeroParagraph } from "./settings";
 import * as defaults from "./defaults";
 import SharedImage, { sharedImageCss, staticImageCss } from "./shared-image";
 import { useImageScroll } from "./use-image-scroll";
+import {
+    hasWell,
+    isWaiting,
+    resolveImageSrc,
+} from "../../components/image-source";
+import { PALETTE } from "../../components/palette";
 
 /** CSS-safe scope token derived from the widget instance id (stable across SSR). */
 function toScope(id: string | undefined): string {
@@ -103,22 +104,15 @@ function useHeaderHeightVar(
     }, [ref, enabled]);
 }
 
-/**
- * Resolve a picture to a `src`. The tagged union means there is exactly one
- * place a URL can come from, so there is no precedence rule to get wrong.
- * Settings loaded from the database predate nothing, but they can still be
- * malformed by hand, hence the defensive `source` check.
- */
-function resolveImageSrc(image?: HeroImage): string {
-    const source: ImageSource | undefined = image?.source;
-    if (!source) {
-        return "";
-    }
-    if (source.kind === "media") {
-        return source.media?.file || source.media?.thumbnail || "";
-    }
-    return source.url || "";
-}
+/** A picture's resolved URL, or "" — placeholders resolve to nothing. */
+const srcOf = (image?: HeroImage): string =>
+    resolveImageSrc(image?.source) ?? "";
+
+/** The well text when the picture is a placeholder, else undefined. */
+const waitingText = (image?: HeroImage): string | undefined => {
+    const source = image?.source;
+    return isWaiting(source) ? source.description : undefined;
+};
 
 /**
  * Split a paragraph around its inline link. Falls back to plain text whenever
@@ -147,13 +141,15 @@ function ParagraphBody({
             <Link
                 href={linkHref}
                 className={clsx(
-                    "font-semibold underline-offset-2 rounded-sm",
-                    /* Colours come from custom properties set on the block
-                       root, so they stay settings-driven while still allowing
-                       a pure-CSS :hover (an inline style could not). */
-                    "text-[var(--anahata-link)] hover:text-[var(--anahata-link-hover)] hover:underline",
+                    /* Always underlined: pine against ink is 1.5:1, so
+                       colour alone could never carry a link. Colours come
+                       from custom properties set on the block root, so they
+                       stay settings-driven while still allowing a pure-CSS
+                       :hover (an inline style could not). */
+                    "underline decoration-1 underline-offset-[0.16em] rounded-sm",
+                    "text-[var(--anahata-link)] hover:text-[var(--anahata-link-hover)] hover:decoration-2 active:text-[var(--anahata-link-hover)]",
                     "transition-colors duration-100 ease-in",
-                    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--anahata-link-hover)]",
+                    "focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-[var(--anahata-link)]",
                 )}
             >
                 {linkText}
@@ -164,32 +160,75 @@ function ParagraphBody({
 }
 
 /**
- * The §0.6 button recipe, one class list per real stylesheet variant.
- *
- * White text on the saffron ground was 2.14:1 — under the 4.5:1 floor —
- * so the rest state now pairs saffron with cocoa (7.24:1). Hover/active
- * darken the ground to rust/rust-pressed, which both carry white text
- * comfortably (7.43:1 / 9.79:1); `active:text-white` is set explicitly
- * (not inherited from `:hover`) because a keyboard Enter/Space press
- * triggers `:active` without `:hover`, and cocoa-on-rust-pressed is only
- * 1.58:1 — the missed-state case the spec warns about.
+ * Block-scoped CSS painted from the v1.0 palette. Plain classes rather than
+ * Tailwind arbitrary values because these colours are constants, and the
+ * hover / active / focus states have to be written out explicitly: a
+ * keyboard Enter/Space press triggers `:active` without `:hover`, so every
+ * pressed state names its own colours instead of inheriting hover's. Only
+ * links and buttons react to hover — nothing else in the hero does.
  */
-const ctaBaseClasses = clsx(
-    "inline-block text-center capitalize font-bold font-open-sans",
-    "min-w-[200px] rounded-[10px] border-0 cursor-pointer no-underline",
-    "transition-colors duration-100 ease-in",
-    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#993300]",
-    "active:bg-[#7a2900] active:text-white active:translate-y-[1px]",
-);
+const heroCss = `
+.anahata-hero__offerings li + li::before {
+    content: "·"; margin-right: 0.7em; color: ${PALETTE.edge};
+}
+.anahata-hero__button {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 48px; padding: 11px 22px;
+    border: 1.5px solid transparent; border-radius: 6px;
+    font-weight: 700; font-size: 16px; line-height: 1.2;
+    text-align: center; text-decoration: none; cursor: pointer;
+    transition: background-color 100ms ease-in, color 100ms ease-in, border-color 100ms ease-in;
+}
+.anahata-hero__button:hover, .anahata-hero__button:active { text-decoration: none; }
+.anahata-hero__button:focus-visible {
+    outline: 3px solid ${PALETTE.pine}; outline-offset: 3px;
+}
+.anahata-hero__button--pine {
+    background: ${PALETTE.pine}; border-color: ${PALETTE.pine}; color: ${PALETTE.bone};
+}
+.anahata-hero__button--pine:hover {
+    background: ${PALETTE.pineDeep}; border-color: ${PALETTE.pineDeep}; color: ${PALETTE.bone};
+}
+.anahata-hero__button--pine:active {
+    background: ${PALETTE.pineDeep}; border-color: ${PALETTE.pineDeep}; color: ${PALETTE.bone};
+    transform: translateY(1px);
+}
+.anahata-hero__button--moss {
+    background: ${PALETTE.moss}; border-color: ${PALETTE.pine}; color: ${PALETTE.ink};
+}
+.anahata-hero__button--moss:hover {
+    background: ${PALETTE.pineDeep}; border-color: ${PALETTE.pineDeep}; color: ${PALETTE.bone};
+}
+.anahata-hero__button--moss:active {
+    background: ${PALETTE.pineDeep}; border-color: ${PALETTE.pineDeep}; color: ${PALETTE.bone};
+    transform: translateY(1px);
+}
+.anahata-hero__button--outline {
+    background: ${PALETTE.card}; border-color: ${PALETTE.pine}; color: ${PALETTE.pine};
+}
+.anahata-hero__button--outline:hover {
+    background: ${PALETTE.pine}; border-color: ${PALETTE.pine}; color: ${PALETTE.bone};
+}
+.anahata-hero__button--outline:active {
+    background: ${PALETTE.pineDeep}; border-color: ${PALETTE.pineDeep}; color: ${PALETTE.bone};
+    transform: translateY(1px);
+}
+.anahata-hero__button--large { padding: 16px 45px; }
+@media (max-width: 767.98px) {
+    .anahata-hero__actions .anahata-hero__button { flex: 1 1 100%; }
+}
+`;
 
+/**
+ * Recipe per `CtaStyle`. The three Anahata names map onto the new recipes
+ * so a stored layout keeps rendering, but nothing paints the old palette.
+ */
 const ctaVariantClasses: Record<CtaStyle, string> = {
-    saffron:
-        "bg-[#ff9900] text-[#312110] hover:bg-[#993300] hover:text-white text-[14px] px-[23px] py-[8px]",
-    "saffron-big":
-        "bg-[#ff9900] text-[#312110] hover:bg-[#993300] hover:text-white text-[16px] px-[45px] py-[16px]",
-    /* White ground: rust text at rest (7.43:1) — saffron text there was
-       2.14:1 and never qualified even at this size. */
-    white: "bg-white text-[#993300] hover:bg-[#993300] hover:text-white text-[14px] px-[23px] py-[8px]",
+    pine: "anahata-hero__button--pine",
+    moss: "anahata-hero__button--moss",
+    saffron: "anahata-hero__button--pine",
+    "saffron-big": "anahata-hero__button--pine anahata-hero__button--large",
+    white: "anahata-hero__button--outline",
 };
 
 export default function Widget({
@@ -205,13 +244,19 @@ export default function Widget({
         wordmark = defaults.wordmark,
         wordmarkMaxWidth = defaults.wordmarkMaxWidth,
         animation = defaults.animation,
+        kicker = defaults.kicker,
         heading = defaults.heading,
+        offerings = defaults.offerings,
         paragraphs = defaults.paragraphs,
+        ledeParagraphIndex = defaults.ledeParagraphIndex,
         photo = defaults.photo,
+        photoPosition = defaults.photoPosition,
         photoOffsetTop = defaults.photoOffsetTop,
         ctaCaption = defaults.ctaCaption,
         ctaAction = defaults.ctaAction,
         ctaStyle = defaults.ctaStyle,
+        secondaryCtaCaption = defaults.secondaryCtaCaption,
+        secondaryCtaAction = defaults.secondaryCtaAction,
         groundColor = defaults.groundColor,
         headingColor = defaults.headingColor,
         bodyColor = defaults.bodyColor,
@@ -232,19 +277,27 @@ export default function Widget({
     overiddenTheme.structure.section.padding.y =
         verticalPadding || theme.theme.structure.section.padding.y;
 
-    const bannerSrc = resolveImageSrc(bannerImage);
-    const wordmarkSrc = resolveImageSrc(wordmark);
-    const photoSrc = resolveImageSrc(photo);
+    /* One frame, banner first (README § Shared homepage image): the banner
+       — a URL, a library item, or a well — starts over the cover band and
+       scrolls into the 3:2 column; the welcome photo is the frame's content
+       only when no banner is set. A well counts as content: its whole point
+       is to be judged in the real box. */
+    const bannerWell = hasWell(bannerImage?.source);
+    const frameImage: HeroImage = bannerWell ? bannerImage : photo;
+    const frameWell = hasWell(frameImage?.source);
     const showCta = Boolean(ctaCaption && ctaAction);
+    const showSecondaryCta = Boolean(secondaryCtaCaption && secondaryCtaAction);
     const isFullScreenBanner = bannerHeightMode === "full-screen";
+    const offeringWords = (offerings ?? []).filter(
+        (word) => typeof word === "string" && word.trim(),
+    );
 
     const scope = useMemo(() => toScope(id), [id]);
     const rootRef = useRef<HTMLDivElement>(null);
     const bannerRef = useRef<HTMLDivElement>(null);
     const destinationRef = useRef<HTMLDivElement>(null);
     const imageRef = useRef<HTMLDivElement>(null);
-    const sharedSrc = bannerSrc || photoSrc;
-    useHeaderHeightVar(rootRef, isFullScreenBanner && Boolean(bannerSrc));
+    useHeaderHeightVar(rootRef, isFullScreenBanner && bannerWell);
     useImageScroll(
         {
             root: rootRef,
@@ -252,7 +305,7 @@ export default function Widget({
             destination: destinationRef,
             image: imageRef,
         },
-        !editing && Boolean(bannerSrc),
+        !editing && bannerWell,
     );
 
     /* Two `height` declarations, not one: a browser that doesn't understand
@@ -308,6 +361,7 @@ export default function Widget({
         >
             <style>
                 {sharedImageCss}
+                {heroCss}
                 {fullScreenBannerCss}
             </style>
             <noscript
@@ -315,7 +369,7 @@ export default function Widget({
                     __html: `<style>${staticImageCss.split('[data-image-motion="static"]').join("")}</style>`,
                 }}
             />
-            {bannerSrc && (
+            {bannerWell && (
                 <div
                     ref={bannerRef}
                     aria-hidden="true"
@@ -339,22 +393,99 @@ export default function Widget({
                 nextTheme={nextTheme as "dark" | "light"}
                 className="anahata-hero__welcome bg-transparent"
             >
-                {heading && (
-                    <h2
-                        className="relative z-[2] font-playfair-display text-[32px] font-normal leading-[1.2] text-center pb-8 mt-0"
-                        style={{
-                            color: headingColor,
-                            backgroundColor: groundColor,
-                        }}
+                {/* Text first in the DOM so phones read heading → copy →
+                    photo; `photoPosition` only decides the md+ order. The
+                    scroll hook reads this row's flex-direction, and accepts
+                    both `row` and `row-reverse`. */}
+                <div
+                    className={clsx(
+                        "flex flex-col gap-y-8 md:items-center md:gap-x-16",
+                        photoPosition === "left"
+                            ? "md:flex-row-reverse"
+                            : "md:flex-row",
+                    )}
+                >
+                    <div
+                        className={clsx(
+                            "relative z-[2] w-full min-w-0",
+                            frameWell ? "md:w-[55%]" : "md:w-full",
+                        )}
+                        style={{ backgroundColor: groundColor }}
                     >
-                        {heading}
-                    </h2>
-                )}
-                <div className="flex flex-col items-start md:flex-row md:gap-x-[35px] gap-y-8">
-                    {sharedSrc && (
+                        {kicker && (
+                            <p
+                                className="font-open-sans font-semibold text-[13px] leading-[1.4] tracking-[0.14em] uppercase mt-0 mb-3"
+                                style={{ color: PALETTE.inkSoft }}
+                            >
+                                {kicker}
+                            </p>
+                        )}
+                        {heading && (
+                            <h1
+                                className="font-playfair-display font-bold text-[clamp(36px,4.4vw,54px)] leading-[1.08] tracking-[-0.012em] m-0"
+                                style={{ color: headingColor }}
+                            >
+                                {heading}
+                            </h1>
+                        )}
+                        {offeringWords.length > 0 && (
+                            <ul
+                                className="anahata-hero__offerings flex flex-wrap gap-x-[0.7em] list-none m-0 p-0 mt-[18px] mb-8 font-open-sans font-semibold text-[13px] leading-[1.8] tracking-[0.12em] uppercase"
+                                style={{ color: headingColor }}
+                            >
+                                {offeringWords.map((word, index) => (
+                                    <li key={`${index}-${word}`}>{word}</li>
+                                ))}
+                            </ul>
+                        )}
+                        {paragraphs.map((paragraph, index) => {
+                            const lede = index === ledeParagraphIndex;
+                            return (
+                                <p
+                                    key={`${index}-${paragraph.text.slice(0, 24)}`}
+                                    className={clsx(
+                                        "text-left max-w-[58ch]",
+                                        lede
+                                            ? "font-playfair-display text-[1.4rem] leading-[1.4] mt-[1.2em] mb-4"
+                                            : "font-open-sans text-[16px] leading-[1.65] mt-0 mb-4",
+                                    )}
+                                    style={{
+                                        color: lede ? headingColor : bodyColor,
+                                    }}
+                                >
+                                    <ParagraphBody paragraph={paragraph} />
+                                </p>
+                            );
+                        })}
+                        {(showCta || showSecondaryCta) && (
+                            <div className="anahata-hero__actions flex flex-wrap gap-3 mt-9">
+                                {showCta && (
+                                    <Link
+                                        href={ctaAction}
+                                        className={clsx(
+                                            "anahata-hero__button font-open-sans",
+                                            ctaVariantClasses[ctaStyle] ??
+                                                ctaVariantClasses.pine,
+                                        )}
+                                    >
+                                        {ctaCaption}
+                                    </Link>
+                                )}
+                                {showSecondaryCta && (
+                                    <Link
+                                        href={secondaryCtaAction}
+                                        className="anahata-hero__button anahata-hero__button--moss font-open-sans"
+                                    >
+                                        {secondaryCtaCaption}
+                                    </Link>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                    {frameWell && (
                         <div
                             ref={destinationRef}
-                            className="anahata-hero__image-slot w-full min-w-0 md:w-1/2 md:mt-[var(--anahata-photo-offset)]"
+                            className="anahata-hero__image-slot w-full min-w-0 md:w-[45%] md:mt-[var(--anahata-photo-offset)]"
                             style={
                                 {
                                     "--anahata-photo-offset": `${photoOffsetTop}px`,
@@ -363,54 +494,23 @@ export default function Widget({
                         >
                             <SharedImage
                                 frameRef={imageRef}
-                                source={sharedSrc}
-                                alt={bannerSrc ? bannerImage.alt : photo.alt}
+                                source={srcOf(frameImage)}
+                                placeholder={waitingText(frameImage)}
+                                alt={frameImage.alt}
                                 fit={bannerFit}
                                 position={bannerPosition}
                                 mode={
-                                    bannerSrc ? bannerMode : { kind: "static" }
+                                    bannerWell ? bannerMode : { kind: "static" }
                                 }
                                 wordmark={wordmark}
-                                wordmarkSrc={wordmarkSrc}
+                                wordmarkSrc={srcOf(wordmark)}
+                                wordmarkPlaceholder={waitingText(wordmark)}
                                 wordmarkWidth={wordmarkMaxWidth}
                                 editing={editing}
                                 animation={animation}
                             />
                         </div>
                     )}
-                    <div
-                        className={clsx(
-                            "relative z-[2] w-full min-w-0",
-                            sharedSrc ? "md:w-1/2" : "md:w-full",
-                        )}
-                        style={{ backgroundColor: groundColor }}
-                    >
-                        {paragraphs.map((paragraph, index) => (
-                            <p
-                                key={`${index}-${paragraph.text.slice(0, 24)}`}
-                                className={clsx(
-                                    "font-open-sans text-[14px] leading-[1.65] text-left",
-                                    index === paragraphs.length - 1
-                                        ? "mb-[30px]"
-                                        : "mb-[1.5em]",
-                                )}
-                                style={{ color: bodyColor }}
-                            >
-                                <ParagraphBody paragraph={paragraph} />
-                            </p>
-                        ))}
-                        {showCta && (
-                            <Link
-                                href={ctaAction}
-                                className={clsx(
-                                    ctaBaseClasses,
-                                    ctaVariantClasses[ctaStyle],
-                                )}
-                            >
-                                {ctaCaption}
-                            </Link>
-                        )}
-                    </div>
                 </div>
             </Section>
         </div>

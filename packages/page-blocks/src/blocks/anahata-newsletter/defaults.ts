@@ -1,4 +1,5 @@
 import type { SectionBackground, ThemeStyle } from "@courselit/page-models";
+import { PALETTE } from "../../components/palette";
 import type { SubscribeMode } from "./settings";
 
 /* ------------------------------------------------------------------ *
@@ -32,73 +33,71 @@ export const DEFAULT_SUBMISSION_ERROR_MESSAGE =
 export const DEFAULT_DISCLAIMER = "";
 
 /* ------------------------------------------------------------------ *
- * Background — the "Stay in Touch" band sits on the site's own callout
- * photograph, anchored to its bottom edge so the horizon stays put as
- * the band grows. Editable through the standard Background panel.
- * Source: [25_all.css:481] #footer-callout-wrap.
+ * Background — the "Stay in Touch" band is a solid fern ground (Forest &
+ * Bone; homepage-redesign CONTRACT § anahataNewsletter): no photograph and
+ * no overlay, so the band's contrast is a fixed property of the palette
+ * rather than of whatever pixels a photo happens to put under the text.
+ * Editable through the standard Background panel; the layout script writes
+ * this same shape — `{ type: "color", backgroundColor: "#d6e0c3" }`.
+ *
+ * No `backgroundColorDark` on purpose: the heading, body and field colours
+ * below are fixed palette values, not theme tokens, so `Section` falls back
+ * to the light fern in dark mode and the text keeps its measured contrast.
  * ------------------------------------------------------------------ */
 
-export const DEFAULT_BACKGROUND_IMAGE = "/anahata/footer-callout-bg.jpg";
-
 export const DEFAULT_BACKGROUND: SectionBackground = {
-    type: "image",
-    media: { file: DEFAULT_BACKGROUND_IMAGE },
-    backgroundSize: "cover",
-    backgroundPosition: "center bottom",
-    backgroundRepeat: "no-repeat",
-    // A photograph cannot promise a contrast ratio, and this one does not: the
-    // callout image darkens markedly toward its right, and cocoa body text over
-    // it was measured (per-pixel, across the middle 70% where the text sits) at
-    // 8.84:1 on average but only 3.09:1 at worst, with 11.5% of that region
-    // under the 4.5:1 floor.
-    //
-    // ⚠️ `opacity` here is on a 0–10 scale, NOT 0–1: section.tsx renders it as
-    // `overlay.opacity / 10`, and the Background panel drives it with a 0–10
-    // slider. A CSS-style 0.25 silently becomes 0.025 — an overlay that is
-    // present, valid, and does nothing. 3 renders as 0.3, which sampling
-    // against the real image puts at 5.24:1 worst-case (2.5 would just clear
-    // the floor at 4.82:1, but the slider is integer-stepped, so 3 is both
-    // safer and actually reachable by hand afterwards).
-    overlay: {
-        color: "#f7f4eb",
-        blendMode: "normal",
-        opacity: 3,
-    },
+    type: "color",
+    backgroundColor: PALETTE.fern,
 };
 
 /* ------------------------------------------------------------------ *
- * Palette.
- *
- * Every value below is a token from
- *   ~/amaanah/projects/karuna-membership/anahata-design-system/tokens.css
- * except the two feedback colours, which tokens.css does not define; those
- * come from the site's own stylesheet / the visual spec and are called out
- * individually.
+ * Palette — swamikk-design-system/tokens.css v1.0 (Forest & Bone), via
+ * components/palette.ts. No invented colours. Ratios measured with the
+ * WCAG relative-luminance formula against the ground each sits on. The only
+ * hexes declared here are the two feedback colours, which are functional
+ * (invalid / confirmed) rather than brand and so stay outside the roles.
  * ------------------------------------------------------------------ */
 
-export const SAFFRON = "#ff9900"; // tokens --saffron — button fill only, never text (2.14:1 on white)
-export const RUST = "#993300"; // tokens --rust (7.43:1 on white)
-export const RUST_PRESSED = "#7a2900"; // --rust darkened ~12% for :active (visual spec §0.6, 9.79:1 on white with white text)
-export const INK = "#545454"; // tokens --ink
-export const CREAM = "#f7f4eb"; // tokens --cream
-export const CARD = "#ffffff"; // tokens --card
-export const COCOA = "#312110"; // tokens --cocoa — rest-state button text on saffron (7.24:1)
-/**
- * tokens --border-warm. Raised from the original `#e7dfcc` (1.33:1 on white
- * — well under the 3:1 non-text/UI-component floor) to `#9c7f52` (3.77:1 on
- * white, 3.43:1 on cream) so the input/card boundary is actually perceivable,
- * still in the warm-tan family.
- */
-export const BORDER_WARM = "#9c7f52";
-export const INK_STRONG = "#373737"; // tokens .an-callout .an-quote colour
-export const CALLOUT_INK = "#252525"; // visual spec §8 [25_all.css:483]
+/** pine: the heading (7.0:1 on fern). */
+export const HEADING_COLOR = PALETTE.pine;
+/** ink: body copy and small print (10.5:1 on fern). */
+export const BODY_COLOR = PALETTE.ink;
 
-/** Not in tokens.css. From [25_all.css:175] (the theme's real invalid-field red). 4.57:1 on white. */
-export const FEEDBACK_ERROR = "#dd3333";
+/** card: the email field and the feedback box. */
+export const FIELD_GROUND = PALETTE.card;
+/** ink: typed text in the field (13.6:1 on card). */
+export const FIELD_TEXT = PALETTE.ink;
+/** ink-soft at full opacity (7.5:1 on card) — was ink at 60%, which blends to 3.8:1. */
+export const FIELD_PLACEHOLDER = PALETTE.inkSoft;
+/** edge: field and feedback-box border (4.1:1 on card, 3.2:1 on fern — both clear the 3:1 UI floor). */
+export const FIELD_EDGE = PALETTE.edge;
+/** pine: every focus ring (7.0:1 on fern, 9.1:1 on card). */
+export const FOCUS_RING = PALETTE.pine;
+
+/** moss: the Subscribe button at rest — ink text (5.8:1) inside a 1.5px pine border. */
+export const BUTTON_GROUND = PALETTE.moss;
+export const BUTTON_TEXT = PALETTE.ink;
+export const BUTTON_EDGE = PALETTE.pine;
+/** pine-deep with bone text (10.7:1) — hover AND :active, which the widget pins separately. */
+export const BUTTON_GROUND_PRESSED = PALETTE.pineDeep;
+export const BUTTON_TEXT_PRESSED = PALETTE.bone;
 /**
- * Not in tokens.css. The source value (#33dd33, [25_all.css:195]) fails contrast
- * on white; the visual spec prescribes this substitute (5.13:1 on white).
+ * ink-soft with bone text (6.5:1) while a submission is in flight. A solid
+ * fill, not `opacity-*`, so the disabled contrast is fixed rather than a
+ * blend with the ground.
  */
+export const BUTTON_GROUND_DISABLED = PALETTE.inkSoft;
+export const BUTTON_TEXT_DISABLED = PALETTE.bone;
+
+/**
+ * Not in the palette. The theme's own invalid-field red ([25_all.css:175],
+ * #dd3333) measures 4.3:1 on card — under the 4.5:1 text floor the feedback
+ * box needs now that its ground is card rather than white — so it is
+ * darkened one step: 5.3:1 on card, 4.1:1 on fern as the field's invalid
+ * border.
+ */
+export const FEEDBACK_ERROR = "#c62828";
+/** Not in the palette. 4.8:1 on card (the source value #33dd33 fails outright). */
 export const FEEDBACK_SUCCESS = "#2e7d32";
 
 /* ---- type ---- */

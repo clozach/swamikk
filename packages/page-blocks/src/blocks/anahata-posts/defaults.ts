@@ -1,121 +1,81 @@
-import type { Post } from "./settings";
+import { placeholderSource } from "../../components/image-source";
+import type { MoreLink, Post } from "./settings";
+
+export const heading = "Writing and recipes";
+export const headingLink = "";
+export const moreLink: MoreLink = { label: "Read the blog", href: "/blog" };
+/** 96px, the reference look's `--rest`. */
+export const verticalPadding = "py-24" as const;
+
+const post = (
+    id: string,
+    title: string,
+    date: string,
+    slug: string,
+    description: string,
+): Post => ({
+    id,
+    title,
+    date,
+    href: `/blog/${slug}`,
+    thumbnail: { source: placeholderSource(description), alt: "" },
+});
 
 /**
- * Anahata brand palette used by this block.
- *
- * Source of truth: anahata-design-system/tokens.css. These constants exist for
- * documentation and for the admin preview only — the rendered markup writes the
- * hexes as literal Tailwind arbitrary values (`bg-[#f8ecdb]`), because Tailwind's
- * scanner is static and cannot see an interpolated class name.
+ * The six spec rows (homepage-redesign-spec.md § 5), newest first. Titles are
+ * verbatim — keep the en dash in the India letter. Every picture is a well
+ * until a real production photo is uploaded.
  */
-export const palette = {
-    /** Recent Posts ground (the site's `.bg-apricot`; absent from tokens.css). */
-    apricot: "#f8ecdb",
-    /** Body text. */
-    ink: "#545454",
-    /** Headings, hovers, the divider rule (6.37:1 on the apricot ground). */
-    rust: "#993300",
-    /**
-     * Button fill only — never text on this apricot/cream family: it measures
-     * 1.84:1 on apricot, 1.95:1 on cream, under AA at any size. Button text is
-     * cocoa at rest (7.24:1) and white on the rust/rust-pressed hover/active
-     * grounds (7.43:1 / 9.79:1).
-     */
-    saffron: "#ff9900",
-    /** Pressed-button rust / hover-link rust, darkened ~12%. Not in the source stylesheet. */
-    rustPressed: "#7a2900",
-    /** The dashed rule under each card. */
-    warmDashed: "#d7cdbf",
-} as const;
-
-export const heading = "Recent Posts";
-export const headingLink = "";
-export const showDivider = true;
-export const thumbnailSize = 150;
-export const buttonCaption = "Read More at Our Blog";
-export const buttonAction = "/blog";
-export const verticalPadding = "py-12" as const;
-
-/** Curly quotes below are verbatim from the live site — do not straighten them. */
 export const posts: Post[] = [
-    {
-        id: "anahata-post-kumara-salad",
-        title: "The Vitality Kumara & Smoked Fish Salad",
-        date: "April 20, 2026",
-        href: "#",
-        thumbnail: {
-            kind: "url",
-            url: "/anahata/post-kumara-salad.jpg",
-            alt: "The Vitality Kumara & Smoked Fish Salad",
-        },
-    },
-    {
-        id: "anahata-post-menopause",
-        title: "Navigating the Change: A Guide to Embracing Menopause",
-        date: "April 20, 2026",
-        href: "#",
-        thumbnail: {
-            kind: "url",
-            url: "/anahata/post-menopause.png",
-            alt: "Navigating the Change: A Guide to Embracing Menopause",
-        },
-    },
-    {
-        id: "anahata-post-autumn-tonic",
-        title: "The “Autumn Anchor” Tonic",
-        date: "March 12, 2026",
-        href: "#",
-        thumbnail: {
-            kind: "url",
-            url: "/anahata/post-autumn-tonic.png",
-            alt: "The “Autumn Anchor” Tonic",
-        },
-    },
-    {
-        id: "anahata-post-nervous-system",
-        title: "Beyond the Stretch: Why a Nervous System Reset is the Ultimate Life Cleaning",
-        date: "March 12, 2026",
-        href: "#",
-        thumbnail: {
-            kind: "url",
-            url: "/anahata/post-nervous-system.png",
-            alt: "Beyond the Stretch: Why a Nervous System Reset is the Ultimate Life Cleaning",
-        },
-    },
-    {
-        id: "anahata-post-nourish-bowl",
-        title: "The “Kiwi Yogi” Nourish Bowl",
-        date: "February 18, 2026",
-        href: "#",
-        thumbnail: {
-            kind: "url",
-            url: "/anahata/post-nourish-bowl.png",
-            alt: "The “Kiwi Yogi” Nourish Bowl",
-        },
-    },
-    {
-        id: "anahata-post-tempeh-salad",
-        title: "Crunchy Marinated Tempeh Salad",
-        date: "February 9, 2026",
-        href: "#",
-        thumbnail: {
-            kind: "url",
-            url: "/anahata/post-tempeh-salad.png",
-            alt: "Crunchy Marinated Tempeh Salad",
-        },
-    },
+    post(
+        "anahata-post-roasted-vegetable-salad",
+        "Roasted Vegetable Salad",
+        "September 7, 2026",
+        "roasted-vegetable-salad",
+        "Overhead shot of the finished salad on a wooden table, natural light.",
+    ),
+    post(
+        "anahata-post-menopause",
+        "Navigating the Change: A Guide to Embracing Menopause",
+        "April 20, 2026",
+        "navigating-the-change-a-guide-to-embracing-menopause",
+        "A woman mid-life, seated in meditation outdoors, calm and unposed.",
+    ),
+    post(
+        "anahata-post-nervous-system",
+        "Beyond the Stretch: Why a Nervous System Reset is the Ultimate Life Cleaning",
+        "March 12, 2026",
+        "beyond-the-stretch-why-a-nervous-system-reset-is-the-ultimate-life-cleaning",
+        "A person lying in relaxation pose on a mat, eyes closed, soft light from a window.",
+    ),
+    post(
+        "anahata-post-tempeh-salad",
+        "Crunchy Marinated Tempeh Salad",
+        "February 9, 2026",
+        "crunchy-marinated-tempeh-salad",
+        "Close-up of the tempeh salad in a bowl, crumbs of marinade visible.",
+    ),
+    post(
+        "anahata-post-from-india-with-love",
+        "From India with love – An update from Swami Karma Karuna",
+        "January 4, 2026",
+        "from-india-with-love-an-update-from-swami-karma-karuna",
+        "Swami Karma Karuna at the Bihar School of Yoga ashram, morning light, a letter in hand.",
+    ),
+    post(
+        "anahata-post-christmas-recipe",
+        "Christmas Recipe",
+        "November 26, 2025",
+        "christmas-recipe",
+        "A festive dish served on a plain cloth, a sprig of greenery beside it.",
+    ),
 ];
 
+/** A fresh post starts as a well (the development staple), description to be typed. */
 export const newPost = (id: string): Post => ({
     id,
     title: "Post title",
     date: "January 1, 2026",
     href: "#",
-    thumbnail: { kind: "url", url: "", alt: "" },
+    thumbnail: { source: placeholderSource(""), alt: "" },
 });
-
-/** Resolves either arm of the thumbnail union to a src string. */
-export const thumbnailSrc = (thumbnail: Post["thumbnail"]): string =>
-    thumbnail.kind === "media"
-        ? thumbnail.media?.file || thumbnail.media?.thumbnail || ""
-        : thumbnail.url;

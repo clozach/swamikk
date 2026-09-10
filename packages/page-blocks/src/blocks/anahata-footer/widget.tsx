@@ -12,6 +12,13 @@ import Settings, {
     SocialPlatform,
 } from "./settings";
 import {
+    isWaiting,
+    normalizeImageSource,
+    resolveImageSrc,
+} from "../../components/image-source";
+import { PALETTE } from "../../components/palette";
+import { WaitingForAsset } from "../../components/waiting-for-asset";
+import {
     BACK_TO_TOP_SIZE,
     COLUMN_GAP,
     COLUMN_TITLE_SIZE,
@@ -22,16 +29,17 @@ import {
     DECOR_RIGHT_WIDTH,
     FONT_BODY,
     FONT_DISPLAY,
+    GROUND,
+    HAIRLINE,
     INNER_MAX_WIDTH,
-    NAVY,
-    OCEAN,
-    OCEAN_HAIRLINE,
+    LINK_HOVER,
     PADDING_BOTTOM,
     PADDING_TOP,
     SOCIAL_BUTTON_SIZE,
     SOCIAL_GAP,
     SOCIAL_GLYPH_SIZE,
-    WHITE,
+    STRIP,
+    TEXT,
     WIDGET_PADDING_BOTTOM,
     backToTop as defaultBackToTop,
     columns as defaultColumns,
@@ -89,6 +97,22 @@ function gridTemplateColumns(count: number): string {
     }
     return `repeat(auto-fit, minmax(min(${COLUMN_MIN_WIDTH}px, 100%), 1fr))`;
 }
+
+/**
+ * Every footer link paints from two custom properties the <footer> sets from
+ * its settings — `--ayr-footer-text` (rest) and `--ayr-footer-hover` (hover,
+ * active, focus ring) — rather than an inline `color`, because an inline
+ * style would beat the hover class and the link could never change colour.
+ * Hover and active are the same state, as in the reference; only real links
+ * and buttons get one.
+ */
+const FOOTER_LINK = cn(
+    "text-[var(--ayr-footer-text)]",
+    "transition-colors duration-100 ease-in",
+    "hover:text-[var(--ayr-footer-hover)] hover:underline hover:decoration-2 hover:underline-offset-4",
+    "active:text-[var(--ayr-footer-hover)] active:underline active:decoration-2 active:underline-offset-4",
+    "focus-visible:text-[var(--ayr-footer-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ayr-footer-hover)]",
+);
 
 const socialLabels: Record<SocialPlatform, string> = {
     facebook: "Facebook",
@@ -178,6 +202,7 @@ function LinksColumnView({
     hairlineColor,
 }: {
     column: LinksColumn;
+    /** Title colour only — the links read `--ayr-footer-text`. */
     textColor: string;
     hairlineColor: string;
 }): JSX.Element {
@@ -201,18 +226,9 @@ function LinksColumnView({
                     >
                         <Link
                             href={link.href}
-                            style={{ color: textColor }}
                             className={cn(
                                 "relative z-[2] inline-block max-w-full py-[3px] pr-[60px] uppercase no-underline",
-                                "transition-opacity duration-100 ease-in",
-                                "hover:opacity-80",
-                                "focus-visible:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current",
-                                /* Not opacity: white text on ocean fades below
-                                   AA (4.5:1) once opacity drops under ~76% —
-                                   the old active:opacity-60 measured 3.46:1.
-                                   A position nudge gives "pressed" feedback
-                                   without touching contrast. */
-                                "active:translate-y-[1px]",
+                                FOOTER_LINK,
                             )}
                         >
                             {link.label}
@@ -232,23 +248,42 @@ function ContactColumnView({
     textColor: string;
 }): JSX.Element {
     const socials: SocialLink[] = column.socials || [];
+    // Explicit `logoSource` first; else the legacy `logoUrl` parsed into the
+    // url arm (an empty string yields a source with nothing to show).
+    const logoSource =
+        normalizeImageSource(column.logoSource) ??
+        normalizeImageSource(column.logoUrl);
+    const logoSrc = resolveImageSrc(logoSource);
+    const logoWidth = column.logoWidth || 150;
+    const logoHeight = column.logoHeight || 168;
 
     return (
         <div className="text-center">
             <ColumnTitleSlot title={column.title} color={textColor} />
-            {column.logoUrl ? (
+            {isWaiting(logoSource) ? (
+                // The mark's exact box on the dark ground, as the
+                // waiting-for-asset well; 150 × 168 clears the "full" tier so
+                // the description shows inside it.
+                <WaitingForAsset
+                    description={logoSource.description}
+                    width={logoWidth}
+                    height={logoHeight}
+                    tone="dark"
+                    className="mx-auto mb-2 max-w-full"
+                />
+            ) : logoSrc ? (
                 // A plain <img>: the footer logo is a fixed-size static
                 // asset, not a responsive medialit upload, so the
                 // Image wrapper's aspect-video box would be wrong here.
                 <img
-                    src={column.logoUrl}
+                    src={logoSrc}
                     alt={column.logoAlt || ""}
-                    width={column.logoWidth || undefined}
-                    height={column.logoHeight || undefined}
+                    width={logoWidth}
+                    height={logoHeight}
                     loading="lazy"
                     decoding="async"
                     className="mx-auto mb-2 h-auto max-w-full"
-                    style={{ width: `${column.logoWidth || 150}px` }}
+                    style={{ width: `${logoWidth}px` }}
                 />
             ) : null}
             {column.heading ? (
@@ -290,12 +325,9 @@ function ContactColumnView({
                     ) : null}
                     <Link
                         href={`mailto:${column.email}`}
-                        style={{ color: textColor }}
                         className={cn(
-                            "underline underline-offset-2",
-                            "transition-opacity duration-100 ease-in",
-                            "hover:opacity-80",
-                            "focus-visible:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current",
+                            "underline underline-offset-2 [overflow-wrap:anywhere]",
+                            FOOTER_LINK,
                         )}
                     >
                         {column.email}
@@ -319,17 +351,14 @@ function ContactColumnView({
                             <Link
                                 href={social.href}
                                 style={{
-                                    color: textColor,
-                                    borderColor: textColor,
                                     width: `${SOCIAL_BUTTON_SIZE}px`,
                                     height: `${SOCIAL_BUTTON_SIZE}px`,
                                 }}
                                 className={cn(
-                                    "flex items-center justify-center rounded-full border-2 border-solid bg-transparent",
-                                    "transition-colors duration-100 ease-in",
-                                    "hover:bg-black/10",
-                                    "focus-visible:bg-black/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current",
-                                    "active:bg-black/20",
+                                    "flex items-center justify-center rounded-full border-2 border-solid bg-transparent no-underline",
+                                    "border-[var(--ayr-footer-text)] hover:border-[var(--ayr-footer-hover)] active:border-[var(--ayr-footer-hover)] focus-visible:border-[var(--ayr-footer-hover)]",
+                                    FOOTER_LINK,
+                                    "hover:no-underline active:no-underline",
                                 )}
                             >
                                 <SocialGlyph
@@ -392,24 +421,35 @@ function BackToTopControl({
             tabIndex={visible ? 0 : -1}
             className={cn(
                 "fixed z-40 box-content flex items-center justify-center rounded-full border-0",
-                "bg-white text-[#545454] shadow-md",
+                "bg-[var(--ayr-btt-bg)] text-[var(--ayr-btt-fg)] shadow-md",
                 "transition-[opacity,background-color,color,box-shadow] duration-200 ease-in-out",
-                /* White-on-saffron was 2.14:1 (fails AA); cocoa-on-saffron is
-                   7.24:1. Active moves to rust, where white is 7.43:1. */
-                "hover:bg-[#ff9900] hover:text-[#312110]",
-                "focus-visible:bg-[#ff9900] focus-visible:text-[#312110] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#993300]",
-                "active:bg-[#993300] active:text-white",
+                /* Floats over page content of any ground, so it carries its
+                   own palette: bone chip with a pine glyph (7.76:1) at rest,
+                   inverted on hover/focus (bone on pine 7.76:1), pine-deep
+                   when pressed (10.67:1). The pine ring reads on the bone
+                   page ground (7.76:1) where a moss-light one would not. */
+                "hover:bg-[var(--ayr-btt-hover-bg)] hover:text-[var(--ayr-btt-hover-fg)]",
+                "focus-visible:bg-[var(--ayr-btt-hover-bg)] focus-visible:text-[var(--ayr-btt-hover-fg)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ayr-btt-ring)]",
+                "active:bg-[var(--ayr-btt-active-bg)] active:text-[var(--ayr-btt-hover-fg)]",
                 visible
                     ? "visible opacity-100"
                     : "pointer-events-none invisible opacity-0",
             )}
-            style={{
-                minWidth: `${Math.max(44, BACK_TO_TOP_SIZE)}px`,
-                minHeight: `${Math.max(44, BACK_TO_TOP_SIZE)}px`,
-                right: "calc(max(16px, env(safe-area-inset-right)) + 44px + 12px)",
-                bottom: "calc(var(--kk-mobile-pay-bar-height, 0px) + max(16px, env(safe-area-inset-bottom)))",
-                fontSize: "16px",
-            }}
+            style={
+                {
+                    "--ayr-btt-bg": PALETTE.bone,
+                    "--ayr-btt-fg": PALETTE.pine,
+                    "--ayr-btt-hover-bg": PALETTE.pine,
+                    "--ayr-btt-hover-fg": PALETTE.bone,
+                    "--ayr-btt-active-bg": PALETTE.pineDeep,
+                    "--ayr-btt-ring": PALETTE.pine,
+                    minWidth: `${Math.max(44, BACK_TO_TOP_SIZE)}px`,
+                    minHeight: `${Math.max(44, BACK_TO_TOP_SIZE)}px`,
+                    right: "calc(max(16px, env(safe-area-inset-right)) + 44px + 12px)",
+                    bottom: "calc(var(--kk-mobile-pay-bar-height, 0px) + max(16px, env(safe-area-inset-bottom)))",
+                    fontSize: "16px",
+                } as React.CSSProperties
+            }
         >
             <ExpandLess width={16} height={16} aria-hidden="true" />
         </button>
@@ -419,15 +459,16 @@ function BackToTopControl({
 export default function Widget({
     settings: {
         columns = defaultColumns,
-        groundColor = OCEAN,
-        textColor = WHITE,
-        hairlineColor = OCEAN_HAIRLINE,
+        groundColor = GROUND,
+        textColor = TEXT,
+        hairlineColor = HAIRLINE,
+        linkHoverColor = LINK_HOVER,
         decorLeftUrl = defaultDecorLeftUrl,
         decorRightUrl = defaultDecorRightUrl,
         innerMaxWidth = INNER_MAX_WIDTH,
         paddingTop = PADDING_TOP,
         paddingBottom = PADDING_BOTTOM,
-        copyrightGroundColor = NAVY,
+        copyrightGroundColor = STRIP,
         copyrightPrefix = defaultCopyrightPrefix,
         copyrightOwner = defaultCopyrightOwner,
         copyrightLinkPrefix = defaultCopyrightLinkPrefix,
@@ -446,14 +487,21 @@ export default function Widget({
         <footer
             id={cssId}
             className="w-full"
-            style={{
-                fontFamily: FONT_BODY,
-                fontSize: "14px",
-                lineHeight: 1.65,
-            }}
+            style={
+                {
+                    fontFamily: FONT_BODY,
+                    fontSize: "14px",
+                    lineHeight: 1.65,
+                    // Read by FOOTER_LINK on every link in the block, the
+                    // copyright credit included.
+                    "--ayr-footer-text": textColor,
+                    "--ayr-footer-hover": linkHoverColor,
+                } as React.CSSProperties
+            }
         >
-            {/* Ocean band. `overflow-hidden` keeps the decorative edges
-                from ever producing horizontal page scroll. */}
+            {/* Pine-dark band. `overflow-hidden` keeps the decorative edges
+                (when an editor sets any) from ever producing horizontal
+                page scroll. */}
             <div
                 className="relative w-full overflow-hidden"
                 style={{ backgroundColor: groundColor, color: textColor }}
@@ -518,12 +566,13 @@ export default function Widget({
                 </div>
             </div>
 
-            {/* Navy copyright strip — full bleed, centred. */}
+            {/* Copyright strip — full bleed, centred, one step darker than
+                the ground. Text follows the footer's text colour. */}
             <div
                 className="w-full text-center"
                 style={{
                     backgroundColor: copyrightGroundColor,
-                    color: WHITE,
+                    color: textColor,
                     fontSize: `${COPYRIGHT_FONT_SIZE}px`,
                     lineHeight: `${COPYRIGHT_LINE_HEIGHT}px`,
                 }}
@@ -541,13 +590,7 @@ export default function Widget({
                             {" | "}
                             <Link
                                 href={copyrightLinkHref}
-                                style={{ color: WHITE }}
-                                className={cn(
-                                    "no-underline",
-                                    "transition-opacity duration-100 ease-in",
-                                    "hover:opacity-80",
-                                    "focus-visible:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current",
-                                )}
+                                className={cn("no-underline", FOOTER_LINK)}
                             >
                                 {copyrightLinkPrefix
                                     ? `${copyrightLinkPrefix} `

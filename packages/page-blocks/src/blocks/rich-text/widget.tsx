@@ -30,6 +30,7 @@ const Widget = ({
         maxWidth,
         verticalPadding,
         fontSize = defaultFontSize,
+        background,
     },
     state: { theme },
 }: WidgetProps<Settings>) => {
@@ -48,6 +49,7 @@ const Widget = ({
                 textAlign: alignment,
             }}
             id={cssId}
+            background={background}
         >
             <Text1
                 theme={overiddenTheme}

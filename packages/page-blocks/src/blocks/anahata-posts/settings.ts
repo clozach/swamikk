@@ -1,42 +1,59 @@
 import type { Media, WidgetDefaultSettings } from "@courselit/common-models";
+import type { ImageSource } from "../../components/image-source";
 
 /**
- * Where a post's 150x150 thumbnail comes from.
- *
- * The Anahata defaults are static files staged under `apps/web/public/anahata/`,
- * which are plain same-origin URLs and have no Medialit `Media` record. Karuna
- * must also be able to swap in an image uploaded through the media library.
- *
- * Those are two genuinely different shapes, so they are a tagged union rather
- * than a pair of optional fields: "a url AND a media object" and "neither" are
- * both unrepresentable.
+ * A post's picture: the shared image source plus the post's own alt text.
+ * `source` absent means no picture and no well — the 3:2 box stays, empty,
+ * so the card keeps its geometry.
+ */
+export interface PostImage {
+    source?: ImageSource;
+    alt: string;
+}
+
+/**
+ * The flat shape stored before the shared union (alt inside each arm). It is
+ * still present in saved layouts and is what `apply-homepage.sh` writes, so
+ * it stays readable forever via `normalizePostThumbnail`; the admin editor
+ * only ever writes `PostImage` back.
  */
 export type PostThumbnail =
     | { kind: "url"; url: string; alt?: string }
-    | { kind: "media"; media: Partial<Media>; alt?: string };
+    | { kind: "media"; media: Partial<Media>; alt?: string }
+    | { kind: "placeholder"; description: string; alt?: string };
 
 export interface Post {
     /** Stable key for React lists and drag-to-reorder. Never shown. */
     id: string;
     title: string;
-    /** Free text, rendered verbatim (e.g. "April 20, 2026"). */
+    /** Free text, rendered verbatim (e.g. "September 7, 2026"). */
     date: string;
-    /** Post permalink. Inert links are "#". */
+    /** Post permalink, `/blog/<slug>`. Inert links are "#". */
     href: string;
-    thumbnail: PostThumbnail;
+    thumbnail: PostImage | PostThumbnail;
 }
 
+/** The link under the cards, e.g. "Read the blog" → "/blog". */
+export interface MoreLink {
+    label: string;
+    href: string;
+}
+
+/**
+ * Keys a pre-redesign layout may still carry and this block now ignores:
+ * `showDivider` (the rust rule is gone) and `thumbnailSize` (the wells are
+ * 3:2 and fill their column).
+ */
 export default interface Settings extends WidgetDefaultSettings {
-    /** Section heading, e.g. "Recent Posts". Rendered uppercase. */
+    /** Section heading. Default "Writing and recipes". */
     heading?: string;
     /** Optional href that wraps the heading. Empty string = plain heading. */
     headingLink?: string;
-    /** The 200px rust rule under the heading. */
-    showDivider?: boolean;
     posts?: Post[];
-    /** Thumbnail edge length in px at >= 768px viewports. */
-    thumbnailSize?: number;
+    moreLink?: MoreLink;
+    /** @deprecated pre-redesign name for `moreLink.label`; read only when `moreLink` is absent. */
     buttonCaption?: string;
+    /** @deprecated pre-redesign name for `moreLink.href`; read only when `moreLink` is absent. */
     buttonAction?: string;
     cssId?: string;
 }

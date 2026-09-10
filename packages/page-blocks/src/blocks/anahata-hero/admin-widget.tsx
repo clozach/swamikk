@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import type { Address, Media, Profile } from "@courselit/common-models";
+import type { Address, Profile } from "@courselit/common-models";
 import type {
     Theme,
     ThemeStyle,
@@ -14,7 +14,6 @@ import {
     Form,
     FormField,
     MaxWidthSelector,
-    MediaSelector,
     PageBuilderPropertyHeader,
     PageBuilderSlider,
     SectionBackgroundPanel,
@@ -30,8 +29,11 @@ import Settings, {
     HeroAnimation,
     HeroImage,
     HeroParagraph,
+    PhotoPosition,
 } from "./settings";
 import * as defaults from "./defaults";
+import { ImageSourceField } from "../../components/image-source-field";
+import { normalizeImageSource } from "../../components/image-source";
 
 interface AdminWidgetProps {
     name: string;
@@ -43,13 +45,34 @@ interface AdminWidgetProps {
     theme: Theme;
 }
 
+/** One line per offering; blank lines and stray spaces are dropped on save. */
+const offeringsFromText = (text: string): string[] =>
+    text
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+/** A stored picture, or the default when it is absent or unreadable. */
+const heroImage = (
+    stored: HeroImage | undefined,
+    fallback: HeroImage,
+): HeroImage => {
+    const source = normalizeImageSource(stored?.source);
+    return source
+        ? { source, alt: typeof stored?.alt === "string" ? stored.alt : "" }
+        : fallback;
+};
+
 /**
- * Editor for one picture. The Source select is what switches the tagged
- * union, so the two inputs are never both live at once.
+ * Editor for one picture: the shared source control (URL · Library ·
+ * Placeholder) plus this block's own alt text. A placeholder's description
+ * is typed inside the source control; it doubles as the well's name until a
+ * real image arrives, so the alt only matters for a URL or library image.
  */
 function ImageEditor({
     label,
     tooltip,
+    urlPlaceholder,
     value,
     onChange,
     profile,
@@ -57,86 +80,34 @@ function ImageEditor({
 }: {
     label: string;
     tooltip?: string;
+    urlPlaceholder?: string;
     value: HeroImage;
     onChange: (image: HeroImage) => void;
     profile: Profile;
     address: Address;
 }): JSX.Element {
-    const media: Partial<Media> =
-        value.source.kind === "media" ? value.source.media : {};
-    const url = value.source.kind === "url" ? value.source.url : "";
-
     return (
         <div className="flex flex-col gap-2">
             <PageBuilderPropertyHeader label={label} tooltip={tooltip} />
-            <Select
-                title="Source"
-                value={value.source.kind}
-                options={[
-                    { label: "URL or file path", value: "url" },
-                    { label: "Media library", value: "media" },
-                ]}
-                onChange={(kind: "url" | "media") =>
-                    onChange({
-                        ...value,
-                        source:
-                            kind === "url"
-                                ? { kind: "url", url }
-                                : { kind: "media", media },
-                    })
-                }
+            <ImageSourceField
+                value={value.source}
+                onChange={(source) => onChange({ ...value, source })}
+                urlPlaceholder={urlPlaceholder}
+                profile={profile}
+                address={address}
             />
-            {value.source.kind === "url" ? (
+            {value.source.kind !== "placeholder" && (
                 <Form>
                     <FormField
-                        label="Image URL"
-                        placeholder="/anahata/hero-silentmed.jpg"
-                        value={url}
+                        label="Alt text"
+                        tooltip="Leave empty for a purely decorative image"
+                        value={value.alt}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                            onChange({
-                                ...value,
-                                source: { kind: "url", url: e.target.value },
-                            })
+                            onChange({ ...value, alt: e.target.value })
                         }
                     />
                 </Form>
-            ) : (
-                <MediaSelector
-                    title=""
-                    src={media.thumbnail}
-                    srcTitle={media.originalFileName}
-                    profile={profile}
-                    address={address}
-                    onSelection={(selected: Media) => {
-                        if (selected) {
-                            onChange({
-                                ...value,
-                                source: { kind: "media", media: selected },
-                            });
-                        }
-                    }}
-                    onRemove={() =>
-                        onChange({
-                            ...value,
-                            source: { kind: "media", media: {} },
-                        })
-                    }
-                    strings={{}}
-                    access="public"
-                    mediaId={media.mediaId}
-                    type="page"
-                />
             )}
-            <Form>
-                <FormField
-                    label="Alt text"
-                    tooltip="Leave empty for a purely decorative image"
-                    value={value.alt}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        onChange({ ...value, alt: e.target.value })
-                    }
-                />
-            </Form>
         </div>
     );
 }
@@ -146,6 +117,7 @@ function ParagraphEditor({
     index,
     total,
     paragraph,
+    isLede,
     onChange,
     onMove,
     onRemove,
@@ -153,6 +125,7 @@ function ParagraphEditor({
     index: number;
     total: number;
     paragraph: HeroParagraph;
+    isLede: boolean;
     onChange: (paragraph: HeroParagraph) => void;
     onMove: (from: number, to: number) => void;
     onRemove: (index: number) => void;
@@ -164,7 +137,10 @@ function ParagraphEditor({
     return (
         <div className="flex flex-col gap-2 border border-slate-200 rounded p-3">
             <div className="flex items-center justify-between">
-                <p className="font-semibold">Paragraph {index + 1}</p>
+                <p className="font-semibold">
+                    Paragraph {index + 1}
+                    {isLede ? " (lede)" : ""}
+                </p>
                 <div className="flex gap-1">
                     <Button
                         component="button"
@@ -237,7 +213,7 @@ export default function AdminWidget({
 }: AdminWidgetProps): JSX.Element {
     /* ---- banner ---- */
     const [bannerImage, setBannerImage] = useState<HeroImage>(
-        settings.bannerImage || defaults.bannerImage,
+        heroImage(settings.bannerImage, defaults.bannerImage),
     );
     const [bannerFit, setBannerFit] = useState<BannerFit>(
         settings.bannerFit || defaults.bannerFit,
@@ -258,7 +234,7 @@ export default function AdminWidget({
         settings.bannerMinHeight ?? defaults.bannerMinHeight,
     );
     const [wordmark, setWordmark] = useState<HeroImage>(
-        settings.wordmark || defaults.wordmark,
+        heroImage(settings.wordmark, defaults.wordmark),
     );
     const [wordmarkMaxWidth, setWordmarkMaxWidth] = useState<number>(
         settings.wordmarkMaxWidth ?? defaults.wordmarkMaxWidth,
@@ -268,14 +244,26 @@ export default function AdminWidget({
     );
 
     /* ---- welcome row ---- */
+    const [kicker, setKicker] = useState<string>(
+        settings.kicker ?? defaults.kicker,
+    );
     const [heading, setHeading] = useState<string>(
         settings.heading ?? defaults.heading,
+    );
+    const [offeringsText, setOfferingsText] = useState<string>(
+        (settings.offerings ?? defaults.offerings).join("\n"),
     );
     const [paragraphs, setParagraphs] = useState<HeroParagraph[]>(
         settings.paragraphs || defaults.paragraphs,
     );
+    const [ledeParagraphIndex, setLedeParagraphIndex] = useState<number>(
+        settings.ledeParagraphIndex ?? defaults.ledeParagraphIndex,
+    );
     const [photo, setPhoto] = useState<HeroImage>(
-        settings.photo || defaults.photo,
+        heroImage(settings.photo, defaults.photo),
+    );
+    const [photoPosition, setPhotoPosition] = useState<PhotoPosition>(
+        settings.photoPosition || defaults.photoPosition,
     );
     const [photoOffsetTop, setPhotoOffsetTop] = useState<number>(
         settings.photoOffsetTop ?? defaults.photoOffsetTop,
@@ -288,6 +276,12 @@ export default function AdminWidget({
     );
     const [ctaStyle, setCtaStyle] = useState<CtaStyle>(
         settings.ctaStyle || defaults.ctaStyle,
+    );
+    const [secondaryCtaCaption, setSecondaryCtaCaption] = useState<string>(
+        settings.secondaryCtaCaption ?? defaults.secondaryCtaCaption,
+    );
+    const [secondaryCtaAction, setSecondaryCtaAction] = useState<string>(
+        settings.secondaryCtaAction ?? defaults.secondaryCtaAction,
     );
 
     /* ---- design ---- */
@@ -329,13 +323,19 @@ export default function AdminWidget({
             wordmark,
             wordmarkMaxWidth,
             animation,
+            kicker,
             heading,
+            offerings: offeringsFromText(offeringsText),
             paragraphs,
+            ledeParagraphIndex,
             photo,
+            photoPosition,
             photoOffsetTop,
             ctaCaption,
             ctaAction,
             ctaStyle,
+            secondaryCtaCaption,
+            secondaryCtaAction,
             groundColor,
             headingColor,
             bodyColor,
@@ -357,13 +357,19 @@ export default function AdminWidget({
         wordmark,
         wordmarkMaxWidth,
         animation,
+        kicker,
         heading,
+        offeringsText,
         paragraphs,
+        ledeParagraphIndex,
         photo,
+        photoPosition,
         photoOffsetTop,
         ctaCaption,
         ctaAction,
         ctaStyle,
+        secondaryCtaCaption,
+        secondaryCtaAction,
         groundColor,
         headingColor,
         bodyColor,
@@ -401,6 +407,14 @@ export default function AdminWidget({
         setParagraphs([...paragraphs, { text: "" }]);
     };
 
+    const ledeOptions = [
+        { label: "None", value: "-1" },
+        ...paragraphs.map((_, index) => ({
+            label: `Paragraph ${index + 1}`,
+            value: String(index),
+        })),
+    ];
+
     return (
         <AdminWidgetPanelContainer
             type="multiple"
@@ -409,7 +423,8 @@ export default function AdminWidget({
             <AdminWidgetPanel title="Banner" value="banner">
                 <ImageEditor
                     label="Banner image"
-                    tooltip="The full-width photograph behind the wordmark"
+                    tooltip="The full-width band behind the wordmark. A placeholder draws a waiting-for-asset well in the band's exact box."
+                    urlPlaceholder="/anahata/hp-hero-bg.jpg"
                     value={bannerImage}
                     onChange={setBannerImage}
                     profile={profile}
@@ -417,7 +432,8 @@ export default function AdminWidget({
                 />
                 <ImageEditor
                     label="Wordmark overlay"
-                    tooltip="Centred over the banner; clear the URL to hide it"
+                    tooltip="Centred over the banner (835 × 120). Choose Placeholder to show a well; switch to URL and leave it blank to hide it."
+                    urlPlaceholder="/anahata/solutions-for-life.png"
                     value={wordmark}
                     onChange={setWordmark}
                     profile={profile}
@@ -457,7 +473,7 @@ export default function AdminWidget({
                 ) : null}
                 <Select
                     title="Banner height"
-                    tooltip="Full screen fills the viewport below the site header, like the real site. Fixed sizes the band off the aspect ratio below."
+                    tooltip="Full screen fills the viewport below the site header. Fixed sizes the band off the aspect ratio below."
                     value={bannerHeightMode}
                     options={[
                         {
@@ -535,20 +551,49 @@ export default function AdminWidget({
             <AdminWidgetPanel title="Welcome" value="welcome">
                 <Form>
                     <FormField
+                        label="Kicker"
+                        tooltip="Small-caps line above the heading. Leave empty to hide it."
+                        value={kicker}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            setKicker(e.target.value)
+                        }
+                    />
+                    <FormField
                         label="Heading"
                         value={heading}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                             setHeading(e.target.value)
                         }
                     />
+                    <FormField
+                        label="Offerings (one per line)"
+                        tooltip="Typeset under the heading as a wrapping dotted line, e.g. Mentoring · Coaching · Teaching. Leave empty to hide the strip."
+                        component="textarea"
+                        rows={5}
+                        value={offeringsText}
+                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                            setOfferingsText(e.target.value)
+                        }
+                    />
                 </Form>
                 <ImageEditor
                     label="Photo"
-                    tooltip="Sits to the left of the copy on desktop, above it on mobile"
+                    tooltip="The 3:2 column beside the text. Shown when no banner is set; with a banner, the banner arrives in this column as you scroll."
+                    urlPlaceholder="/anahata/hero-silentmed.jpg"
                     value={photo}
                     onChange={setPhoto}
                     profile={profile}
                     address={address}
+                />
+                <Select
+                    title="Photo position"
+                    tooltip="Which side of the text the photo column sits on from tablet width up. Phones stack text above photo."
+                    value={photoPosition}
+                    options={[
+                        { label: "Right of the text", value: "right" },
+                        { label: "Left of the text", value: "left" },
+                    ]}
+                    onChange={(value: PhotoPosition) => setPhotoPosition(value)}
                 />
                 <PageBuilderSlider
                     title="Photo top offset (desktop)"
@@ -561,7 +606,7 @@ export default function AdminWidget({
                     unit="px"
                 />
                 <PageBuilderPropertyHeader
-                    label="Call to action"
+                    label="Primary button"
                     tooltip="Leave the caption empty to hide the button"
                 />
                 <Form>
@@ -574,7 +619,7 @@ export default function AdminWidget({
                     />
                     <FormField
                         label="Button link"
-                        placeholder="#"
+                        placeholder="/p/members-library-test"
                         value={ctaAction}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                             setCtaAction(e.target.value)
@@ -583,17 +628,58 @@ export default function AdminWidget({
                 </Form>
                 <Select
                     title="Button style"
+                    tooltip="Pine is the primary recipe (pine fill, bone text); Moss the secondary (moss fill, ink text, pine edge). The three older names still render: Saffron and Saffron (large) paint the pine recipe, White the outline."
                     value={ctaStyle}
                     options={[
-                        { label: "Saffron", value: "saffron" },
-                        { label: "Saffron (large)", value: "saffron-big" },
-                        { label: "White", value: "white" },
+                        { label: "Pine (primary)", value: "pine" },
+                        { label: "Moss (secondary)", value: "moss" },
+                        { label: "Saffron → pine", value: "saffron" },
+                        {
+                            label: "Saffron (large) → pine, large",
+                            value: "saffron-big",
+                        },
+                        { label: "White → outline", value: "white" },
                     ]}
                     onChange={(value: CtaStyle) => setCtaStyle(value)}
                 />
+                <PageBuilderPropertyHeader
+                    label="Secondary button"
+                    tooltip="Always the moss recipe. Leave the caption empty to hide it."
+                />
+                <Form>
+                    <FormField
+                        label="Button text"
+                        value={secondaryCtaCaption}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            setSecondaryCtaCaption(e.target.value)
+                        }
+                    />
+                    <FormField
+                        label="Button link"
+                        placeholder="/p/private-sessions"
+                        value={secondaryCtaAction}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            setSecondaryCtaAction(e.target.value)
+                        }
+                    />
+                </Form>
             </AdminWidgetPanel>
 
             <AdminWidgetPanel title="Body copy" value="paragraphs">
+                <Select
+                    title="Lede paragraph"
+                    tooltip="Set one paragraph in the display face (Playfair Display, larger, heading colour)."
+                    value={
+                        ledeParagraphIndex >= 0 &&
+                        ledeParagraphIndex < paragraphs.length
+                            ? String(ledeParagraphIndex)
+                            : "-1"
+                    }
+                    options={ledeOptions}
+                    onChange={(value: string) =>
+                        setLedeParagraphIndex(Number(value))
+                    }
+                />
                 <div className="flex flex-col gap-3">
                     {paragraphs.map((paragraph, index) => (
                         <ParagraphEditor
@@ -601,6 +687,7 @@ export default function AdminWidget({
                             index={index}
                             total={paragraphs.length}
                             paragraph={paragraph}
+                            isLede={index === ledeParagraphIndex}
                             onChange={(updated) =>
                                 updateParagraph(index, updated)
                             }
@@ -626,6 +713,7 @@ export default function AdminWidget({
                 />
                 <ColorSelector
                     title="Heading colour"
+                    tooltip="Also paints the offerings strip and the lede paragraph."
                     value={headingColor}
                     onChange={(value?: string) =>
                         setHeadingColor(value || defaults.headingColor)
@@ -640,7 +728,7 @@ export default function AdminWidget({
                 />
                 <ColorSelector
                     title="Link colour"
-                    tooltip="Anahata's saffron scores only 1.95:1 against the cream ground, under the 4.5:1 accessibility floor for body text (and still under 3:1 at any size). Default is now the rust (#993300, 6.75:1)."
+                    tooltip="Inline links in the body copy. Default is pine (8.22:1 on the bone ground); links are always underlined so colour never has to carry them alone."
                     value={linkColor}
                     onChange={(value?: string) =>
                         setLinkColor(value || defaults.linkColor)

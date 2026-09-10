@@ -4,20 +4,30 @@ import type {
     TourHeadingAlignment,
     TourLoadStrategy,
 } from "./settings";
+import { PALETTE } from "../../components/palette";
 
 /* ------------------------------------------------------------------ *
- * Anahata palette — mirrors anahata-design-system/tokens.css.
- * The CourseLit theme tokens (bg-background / text-foreground …) carry
- * the *site's* palette, not Anahata's, so the brand hexes are declared
- * here once and applied through scoped CSS in widget.tsx.
+ * Palette — swamikk-design-system/tokens.css v1.0 (Forest & Bone), via
+ * components/palette.ts, applied through the scoped CSS in widget.tsx (the
+ * CourseLit theme tokens carry the editor's palette, not the page's). No
+ * invented colours; ratios measured with the WCAG relative-luminance
+ * formula against the ground each sits on.
  * ------------------------------------------------------------------ */
-export const CREAM = "#f7f4eb"; // --cream : page ground
-export const INK = "#545454"; // --ink   : body copy
-export const RUST = "#993300"; // --rust  : h2, divider, hover (6.75:1 on cream)
-export const SAFFRON = "#ff9900"; // --saffron : button fill only — 2.14:1 with white text, fails AA
-export const CARD = "#ffffff"; // --card
-export const COCOA = "#312110"; // --cocoa : button text on saffron (7.24:1)
-export const RUST_PRESSED = "#7a2900"; // rust darkened ~12% for :active (9.79:1 with white text)
+/** bone: the frame ground before the iframe paints, and the poster ground. */
+export const GROUND = PALETTE.bone;
+/** ink: root copy, caption, poster help text (11.6:1 on bone). */
+export const TEXT_COLOR = PALETTE.ink;
+/** pine: the rule, the heading, the button's hover ground, every focus ring (7.8:1 on bone). */
+export const ACCENT = PALETTE.pine;
+/** moss: the poster button at rest, with ink text (5.8:1). */
+export const BUTTON_GROUND = PALETTE.moss;
+export const BUTTON_TEXT = PALETTE.ink;
+/** card: the button text on its pine hover ground (9.1:1) and pine-deep pressed ground (12.5:1). */
+export const BUTTON_TEXT_PRESSED = PALETTE.card;
+/** pine-deep: the :active ground. */
+export const BUTTON_GROUND_PRESSED = PALETTE.pineDeep;
+/** card at 88% — the help-text chip that lifts the copy off a poster photograph. */
+export const POSTER_CHIP = `color-mix(in srgb, ${PALETTE.card} 88%, transparent)`;
 
 export const FONT_DISPLAY = `var(--font-playfair-display), "Playfair Display", Georgia, serif`;
 export const FONT_BODY = `var(--font-open-sans), "Open Sans", -apple-system, "Segoe UI", sans-serif`;

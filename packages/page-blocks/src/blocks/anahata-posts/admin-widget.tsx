@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import type { Address, Media, Profile } from "@courselit/common-models";
+import type { Address, Profile } from "@courselit/common-models";
 import type {
     Theme,
     ThemeStyle,
@@ -10,33 +10,28 @@ import {
     AdminWidgetPanelContainer,
     Button,
     Button2,
-    Checkbox,
     CssIdField,
     DragAndDrop,
     Form,
     FormField,
     MaxWidthSelector,
-    MediaSelector,
-    PageBuilderPropertyHeader,
-    PageBuilderSlider,
     SectionBackgroundPanel,
-    Select,
     Tooltip,
     VerticalPaddingSelector,
 } from "@courselit/components-library";
 import { generateUniqueId } from "@courselit/utils";
-import { HelpCircle, PencilIcon } from "lucide-react";
-import Settings, { Post, PostThumbnail } from "./settings";
+import { PencilIcon } from "lucide-react";
+import type { ImageSource } from "../../components/image-source";
+import { hasWell } from "../../components/image-source";
+import { ImageSourceField } from "../../components/image-source-field";
+import Settings, { MoreLink, Post, PostImage } from "./settings";
+import { normalizePostThumbnail } from "./thumbnail";
 import {
-    buttonAction as defaultButtonAction,
-    buttonCaption as defaultButtonCaption,
     heading as defaultHeading,
     headingLink as defaultHeadingLink,
+    moreLink as defaultMoreLink,
     newPost,
     posts as defaultPosts,
-    showDivider as defaultShowDivider,
-    thumbnailSize as defaultThumbnailSize,
-    thumbnailSrc,
     verticalPadding as defaultVerticalPadding,
 } from "./defaults";
 
@@ -67,18 +62,14 @@ export default function AdminWidget({
     const [headingLink, setHeadingLink] = useState(
         settings.headingLink ?? defaultHeadingLink,
     );
-    const [showDivider, setShowDivider] = useState(
-        settings.showDivider ?? defaultShowDivider,
-    );
     const [posts, setPosts] = useState<Post[]>(settings.posts ?? defaultPosts);
-    const [thumbnailSize, setThumbnailSize] = useState(
-        settings.thumbnailSize ?? defaultThumbnailSize,
-    );
-    const [buttonCaption, setButtonCaption] = useState(
-        settings.buttonCaption ?? defaultButtonCaption,
-    );
-    const [buttonAction, setButtonAction] = useState(
-        settings.buttonAction ?? defaultButtonAction,
+    // A pre-redesign layout's `buttonCaption`/`buttonAction` pair seeds the
+    // link once; from here on only `moreLink` is written.
+    const [moreLink, setMoreLink] = useState<MoreLink>(
+        settings.moreLink ??
+            (settings.buttonCaption && settings.buttonAction
+                ? { label: settings.buttonCaption, href: settings.buttonAction }
+                : defaultMoreLink),
     );
     const [cssId, setCssId] = useState(settings.cssId);
     const [maxWidth, setMaxWidth] = useState<
@@ -96,11 +87,8 @@ export default function AdminWidget({
         onChange({
             heading,
             headingLink,
-            showDivider,
             posts,
-            thumbnailSize,
-            buttonCaption,
-            buttonAction,
+            moreLink,
             cssId,
             maxWidth,
             verticalPadding,
@@ -109,11 +97,8 @@ export default function AdminWidget({
     }, [
         heading,
         headingLink,
-        showDivider,
         posts,
-        thumbnailSize,
-        buttonCaption,
-        buttonAction,
+        moreLink,
         cssId,
         maxWidth,
         verticalPadding,
@@ -165,7 +150,7 @@ export default function AdminWidget({
     return (
         <AdminWidgetPanelContainer
             type="multiple"
-            defaultValue={["header", "posts", "call-to-action", "design"]}
+            defaultValue={["header", "posts", "more-link", "design"]}
         >
             <AdminWidgetPanel title="Header" value="header">
                 <Form>
@@ -182,18 +167,6 @@ export default function AdminWidget({
                         onChange={(e) => setHeadingLink(e.target.value)}
                     />
                 </Form>
-                <div className="flex justify-between items-center mt-2">
-                    <div className="flex grow items-center gap-1">
-                        <p>Show divider</p>
-                        <Tooltip title="The 200px rust rule beneath the heading">
-                            <HelpCircle className="w-4 h-4" />
-                        </Tooltip>
-                    </div>
-                    <Checkbox
-                        checked={showDivider}
-                        onChange={(value: boolean) => setShowDivider(value)}
-                    />
-                </div>
             </AdminWidgetPanel>
 
             <AdminWidgetPanel title="Posts" value="posts">
@@ -234,33 +207,29 @@ export default function AdminWidget({
                 </Button>
             </AdminWidgetPanel>
 
-            <AdminWidgetPanel title="Call to action" value="call-to-action">
+            <AdminWidgetPanel title="Link under the cards" value="more-link">
                 <Form>
                     <FormField
-                        label="Button text"
-                        value={buttonCaption}
-                        onChange={(e) => setButtonCaption(e.target.value)}
+                        label="Label"
+                        value={moreLink.label}
+                        placeholder={defaultMoreLink.label}
+                        tooltip="Leave empty to hide the link"
+                        onChange={(e) =>
+                            setMoreLink({ ...moreLink, label: e.target.value })
+                        }
                     />
                     <FormField
-                        label="Button link"
-                        value={buttonAction}
-                        onChange={(e) => setButtonAction(e.target.value)}
+                        label="Link"
+                        value={moreLink.href}
+                        placeholder={defaultMoreLink.href}
+                        onChange={(e) =>
+                            setMoreLink({ ...moreLink, href: e.target.value })
+                        }
                     />
                 </Form>
             </AdminWidgetPanel>
 
             <AdminWidgetPanel title="Design" value="design">
-                <PageBuilderSlider
-                    title="Thumbnail size"
-                    min={80}
-                    max={200}
-                    unit="px"
-                    value={thumbnailSize}
-                    tooltip="Edge length of the square thumbnail on wide screens. It scales down automatically on phones."
-                    onChange={(value?: number) =>
-                        setThumbnailSize(value ?? defaultThumbnailSize)
-                    }
-                />
                 <MaxWidthSelector
                     value={maxWidth || theme.theme.structure.page.width}
                     onChange={setMaxWidth}
@@ -306,23 +275,16 @@ function PostEditor({
     const [title, setTitle] = useState(post.title);
     const [date, setDate] = useState(post.date);
     const [href, setHref] = useState(post.href);
-    const [thumbnail, setThumbnail] = useState<PostThumbnail>(post.thumbnail);
+    // Whatever shape came in (current or legacy flat), the editor holds and
+    // writes back the current one.
+    const [thumbnail, setThumbnail] = useState<PostImage>(() =>
+        normalizePostThumbnail(post.thumbnail),
+    );
     const [deleteConfirmation, setDeleteConfirmation] = useState(false);
 
-    const alt = thumbnail.alt ?? "";
-    const setAlt = (value: string) =>
-        setThumbnail({ ...thumbnail, alt: value });
-
-    const setKind = (kind: PostThumbnail["kind"]) => {
-        if (kind === thumbnail.kind) {
-            return;
-        }
-        setThumbnail(
-            kind === "url"
-                ? { kind: "url", url: "", alt }
-                : { kind: "media", media: {}, alt },
-        );
-    };
+    const setSource = (source: ImageSource) =>
+        setThumbnail({ ...thumbnail, source });
+    const setAlt = (alt: string) => setThumbnail({ ...thumbnail, alt });
 
     return (
         <div className="flex flex-col gap-4">
@@ -335,75 +297,37 @@ function PostEditor({
                 <FormField
                     label="Date"
                     value={date}
-                    placeholder="April 20, 2026"
+                    placeholder="September 7, 2026"
                     tooltip="Shown verbatim beneath the title"
                     onChange={(e) => setDate(e.target.value)}
                 />
                 <FormField
                     label="Link"
                     value={href}
-                    placeholder="#"
+                    placeholder="/blog/post-slug"
                     onChange={(e) => setHref(e.target.value)}
                 />
             </Form>
 
-            <PageBuilderPropertyHeader
+            <ImageSourceField
                 label="Thumbnail"
-                tooltip="Rendered as a square, cropped to fill"
+                tooltip="Shown 3:2, cropped to fill. Pick Placeholder and describe the photo until the real one arrives."
+                value={thumbnail.source}
+                onChange={setSource}
+                urlPlaceholder="/anahata/post-roasted-vegetable-salad.jpg"
+                profile={profile}
+                address={address}
             />
-            <Select
-                title="Image source"
-                value={thumbnail.kind}
-                options={[
-                    { label: "File path", value: "url" },
-                    { label: "Media library", value: "media" },
-                ]}
-                onChange={(value: PostThumbnail["kind"]) => setKind(value)}
-            />
-            {thumbnail.kind === "url" ? (
-                <Form onSubmit={(e) => e.preventDefault()}>
-                    <FormField
-                        label="Image path"
-                        value={thumbnail.url}
-                        placeholder="/anahata/post-kumara-salad.jpg"
-                        onChange={(e) =>
-                            setThumbnail({
-                                kind: "url",
-                                url: e.target.value,
-                                alt,
-                            })
-                        }
-                    />
-                </Form>
-            ) : (
-                <MediaSelector
-                    title=""
-                    src={thumbnail.media?.thumbnail}
-                    srcTitle={thumbnail.media?.originalFileName}
-                    profile={profile}
-                    address={address}
-                    onSelection={(media: Media) =>
-                        media && setThumbnail({ kind: "media", media, alt })
-                    }
-                    onRemove={() =>
-                        setThumbnail({ kind: "media", media: {}, alt })
-                    }
-                    strings={{}}
-                    access="public"
-                    mediaId={thumbnail.media?.mediaId}
-                    type="page"
-                />
-            )}
             <Form onSubmit={(e) => e.preventDefault()}>
                 <FormField
                     label="Image alt text"
-                    value={alt}
+                    value={thumbnail.alt}
                     placeholder={title}
-                    tooltip="Describes the image to screen readers. Falls back to the title."
+                    tooltip="Describes the image to screen readers. Falls back to the title; a placeholder's description stands in until then."
                     onChange={(e) => setAlt(e.target.value)}
                 />
             </Form>
-            {!thumbnailSrc(thumbnail) && (
+            {!hasWell(thumbnail.source) && (
                 <p className="text-sm text-muted-foreground">
                     No image selected yet.
                 </p>

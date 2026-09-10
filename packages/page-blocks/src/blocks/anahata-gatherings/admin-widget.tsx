@@ -24,14 +24,26 @@ import {
     VerticalPaddingSelector,
 } from "@courselit/components-library";
 import { generateUniqueId } from "@courselit/utils";
-import Settings, { GatheringEvent, HeadingLink } from "./settings";
+import type { ImageSource } from "../../components/image-source";
+import { ImageSourceField } from "../../components/image-source-field";
+import Settings, {
+    GatheringEvent,
+    GatheringsLayout,
+    HeadingLink,
+    MoreLink,
+} from "./settings";
 import {
     blankEvent,
-    events as defaultEvents,
     headingLink as defaultHeadingLink,
+    intro as defaultIntro,
     showDivider as defaultShowDivider,
     title as defaultTitle,
 } from "./defaults";
+import {
+    normalizeEvents,
+    normalizeLayout,
+    normalizeMoreLink,
+} from "./normalize";
 
 interface AdminWidgetProps {
     name: string;
@@ -44,17 +56,16 @@ interface AdminWidgetProps {
 }
 
 /**
- * Parse stored events into a shape the editor can trust: always an array, every
- * card carrying a stable id (documents saved before ids existed will not).
+ * The layout Select needs a string for "no explicit choice"; `auto` is that
+ * sentinel and maps back to an absent setting.
  */
-function withIds(events: unknown): GatheringEvent[] {
-    if (!Array.isArray(events)) {
-        return defaultEvents.map((event) => ({ ...event }));
-    }
-    return events.map((event: GatheringEvent) =>
-        event.id ? event : { ...event, id: generateUniqueId() },
-    );
-}
+type LayoutChoice = GatheringsLayout | "auto";
+
+const LAYOUT_OPTIONS: { label: string; value: LayoutChoice }[] = [
+    { label: "Automatic (row for one event, grid for more)", value: "auto" },
+    { label: "Row — one wide card, picture left", value: "row" },
+    { label: "Grid — up to four across", value: "grid" },
+];
 
 /**
  * Stored documents predate this union (or were hand-edited), so a value may be
@@ -85,14 +96,21 @@ export default function AdminWidget({
     theme,
 }: AdminWidgetProps): JSX.Element {
     const [title, setTitle] = useState(settings.title ?? defaultTitle);
+    const [intro, setIntro] = useState(settings.intro ?? defaultIntro);
     const [headingLink, setHeadingLink] = useState<HeadingLink>(
         normalizeHeadingLink(settings.headingLink),
     );
     const [showDivider, setShowDivider] = useState<boolean>(
         settings.showDivider ?? defaultShowDivider,
     );
-    const [events, setEvents] = useState<GatheringEvent[]>(
-        withIds(settings.events),
+    const [events, setEvents] = useState<GatheringEvent[]>(() =>
+        normalizeEvents(settings.events, generateUniqueId),
+    );
+    const [layout, setLayout] = useState<GatheringsLayout | undefined>(
+        normalizeLayout(settings.layout),
+    );
+    const [moreLink, setMoreLink] = useState<MoreLink>(
+        normalizeMoreLink(settings.moreLink),
     );
     const [cssId, setCssId] = useState(settings.cssId);
     const [maxWidth, setMaxWidth] = useState<
@@ -108,9 +126,12 @@ export default function AdminWidget({
     useEffect(() => {
         onChange({
             title,
+            intro,
             headingLink,
             showDivider,
             events,
+            layout,
+            moreLink,
             cssId,
             maxWidth,
             verticalPadding,
@@ -118,9 +139,12 @@ export default function AdminWidget({
         });
     }, [
         title,
+        intro,
         headingLink,
         showDivider,
         events,
+        layout,
+        moreLink,
         cssId,
         maxWidth,
         verticalPadding,
@@ -171,15 +195,25 @@ export default function AdminWidget({
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                             setTitle(e.target.value)
                         }
-                        tooltip="The big rust heading above the event cards."
+                        tooltip="The pine heading above the event cards."
+                    />
+                    <FormField
+                        label="Intro"
+                        component="textarea"
+                        rows={3}
+                        value={intro ?? ""}
+                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                            setIntro(e.target.value)
+                        }
+                        tooltip="One short paragraph under the heading. Leave blank to hide it."
                     />
                 </Form>
                 <Select
                     title="Heading behaviour"
                     value={headingLink.kind}
                     options={[
-                        { label: "Links somewhere", value: "linked" },
                         { label: "Plain text", value: "plain" },
+                        { label: "Links somewhere", value: "linked" },
                     ]}
                     onChange={(kind: HeadingLink["kind"]) =>
                         setHeadingLink(
@@ -189,10 +223,7 @@ export default function AdminWidget({
                                       href:
                                           headingLink.kind === "linked"
                                               ? headingLink.href
-                                              : defaultHeadingLink.kind ===
-                                                  "linked"
-                                                ? defaultHeadingLink.href
-                                                : "/products",
+                                              : "",
                                   }
                                 : { kind: "plain" },
                         )
@@ -219,7 +250,7 @@ export default function AdminWidget({
                 <div className="flex justify-between items-center gap-2">
                     <PageBuilderPropertyHeader
                         label="Show divider"
-                        tooltip="The 200px rust rule beneath the heading."
+                        tooltip="A short pine rule beneath the heading."
                     />
                     <Checkbox
                         checked={showDivider}
@@ -229,9 +260,17 @@ export default function AdminWidget({
             </AdminWidgetPanel>
 
             <AdminWidgetPanel title="Events" value="events">
+                <Select
+                    title="Layout"
+                    value={layout ?? "auto"}
+                    options={LAYOUT_OPTIONS}
+                    onChange={(choice: LayoutChoice) =>
+                        setLayout(choice === "auto" ? undefined : choice)
+                    }
+                />
                 <PageBuilderPropertyHeader
                     label="Event cards"
-                    tooltip="Four across on desktop, two on tablet, one on mobile."
+                    tooltip="Row: one wide card with the picture on the left. Grid: four across on desktop, two on tablet, one on mobile."
                 />
                 {events.length === 0 && (
                     <p className="text-sm text-muted-foreground">
@@ -274,22 +313,22 @@ export default function AdminWidget({
                                                     href: e.target.value,
                                                 })
                                             }
-                                            placeholder="#"
-                                            tooltip="Where the card navigates. Leave as # until the event page exists."
+                                            placeholder="https://www.anahata-retreat.org.nz/event/…"
+                                            tooltip="Where the title navigates. Leave as # until the event page exists."
                                         />
-                                        <FormField
-                                            label="Image URL"
-                                            value={event.imageUrl ?? ""}
-                                            onChange={(
-                                                e: React.ChangeEvent<HTMLInputElement>,
-                                            ) =>
-                                                updateEvent(index, {
-                                                    imageUrl: e.target.value,
-                                                })
-                                            }
-                                            placeholder="/anahata/course-building-resilience-2026.png"
-                                            tooltip="A site path like /anahata/my-event.png, or any full image URL."
-                                        />
+                                    </Form>
+                                    <ImageSourceField
+                                        label="Image"
+                                        tooltip="The 16:9 picture on the card. Choose Placeholder to show a waiting-for-asset well until the poster arrives."
+                                        value={event.image}
+                                        onChange={(image: ImageSource) =>
+                                            updateEvent(index, { image })
+                                        }
+                                        urlPlaceholder="/anahata/event-european-tour.png"
+                                        profile={profile}
+                                        address={address}
+                                    />
+                                    <Form>
                                         <FormField
                                             label="Image alt text"
                                             value={event.imageAlt ?? ""}
@@ -324,7 +363,7 @@ export default function AdminWidget({
                                                     dateRange: e.target.value,
                                                 })
                                             }
-                                            placeholder="Thursday 02 July, 2026 - Thursday 23 July, 2026"
+                                            placeholder="Saturday 01 August, 2026 @ 12:00 am – Saturday 31 October, 2026 @ 11:59 pm"
                                         />
                                         <FormField
                                             label="Excerpt"
@@ -377,6 +416,28 @@ export default function AdminWidget({
                         Add event
                     </Button>
                 </div>
+                <PageBuilderPropertyHeader
+                    label="Link under the cards"
+                    tooltip="Blank either field to hide the link. A full https:// address opens in a new tab and gets the ↗ mark automatically."
+                />
+                <Form>
+                    <FormField
+                        label="Label"
+                        value={moreLink.label}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            setMoreLink({ ...moreLink, label: e.target.value })
+                        }
+                        placeholder="All Anahata events"
+                    />
+                    <FormField
+                        label="Link"
+                        value={moreLink.href}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            setMoreLink({ ...moreLink, href: e.target.value })
+                        }
+                        placeholder="https://www.anahata-retreat.org.nz/gatherings"
+                    />
+                </Form>
             </AdminWidgetPanel>
 
             <AdminWidgetPanel title="Design" value="design">

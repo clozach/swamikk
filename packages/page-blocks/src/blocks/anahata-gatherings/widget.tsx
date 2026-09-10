@@ -3,178 +3,253 @@ import { WidgetProps } from "@courselit/common-models";
 import { ThemeStyle } from "@courselit/page-models";
 import { Section } from "@courselit/page-primitives";
 import { Link } from "@courselit/components-library";
-import Settings, { GatheringEvent, HeadingLink } from "./settings";
+import { FONT_BODY, FONT_DISPLAY, PALETTE } from "../../components/palette";
 import {
-    events as defaultEvents,
+    hasWell,
+    isWaiting,
+    resolveImageSrc,
+} from "../../components/image-source";
+import { WaitingForAsset } from "../../components/waiting-for-asset";
+import Settings, {
+    GatheringEvent,
+    GatheringsLayout,
+    HeadingLink,
+} from "./settings";
+import {
     headingLink as defaultHeadingLink,
+    intro as defaultIntro,
     showDivider as defaultShowDivider,
     title as defaultTitle,
 } from "./defaults";
+import {
+    eventImage,
+    normalizeEvents,
+    normalizeLayout,
+    normalizeMoreLink,
+    resolveLayout,
+} from "./normalize";
 
 /**
- * Anahata palette (anahata-design-system/tokens.css). These are brand colours,
- * deliberately not theme tokens: the section reproduces the retreat's own
- * cream/saffron/rust identity rather than the CourseLit theme.
+ * Palette: swamikk design system v1.0 (`components/palette.ts`), by role.
+ * Colours are constants, not settings — this section is painted from the
+ * one palette the whole homepage shares, and every pairing below was
+ * measured there (ink 13.63:1 and pine 9.10:1 on card; ink 12.31:1, pine
+ * 8.22:1 and ink-soft 6.81:1 on bone; edge 3.72:1 vs bone for the card
+ * border). The section ground itself is the theme's `background`, which the
+ * theme script sets to bone.
  *
- * Saffron text measures 1.95:1 on the cream ground this section sits on —
- * under AA even at these display sizes — so it is not used as a text
- * colour here; rust (6.75:1) and rust-pressed (8.90:1) carry the rest/hover
- * pair instead, with cocoa (14.09:1) as the deepest active/pressed step —
- * nothing in this block uses saffron as a fill, so it is not declared here.
+ * The next/font variables win when the app defines them; the palette's
+ * stacks are the fallback.
  */
-const RUST = "#993300";
-const RUST_PRESSED = "#7a2900";
-const INK = "#545454";
-const COCOA = "#312110";
-const CREAM = "#f7f4eb";
-const FONT_DISPLAY =
-    'var(--font-playfair-display), "Playfair Display", Georgia, serif';
-const FONT_BODY =
-    'var(--font-open-sans), "Open Sans", -apple-system, "Segoe UI", sans-serif';
-const DUR_HOVER = "100ms";
+const DISPLAY = `var(--font-playfair-display), ${FONT_DISPLAY}`;
+const BODY = `var(--font-open-sans), ${FONT_BODY}`;
+const { pine, pineDeep, ink, inkSoft, card, edge, wellGround } = PALETTE;
 
 const ROOT = "anahata-gatherings";
 
 /**
- * Scoped stylesheet. Raw CSS is the right channel here (exact px breakpoints at
- * 768/960/767, pseudo-classes, descendant hover) and it is namespaced under
- * `.anahata-gatherings` so it cannot leak. It ships inline with the block
- * rather than in the package's shared `styles.css` so this block stays
- * self-contained.
+ * Scoped stylesheet. Raw CSS is the right channel here (exact px breakpoints
+ * at 768/960, pseudo-classes, a grid template) and it is namespaced under
+ * `.anahata-gatherings` so it cannot leak. It ships inline with the block so
+ * the block stays self-contained.
+ *
+ * Only real links react to hover, and every hover rule has its `:active`
+ * twin so keyboard and touch see the same state. Cards, images and wells are
+ * inert: no lift, no zoom, no colour shift.
  */
 const css = `
 .${ROOT} {
-    font-family: ${FONT_BODY};
-    color: ${INK};
+    font-family: ${BODY};
+    color: ${ink};
     line-height: 1.65;
     text-align: left;
 }
 .${ROOT}__heading {
-    font-family: ${FONT_DISPLAY};
-    font-size: 32px;
+    font-family: ${DISPLAY};
+    font-size: clamp(28px, 3vw, 36px);
     font-weight: 400;
-    color: ${RUST};
-    line-height: 1.2;
-    text-align: center;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    color: ${pine};
     margin: 0;
-    padding-bottom: 15px;
 }
 .${ROOT}__heading-link {
     color: inherit;
     text-decoration: none;
     border-radius: 2px;
-    transition: color ${DUR_HOVER} ease-in;
 }
-.${ROOT}__heading-link:hover { color: ${RUST_PRESSED}; }
-.${ROOT}__heading-link:active { color: ${COCOA}; }
+.${ROOT}__heading-link:hover,
+.${ROOT}__heading-link:active {
+    color: ${pineDeep};
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.16em;
+}
 .${ROOT}__heading-link:focus-visible {
-    outline: 2px solid ${RUST};
-    outline-offset: 4px;
+    outline: 3px solid ${pine};
+    outline-offset: 3px;
 }
 .${ROOT}__divider {
-    width: 80%;
-    max-width: 200px;
+    width: 64px;
     height: 0;
     border: 0;
-    border-bottom: 2px solid ${RUST};
-    margin: 0 auto 55px;
+    border-bottom: 2px solid ${pine};
+    margin: 16px 0 0;
 }
-.${ROOT}__grid {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 20px;
-    align-items: start;
-    width: 100%;
+.${ROOT}__intro {
+    font-size: 16px;
+    line-height: 1.65;
+    color: ${ink};
+    max-width: 62ch;
+    margin: 16px 0 0;
 }
+.${ROOT}__cards { margin-top: 40px; }
 
+/* ---- the card, shared by both layouts ---- */
 .${ROOT}__card {
-    flex: 0 1 100%;
-    max-width: 100%;
     display: flex;
     flex-direction: column;
     min-width: 0;
-    background: transparent;
-    border: none;
+    background: ${card};
+    border: 1px solid ${edge};
+    border-radius: 6px;
+    overflow: hidden;
     color: inherit;
-    text-decoration: none;
-    border-radius: 4px;
-}
-@media (min-width: 768px) {
-    .${ROOT}__card { flex-basis: calc((100% - 20px) / 2); max-width: calc((100% - 20px) / 2); }
-}
-@media (min-width: 960px) {
-    .${ROOT}__card { flex-basis: calc((100% - 60px) / 4); max-width: calc((100% - 60px) / 4); }
-}
-/* Interactive affordances apply only to cards that actually navigate, so a
-   card with no link never falsely signals clickability. The affordance is a
-   pointer cursor plus a gentle image magnification (below) — no lift/shadow,
-   which revealed how tight the card's own click boundary is. */
-.${ROOT}__card--linked {
-    cursor: pointer;
-}
-.${ROOT}__card--linked:focus-visible {
-    outline: 2px solid ${RUST};
-    outline-offset: 4px;
 }
 .${ROOT}__media {
-    /* Clips the image's hover scale so magnification cannot bleed past the
-       card edge. */
     position: relative;
-    overflow: hidden;
     width: 100%;
-    aspect-ratio: 768 / 570;
-    background-color: ${CREAM};
-    border-radius: 4px;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: ${wellGround};
+    border-bottom: 1px solid ${edge};
 }
+/* The image and the waiting-for-asset well occupy the identical box. */
 .${ROOT}__img {
+    position: absolute;
+    inset: 0;
     display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
     object-position: center;
-    transition: transform ${DUR_HOVER} ease-in;
 }
-.${ROOT}__card--linked:hover .${ROOT}__img { transform: scale(1.03); }
-.${ROOT}__details { padding: 12px 0 0; border: none; }
+.${ROOT}__media .ayr-well { border-radius: 0; }
+.${ROOT}__body {
+    display: flex;
+    flex-direction: column;
+    padding: 20px 20px 24px;
+    min-width: 0;
+}
 .${ROOT}__title {
-    font-family: ${FONT_DISPLAY};
-    font-size: 15px;
-    font-weight: 700;
-    color: ${RUST};
-    line-height: 1.35;
+    font-family: ${DISPLAY};
+    font-size: 22px;
+    font-weight: 400;
+    line-height: 1.25;
+    color: ${pine};
     margin: 0;
-    padding-bottom: 8px;
     overflow-wrap: anywhere;
-    transition: color ${DUR_HOVER} ease-in;
 }
-.${ROOT}__card--linked:hover .${ROOT}__title,
-.${ROOT}__card--linked:focus-visible .${ROOT}__title { color: ${RUST_PRESSED}; }
-.${ROOT}__date {
+.${ROOT}__title-link {
+    color: inherit;
+    text-decoration: none;
+    border-radius: 2px;
+}
+.${ROOT}__title-link:hover,
+.${ROOT}__title-link:active {
+    color: ${pineDeep};
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.16em;
+}
+.${ROOT}__title-link:focus-visible {
+    outline: 3px solid ${pine};
+    outline-offset: 3px;
+}
+.${ROOT}__meta {
     font-size: 14px;
-    color: ${INK};
     line-height: 1.65;
-    margin: 0 0 5px;
+    color: ${inkSoft};
+    margin: 6px 0 0;
     overflow-wrap: anywhere;
 }
+.${ROOT}__meta + .${ROOT}__meta { margin-top: 2px; }
 .${ROOT}__excerpt {
-    font-size: 14px;
-    color: ${INK};
+    font-size: 16px;
     line-height: 1.65;
-    margin: 15px 0;
+    color: ${ink};
+    margin: 14px 0 0;
     overflow-wrap: anywhere;
 }
-@media (max-width: 767px) {
-    .${ROOT}__card {
-        border-bottom: 1px solid ${COCOA};
-        padding-bottom: 20px;
+
+/* ---- grid: 1 / 2 / 4 across ---- */
+.${ROOT}__grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: stretch;
+    width: 100%;
+}
+.${ROOT}__grid .${ROOT}__card { flex: 0 1 100%; max-width: 100%; }
+@media (min-width: 768px) {
+    .${ROOT}__grid .${ROOT}__card {
+        flex-basis: calc((100% - 20px) / 2);
+        max-width: calc((100% - 20px) / 2);
     }
 }
-@media (prefers-reduced-motion: reduce) {
-    .${ROOT}__img,
-    .${ROOT}__title,
-    .${ROOT}__heading-link { transition: none; }
-    .${ROOT}__card--linked:hover .${ROOT}__img { transform: none; }
+@media (min-width: 960px) {
+    .${ROOT}__grid .${ROOT}__card {
+        flex-basis: calc((100% - 60px) / 4);
+        max-width: calc((100% - 60px) / 4);
+    }
+    .${ROOT}__grid .${ROOT}__title { font-size: 19px; }
+}
+
+/* ---- row: one horizontal card, well left (~45%), text right ---- */
+.${ROOT}__rows {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+.${ROOT}__card--row { max-width: 980px; }
+@media (min-width: 768px) {
+    .${ROOT}__card--row.${ROOT}__card--with-media {
+        display: grid;
+        grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+        align-items: stretch;
+    }
+    .${ROOT}__card--row.${ROOT}__card--with-media .${ROOT}__media {
+        border-bottom: 0;
+        border-right: 1px solid ${edge};
+    }
+    .${ROOT}__card--row .${ROOT}__body {
+        padding: 28px 32px;
+        justify-content: center;
+    }
+}
+
+/* ---- the link under the cards ---- */
+.${ROOT}__more {
+    margin: 32px 0 0;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.65;
+}
+.${ROOT}__more-link {
+    color: ${pine};
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.16em;
+    border-radius: 2px;
+}
+.${ROOT}__more-link:hover,
+.${ROOT}__more-link:active {
+    color: ${pineDeep};
+    text-decoration-thickness: 2px;
+}
+.${ROOT}__more-link:focus-visible {
+    outline: 3px solid ${pine};
+    outline-offset: 3px;
 }
 `;
 
@@ -218,60 +293,87 @@ function Heading({
     return <h2 className={`${ROOT}__heading`}>{title}</h2>;
 }
 
-function EventCard({ event }: { event: GatheringEvent }) {
-    const card = (
-        <>
-            {event.imageUrl && (
-                <div className={`${ROOT}__media`}>
-                    {/* Plain <img>: sources are same-origin /public paths and
-                        the size is fixed by aspect-ratio, so next/image buys
-                        nothing here and would need a host allowlist for
-                        arbitrary URLs Karuna pastes in. */}
-                    <img
-                        className={`${ROOT}__img`}
-                        src={event.imageUrl}
-                        alt={event.imageAlt || ""}
-                        loading="lazy"
-                        decoding="async"
-                    />
-                </div>
+/** The 16:9 box: the real picture, or the waiting-for-asset well in its place. */
+function EventMedia({ event }: { event: GatheringEvent }) {
+    const source = eventImage(event);
+    if (!hasWell(source)) return null;
+    return (
+        <div className={`${ROOT}__media`}>
+            {isWaiting(source) ? (
+                <WaitingForAsset fill description={source.description} />
+            ) : (
+                /* Plain <img>: sources are same-origin /public paths or media
+                   files and the box is fixed by aspect-ratio, so next/image
+                   buys nothing here and would need a host allowlist for
+                   arbitrary URLs Karuna pastes in. */
+                <img
+                    className={`${ROOT}__img`}
+                    src={resolveImageSrc(source)}
+                    alt={event.imageAlt || ""}
+                    loading="lazy"
+                    decoding="async"
+                />
             )}
-            <div className={`${ROOT}__details`}>
-                <h3 className={`${ROOT}__title`}>{event.title}</h3>
-                {(event.hostLine || event.dateRange) && (
-                    <div className={`${ROOT}__date`}>
-                        {event.hostLine && <span>{event.hostLine}</span>}
-                        {event.hostLine && event.dateRange && <br />}
-                        {event.dateRange && <span>{event.dateRange}</span>}
-                    </div>
+        </div>
+    );
+}
+
+function EventCard({
+    event,
+    layout,
+}: {
+    event: GatheringEvent;
+    layout: GatheringsLayout;
+}) {
+    const withMedia = hasWell(eventImage(event));
+    const classes = [
+        `${ROOT}__card`,
+        layout === "row" && `${ROOT}__card--row`,
+        withMedia && `${ROOT}__card--with-media`,
+    ]
+        .filter(Boolean)
+        .join(" ");
+    const isLinked = Boolean(event.href) && event.href !== "#";
+
+    return (
+        <article className={classes}>
+            <EventMedia event={event} />
+            <div className={`${ROOT}__body`}>
+                <h3 className={`${ROOT}__title`}>
+                    {isLinked ? (
+                        <Link
+                            href={event.href}
+                            className={`${ROOT}__title-link`}
+                        >
+                            {event.title}
+                        </Link>
+                    ) : (
+                        event.title
+                    )}
+                </h3>
+                {event.hostLine && (
+                    <p className={`${ROOT}__meta`}>{event.hostLine}</p>
+                )}
+                {event.dateRange && (
+                    <p className={`${ROOT}__meta`}>{event.dateRange}</p>
                 )}
                 {event.excerpt && (
                     <p className={`${ROOT}__excerpt`}>{event.excerpt}</p>
                 )}
             </div>
-        </>
-    );
-
-    if (!event.href) {
-        return <div className={`${ROOT}__card`}>{card}</div>;
-    }
-
-    return (
-        <Link
-            href={event.href}
-            className={`${ROOT}__card ${ROOT}__card--linked`}
-        >
-            {card}
-        </Link>
+        </article>
     );
 }
 
 export default function Widget({
     settings: {
         title = defaultTitle,
+        intro = defaultIntro,
         headingLink,
         showDivider = defaultShowDivider,
         events,
+        layout,
+        moreLink,
         cssId,
         maxWidth,
         verticalPadding,
@@ -287,9 +389,10 @@ export default function Widget({
         verticalPadding || theme.theme.structure.section.padding.y;
 
     const heading = normalizeHeadingLink(headingLink);
-    const cards: GatheringEvent[] = Array.isArray(events)
-        ? events
-        : defaultEvents;
+    // Ids only matter to the editor; a stored card without one keys by index.
+    const cards = normalizeEvents(events, () => "");
+    const shape = resolveLayout(normalizeLayout(layout), cards.length);
+    const more = normalizeMoreLink(moreLink);
 
     return (
         <Section
@@ -302,15 +405,28 @@ export default function Widget({
             <div className={ROOT}>
                 {title && <Heading title={title} headingLink={heading} />}
                 {showDivider && <hr className={`${ROOT}__divider`} />}
+                {intro && <p className={`${ROOT}__intro`}>{intro}</p>}
                 {cards.length > 0 && (
-                    <div className={`${ROOT}__grid`}>
+                    <div
+                        className={`${ROOT}__cards ${ROOT}__${
+                            shape === "row" ? "rows" : "grid"
+                        }`}
+                    >
                         {cards.map((event, index) => (
                             <EventCard
                                 key={event.id || `${ROOT}-${index}`}
                                 event={event}
+                                layout={shape}
                             />
                         ))}
                     </div>
+                )}
+                {more.label && more.href && (
+                    <p className={`${ROOT}__more`}>
+                        <Link href={more.href} className={`${ROOT}__more-link`}>
+                            {more.label}
+                        </Link>
+                    </p>
                 )}
             </div>
         </Section>

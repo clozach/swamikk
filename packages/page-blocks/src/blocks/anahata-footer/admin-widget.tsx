@@ -32,13 +32,19 @@ import Settings, {
     SocialPlatform,
 } from "./settings";
 import {
+    normalizeImageSource,
+    type ImageSource,
+} from "../../components/image-source";
+import { ImageSourceField } from "../../components/image-source-field";
+import {
+    GROUND,
+    HAIRLINE,
     INNER_MAX_WIDTH,
-    NAVY,
-    OCEAN,
-    OCEAN_HAIRLINE,
+    LINK_HOVER,
     PADDING_BOTTOM,
     PADDING_TOP,
-    WHITE,
+    STRIP,
+    TEXT,
     backToTop as defaultBackToTop,
     columns as defaultColumns,
     copyrightLinkHref as defaultCopyrightLinkHref,
@@ -147,6 +153,8 @@ function LinkEditor({
 export default function AdminWidget({
     settings,
     onChange,
+    address,
+    profile,
 }: AdminWidgetProps): JSX.Element {
     // `?? defaultColumns`, not a length check: an empty array is a deliberate
     // "no columns" state, and treating it as absent would silently resurrect
@@ -156,11 +164,14 @@ export default function AdminWidget({
     );
 
     const [groundColor, setGroundColor] = useState(
-        settings.groundColor || OCEAN,
+        settings.groundColor || GROUND,
     );
-    const [textColor, setTextColor] = useState(settings.textColor || WHITE);
+    const [textColor, setTextColor] = useState(settings.textColor || TEXT);
     const [hairlineColor, setHairlineColor] = useState(
-        settings.hairlineColor || OCEAN_HAIRLINE,
+        settings.hairlineColor || HAIRLINE,
+    );
+    const [linkHoverColor, setLinkHoverColor] = useState(
+        settings.linkHoverColor || LINK_HOVER,
     );
 
     const [decorLeftUrl, setDecorLeftUrl] = useState(
@@ -181,7 +192,7 @@ export default function AdminWidget({
     );
 
     const [copyrightGroundColor, setCopyrightGroundColor] = useState(
-        settings.copyrightGroundColor || NAVY,
+        settings.copyrightGroundColor || STRIP,
     );
     const [copyrightPrefix, setCopyrightPrefix] = useState(
         settings.copyrightPrefix ?? defaultCopyrightPrefix,
@@ -233,6 +244,7 @@ export default function AdminWidget({
             groundColor,
             textColor,
             hairlineColor,
+            linkHoverColor,
             decorLeftUrl,
             decorRightUrl,
             innerMaxWidth,
@@ -252,6 +264,7 @@ export default function AdminWidget({
         groundColor,
         textColor,
         hairlineColor,
+        linkHoverColor,
         decorLeftUrl,
         decorRightUrl,
         innerMaxWidth,
@@ -436,9 +449,33 @@ export default function AdminWidget({
     ) => {
         const addressLines = column.addressLines ?? [];
         const socials = column.socials ?? [];
+        // The same precedence the widget renders: explicit `logoSource`, else
+        // the legacy `logoUrl` parsed into the url arm.
+        const logoSource: ImageSource | undefined =
+            normalizeImageSource(column.logoSource) ??
+            normalizeImageSource(column.logoUrl);
 
         return (
             <AccordionContent className="flex flex-col gap-4">
+                {/* Outside the <Form> below: the field renders its own form
+                    for the URL / description arms, and forms do not nest. */}
+                <ImageSourceField
+                    label="Logo"
+                    tooltip="The 150 × 168 mark above the address. Placeholder renders the waiting-for-asset well on the dark ground until the real mark is uploaded."
+                    value={logoSource}
+                    onChange={(next) =>
+                        // Writing `logoSource` retires the legacy field on
+                        // this column so it can never resurface.
+                        replaceColumn(columnIndex, {
+                            ...column,
+                            logoSource: next,
+                            logoUrl: "",
+                        })
+                    }
+                    urlPlaceholder="/anahata/mark-reversed.svg"
+                    profile={profile}
+                    address={address}
+                />
                 <Form className="flex flex-col gap-2">
                     <FormField
                         label="Column title"
@@ -448,16 +485,6 @@ export default function AdminWidget({
                             replaceColumn(columnIndex, {
                                 ...column,
                                 title: e.target.value,
-                            })
-                        }
-                    />
-                    <FormField
-                        label="Logo URL"
-                        value={column.logoUrl}
-                        onChange={(e: any) =>
-                            replaceColumn(columnIndex, {
-                                ...column,
-                                logoUrl: e.target.value,
                             })
                         }
                     />
@@ -676,7 +703,7 @@ export default function AdminWidget({
                     title="Strip background"
                     value={copyrightGroundColor}
                     onChange={(value?: string) =>
-                        setCopyrightGroundColor(value || NAVY)
+                        setCopyrightGroundColor(value || STRIP)
                     }
                 />
             </AdminWidgetPanel>
@@ -703,19 +730,26 @@ export default function AdminWidget({
                     title="Footer background"
                     value={groundColor}
                     onChange={(value?: string) =>
-                        setGroundColor(value || OCEAN)
+                        setGroundColor(value || GROUND)
                     }
                 />
                 <ColorSelector
                     title="Text"
                     value={textColor}
-                    onChange={(value?: string) => setTextColor(value || WHITE)}
+                    onChange={(value?: string) => setTextColor(value || TEXT)}
                 />
                 <ColorSelector
                     title="Menu hairline"
                     value={hairlineColor}
                     onChange={(value?: string) =>
-                        setHairlineColor(value || OCEAN_HAIRLINE)
+                        setHairlineColor(value || HAIRLINE)
+                    }
+                />
+                <ColorSelector
+                    title="Link hover and focus ring"
+                    value={linkHoverColor}
+                    onChange={(value?: string) =>
+                        setLinkHoverColor(value || LINK_HOVER)
                     }
                 />
                 <PageBuilderSlider

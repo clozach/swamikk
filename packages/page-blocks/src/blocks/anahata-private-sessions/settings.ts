@@ -1,32 +1,23 @@
-import { Media, WidgetDefaultSettings } from "@courselit/common-models";
+import { WidgetDefaultSettings } from "@courselit/common-models";
+import {
+    type ImageSource,
+    resolveImageSrc,
+} from "../../components/image-source";
 
 /**
- * Where an image comes from.
- *
- * The Anahata assets are staged as same-origin files under `/anahata/…`, which
- * the medialit-backed `MediaSelector` cannot represent. Rather than carrying a
- * nullable `url` alongside a nullable `media` (a flag-bag whose combinations
- * include two illegal states), the source is a tagged union: exactly one shape
- * is ever populated, and `resolveImageSource` is the single reader.
+ * The picture source is the shared tagged union (`url` · `media` ·
+ * `placeholder`) from `components/image-source`. This block used to carry its
+ * own two-arm copy; the shared one was generalised from it, so re-exporting
+ * keeps every existing import path and stored document working.
  */
-export type ImageSource =
-    | { kind: "url"; url: string }
-    | { kind: "media"; media: Media };
+export type { ImageSource };
 
 /**
- * The single reader for an `ImageSource`. Returns `undefined` when the source
- * is absent or carries no usable file, so callers never branch on the tag.
+ * The block's original reader, kept as an alias of the shared one so callers
+ * never branch on the tag. `undefined` for an absent source, an empty file,
+ * OR a placeholder — the widget checks `isWaiting` for the latter.
  */
-export function resolveImageSource(
-    source: ImageSource | undefined,
-): string | undefined {
-    if (!source) {
-        return undefined;
-    }
-    const url =
-        source.kind === "url" ? source.url : source.media?.file || undefined;
-    return url && url.trim() ? url.trim() : undefined;
-}
+export const resolveImageSource = resolveImageSrc;
 
 /** One list item in the callout. `id` is stable across drags/edits. */
 export interface Bullet {
@@ -34,15 +25,21 @@ export interface Bullet {
     text: string;
 }
 
-/** Which side the photograph sits on at >= 768px. Below that it always stacks first. */
+/**
+ * Which side the photograph sits on at >= 768px. Below that the copy leads and
+ * the photograph follows it (the Forest & Bone split on phones).
+ */
 export type PhotoPosition = "left" | "right";
 
 export default interface Settings extends WidgetDefaultSettings {
-    /** Portrait beside the copy. Default: /anahata/swami-kk-bio.jpg */
+    /** The 3:2 photograph (or its waiting-for-asset well) beside the copy. */
     photo?: ImageSource;
     /** Alt text for the portrait. Empty string marks it decorative. */
     photoAlt?: string;
-    /** Intrinsic pixel size of the portrait, used to reserve space (CLS). */
+    /**
+     * Intrinsic pixel size of the portrait, used to reserve the box (CLS).
+     * While the photo is a placeholder these define the well's aspect.
+     */
     photoWidth?: number;
     photoHeight?: number;
 
@@ -50,7 +47,9 @@ export default interface Settings extends WidgetDefaultSettings {
     decorImage?: ImageSource;
     showDecorImage?: boolean;
 
-    /** The rust lead line (an <h4> on the source site). */
+    /** The Playfair H2 above the lead. */
+    heading?: string;
+    /** The lead line under the heading. */
     lead?: string;
     /** The verbatim bullet list. */
     bullets?: Bullet[];
@@ -60,8 +59,9 @@ export default interface Settings extends WidgetDefaultSettings {
     buttonAction?: string;
     buttonOpensInNewTab?: boolean;
 
-    /** Palette overrides. Defaults are the Anahata design tokens. */
+    /** Palette overrides. Defaults are the swamikk v1.0 tokens (Forest & Bone). */
     panelColor?: string;
+    /** Heading, lead line and the bullet markers — the display voice. */
     leadColor?: string;
     textColor?: string;
     buttonColor?: string;
@@ -69,9 +69,9 @@ export default interface Settings extends WidgetDefaultSettings {
     buttonTextColor?: string;
     /**
      * Text colour once the background has moved to `buttonHoverColor`
-     * (hover AND active/pressed). Separate from `buttonTextColor` because
-     * one text colour cannot pass AA against both a saffron rest ground and
-     * a rust hover ground at once — see defaults.ts for the measured ratios.
+     * (hover AND active/pressed). Kept separate from `buttonTextColor` so a
+     * palette whose rest and hover grounds need different text can still
+     * pass AA on both — see defaults.ts for the measured ratios.
      */
     buttonHoverTextColor?: string;
 

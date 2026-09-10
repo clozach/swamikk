@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import type { Address, Media, Profile } from "@courselit/common-models";
+import type { Address, Profile } from "@courselit/common-models";
 import type {
     SectionBackground,
     Theme,
@@ -18,7 +18,6 @@ import {
     FormField,
     IconButton,
     MaxWidthSelector,
-    MediaSelector,
     PageBuilderPropertyHeader,
     Select,
     VerticalPaddingSelector,
@@ -26,6 +25,8 @@ import {
 } from "@courselit/components-library";
 import { Add, ArrowDownward, ArrowUpward, Delete } from "@courselit/icons";
 import { generateUniqueId } from "@courselit/utils";
+import { normalizeImageSource } from "../../components/image-source";
+import { ImageSourceField } from "../../components/image-source-field";
 import Settings, { Bullet, ImageSource, PhotoPosition } from "./settings";
 import * as defaults from "./defaults";
 
@@ -37,88 +38,6 @@ interface AdminWidgetProps {
     networkAction: boolean;
     profile: Profile;
     theme: Theme;
-}
-
-/**
- * Editor for one `ImageSource`. The tag is the control: picking "Uploaded
- * media" swaps the URL field for the media picker, so the two shapes can never
- * both be half-filled.
- */
-function ImageSourceField({
-    label,
-    tooltip,
-    value,
-    onChange,
-    profile,
-    address,
-}: {
-    label: string;
-    tooltip?: string;
-    value: ImageSource | undefined;
-    onChange: (value: ImageSource) => void;
-    profile: Profile;
-    address: Address;
-}) {
-    const kind = value?.kind ?? "url";
-    const media = value?.kind === "media" ? value.media : undefined;
-
-    return (
-        <div className="flex flex-col gap-2">
-            <PageBuilderPropertyHeader label={label} tooltip={tooltip} />
-            <Select
-                title="Source"
-                variant="without-label"
-                value={kind}
-                options={[
-                    { label: "File path or URL", value: "url" },
-                    { label: "Uploaded media", value: "media" },
-                ]}
-                onChange={(next: ImageSource["kind"]) =>
-                    onChange(
-                        next === "url"
-                            ? {
-                                  kind: "url",
-                                  url: value?.kind === "url" ? value.url : "",
-                              }
-                            : {
-                                  kind: "media",
-                                  media: (media || {}) as Media,
-                              },
-                    )
-                }
-            />
-            {kind === "url" ? (
-                <Form>
-                    <FormField
-                        label="Path"
-                        value={value?.kind === "url" ? value.url : ""}
-                        placeholder="/anahata/swami-kk-bio.jpg"
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                            onChange({ kind: "url", url: e.target.value })
-                        }
-                    />
-                </Form>
-            ) : (
-                <MediaSelector
-                    title=""
-                    src={media?.thumbnail || ""}
-                    srcTitle={media?.originalFileName || ""}
-                    profile={profile}
-                    address={address}
-                    onSelection={(selected: Media) =>
-                        selected && onChange({ kind: "media", media: selected })
-                    }
-                    onRemove={() =>
-                        onChange({ kind: "media", media: {} as Media })
-                    }
-                    strings={{}}
-                    access="public"
-                    mediaId={media?.mediaId}
-                    type="page"
-                />
-            )}
-        </div>
-    );
 }
 
 /** Reorderable list of plain-text bullets. */
@@ -231,7 +150,7 @@ export default function AdminWidget({
     );
 
     const [photo, setPhoto] = useState<ImageSource>(
-        settings.photo || defaults.photo,
+        () => normalizeImageSource(settings.photo) ?? defaults.photo,
     );
     const [photoAlt, setPhotoAlt] = useState(
         settings.photoAlt ?? defaults.photoAlt,
@@ -243,10 +162,13 @@ export default function AdminWidget({
         settings.photoHeight ?? defaults.photoHeight,
     );
     const [decorImage, setDecorImage] = useState<ImageSource>(
-        settings.decorImage || defaults.decorImage,
+        () => normalizeImageSource(settings.decorImage) ?? defaults.decorImage,
     );
     const [showDecorImage, setShowDecorImage] = useState(
         settings.showDecorImage ?? defaults.showDecorImage,
+    );
+    const [heading, setHeading] = useState(
+        settings.heading ?? defaults.heading,
     );
     const [lead, setLead] = useState(settings.lead ?? defaults.lead);
     const [bullets, setBullets] = useState<Bullet[]>(seededBullets);
@@ -302,6 +224,7 @@ export default function AdminWidget({
             photoHeight,
             decorImage,
             showDecorImage,
+            heading,
             lead,
             bullets,
             buttonCaption,
@@ -327,6 +250,7 @@ export default function AdminWidget({
         photoHeight,
         decorImage,
         showDecorImage,
+        heading,
         lead,
         bullets,
         buttonCaption,
@@ -354,10 +278,18 @@ export default function AdminWidget({
             <AdminWidgetPanel title="Copy" value="copy">
                 <Form>
                     <FormField
+                        label="Heading"
+                        tooltip="The Playfair Display heading above the lead."
+                        value={heading}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            setHeading(e.target.value)
+                        }
+                    />
+                    <FormField
                         component="textarea"
                         rows={4}
                         label="Lead line"
-                        tooltip="The rust heading above the bullets."
+                        tooltip="The line under the heading, above the bullets."
                         value={lead}
                         onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
                             setLead(e.target.value)
@@ -406,16 +338,17 @@ export default function AdminWidget({
             <AdminWidgetPanel title="Images" value="images">
                 <ImageSourceField
                     label="Photograph"
-                    tooltip="Shown beside the copy; fills its half of the block."
+                    tooltip="The 3:2 picture beside the copy. Pick Placeholder and describe the photo until the real one arrives; the well takes its exact place."
                     value={photo}
                     onChange={setPhoto}
+                    urlPlaceholder="/anahata/swami-kk-bio.jpg"
                     profile={profile}
                     address={address}
                 />
                 <Form>
                     <FormField
                         label="Photograph alt text"
-                        tooltip="Leave empty if the photograph is purely decorative."
+                        tooltip="Leave empty if the photograph is purely decorative. A placeholder well always names itself by its description."
                         value={photoAlt}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                             setPhotoAlt(e.target.value)
@@ -423,6 +356,7 @@ export default function AdminWidget({
                     />
                     <FormField
                         label="Photograph intrinsic width (px)"
+                        tooltip="With the height, sets the box's aspect — 3:2 by default. Update to the real asset's natural size when it lands."
                         type="number"
                         value={photoWidth}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -457,6 +391,7 @@ export default function AdminWidget({
                         label="Corner ornament"
                         value={decorImage}
                         onChange={setDecorImage}
+                        urlPlaceholder="/anahata/testimonial-bg.jpg"
                         profile={profile}
                         address={address}
                     />
@@ -472,17 +407,19 @@ export default function AdminWidget({
                         { label: "Right", value: "right" },
                     ]}
                     onChange={(value: PhotoPosition) => setPhotoPosition(value)}
-                    subtitle="Applies from 768px up; below that the photograph always sits above the copy."
+                    subtitle="Applies from 768px up; below that the copy leads and the photograph follows it."
                 />
                 <ColorSelector
                     title="Panel background"
+                    tooltip="Bone by default, so the block sits on the page ground with no callout panel."
                     value={panelColor}
                     onChange={(value?: string) =>
                         setPanelColor(value || defaults.panelColor)
                     }
                 />
                 <ColorSelector
-                    title="Lead line"
+                    title="Heading, lead and bullet markers"
+                    tooltip="The display voice: pine by default (7.76:1 on bone)."
                     value={leadColor}
                     onChange={(value?: string) =>
                         setLeadColor(value || defaults.leadColor)
@@ -490,6 +427,7 @@ export default function AdminWidget({
                 />
                 <ColorSelector
                     title="Bullet text"
+                    tooltip="Ink by default (11.63:1 on bone)."
                     value={textColor}
                     onChange={(value?: string) =>
                         setTextColor(value || defaults.textColor)
@@ -503,7 +441,8 @@ export default function AdminWidget({
                     }
                 />
                 <ColorSelector
-                    title="Button hover / focus"
+                    title="Button hover / pressed"
+                    tooltip="The ground on hover and while pressed. Pine-deep by default; the focus ring stays pine."
                     value={buttonHoverColor}
                     onChange={(value?: string) =>
                         setButtonHoverColor(value || defaults.buttonHoverColor)
@@ -511,7 +450,7 @@ export default function AdminWidget({
                 />
                 <ColorSelector
                     title="Button text"
-                    tooltip="Rest-state text, against the button background above. White-on-saffron was 2.14:1 (fails AA); cocoa reaches 7.24:1."
+                    tooltip="Rest-state text, against the button background above. Bone on pine measures 7.76:1."
                     value={buttonTextColor}
                     onChange={(value?: string) =>
                         setButtonTextColor(value || defaults.buttonTextColor)
@@ -519,7 +458,7 @@ export default function AdminWidget({
                 />
                 <ColorSelector
                     title="Button hover/active text"
-                    tooltip="Text once the background moves to the hover colour above (hover AND active/pressed)."
+                    tooltip="Text once the background moves to the hover colour above (hover AND active/pressed). Bone on pine-deep measures 10.67:1."
                     value={buttonHoverTextColor}
                     onChange={(value?: string) =>
                         setButtonHoverTextColor(

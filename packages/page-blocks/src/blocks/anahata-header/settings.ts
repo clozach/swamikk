@@ -1,4 +1,5 @@
 import { Media, WidgetDefaultSettings } from "@courselit/common-models";
+import type { ImageSource } from "../../components/image-source";
 
 /**
  * A single navigation entry. `children` is recursive so the editor can express
@@ -30,18 +31,29 @@ export default interface Settings extends WidgetDefaultSettings {
     /** Accessible name for that switch. */
     themeToggleLabel?: string;
 
-    /** Logo picked from the media library. Wins over `logoSrc` when set. */
+    /** Where the 40 × 40 mark comes from: a URL, a media-library item, or a
+     *  placeholder (the waiting-for-asset well) — the shared tagged union, so
+     *  "url and media both set" is unrepresentable. Absent on layouts saved
+     *  before the union: those fold `logoMedia` + `logoSrc` into one source
+     *  at read time (see `logo-source.ts`). */
+    logoSource?: ImageSource;
+    /** Legacy — logo picked from the media library. Read only when
+     *  `logoSource` is absent; wins over `logoSrc`. */
     logoMedia?: Media;
-    /** Static logo path, e.g. the staged `/anahata/logo-2021.png`. */
+    /** Legacy — static logo path. Read only when `logoSource` is absent. */
     logoSrc?: string;
+    /** Accessible name of the home link ("Swami Karma Karuna — home"). */
     logoAlt?: string;
-    /** Intrinsic pixel dimensions — used for the aspect box, not for display. */
+    /** Intrinsic pixel dimensions — the chip's box, image or well alike. */
     logoWidth?: number;
     logoHeight?: number;
+    /** The name typeset beside the chip (Playfair). Visually hidden ≤479px,
+     *  where the chip alone carries the brand. */
+    brandName?: string;
     /** Where the logo links to. */
     homeHref?: string;
 
-    /** Cocoa utility strip above the header band. */
+    /** Pine-dark utility strip above the header band. */
     showTopBar?: boolean;
     topBarLeftItems?: TopBarItem[];
     topBarRightItems?: TopBarItem[];

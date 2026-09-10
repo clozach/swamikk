@@ -7,19 +7,16 @@ import type {
     HeroAnimation,
     HeroImage,
     HeroParagraph,
-    ImageSource,
+    PhotoPosition,
 } from "./settings";
+import { placeholderSource } from "../../components/image-source";
+import { PALETTE } from "../../components/palette";
 
-/* ------------------------------------------------------------------ *
- * Anahata palette — every value read out of the live stylesheet.
- * Kept here (not in tokens.css) because page-blocks ships its own
- * Tailwind build and never loads the design-system stylesheet.
- * ------------------------------------------------------------------ */
-export const CREAM = "#f7f4eb"; // page ground
-export const INK = "#545454"; // body copy
-export const RUST = "#993300"; // display headings, links (6.75:1 on cream)
-export const SAFFRON = "#ff9900"; // button/table fills — never text on cream/white
-export const RUST_PRESSED = "#7a2900"; // derived: rust darkened ~12% for :active (8.90:1 on cream)
+/*
+ * Every colour below is a swamikk v1.0 role (components/palette.ts). Only
+ * lowercase exports reach the content-changes preview (`pagePreviewSettings`
+ * filters on /^[a-z]/), so helpers and constants stay capitalised or local.
+ */
 
 /* ---- banner band ---- */
 /**
@@ -28,74 +25,87 @@ export const RUST_PRESSED = "#7a2900"; // derived: rust darkened ~12% for :activ
  * for an admin who wants a shorter, proportionally-sized band instead.
  */
 export const bannerHeightMode: BannerHeightMode = "full-screen";
-export const bannerAspectRatio = "1920 / 947"; // revslider natural size; used in "fixed" mode
+export const bannerAspectRatio = "1920 / 947"; // used in "fixed" mode
 export const bannerMinHeight = 220; // px floor on narrow screens, both modes
 export const bannerFit: BannerFit = "cover";
 /** Static single photo by default — social rotation is opt-in per block. */
 export const bannerMode: BannerMode = { kind: "static" };
 export const bannerPosition: BannerPosition = "center";
-export const wordmarkMaxWidth = 835; // natural width of the wordmark PNG
+export const wordmarkMaxWidth = 835; // natural width of the wordmark lockup
+/** The wordmark's box (spec § 1: "wide, about 835 × 120"). */
+export const WORDMARK_ASPECT_RATIO = "835 / 120";
+/** The welcome photo's box (spec § 1: "3:2, the column beside the text"). */
+export const PHOTO_ASPECT_RATIO = "3 / 2";
 export const animation: HeroAnimation = "fade";
 
-const url = (value: string): ImageSource => ({ kind: "url", url: value });
-
 /**
- * `hp-hero-bg.jpg` (1920x947, same aspect ratio as the old placeholder) —
- * distinct from `photo` below so the banner and the "Welcome to Anahata"
- * section never show the same picture.
+ * Every picture starts as a waiting-for-asset well carrying the photo idea
+ * from `homepage-redesign-spec.md § 1`, verbatim. A real photo replaces a
+ * well through the ordinary image change.
  */
 export const bannerImage: HeroImage = {
-    source: url("/anahata/hp-hero-bg.jpg"),
+    source: placeholderSource(
+        "Swami Karma Karuna teaching — seated, mid-gesture, eye contact with a student just out of frame. Warm natural light, indoors or on a veranda. Her face and hands are the subject. Not a landscape. Not the retreat buildings.",
+    ),
     alt: "",
 };
 
 export const wordmark: HeroImage = {
-    source: url("/anahata/solutions-for-life.png"),
-    alt: "Anahata Yoga — Solutions For Life",
+    source: placeholderSource(
+        "Wordmark lockup — 'Swami Karma Karuna' with 'Yoga Solutions for Life™' beneath it. Flat vector, one ink colour, transparent background.",
+    ),
+    alt: "Swami Karma Karuna — Yoga Solutions for Life",
 };
 
 export const photo: HeroImage = {
-    source: url("/anahata/hero-silentmed.jpg"),
-    alt: "Silent meditation at Anahata Yoga Retreat",
+    source: placeholderSource(
+        "Swami Karma Karuna in a quiet moment — close portrait, soft daylight, plain background. Relaxed, present, looking at the camera.",
+    ),
+    alt: "",
 };
 
-/** Two 32px spacers sat above the photo column on the real site. */
-export const photoOffsetTop = 64;
+/** The photo column sits beside the text, vertically centred (no offset). */
+export const photoOffsetTop = 0;
+export const photoPosition: PhotoPosition = "right";
 
-/* ---- copy ---- */
-export const heading = "Welcome to Anahata";
+/* ---- copy (spec § 1, verbatim) ---- */
+export const kicker = "with Swami Karma Karuna";
+export const heading = "Yoga Solutions for Life";
+export const offerings: string[] = [
+    "Mentoring",
+    "Coaching",
+    "Teaching",
+    "Membership",
+    "Appearances",
+];
 
 export const paragraphs: HeroParagraph[] = [
     {
-        text: "The Anahata Yoga Health & Education Trust is a non-profit, charitable, organisation dedicated to sharing the traditional practices of yoga. Our community lives in accordance with authentic yoga lifestyle and Eco principles. We are committed to living simply and sustainably; in harmony with nature and one another.",
-        linkText: "The Anahata Yoga Health & Education Trust",
-        linkHref: "#",
+        text: "Swami Karma Karuna has taught yoga for more than twenty-five years in the Satyananda tradition of the Bihar School of Yoga, under the guidance of Swami Niranjanananda Saraswati. She is a founding member and director of Anahata Yoga Retreat in Golden Bay, New Zealand, and teaches in India for part of each year.",
+        linkText: "Anahata Yoga Retreat",
+        linkHref: "https://www.anahata-retreat.org.nz",
     },
     {
-        text: "Situated in New Zealand's luscious native forest, with spectacular views over Golden Bay, Anahata offers a sanctuary space in which to cultivate personal growth, facilitate healing and discover who you really are.",
+        text: "She works with people directly: one-to-one mentoring and coaching, yoga teaching online and in person, a membership with regular live sessions and a library of recorded practices, and appearances at retreats, trainings and events around the world.",
     },
     {
-        text: "We welcome you to join us in experiencing the health and well-being that comes from living in a supportive, inspiring and dynamic environment.",
+        text: "Simple, powerful techniques for transformation — practices that fit a real life, with family, work and everything else in it.",
     },
 ];
 
-/* ---- call to action (off by default; the real hero has no button) ---- */
-export const ctaCaption = "";
-export const ctaAction = "#";
-export const ctaStyle: CtaStyle = "saffron";
+/** Paragraph 3 is the Playfair lede. */
+export const ledeParagraphIndex = 2;
 
-/* ---- design ---- */
-export const groundColor = CREAM;
-export const headingColor = RUST;
-export const bodyColor = INK;
+/* ---- calls to action ---- */
+export const ctaCaption = "Explore the membership";
+export const ctaAction = "/p/members-library-test";
+export const ctaStyle: CtaStyle = "pine";
+export const secondaryCtaCaption = "Book a private session";
+export const secondaryCtaAction = "/p/private-sessions";
 
-/**
- * The live site's `a { color: #ff9900 }` measures 1.95:1 against the cream
- * ground — even at 60px display size it would need 3:1 and still misses,
- * so there is no size at which saffron qualifies here. The default is rust
- * (6.75:1); hover deepens to rust-pressed (8.90:1) rather than repeating
- * rust, so the two states stay visually distinct. Both remain settings —
- * an admin who wants the literal site colour back can still pick it.
- */
-export const linkColor = RUST;
-export const linkHoverColor = RUST_PRESSED;
+/* ---- design (swamikk v1.0 roles; ratios measured in tokens.css) ---- */
+export const groundColor = PALETTE.bone;
+export const headingColor = PALETTE.pine; // 8.22:1 on bone
+export const bodyColor = PALETTE.ink; // 12.31:1 on bone
+export const linkColor = PALETTE.pine;
+export const linkHoverColor = PALETTE.pineDeep; // 11.29:1 on bone

@@ -1,3 +1,7 @@
+import {
+    placeholderSource,
+    type ImageSource,
+} from "../../components/image-source";
 import { MenuItem, TopBarItem } from "./settings";
 
 /**
@@ -16,17 +20,29 @@ export const sticky = true;
 export const showThemeToggle = true;
 export const themeToggleLabel = "Toggle light and dark theme";
 
-/* A small square mark sitting immediately left of the first nav item, not a
-   free-standing wordmark row — the two read as one masthead line rather than
-   a logo chip stacked above a menu. Served from the app image, not /anahata/
-   (that dir holds the home-page-replica media specifically). */
-export const logoSrc = "/swami-kk-logo.png";
+/* A small square mark sitting immediately left of the brand name and the
+   first nav item, not a free-standing wordmark row — the three read as one
+   masthead line rather than a logo chip stacked above a menu.
+
+   The mark itself has not been drawn yet, so the default is the placeholder
+   arm: the 40 × 40 slot renders as a waiting-for-asset well carrying this
+   description (spec § 0) until a real file is uploaded. The old
+   `/swami-kk-logo.png` default is gone with it — every picture on the site is
+   a well until its production asset lands. Layouts that still store the
+   legacy `logoSrc` / `logoMedia` pair keep rendering through
+   `logo-source.ts`. */
+export const logoSource: ImageSource = placeholderSource(
+    "Swami Karma Karuna mark — a simple lotus or initials monogram, single ink colour, transparent background.",
+);
 export const logoAlt = "Swami Karma Karuna — home";
 export const logoWidth = 40;
 export const logoHeight = 40;
+/* Typeset beside the chip in Playfair; the chip alone carries the brand
+   below 480px. */
+export const brandName = "Swami Karma Karuna";
 export const homeHref = "/";
 
-/* The cocoa utility strip is off by default and ships with no items.
+/* The pine-dark utility strip is off by default and ships with no items.
    It used to carry Cart / Search / Menu / Contact, copied from the live
    WordPress site where those are real WooCommerce and theme features. Here
    they were four `href: "#"` placeholders: Cart and Search have nothing to
@@ -75,8 +91,8 @@ export const accountManageHref = "/dashboard/profile";
 export const accountContentLabel = "My content";
 export const accountContentHref = "/dashboard";
 /* "Logout" (one word) to match the Figma confirm-animation frames. Logging
-   out is a two-click action in place: the control arms, a rust panel wipes in
-   left→right, the icon flies off and a "?" takes its place; a second click
+   out is a two-click action in place: the control arms, an accent panel wipes
+   in left→right, the icon flies off and a "?" takes its place; a second click
    confirms. No navigation to the whole-page /logout confirmation. */
 export const accountLogoutLabel = "Logout";
 

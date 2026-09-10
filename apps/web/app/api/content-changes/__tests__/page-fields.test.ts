@@ -8,6 +8,7 @@ import {
     resolvePageImage,
     verifyPageImage,
 } from "@/services/content-changes/page-media";
+import { waitingDescription } from "@/services/content-changes/page-registry";
 import * as defaults from "../../../../../../packages/page-blocks/src/blocks/anahata-hero/defaults";
 import type { WidgetInstance } from "@courselit/common-models";
 const hero = (settings: Record<string, unknown> = {}): WidgetInstance => ({
@@ -110,6 +111,120 @@ it("marks a rotating banner replacement as a fallback while leaving rotation con
         fieldValue: value,
     });
     expect(after.settings!.bannerMode).toEqual({ kind: "social-rotation" });
+});
+it("lists a waiting-for-asset placeholder as an image field that names the photo idea", () => {
+    const well = {
+        source: { kind: "placeholder", description: "Karuna in the hall" },
+        alt: "",
+    };
+    const fields = pageWidgetFields(hero({ bannerImage: well }));
+    expect(fields.find((item) => item.field === "bannerImage")).toEqual({
+        field: "bannerImage",
+        kind: "image",
+        label: "Banner fallback image (waiting for asset)",
+        value: well,
+        defaultDerived: false,
+        placeholder: { description: "Karuna in the hall" },
+    });
+    const real = {
+        source: { kind: "media", media },
+        alt: "Retreat garden",
+    };
+    expect(
+        pageWidgetFields(hero({ bannerImage: real })).find(
+            (item) => item.field === "bannerImage",
+        ),
+    ).toEqual({
+        field: "bannerImage",
+        kind: "image",
+        label: "Banner fallback image",
+        value: real,
+        defaultDerived: false,
+    });
+    expect(waitingDescription(well)).toBe("Karuna in the hall");
+    expect(
+        waitingDescription({ kind: "placeholder", description: "Bare well" }),
+    ).toBe("Bare well");
+    expect(
+        waitingDescription({
+            thumbnail: { kind: "placeholder", description: "Post cover" },
+        }),
+    ).toBe("Post cover");
+    expect(waitingDescription(real)).toBeUndefined();
+    expect(waitingDescription("Some heading")).toBeUndefined();
+    expect(
+        pageWidgetSnapshot(hero({ bannerImage: well }), "bannerImage"),
+    ).toMatchObject({ fieldValue: well, defaultDerived: false });
+});
+it("replaces a placeholder baseline with a resolved library image through the ordinary image patch", async () => {
+    const well = {
+        source: { kind: "placeholder", description: "Karuna in the hall" },
+        alt: "",
+    };
+    const widget = hero({ photo: well });
+    const deps = {
+        get: jest.fn(async () => media),
+        seal: jest.fn(async () => media),
+    } as any;
+    const resolved = await resolvePageImage(
+        "image",
+        "Karuna teaching",
+        widget,
+        ctx,
+        deps,
+    );
+    const after = patchPageWidget(
+        widget,
+        "photo",
+        { kind: "image", mediaId: "image", alt: "Karuna teaching" },
+        resolved,
+    );
+    expect(pageWidgetSnapshot(after, "photo").fieldValue).toMatchObject({
+        source: {
+            kind: "media",
+            media: { mediaId: "image", file: media.file },
+        },
+        alt: "Karuna teaching",
+    });
+    expect(
+        pageWidgetFields(after).find((item) => item.field === "photo"),
+    ).toMatchObject({ label: "Welcome image" });
+    expect(widget.settings!.photo).toEqual(well);
+    deps.get.mockClear();
+    await verifyPageImage(well, widget, ctx, deps);
+    expect(deps.get).not.toHaveBeenCalled();
+    const mirrored = mirrorPageWidgetValue(
+        hero({ photo: well }),
+        after,
+        "photo",
+    );
+    expect((mirrored.settings!.photo as any).source.kind).toBe("media");
+});
+it("lists the hero's kicker and second button text beside the heading and first button", () => {
+    const fields = pageWidgetFields(hero()).map((item) => [
+        item.field,
+        item.label,
+        item.value,
+        item.defaultDerived,
+    ]);
+    expect(fields).toEqual(
+        expect.arrayContaining([
+            ["kicker", "Kicker", defaults.kicker, true],
+            ["heading", "Welcome heading", defaults.heading, true],
+            ["ctaCaption", "Button text", defaults.ctaCaption, true],
+            [
+                "secondaryCtaCaption",
+                "Second button text",
+                defaults.secondaryCtaCaption,
+                true,
+            ],
+        ]),
+    );
+    expect(
+        pageWidgetFields(hero({ secondaryCtaCaption: " " })).map(
+            (item) => item.field,
+        ),
+    ).not.toContain("secondaryCtaCaption");
 });
 it("mirrors one paragraph without overwriting a different unpublished paragraph, including recovery to defaults", () => {
     const draft = hero({
