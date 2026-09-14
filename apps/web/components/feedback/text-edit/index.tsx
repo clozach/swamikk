@@ -10,7 +10,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { FeedbackNotice } from "../notice";
 import { SelectionTools } from "../selection-tools";
 import { usePortalHost, useVisualViewport } from "../viewport";
-import { targetWidgetId } from "./leaves";
+import { currentAt, targetWidgetId } from "./leaves";
 import { useTextEdit } from "./use-text-edit";
 import HistoryPanel from "./history";
 import "./text-edit.css";
@@ -20,6 +20,9 @@ const Shortcut = ({ children }: { children: string }) => (
         {children}
     </kbd>
 );
+/** The run a chip belongs to may re-match under a path inside or around the saved one. */
+const related = (a: string, b: string) =>
+    a === b || a.startsWith(`${b}.`) || b.startsWith(`${a}.`);
 
 /**
  * Inline text editing for site managers: a pill beside the ? control turns
@@ -45,25 +48,23 @@ export default function TextEditSession({
     const [historyKey, setHistoryKey] = useState(0);
     const [chipRect, setChipRect] = useState<DOMRect | null>(null);
     const on = state.mode.kind === "on";
+    const dialogOpen = history && on;
     useEffect(
         () => onModeChange(state.mode.kind !== "off"),
         [onModeChange, state.mode.kind],
     );
 
     // The in-place way back sits on the run that changed and follows it.
-    const chipElement =
-        state.chip && state.mode.kind === "on"
-            ? state.mode.runs.find((run) => {
-                  const id = targetWidgetId(
-                      state.mode.kind === "on" ? state.mode.index : new Map(),
-                      state.chip!.target,
-                  );
-                  return (
-                      run.widgetId === id &&
-                      run.path === state.chip!.target.path
-                  );
-              })?.element || null
-            : null;
+    const chipElement = (() => {
+        if (!state.chip || state.mode.kind !== "on") return null;
+        const widgetId = targetWidgetId(state.mode.index, state.chip.target);
+        const path = state.chip.path;
+        return (
+            state.mode.runs.find(
+                (run) => run.widgetId === widgetId && related(run.path, path),
+            )?.element || null
+        );
+    })();
     useEffect(() => {
         if (!chipElement) return;
         const update = () =>
@@ -91,6 +92,14 @@ export default function TextEditSession({
                 ? copy.count.replace("{n}", String(state.mode.runs.length))
                 : copy.none
             : copy.loading;
+    // A notice answers the click that raised it: inside the open dialog it
+    // stays reachable (the modal makes everything else inert).
+    const notice = state.notice && (
+        <FeedbackNotice
+            message={state.notice.text}
+            onDismiss={state.clearNotice}
+        />
+    );
 
     return (
         <>
@@ -206,14 +215,9 @@ export default function TextEditSession({
                     </Button>
                 </SelectionTools>
             )}
-            {state.notice && (
-                <FeedbackNotice
-                    message={state.notice.text}
-                    onDismiss={state.clearNotice}
-                />
-            )}
+            {!dialogOpen && notice}
             <Dialog
-                open={history && on}
+                open={dialogOpen}
                 onOpenChange={(open) => {
                     if (!open) setHistory(false);
                 }}
@@ -227,6 +231,11 @@ export default function TextEditSession({
                             pageId={state.mode.pageId}
                             userId={profile?.userId}
                             refreshKey={historyKey}
+                            current={(target, path) =>
+                                state.mode.kind === "on"
+                                    ? currentAt(state.mode.index, target, path)
+                                    : undefined
+                            }
                             onRestore={async (edit) => {
                                 const result = await state.restore(edit);
                                 if (result) setHistoryKey((key) => key + 1);
@@ -234,6 +243,7 @@ export default function TextEditSession({
                             }}
                         />
                     )}
+                    {dialogOpen && notice}
                 </DialogContent>
             </Dialog>
         </>

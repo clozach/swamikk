@@ -124,9 +124,27 @@ row (`PageTextEdit`); nothing is rewritten.
 The comment layer is separate by design: a comment asks for a change, this
 makes one. While text editing is on, the ? control is disabled; while the ?
 tools are open, the pill is hidden. Text stored under two paths of one block
-is marked, not editable (the wrong field can never be changed); mixed-format
-paragraphs, link addresses, alt text and image-well descriptions keep the
-builder / proposal paths. Source: `text-edit/` (`runs.ts` matches rendered
+is marked, not editable (the wrong field can never be changed); link
+addresses, alt text and image-well descriptions keep the builder / proposal
+paths (`projects/kk-web-tools/inline-edit-exclusions-brief.md` in the vault
+says what each would take).
+
+Three kinds of run map back to the store: a **text** run (one string leaf,
+edited as plain text — a menu item decorated with the ↗ cue and its
+screen-reader note still counts), a **linked-text** run (a hero paragraph
+`{ text, linkText }`, edited with its link kept in place and written back as
+two leaves in one edit; deleting the link is refused), and a **rich-node** run
+(a rich-text paragraph or heading with bold/italic/links inside, edited with
+the formatting kept and rebuilt from the DOM into one TipTap node, which the
+server proves with the same structure validation proposals use). One edit
+therefore carries one or more changes on one widget, applied together and
+recorded as one history row; undo, redo and restore reverse every change of
+that row.
+
+History rows read BEFORE (red) over AFTER (green) with the words cut out of a
+strip on each band's right edge; **Restore the red text** is the only control,
+a penned arrow runs from it to the red text, and it reads *The page already
+shows the red text* (disabled) when that is so. Notices sit above dialogs. Source: `text-edit/` (`runs.ts` matches rendered
 text to leaves, `use-text-edit.ts` owns the mode, `history.tsx` the way back);
 server: `services/content-changes/text-leaves.ts` + `text-edit.ts`, routes
 under `/api/content-changes/text/`.

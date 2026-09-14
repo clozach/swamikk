@@ -60,7 +60,9 @@
 }
 .kk-feedback-notice {
     position: fixed;
-    z-index: 47;
+    /* Above dialogs (z-50): a notice answers the click that raised it. */
+    z-index: 60;
+    pointer-events: auto;
     right: 16px;
     bottom: calc(
         var(--kk-mobile-pay-bar-height, 0px) +

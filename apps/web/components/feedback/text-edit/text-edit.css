@@ -119,6 +119,15 @@ html[data-kk-text-edit] [data-kk-ambiguous] {
     cursor: help;
 }
 
+/* Compound runs keep their links and formatting while being edited. */
+html[data-kk-text-edit] [data-kk-editable][data-kk-kind="rich-node"],
+html[data-kk-text-edit] [data-kk-editable][data-kk-kind="linked-text"] {
+    outline-style: dashed;
+}
+html[data-kk-text-edit] [data-kk-editing] a {
+    cursor: text;
+}
+
 /* History */
 .kk-text-history {
     display: grid;
@@ -132,11 +141,28 @@ html[data-kk-text-edit] [data-kk-ambiguous] {
     list-style: none;
 }
 .kk-text-history-row {
+    position: relative;
     display: grid;
     gap: 8px;
-    padding: 12px;
+    padding: 12px 12px 12px 34px;
     border: 1px solid #0000001a;
     border-radius: 10px;
+}
+/* The penned arrow from the Restore button up the gutter into the red text. */
+.kk-text-history-arrow {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    color: #8a3b12;
+    opacity: 0.85;
+}
+.kk-text-history-restore {
+    justify-self: start;
+    min-height: 44px;
+    height: auto;
+    max-width: 100%;
+    white-space: normal;
+    text-align: left;
 }
 .kk-text-history-meta {
     display: flex;
@@ -151,19 +177,59 @@ html[data-kk-text-edit] [data-kk-ambiguous] {
     overflow-wrap: anywhere;
     white-space: pre-wrap;
 }
+.kk-text-history-diff del,
+.kk-text-history-diff ins {
+    position: relative;
+    display: block;
+    min-height: 52px;
+    padding: 8px 40px 8px 8px;
+    border-radius: 6px;
+    text-decoration: none;
+}
 .kk-text-history-diff del {
     color: #8a3b12;
-    background: #c76f1d14;
+    background: #c76f1d1f;
+}
+.kk-text-history-diff del .kk-text-history-words {
     text-decoration: line-through;
-    padding: 2px 4px;
-    border-radius: 4px;
 }
 .kk-text-history-diff ins {
     color: #1f3a2a;
-    background: #2f4f3a14;
-    text-decoration: none;
-    padding: 2px 4px;
-    border-radius: 4px;
+    background: #2f4f3a1f;
+}
+/* BEFORE / AFTER as cut-outs: a solid strip on the band's right edge with the
+   word punched through it in the dialog's own background, reading upward. */
+.kk-text-history-cut {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 26px;
+    border-radius: 0 6px 6px 0;
+    background: #8a3b12;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+.kk-text-history-diff ins .kk-text-history-cut {
+    background: #2f4f3a;
+}
+.kk-text-history-cut > span {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    /* The theme keeps --background as an HSL triplet. */
+    color: hsl(var(--background, 0 0% 100%));
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    line-height: 1;
+    white-space: nowrap;
+}
+.kk-text-history-note {
+    display: block;
+    font-size: 12px;
+    opacity: 0.75;
 }
 @media (max-width: 640px) {
     .kk-text-edit-bar {
@@ -173,5 +239,23 @@ html[data-kk-text-edit] [data-kk-ambiguous] {
     }
     .kk-text-edit-bar .kk-text-edit-key {
         display: none;
+    }
+}
+
+/* Dark theme: the same bands, inks that stay readable on the dark ground. */
+.dark .kk-text-history-diff del,
+html[data-theme="dark"] .kk-text-history-diff del {
+    color: #f0c6a3;
+}
+.dark .kk-text-history-diff ins,
+html[data-theme="dark"] .kk-text-history-diff ins {
+    color: #c4e1cc;
+}
+@media (prefers-color-scheme: dark) {
+    html:not(.light):not([data-theme="light"]) .kk-text-history-diff del {
+        color: #f0c6a3;
+    }
+    html:not(.light):not([data-theme="light"]) .kk-text-history-diff ins {
+        color: #c4e1cc;
     }
 }

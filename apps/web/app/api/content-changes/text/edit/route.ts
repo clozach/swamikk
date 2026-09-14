@@ -23,6 +23,15 @@ const path = z
     .max(300)
     .regex(/^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+){0,23}$/);
 const text = z.string().max(MAX_TEXT);
+const node = z.object({ type: z.string().min(1).max(40) }).passthrough();
+const change = z.discriminatedUnion("kind", [
+    z
+        .object({ kind: z.literal("text"), path, before: text, after: text })
+        .strict(),
+    z
+        .object({ kind: z.literal("node"), path, before: node, after: node })
+        .strict(),
+]);
 const input = z
     .object({
         target: z.discriminatedUnion("kind", [
@@ -31,7 +40,6 @@ const input = z
                     kind: z.literal("page-widget-text"),
                     pageId: id,
                     widgetId: id,
-                    path,
                 })
                 .strict(),
             z
@@ -43,20 +51,19 @@ const input = z
                         .min(1)
                         .max(80)
                         .regex(/^[a-zA-Z0-9_-]+$/),
-                    path,
                 })
                 .strict(),
         ]),
-        before: text,
-        after: text,
+        changes: z.array(change).min(1).max(8),
         undoOf: z.string().uuid().optional(),
     })
     .strict();
 
 /**
- * One inline text edit. `before` must be the exact stored value; a mismatch
- * answers 409 with the current text so the editor can resync instead of
- * overwriting someone else's change.
+ * One inline text edit: every change on one widget, applied together. Each
+ * change's `before` must be the exact stored value (string leaf) or node; a
+ * mismatch answers 409 with the current values so the editor can resync
+ * instead of overwriting someone else's change.
  */
 export async function POST(req: NextRequest) {
     let staleBody: unknown;

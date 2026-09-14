@@ -1,5 +1,6 @@
 import type {
     PageTextLeaves,
+    TextChange,
     TextEditTarget,
     TextLeaf,
 } from "@courselit/common-models";
@@ -8,58 +9,134 @@ import type {
 export const normalizeText = (text: string) =>
     text.replace(/ /g, " ").replace(/\s+/g, " ").trim();
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === "object" && value !== null && !Array.isArray(value);
+
+/** The words a rich-text node shows: text nodes in order, a line break per hardBreak. */
+export function nodePlain(node: unknown): string {
+    if (!isRecord(node)) return "";
+    if (node.type === "text")
+        return typeof node.text === "string" ? node.text : "";
+    if (node.type === "hardBreak") return "\n";
+    return Array.isArray(node.content)
+        ? node.content.map(nodePlain).join("")
+        : "";
+}
+
+/** The text-node leaves inside a rich-text node, with the paths the server would list. */
+export function nodeTextLeaves(
+    node: unknown,
+    base: string,
+    source: TextLeaf["source"],
+): TextLeaf[] {
+    if (!isRecord(node)) return [];
+    if (node.type === "text")
+        return typeof node.text === "string" && node.text.trim()
+            ? [
+                  {
+                      path: `${base}.text`,
+                      value: node.text,
+                      kind: "rich-text-leaf",
+                      source,
+                  },
+              ]
+            : [];
+    return Array.isArray(node.content)
+        ? node.content.flatMap((child, index) =>
+              nodeTextLeaves(child, `${base}.content.${index}`, source),
+          )
+        : [];
+}
+
 export interface WidgetLeafIndex {
     widgetId: string;
     name: string;
     shared: boolean;
     byPath: Map<string, TextLeaf>;
-    /** normalized value → every path that reads that way (more than one = ambiguous). */
+    /** normalized string value → every leaf path that reads that way (more than one = ambiguous). */
     byValue: Map<string, string[]>;
+    /** normalized plain text of a rich-text node → every node path that reads that way. */
+    byNodeValue: Map<string, string[]>;
 }
 export type LeafIndex = Map<string, WidgetLeafIndex>;
+
+const add = (map: Map<string, string[]>, key: string, path: string) =>
+    map.set(key, [...(map.get(key) || []), path]);
+const remove = (map: Map<string, string[]>, key: string, path: string) => {
+    const remaining = (map.get(key) || []).filter((item) => item !== path);
+    if (remaining.length) map.set(key, remaining);
+    else map.delete(key);
+};
+const valueMap = (widget: WidgetLeafIndex, leaf: TextLeaf) =>
+    leaf.kind === "rich-text-node" ? widget.byNodeValue : widget.byValue;
+
+function addLeaf(widget: WidgetLeafIndex, leaf: TextLeaf) {
+    // A copy: saves update the index in place and must never touch the payload.
+    const copy = { ...leaf };
+    widget.byPath.set(copy.path, copy);
+    add(valueMap(widget, copy), normalizeText(copy.value), copy.path);
+}
+function dropLeaf(widget: WidgetLeafIndex, path: string) {
+    const leaf = widget.byPath.get(path);
+    if (!leaf) return;
+    remove(valueMap(widget, leaf), normalizeText(leaf.value), path);
+    widget.byPath.delete(path);
+}
 
 export function indexLeaves(page: PageTextLeaves): LeafIndex {
     const index: LeafIndex = new Map();
     for (const widget of page.widgets) {
-        const byPath = new Map<string, TextLeaf>();
-        const byValue = new Map<string, string[]>();
-        for (const leaf of widget.leaves) {
-            // A copy: saves update the index in place and must never touch the payload.
-            byPath.set(leaf.path, { ...leaf });
-            const key = normalizeText(leaf.value);
-            byValue.set(key, [...(byValue.get(key) || []), leaf.path]);
-        }
-        index.set(widget.widgetId, {
+        const entry: WidgetLeafIndex = {
             widgetId: widget.widgetId,
             name: widget.name,
             shared: widget.shared,
-            byPath,
-            byValue,
-        });
+            byPath: new Map(),
+            byValue: new Map(),
+            byNodeValue: new Map(),
+        };
+        for (const leaf of widget.leaves) addLeaf(entry, leaf);
+        index.set(widget.widgetId, entry);
     }
     return index;
 }
 
-/** Record a saved value so later matches and edits start from it. */
-export function updateLeaf(
+/** Record saved changes so later matches and edits start from them. */
+export function applyChangesToIndex(
     index: LeafIndex,
     widgetId: string,
-    path: string,
-    value: string,
+    changes: TextChange[],
 ) {
     const widget = index.get(widgetId);
-    const leaf = widget?.byPath.get(path);
-    if (!widget || !leaf) return;
-    const oldKey = normalizeText(leaf.value);
-    const remaining = (widget.byValue.get(oldKey) || []).filter(
-        (item) => item !== path,
-    );
-    if (remaining.length) widget.byValue.set(oldKey, remaining);
-    else widget.byValue.delete(oldKey);
-    leaf.value = value;
-    leaf.source = "settings";
-    const key = normalizeText(value);
-    widget.byValue.set(key, [...(widget.byValue.get(key) || []), path]);
+    if (!widget) return;
+    for (const change of changes) {
+        const leaf = widget.byPath.get(change.path);
+        if (!leaf) continue;
+        if (change.kind === "text") {
+            dropLeaf(widget, change.path);
+            addLeaf(widget, {
+                ...leaf,
+                value: change.after,
+                source: "settings",
+            });
+            continue;
+        }
+        // A node moved: its own entry, then every text leaf beneath it.
+        for (const path of Array.from(widget.byPath.keys()))
+            if (path.startsWith(`${change.path}.`)) dropLeaf(widget, path);
+        dropLeaf(widget, change.path);
+        addLeaf(widget, {
+            ...leaf,
+            value: nodePlain(change.after),
+            node: change.after,
+            source: "settings",
+        });
+        for (const inner of nodeTextLeaves(
+            change.after,
+            change.path,
+            "settings",
+        ))
+            addLeaf(widget, inner);
+    }
 }
 
 /** The widget id a target's text lives under on this page (shared blocks are keyed by name on the page). */
@@ -71,11 +148,16 @@ export function targetWidgetId(index: LeafIndex, target: TextEditTarget) {
     return undefined;
 }
 
-export function leafValue(index: LeafIndex, target: TextEditTarget) {
+/** What the page stores at a path now: a string, or a rich-text node. */
+export function currentAt(
+    index: LeafIndex,
+    target: TextEditTarget,
+    path: string,
+): unknown {
     const widgetId = targetWidgetId(index, target);
-    return widgetId
-        ? index.get(widgetId)?.byPath.get(target.path)?.value
-        : undefined;
+    const leaf = widgetId ? index.get(widgetId)?.byPath.get(path) : undefined;
+    if (!leaf) return undefined;
+    return leaf.kind === "rich-text-node" ? leaf.node : leaf.value;
 }
 
 const words = (key: string) =>

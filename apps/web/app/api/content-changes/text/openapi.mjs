@@ -15,28 +15,59 @@ const path = {
 const text = { type: "string", maxLength: 20000 };
 const json = (schema) => ({ content: { "application/json": { schema } } });
 const session = [{ CourseLitSession: [] }];
-export const textEditTarget = {
+const richNode = {
+    type: "object",
+    required: ["type"],
+    properties: { type: { type: "string", enum: ["paragraph", "heading"] } },
+    description:
+        "A rich-text block node in the stored TipTap shape, replaced whole; proven by the same structure validation as proposals (allowed marks only, embedded material retained).",
+};
+export const textChange = {
     oneOf: [
         {
             type: "object",
             additionalProperties: false,
-            required: ["kind", "pageId", "widgetId", "path"],
+            required: ["kind", "path", "before", "after"],
             properties: {
-                kind: { type: "string", enum: ["page-widget-text"] },
-                pageId: id,
-                widgetId: id,
+                kind: { type: "string", enum: ["text"] },
                 path,
+                before: text,
+                after: text,
             },
         },
         {
             type: "object",
             additionalProperties: false,
-            required: ["kind", "pageId", "name", "path"],
+            required: ["kind", "path", "before", "after"],
+            properties: {
+                kind: { type: "string", enum: ["node"] },
+                path,
+                before: richNode,
+                after: richNode,
+            },
+        },
+    ],
+};
+export const textEditTarget = {
+    oneOf: [
+        {
+            type: "object",
+            additionalProperties: false,
+            required: ["kind", "pageId", "widgetId"],
+            properties: {
+                kind: { type: "string", enum: ["page-widget-text"] },
+                pageId: id,
+                widgetId: id,
+            },
+        },
+        {
+            type: "object",
+            additionalProperties: false,
+            required: ["kind", "pageId", "name"],
             properties: {
                 kind: { type: "string", enum: ["shared-widget-text"] },
                 pageId: id,
                 name: { type: "string", minLength: 1, maxLength: 80 },
-                path,
             },
             description:
                 "Header/footer text lives on the site, so the edit shows on every page; pageId records where it was made.",
@@ -46,7 +77,7 @@ export const textEditTarget = {
 export const textEdit = {
     type: "object",
     description:
-        "One applied inline edit: editId, target, widgetName, exact before/after, userId, at, the page/site revision it produced, and undoOf when it reverses another edit. Rows are append-only.",
+        "One applied inline edit: editId, target, widgetName, changes (each with its exact before/after string or node), userId, at, the page/site revision it produced, and undoOf when it reverses another edit. Rows are append-only.",
 };
 export const textEditPaths = {
     "/api/content-changes/text/leaves": {
@@ -85,8 +116,10 @@ export const textEditPaths = {
                                                     enum: [
                                                         "text",
                                                         "rich-text-leaf",
+                                                        "rich-text-node",
                                                     ],
                                                 },
+                                                node: richNode,
                                                 source: {
                                                     type: "string",
                                                     enum: [
@@ -112,18 +145,22 @@ export const textEditPaths = {
             tags: ["Content changes"],
             summary: "Apply one inline text edit",
             description:
-                "Replaces one text leaf immediately on the published page and mirrors it into an existing draft of the same text. `before` must equal the stored value; otherwise 409 returns the current text. A draft that already changes the text, an emptied string, a changed link word or a control character is refused. Every attempt is recorded; applied edits form the page's history. Same-origin JSON only.",
+                "Applies one to eight changes on one widget together — string leaves and whole rich-text paragraphs/headings — immediately on the published page, mirrored into an existing draft of the same text. Each `before` must equal the stored value or node; otherwise 409 returns the current values. A draft that already changes the text, an emptied string, removed or lost link words, disallowed formatting or a control character is refused. Every attempt is recorded; applied edits form the page's history. Same-origin JSON only.",
             security: session,
             requestBody: {
                 required: true,
                 ...json({
                     type: "object",
                     additionalProperties: false,
-                    required: ["target", "before", "after"],
+                    required: ["target", "changes"],
                     properties: {
                         target: textEditTarget,
-                        before: text,
-                        after: text,
+                        changes: {
+                            type: "array",
+                            minItems: 1,
+                            maxItems: 8,
+                            items: textChange,
+                        },
                         undoOf: {
                             type: "string",
                             format: "uuid",

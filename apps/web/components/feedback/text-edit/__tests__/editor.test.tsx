@@ -30,6 +30,7 @@ jest.mock("@/components/ui/dialog", () => ({
     DialogDescription: ({ children }) => <p>{children}</p>,
 }));
 
+const target = { kind: "page-widget-text", pageId: "home", widgetId: "hero" };
 const leaves = {
     pageId: "home",
     revision: 1,
@@ -45,23 +46,35 @@ const leaves = {
                     kind: "text",
                     source: "default",
                 },
+                {
+                    path: "paragraphs.0.text",
+                    value: "Read more now",
+                    kind: "text",
+                    source: "default",
+                },
+                {
+                    path: "paragraphs.0.linkText",
+                    value: "more",
+                    kind: "text",
+                    source: "default",
+                },
             ],
         },
     ],
 };
-const applied = (before: string, after: string, undoOf?: string) => ({
+const change = (path: string, before: string, after: string) => ({
+    kind: "text",
+    path,
+    before,
+    after,
+});
+const applied = (changes: unknown[], undoOf?: string) => ({
     kind: "applied",
     edit: {
-        editId: `edit-${after}`,
-        target: {
-            kind: "page-widget-text",
-            pageId: "home",
-            widgetId: "hero",
-            path: "heading",
-        },
+        editId: `edit-${JSON.stringify(changes).length}-${undoOf || "new"}`,
+        target,
         widgetName: "anahataHero",
-        before,
-        after,
+        changes,
         userId: "admin",
         at: "2026-09-13T18:00:00.000Z",
         revision: 2,
@@ -70,6 +83,7 @@ const applied = (before: string, after: string, undoOf?: string) => ({
 });
 const onModeChange = jest.fn();
 const h1 = () => document.querySelector("h1") as HTMLElement;
+const para = () => document.querySelector("p") as HTMLElement;
 
 beforeAll(() => {
     Element.prototype.getClientRects = function () {
@@ -83,7 +97,7 @@ beforeAll(() => {
 });
 beforeEach(() => {
     jest.clearAllMocks();
-    document.body.innerHTML = `<div data-feedback-page="home"><div data-feedback-id="hero" data-feedback-widget="hero"><h1>Welcome home</h1></div></div>`;
+    document.body.innerHTML = `<div data-feedback-page="home"><div data-feedback-id="hero" data-feedback-widget="hero"><h1>Welcome home</h1><p>Read <a href="/x">more</a> now</p></div></div>`;
     jest.mocked(fetchLeaves).mockResolvedValue(leaves as any);
     jest.mocked(fetchHistory).mockResolvedValue({
         edits: [],
@@ -115,10 +129,9 @@ async function enterMode() {
     );
 }
 
-test("a click edits the run in place; Enter saves the exact before/after and leaves an undo chip", async () => {
-    jest.mocked(submitEdit).mockResolvedValueOnce(
-        applied("Welcome home", "Welcome back") as any,
-    );
+test("a click edits the run in place; Enter saves one change and leaves an undo chip", async () => {
+    const first = applied([change("heading", "Welcome home", "Welcome back")]);
+    jest.mocked(submitEdit).mockResolvedValueOnce(first as any);
     await enterMode();
     fireEvent.pointerDown(h1(), { button: 0 });
     await act(async () => {});
@@ -127,14 +140,8 @@ test("a click edits the run in place; Enter saves the exact before/after and lea
     fireEvent.keyDown(h1(), { key: "Enter" });
     await waitFor(() => expect(submitEdit).toHaveBeenCalledTimes(1));
     expect(submitEdit).toHaveBeenCalledWith({
-        target: {
-            kind: "page-widget-text",
-            pageId: "home",
-            widgetId: "hero",
-            path: "heading",
-        },
-        before: "Welcome home",
-        after: "Welcome back",
+        target,
+        changes: [change("heading", "Welcome home", "Welcome back")],
     });
     await screen.findByRole("toolbar", { name: "Changed" });
     expect(h1().textContent).toBe("Welcome back");
@@ -142,28 +149,71 @@ test("a click edits the run in place; Enter saves the exact before/after and lea
     expect(refresh).toHaveBeenCalled();
     // ⌘Z reverses the saved edit through the same endpoint, naming the edit it undoes.
     jest.mocked(submitEdit).mockResolvedValueOnce(
-        applied("Welcome back", "Welcome home", "edit-Welcome back") as any,
+        applied(
+            [change("heading", "Welcome back", "Welcome home")],
+            first.edit.editId,
+        ) as any,
     );
     fireEvent.keyDown(window, { key: "z", code: "KeyZ", metaKey: true });
     await waitFor(() => expect(submitEdit).toHaveBeenCalledTimes(2));
     expect(jest.mocked(submitEdit).mock.calls[1][0]).toEqual({
-        target: {
-            kind: "page-widget-text",
-            pageId: "home",
-            widgetId: "hero",
-            path: "heading",
-        },
-        before: "Welcome back",
-        after: "Welcome home",
-        undoOf: "edit-Welcome back",
+        target,
+        changes: [change("heading", "Welcome back", "Welcome home")],
+        undoOf: first.edit.editId,
     });
     await waitFor(() => expect(h1().textContent).toBe("Welcome home"));
+});
+
+test("a linked paragraph edits with its link kept and saves as words plus link words", async () => {
+    jest.mocked(submitEdit).mockResolvedValueOnce(
+        applied([
+            change(
+                "paragraphs.0.text",
+                "Read more now",
+                "Read much more today",
+            ),
+            change("paragraphs.0.linkText", "more", "much more"),
+        ]) as any,
+    );
+    await enterMode();
+    expect(para().getAttribute("data-kk-kind")).toBe("linked-text");
+    fireEvent.pointerDown(para(), { button: 0 });
+    await act(async () => {});
+    expect(para().getAttribute("contenteditable")).toBe("true");
+    para().querySelector("a")!.textContent = "much more";
+    para().lastChild!.nodeValue = " today";
+    fireEvent.keyDown(para(), { key: "Enter" });
+    await waitFor(() => expect(submitEdit).toHaveBeenCalledTimes(1));
+    expect(submitEdit).toHaveBeenCalledWith({
+        target,
+        changes: [
+            change(
+                "paragraphs.0.text",
+                "Read more now",
+                "Read much more today",
+            ),
+            change("paragraphs.0.linkText", "more", "much more"),
+        ],
+    });
+    // The link is still there; nothing rewrote the paragraph's markup.
+    expect(para().querySelector("a")?.getAttribute("href")).toBe("/x");
+    // Removing the link altogether is refused before anything is sent.
+    fireEvent.pointerDown(para(), { button: 0 });
+    await act(async () => {});
+    para().querySelector("a")!.remove();
+    fireEvent.keyDown(para(), { key: "Enter" });
+    await act(async () => {});
+    expect(submitEdit).toHaveBeenCalledTimes(1);
+    expect(para().querySelector("a")).not.toBeNull();
+    expect(
+        await screen.findByText(/Keep the link as one linked phrase/),
+    ).toBeTruthy();
 });
 
 test("a stale answer resyncs the run to the current text; Escape cancels an edit, then leaves the mode", async () => {
     jest.mocked(submitEdit).mockResolvedValueOnce({
         kind: "stale",
-        current: "Someone else's heading",
+        current: [{ path: "heading", value: "Someone else's heading" }],
         message: "changed elsewhere",
     } as any);
     await enterMode();
@@ -195,7 +245,7 @@ test("a stale answer resyncs the run to the current text; Escape cancels an edit
     expect(screen.getByRole("button", { name: /Edit text/ })).toBeTruthy();
 });
 
-test("an unchanged edit sends nothing; History restores an earlier text against the current one", async () => {
+test("an unchanged edit sends nothing; History restores the red text against the current one, and says so when it already shows", async () => {
     await enterMode();
     fireEvent.pointerDown(h1(), { button: 0 });
     await act(async () => {});
@@ -205,21 +255,34 @@ test("an unchanged edit sends nothing; History restores an earlier text against 
     expect(submitEdit).not.toHaveBeenCalled();
     expect(h1().textContent).toBe("Welcome home");
     jest.mocked(fetchHistory).mockResolvedValueOnce({
-        edits: [applied("Old heading", "Welcome home").edit as any],
+        edits: [
+            applied([change("heading", "Old heading", "Welcome home")])
+                .edit as any,
+            applied([change("heading", "Welcome home", "Elsewhere")])
+                .edit as any,
+        ],
         nextCursor: null,
     });
     jest.mocked(submitEdit).mockResolvedValueOnce(
-        applied("Welcome home", "Old heading", "edit-Welcome home") as any,
+        applied([change("heading", "Welcome home", "Old heading")], "x") as any,
     );
     fireEvent.click(screen.getByRole("button", { name: "History" }));
-    fireEvent.click(
-        await screen.findByRole("button", { name: "Restore this text" }),
-    );
+    const restore = await screen.findAllByRole("button", {
+        name: "Restore the red text",
+    });
+    expect(restore).toHaveLength(1);
+    // The second row's red text is what the page shows now, so its control says so and is inert.
+    expect(
+        screen.getByRole("button", {
+            name: "The page already shows the red text",
+        }),
+    ).toBeDisabled();
+    expect(screen.getAllByText("BEFORE")).toHaveLength(2);
+    expect(screen.getAllByText("AFTER")).toHaveLength(2);
+    fireEvent.click(restore[0]);
     await waitFor(() => expect(submitEdit).toHaveBeenCalledTimes(1));
     expect(jest.mocked(submitEdit).mock.calls[0][0]).toMatchObject({
-        before: "Welcome home",
-        after: "Old heading",
-        undoOf: "edit-Welcome home",
+        changes: [change("heading", "Welcome home", "Old heading")],
     });
     await waitFor(() => expect(h1().textContent).toBe("Old heading"));
 });

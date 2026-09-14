@@ -463,7 +463,12 @@ export const textEditUi = {
     historyMore: "Show earlier edits",
     historyGone:
         "That text is no longer on this page, so it cannot be restored from here.",
-    restore: "Restore this text",
+    restoreRed: "Restore the red text",
+    alreadyCurrent: "The page already shows the red text",
+    before: "BEFORE",
+    after: "AFTER",
+    reverses: "reverses an earlier edit",
+    formattingKept: "Formatting inside this paragraph is kept as it was.",
     restored: "Earlier text restored. Undo with ⌘Z or from History.",
     you: "you",
     other: "another editor",
@@ -477,6 +482,10 @@ export const textEditUi = {
     noPage: "This page has no inline-editable text.",
     runLabel: "Editable text. Press Enter to edit.",
     runHint: "Click to edit · Enter saves · Shift+Enter new line · Esc cancels",
+    richHint:
+        "Click to edit; links and formatting stay in place · Enter saves · Esc cancels",
+    linkKept:
+        "Keep the link as one linked phrase. Changing the link itself needs the page builder.",
     sharedHint:
         "Site-wide text (header or footer): a change here shows on every page",
     ambiguous:

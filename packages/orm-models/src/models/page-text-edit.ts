@@ -10,6 +10,8 @@ import mongoose from "mongoose";
 export type InternalPageTextEdit = TextEdit & {
     domain: mongoose.Types.ObjectId;
     pageId: string;
+    before?: string;
+    after?: string;
     state: "applying" | "applied" | "failed";
     failureReason?: string;
     createdAt: Date;
@@ -23,8 +25,11 @@ export const PageTextEditSchema = new mongoose.Schema<InternalPageTextEdit>(
         pageId: { type: String, required: true },
         target: { type: mongoose.Schema.Types.Mixed, required: true },
         widgetName: { type: String, required: true },
-        before: { type: String, required: true, maxlength: 20000 },
-        after: { type: String, required: true, maxlength: 20000 },
+        /** The edit's changes (text leaves and rich-text nodes), applied together. */
+        changes: { type: mongoose.Schema.Types.Mixed, required: true },
+        /** First-increment rows carried one string change at the top level; read-only now. */
+        before: { type: String, maxlength: 20000 },
+        after: { type: String, maxlength: 20000 },
         userId: { type: String, required: true },
         at: { type: String, required: true },
         revision: { type: Number, required: true, default: 0 },

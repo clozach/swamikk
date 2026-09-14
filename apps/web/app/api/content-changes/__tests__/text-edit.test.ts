@@ -21,6 +21,7 @@ jest.mock("@/services/medialit", () => ({
     deleteMedia: jest.fn(),
 }));
 
+const link = { type: "link", attrs: { href: "/p/more", target: "_blank" } };
 const richText = {
     type: "doc",
     content: [
@@ -32,15 +33,18 @@ const richText = {
             type: "paragraph",
             content: [
                 { type: "text", text: "Read " },
-                {
-                    type: "text",
-                    text: "more",
-                    marks: [{ type: "link", attrs: { href: "/p/more" } }],
-                },
+                { type: "text", text: "more ↗", marks: [link] },
             ],
         },
     ],
 };
+const linkedParagraphs = [
+    {
+        text: "Read the guide today",
+        linkText: "the guide",
+        linkHref: "/p/guide",
+    },
+];
 
 describe("inline text edits", () => {
     let domain: any, user: any, page: any;
@@ -61,14 +65,27 @@ describe("inline text edits", () => {
             },
             ...(body ? { body: JSON.stringify(body) } : {}),
         });
-    const heroTarget = (path: string) => ({
+    const heroTarget = () => ({
         kind: "page-widget-text",
         pageId: page.pageId,
         widgetId: "hero",
+    });
+    const text = (path: string, before: string, after: string) => ({
+        kind: "text",
         path,
+        before,
+        after,
     });
     const post = (body: unknown, headers = {}) =>
         edit(request("/api/content-changes/text/edit", "POST", body, headers));
+    const listed = async () =>
+        (
+            await history(
+                request(
+                    `/api/content-changes/text/history?pageId=${page.pageId}`,
+                ),
+            )
+        ).json();
 
     beforeEach(async () => {
         const id = randomUUID();
@@ -130,7 +147,7 @@ describe("inline text edits", () => {
         });
     });
 
-    it("lists visible strings from settings and defaults, never addresses or image sources", async () => {
+    it("lists strings, link words and rich-text nodes; never addresses or image sources", async () => {
         const response = await leaves(
             request(`/api/content-changes/text/leaves?pageId=${page.pageId}`),
         );
@@ -161,19 +178,30 @@ describe("inline text edits", () => {
             ),
         ).toBe(false);
         expect(widget("intro").leaves).toEqual([
-            {
+            expect.objectContaining({
+                path: "text.content.0",
+                value: "Hello there",
+                kind: "rich-text-node",
+                node: richText.content[0],
+            }),
+            expect.objectContaining({
                 path: "text.content.0.content.0.text",
                 value: "Hello there",
                 kind: "rich-text-leaf",
-                source: "settings",
-            },
+            }),
+            expect.objectContaining({
+                path: "text.content.1",
+                value: "Read more ↗",
+                kind: "rich-text-node",
+                node: richText.content[1],
+            }),
             expect.objectContaining({
                 path: "text.content.1.content.0.text",
                 value: "Read ",
             }),
             expect.objectContaining({
                 path: "text.content.1.content.1.text",
-                value: "more",
+                value: "more ↗",
             }),
         ]);
         expect(widget("header")).toMatchObject({
@@ -188,21 +216,25 @@ describe("inline text edits", () => {
         });
         expect(textKeyAllowed("homeHref")).toBe(false);
         expect(textKeyAllowed("emailLabel")).toBe(true);
+        expect(textKeyAllowed("linkText")).toBe(true);
     });
 
-    it("applies a default-derived edit at once, mirrors the draft, and records it", async () => {
+    it("applies a default-derived edit at once, mirrors the draft, and records its changes", async () => {
         const before: any = await PageModel.findById(page._id).lean();
         const response = await post({
-            target: heroTarget("heading"),
-            before: hero.heading,
-            after: "Yoga for the whole of life",
+            target: heroTarget(),
+            changes: [
+                text("heading", hero.heading, "Yoga for the whole of life"),
+            ],
         });
         expect(response.status).toBe(200);
         const body = await response.json();
         expect(body.kind).toBe("applied");
         expect(body.edit).toMatchObject({
-            before: hero.heading,
-            after: "Yoga for the whole of life",
+            target: heroTarget(),
+            changes: [
+                text("heading", hero.heading, "Yoga for the whole of life"),
+            ],
             userId: user.userId,
             widgetName: "anahataHero",
             revision: (before.__v || 0) + 1,
@@ -223,89 +255,106 @@ describe("inline text edits", () => {
             state: "applied",
             revision: saved.__v,
         });
-        const listed = await history(
-            request(`/api/content-changes/text/history?pageId=${page.pageId}`),
-        );
-        expect((await listed.json()).edits).toEqual([
+        expect((await listed()).edits).toEqual([
             expect.objectContaining({ editId: body.edit.editId }),
         ]);
     });
 
-    it("answers stale with the current text instead of overwriting another change", async () => {
+    it("answers stale with the current values instead of overwriting another change", async () => {
         const response = await post({
-            target: heroTarget("heading"),
-            before: "not what is stored",
-            after: "Something else",
+            target: heroTarget(),
+            changes: [text("heading", "not what is stored", "Something else")],
         });
         expect(response.status).toBe(409);
         expect(await response.json()).toMatchObject({
             error: { code: "stale" },
-            current: hero.heading,
+            current: [{ path: "heading", value: hero.heading }],
         });
         const saved: any = await PageModel.findById(page._id).lean();
         expect(saved.layout[1].settings?.heading).toBeUndefined();
     });
 
-    it("refuses empty text, control characters, unsupported fields and changed link words", async () => {
+    it("refuses empty text, control characters, unsupported fields and lost or removed link words", async () => {
         const empty = await post({
-            target: heroTarget("heading"),
-            before: hero.heading,
-            after: "   ",
+            target: heroTarget(),
+            changes: [text("heading", hero.heading, "   ")],
         });
         expect(empty.status).toBe(400);
         expect((await empty.json()).error.code).toBe("empty_text");
         const control = await post({
-            target: heroTarget("heading"),
-            before: hero.heading,
-            after: "badtext",
+            target: heroTarget(),
+            changes: [text("heading", hero.heading, "badtext")],
         });
         expect(control.status).toBe(400);
         const address = await post({
-            target: heroTarget("ctaHref"),
-            before: "/x",
-            after: "/y",
+            target: heroTarget(),
+            changes: [text("ctaHref", "/x", "/y")],
         });
         expect(address.status).toBe(400);
         await PageModel.updateOne(
             { _id: page._id },
             {
                 $set: {
-                    "layout.1.settings.paragraphs": [
-                        {
-                            text: "Read the guide today",
-                            linkText: "the guide",
-                            linkHref: "/p/guide",
-                        },
-                    ],
-                    "draftLayout.1.settings.paragraphs": [
-                        {
-                            text: "Read the guide today",
-                            linkText: "the guide",
-                            linkHref: "/p/guide",
-                        },
-                    ],
+                    "layout.1.settings.paragraphs": linkedParagraphs,
+                    "draftLayout.1.settings.paragraphs": linkedParagraphs,
                 },
             },
         );
-        const link = await post({
-            target: heroTarget("paragraphs.0.text"),
-            before: "Read the guide today",
-            after: "Read today",
+        const lost = await post({
+            target: heroTarget(),
+            changes: [
+                text("paragraphs.0.text", "Read the guide today", "Read today"),
+            ],
         });
-        expect(link.status).toBe(400);
-        expect((await link.json()).error.code).toBe("link_changed");
-        const kept = await post({
-            target: heroTarget("paragraphs.0.text"),
-            before: "Read the guide today",
-            after: "Read the guide tonight",
+        expect(lost.status).toBe(400);
+        expect((await lost.json()).error.code).toBe("link_changed");
+        const removed = await post({
+            target: heroTarget(),
+            changes: [text("paragraphs.0.linkText", "the guide", "  ")],
         });
-        expect(kept.status).toBe(200);
+        expect(removed.status).toBe(400);
+        expect((await removed.json()).error.code).toBe("link_changed");
         expect(
             await PageTextEditModel.countDocuments({
                 domain: domain._id,
                 state: "applied",
             }),
-        ).toBe(1);
+        ).toBe(0);
+    });
+
+    it("moves a linked paragraph's words and its link words together as one edit", async () => {
+        await PageModel.updateOne(
+            { _id: page._id },
+            {
+                $set: {
+                    "layout.1.settings.paragraphs": linkedParagraphs,
+                    "draftLayout.1.settings.paragraphs": linkedParagraphs,
+                },
+            },
+        );
+        const response = await post({
+            target: heroTarget(),
+            changes: [
+                text(
+                    "paragraphs.0.text",
+                    "Read the guide today",
+                    "Read the handbook tonight",
+                ),
+                text("paragraphs.0.linkText", "the guide", "the handbook"),
+            ],
+        });
+        expect(response.status).toBe(200);
+        const saved: any = await PageModel.findById(page._id).lean();
+        expect(saved.layout[1].settings.paragraphs[0]).toEqual({
+            text: "Read the handbook tonight",
+            linkText: "the handbook",
+            linkHref: "/p/guide",
+        });
+        expect(saved.draftLayout[1].settings.paragraphs[0].linkText).toBe(
+            "the handbook",
+        );
+        const row = (await listed()).edits[0];
+        expect(row.changes).toHaveLength(2);
     });
 
     it("refuses when an unpublished draft already changes the text", async () => {
@@ -314,40 +363,86 @@ describe("inline text edits", () => {
             { $set: { "draftLayout.1.settings.heading": "Draft heading" } },
         );
         const response = await post({
-            target: heroTarget("heading"),
-            before: hero.heading,
-            after: "Published change",
+            target: heroTarget(),
+            changes: [text("heading", hero.heading, "Published change")],
         });
         expect(response.status).toBe(409);
         expect((await response.json()).error.code).toBe("draft_conflict");
     });
 
-    it("edits one rich-text node and keeps the document structure", async () => {
+    it("replaces a rich-text paragraph whole, keeping its link, and refuses formatting it cannot keep", async () => {
+        const target = {
+            kind: "page-widget-text",
+            pageId: page.pageId,
+            widgetId: "intro",
+        };
+        const after = {
+            type: "paragraph",
+            content: [
+                { type: "text", text: "Read even " },
+                { type: "text", text: "more ↗", marks: [link] },
+                { type: "text", text: " today", marks: [{ type: "bold" }] },
+            ],
+        };
         const response = await post({
-            target: {
-                kind: "page-widget-text",
-                pageId: page.pageId,
-                widgetId: "intro",
-                path: "text.content.0.content.0.text",
-            },
-            before: "Hello there",
-            after: "Welcome, friend",
+            target,
+            changes: [
+                {
+                    kind: "node",
+                    path: "text.content.1",
+                    before: richText.content[1],
+                    after,
+                },
+            ],
         });
         expect(response.status).toBe(200);
         const saved: any = await PageModel.findById(page._id).lean();
         expect(saved.layout[2].settings.text).toEqual({
             ...richText,
-            content: [
+            content: [richText.content[0], after],
+        });
+        expect(saved.draftLayout[2].settings.text.content[1]).toEqual(after);
+        const highlighted = await post({
+            target,
+            changes: [
                 {
-                    type: "paragraph",
-                    content: [{ type: "text", text: "Welcome, friend" }],
+                    kind: "node",
+                    path: "text.content.0",
+                    before: richText.content[0],
+                    after: {
+                        type: "paragraph",
+                        content: [
+                            {
+                                type: "text",
+                                text: "Hello",
+                                marks: [{ type: "highlight" }],
+                            },
+                        ],
+                    },
                 },
-                richText.content[1],
             ],
         });
-        expect(
-            saved.draftLayout[2].settings.text.content[0].content[0].text,
-        ).toBe("Welcome, friend");
+        expect(highlighted.status).toBe(400);
+        expect((await highlighted.json()).error.code).toBe(
+            "unsupported_content",
+        );
+        const asString = await post({
+            target,
+            changes: [text("text.content.0", "Hello there", "Hi")],
+        });
+        expect(asString.status).toBe(400);
+        const asNode = await post({
+            target,
+            changes: [
+                {
+                    kind: "node",
+                    path: "text.content.0.content.0.text",
+                    before: {},
+                    after: { type: "paragraph", content: [] },
+                },
+            ],
+        });
+        expect(asNode.status).toBe(400);
     });
 
     it("edits shared header text on the site, mirrors its draft, and lists it as site-wide history", async () => {
@@ -356,10 +451,8 @@ describe("inline text edits", () => {
                 kind: "shared-widget-text",
                 pageId: page.pageId,
                 name: "anahataHeader",
-                path: "brandName",
             },
-            before: "Swami Karma Karuna",
-            after: "Swami Karuna",
+            changes: [text("brandName", "Swami Karma Karuna", "Swami Karuna")],
         });
         expect(response.status).toBe(200);
         const saved: any = await DomainModel.findById(domain._id).lean();
@@ -369,62 +462,109 @@ describe("inline text edits", () => {
         expect(saved.draftSharedWidgets.anahataHeader.settings.brandName).toBe(
             "Swami Karuna",
         );
-        const listed = await (
-            await history(
-                request(
-                    `/api/content-changes/text/history?pageId=${page.pageId}`,
-                ),
-            )
-        ).json();
-        expect(listed.edits[0].target.kind).toBe("shared-widget-text");
+        expect((await listed()).edits[0].target.kind).toBe(
+            "shared-widget-text",
+        );
     });
 
-    it("records an undo as its own row that names the edit it reverses", async () => {
+    it("records an undo as its own row that names the edit it reverses, and reads first-increment rows", async () => {
         const first = await (
             await post({
-                target: heroTarget("heading"),
-                before: hero.heading,
-                after: "Second",
+                target: heroTarget(),
+                changes: [text("heading", hero.heading, "Second")],
             })
         ).json();
         const undo = await post({
-            target: heroTarget("heading"),
-            before: "Second",
-            after: hero.heading,
+            target: heroTarget(),
+            changes: [text("heading", "Second", hero.heading)],
             undoOf: first.edit.editId,
         });
         expect(undo.status).toBe(200);
         const saved: any = await PageModel.findById(page._id).lean();
         expect(saved.layout[1].settings.heading).toBe(hero.heading);
-        const listed = await (
-            await history(
-                request(
-                    `/api/content-changes/text/history?pageId=${page.pageId}`,
-                ),
-            )
-        ).json();
-        expect(listed.edits).toHaveLength(2);
-        expect(listed.edits[0]).toMatchObject({
-            undoOf: first.edit.editId,
-            after: hero.heading,
+        await PageTextEditModel.create({
+            domain: domain._id,
+            editId: randomUUID(),
+            pageId: page.pageId,
+            target: { ...heroTarget(), path: "kicker" },
+            widgetName: "anahataHero",
+            changes: [],
+            before: "Old kicker",
+            after: "New kicker",
+            userId: user.userId,
+            at: "2026-09-13T00:00:00.000Z",
+            revision: 1,
+            state: "applied",
         });
-        expect(listed.edits[1]).toMatchObject({ editId: first.edit.editId });
+        const rows = (await listed()).edits;
+        expect(rows).toHaveLength(3);
+        expect(rows[0]).toMatchObject({
+            undoOf: first.edit.editId,
+            changes: [text("heading", "Second", hero.heading)],
+        });
+        expect(rows[2]).toMatchObject({
+            target: heroTarget(),
+            changes: [text("kicker", "Old kicker", "New kicker")],
+        });
     });
 
-    it("rejects cross-origin writes and non-managers", async () => {
+    it("rejects cross-origin writes, non-managers, and malformed change sets", async () => {
         const foreign = await post(
-            { target: heroTarget("heading"), before: hero.heading, after: "X" },
+            {
+                target: heroTarget(),
+                changes: [text("heading", hero.heading, "X")],
+            },
             { origin: "https://foreign.example" },
         );
         expect(foreign.status).toBe(403);
+        const twice = await post({
+            target: heroTarget(),
+            changes: [
+                text("heading", hero.heading, "X"),
+                text("heading", hero.heading, "Y"),
+            ],
+        });
+        expect(twice.status).toBe(400);
+        const none = await post({ target: heroTarget(), changes: [] });
+        expect(none.status).toBe(400);
+        const nested = await post({
+            target: {
+                kind: "page-widget-text",
+                pageId: page.pageId,
+                widgetId: "intro",
+            },
+            changes: [
+                {
+                    kind: "node",
+                    path: "text.content.0",
+                    before: richText.content[0],
+                    after: richText.content[0],
+                },
+                text("text.content.0.content.0.text", "Hello there", "Hi"),
+            ],
+        });
+        expect(nested.status).toBe(400);
+        const address = await post({
+            target: heroTarget(),
+            changes: [text("heading", hero.heading, "/p/somewhere")],
+        });
+        expect(address.status).toBe(400);
+        const prototype = await post({
+            target: {
+                kind: "shared-widget-text",
+                pageId: page.pageId,
+                name: "constructor",
+            },
+            changes: [text("brandName", "x", "y")],
+        });
+        expect(prototype.status).toBe(404);
         await UserModel.updateOne(
             { _id: user._id },
             { $set: { permissions: ["course:manage_any"] } },
         );
         const denied = await post({
-            target: heroTarget("heading"),
-            before: hero.heading,
-            after: "X",
+            target: heroTarget(),
+            changes: [text("heading", hero.heading, "X")],
         });
         expect(denied.status).toBe(403);
         const listing = await leaves(
@@ -453,9 +593,6 @@ describe("inline text edits", () => {
             widgetTextLeaves({ ...widget, settings }).find(
                 (leaf) => leaf.path === "paragraphs.0.text",
             ),
-        ).toMatchObject({
-            value: replacement,
-            source: "settings",
-        });
+        ).toMatchObject({ value: replacement, source: "settings" });
     });
 });

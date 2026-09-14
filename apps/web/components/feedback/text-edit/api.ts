@@ -8,7 +8,11 @@ import { textEditUi as copy } from "@config/strings";
 
 export type EditOutcome =
     | { kind: "applied"; edit: TextEdit }
-    | { kind: "stale"; current: string; message: string }
+    | {
+          kind: "stale";
+          current: Array<{ path: string; value: unknown }>;
+          message: string;
+      }
     | { kind: "failed"; message: string };
 
 /** Same-origin session requests; the server derives tenant and role. */
@@ -48,7 +52,7 @@ export async function submitEdit(input: TextEditInput): Promise<EditOutcome> {
     );
     if (status === 200 && body?.kind === "applied")
         return { kind: "applied", edit: body.edit as TextEdit };
-    if (status === 409 && typeof body?.current === "string")
+    if (status === 409 && Array.isArray(body?.current))
         return {
             kind: "stale",
             current: body.current,

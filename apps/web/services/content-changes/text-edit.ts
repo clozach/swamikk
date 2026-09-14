@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import type {
     PageTextLeaves,
     PageTextWidgetLeaves,
+    TextChange,
     TextEdit,
     TextEditHistory,
     TextEditInput,
@@ -22,8 +23,12 @@ import { pageRevision, pageWriteFilter } from "./page-guard";
 import { PageTextEditModel } from "./models";
 import { ContentChangeError, requireCondition } from "./errors";
 import { validateTextEdit } from "./text-safety";
+import { stableJson } from "./stable";
 import {
-    richTextDocFor,
+    assertLinkWordsKept,
+    isRichTextDoc,
+    richTextPlain,
+    setRichTextNode,
     setTextLeaf,
     validateReplacement,
     widgetTextLeaves,
@@ -77,7 +82,7 @@ export async function pageTextLeaves(
         const instance = widget.shared
             ? sharedWidgetInstance(
                   widget.name,
-                  domain.sharedWidgets?.[widget.name],
+                  own(domain.sharedWidgets, widget.name),
               )
             : widget;
         return {
@@ -90,50 +95,161 @@ export async function pageTextLeaves(
     return { pageId: page.pageId, revision: pageRevision(page), widgets };
 }
 
+/** History rows from the first increment carried one path with before/after at the top level. */
+const rowChanges = (record: InternalPageTextEdit): TextChange[] => {
+    if (Array.isArray(record.changes) && record.changes.length)
+        return plain(record.changes);
+    const legacy = record as unknown as {
+        target?: { path?: string };
+        before?: string;
+        after?: string;
+    };
+    return legacy.target?.path
+        ? [
+              {
+                  kind: "text",
+                  path: legacy.target.path,
+                  before: legacy.before || "",
+                  after: legacy.after || "",
+              },
+          ]
+        : [];
+};
+const rowTarget = (record: InternalPageTextEdit): TextEdit["target"] => {
+    const target = plain(record.target) as TextEdit["target"] & {
+        path?: string;
+    };
+    delete target.path;
+    return target;
+};
 const view = (record: InternalPageTextEdit): TextEdit => ({
     editId: record.editId,
-    target: plain(record.target),
+    target: rowTarget(record),
     widgetName: record.widgetName,
-    before: record.before,
-    after: record.after,
+    changes: rowChanges(record),
     userId: record.userId,
     at: record.at,
     revision: record.revision,
     ...(record.undoOf ? { undoOf: record.undoOf } : {}),
 });
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === "object" && value !== null && !Array.isArray(value);
+const own = <T>(map: Record<string, T> | undefined, key: string) =>
+    map && Object.prototype.hasOwnProperty.call(map, key)
+        ? map[key]
+        : undefined;
+
+/** The draft copy must accept the same changes; any refusal there is a draft conflict, not a caller error. */
+function applyToDraft(widget: WidgetInstance, changes: TextChange[]) {
+    let replaced: ReturnType<typeof applyChanges>;
+    try {
+        replaced = applyChanges(widget, changes);
+    } catch (error) {
+        if (error instanceof ContentChangeError && error.status !== 409)
+            throw new ContentChangeError(
+                "draft_conflict",
+                "An unpublished draft already changes this text. Publish or discard it in the page builder before editing here.",
+                409,
+            );
+        throw error;
+    }
+    requireCondition(
+        replaced.kind === "settings",
+        "draft_conflict",
+        "An unpublished draft already changes this text. Publish or discard it in the page builder before editing here.",
+        409,
+    );
+    return replaced.settings;
+}
+
 /**
- * The replacement settings for one widget, or a stale result when the stored
- * leaf no longer reads `before`. Rich-text edits keep the document's
- * structure: only the addressed text node changes, and the existing safety
- * validation proves it.
+ * The replacement settings for one widget after every change in the edit, or
+ * a stale result naming each change whose stored value moved. Text leaves are
+ * replaced as strings; a rich-text node is replaced whole and then proven by
+ * the existing structure validation, so formatting can only be the formatting
+ * the editor already allows and embedded material is retained verbatim.
  */
-function replaceLeaf(
+function applyChanges(
     widget: WidgetInstance,
-    path: string,
-    before: string,
-    after: string,
+    changes: TextChange[],
 ):
     | { kind: "settings"; settings: Record<string, unknown> }
-    | { kind: "stale"; current: string } {
-    const leaf = widgetTextLeaves(widget).find((item) => item.path === path);
-    requireCondition(
-        leaf,
-        "unsupported_target",
-        "Choose a text field on the page.",
-    );
-    if (leaf.value !== before) return { kind: "stale", current: leaf.value };
-    const settings = setTextLeaf(widget, path, after);
-    const doc = richTextDocFor(widget.settings || {}, path);
-    if (doc)
-        validateTextEdit(
-            doc.doc as never,
-            richTextDocFor(settings, path)!.doc as never,
+    | { kind: "stale"; current: Array<{ path: string; value: unknown }> } {
+    const leaves = widgetTextLeaves(widget);
+    const stale: Array<{ path: string; value: unknown }> = [];
+    for (const change of changes) {
+        const entry = leaves.find((item) => item.path === change.path);
+        requireCondition(
+            entry,
+            "unsupported_target",
+            "Choose a text field on the page.",
         );
+        if (change.kind === "text") {
+            requireCondition(
+                entry.kind !== "rich-text-node",
+                "bad_request",
+                "A paragraph is replaced as a whole, not as a string.",
+            );
+            if (entry.value !== change.before)
+                stale.push({ path: change.path, value: entry.value });
+        } else {
+            requireCondition(
+                entry.kind === "rich-text-node",
+                "bad_request",
+                "Only a paragraph or heading can be replaced as a whole.",
+            );
+            if (stableJson(entry.node) !== stableJson(change.before))
+                stale.push({ path: change.path, value: entry.node });
+        }
+    }
+    if (stale.length) return { kind: "stale", current: stale };
+    const original = (widget.settings || {}) as Record<string, unknown>;
+    let settings = plain(original);
+    for (const change of changes) {
+        const working = { ...widget, settings };
+        if (change.kind === "text") {
+            requireCondition(
+                !change.path.endsWith(".linkText") ||
+                    !change.before.trim() ||
+                    !!change.after.trim(),
+                "link_changed",
+                "Keep the linked words; removing the link itself needs the page builder.",
+            );
+            validateReplacement(change.after);
+            settings = setTextLeaf(working, change.path, change.after);
+        } else {
+            requireCondition(
+                isRecord(change.after) && Array.isArray(change.after.content),
+                "bad_request",
+                "Invalid paragraph.",
+            );
+            validateReplacement(richTextPlain(change.after));
+            settings = setRichTextNode(working, change.path, change.after);
+        }
+    }
+    assertLinkWordsKept(
+        settings,
+        changes.map((change) => change.path),
+    );
+    for (const key of Array.from(
+        new Set(changes.map((change) => change.path.split(".")[0])),
+    )) {
+        const before = original[key] ?? settings[key];
+        if (isRichTextDoc(before) && isRichTextDoc(settings[key]))
+            validateTextEdit(before as never, settings[key] as never);
+    }
+    requireCondition(
+        stableJson(original) !== stableJson(settings),
+        "no_change",
+        "This text already reads that way.",
+    );
     return { kind: "settings", settings };
 }
 
-const stale = (current: string): TextEditResult => ({
+const stale = (
+    current: Array<{ path: string; value: unknown }>,
+): TextEditResult => ({
     kind: "stale",
     current,
     message:
@@ -152,8 +268,7 @@ async function record(
         pageId: input.target.pageId,
         target: input.target,
         widgetName,
-        before: input.before,
-        after: input.after,
+        changes: input.changes,
         userId: ctx.user.userId,
         at: new Date().toISOString(),
         revision: 0,
@@ -180,10 +295,10 @@ async function applyPageWidgetEdit(
     input: TextEditInput & { target: { kind: "page-widget-text" } },
     ctx: GQLContext,
 ): Promise<TextEditResult> {
-    const { pageId, widgetId, path } = input.target;
+    const { pageId, widgetId } = input.target;
     const page: EditablePage = await editablePage(pageId, ctx);
     const widget = selectedPageWidget(page, widgetId);
-    const replaced = replaceLeaf(widget, path, input.before, input.after);
+    const replaced = applyChanges(widget, input.changes);
     if (replaced.kind === "stale") return stale(replaced.current);
     let draftLayout: WidgetInstance[] | undefined;
     if (page.draftLayout?.length) {
@@ -196,21 +311,10 @@ async function applyPageWidgetEdit(
             "An unpublished draft changes this block. Keep that draft and resolve it in the page builder before editing here.",
             409,
         );
-        const draftReplaced = replaceLeaf(
-            draft,
-            path,
-            input.before,
-            input.after,
-        );
-        requireCondition(
-            draftReplaced.kind === "settings",
-            "draft_conflict",
-            "An unpublished draft already changes this text. Publish or discard it in the page builder before editing here.",
-            409,
-        );
+        const draftSettings = applyToDraft(draft, input.changes);
         draftLayout = page.draftLayout.map((item) =>
             item.widgetId === widgetId
-                ? { ...item, settings: draftReplaced.settings }
+                ? { ...item, settings: draftSettings }
                 : item,
         );
     }
@@ -248,11 +352,11 @@ async function applySharedWidgetEdit(
     input: TextEditInput & { target: { kind: "shared-widget-text" } },
     ctx: GQLContext,
 ): Promise<TextEditResult> {
-    const { name, path } = input.target;
+    const { name } = input.target;
     // The page only records where the edit was made; it must exist on this site.
     await editablePage(input.target.pageId, ctx);
     const domain = await freshDomain(ctx);
-    const current = domain.sharedWidgets?.[name];
+    const current = own(domain.sharedWidgets, name);
     requireCondition(
         current,
         "not_found",
@@ -260,40 +364,50 @@ async function applySharedWidgetEdit(
         404,
     );
     const widget = sharedWidgetInstance(name, current);
-    const replaced = replaceLeaf(widget, path, input.before, input.after);
+    const replaced = applyChanges(widget, input.changes);
     if (replaced.kind === "stale") return stale(replaced.current);
     const sharedWidgets: SharedWidgets = {
         ...plain(domain.sharedWidgets),
         [name]: { ...plain(current), settings: replaced.settings },
     };
     let draftSharedWidgets: SharedWidgets | undefined;
-    const draft = domain.draftSharedWidgets?.[name];
-    if (draft) {
-        const draftReplaced = replaceLeaf(
-            sharedWidgetInstance(name, draft),
-            path,
-            input.before,
-            input.after,
-        );
-        requireCondition(
-            draftReplaced.kind === "settings",
-            "draft_conflict",
-            "An unpublished header or footer draft already changes this text. Publish or discard it in the page builder before editing here.",
-            409,
-        );
+    const draft = own(domain.draftSharedWidgets, name);
+    if (draft)
         draftSharedWidgets = {
             ...plain(domain.draftSharedWidgets),
-            [name]: { ...plain(draft), settings: draftReplaced.settings },
+            [name]: {
+                ...plain(draft),
+                settings: applyToDraft(
+                    sharedWidgetInstance(name, draft),
+                    input.changes,
+                ),
+            },
         };
-    }
     const entry = await record(input, name, ctx);
     const saved = (await DomainModel.findOneAndUpdate(
         {
             _id: domain._id,
+            // Both maps are compared whole: a concurrent draft save loses nothing.
             $expr: {
-                $eq: [
-                    { $literal: plain(domain.sharedWidgets) },
-                    "$sharedWidgets",
+                $and: [
+                    {
+                        $eq: [
+                            { $literal: plain(domain.sharedWidgets) },
+                            "$sharedWidgets",
+                        ],
+                    },
+                    domain.draftSharedWidgets === undefined
+                        ? { $eq: [{ $type: "$draftSharedWidgets" }, "missing"] }
+                        : {
+                              $eq: [
+                                  {
+                                      $literal: plain(
+                                          domain.draftSharedWidgets,
+                                      ),
+                                  },
+                                  "$draftSharedWidgets",
+                              ],
+                          },
                 ],
             },
         },
@@ -323,15 +437,39 @@ async function applySharedWidgetEdit(
     return { kind: "applied", edit: view({ ...entry.toObject(), revision }) };
 }
 
-/** One inline edit: validated, applied under the page/site revision guard, recorded either way. */
+/** One inline edit — every change on one widget together — validated, applied under the page/site revision guard, recorded either way. */
 export async function applyTextEdit(
     input: TextEditInput,
     ctx: GQLContext,
 ): Promise<TextEditResult> {
     requirePageEditor(ctx);
-    validateReplacement(input.after);
     requireCondition(
-        input.before !== input.after,
+        input.changes.length >= 1 && input.changes.length <= 8,
+        "bad_request",
+        "An edit changes between one and eight fields.",
+    );
+    requireCondition(
+        new Set(input.changes.map((change) => change.path)).size ===
+            input.changes.length,
+        "bad_request",
+        "Each field appears once in an edit.",
+    );
+    // One change inside another's node would clobber it; each path stands alone.
+    requireCondition(
+        !input.changes.some((change) =>
+            input.changes.some(
+                (other) =>
+                    other !== change &&
+                    other.path.startsWith(`${change.path}.`),
+            ),
+        ),
+        "bad_request",
+        "Each field in an edit must be separate from the others.",
+    );
+    requireCondition(
+        input.changes.some(
+            (change) => stableJson(change.before) !== stableJson(change.after),
+        ),
         "no_change",
         "This text already reads that way.",
     );
