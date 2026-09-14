@@ -105,3 +105,30 @@ messages. Check on a phone: send a comment, tap Close on its confirmation, then
 send another and leave it alone for five seconds. The page stays usable and no
 confirmation remains. Mocked component tests exercise sending without posting
 real feedback; physical Safari verification follows hosted publication.
+
+## Inline text editing (site managers)
+
+A site manager (`site:manage`, outside Member Mimic) sees an **Edit text ⌥⌘E**
+pill beside the ? control. In that mode every run of page text that reads as
+exactly one stored string (a block's setting, or its default) takes a dashed
+outline; clicking it edits it in place, Enter saves, Shift+Enter breaks a line,
+Escape cancels, Tab saves and steps to the next run. A save changes the
+published page at once and mirrors the same text into the page's draft; the
+page re-renders through `router.refresh()`. The run that changed keeps a
+*Changed · Undo ⌘Z · History* chip until it is dismissed or superseded; ⌘Z /
+⇧⌘Z work across the page while no run is being typed in; **History** lists
+every applied edit on the page (and every site-wide header/footer edit) with a
+permanent *Restore this text*. Every edit, undo and restore is an append-only
+row (`PageTextEdit`); nothing is rewritten.
+
+The comment layer is separate by design: a comment asks for a change, this
+makes one. While text editing is on, the ? control is disabled; while the ?
+tools are open, the pill is hidden. Text stored under two paths of one block
+is marked, not editable (the wrong field can never be changed); mixed-format
+paragraphs, link addresses, alt text and image-well descriptions keep the
+builder / proposal paths. Source: `text-edit/` (`runs.ts` matches rendered
+text to leaves, `use-text-edit.ts` owns the mode, `history.tsx` the way back);
+server: `services/content-changes/text-leaves.ts` + `text-edit.ts`, routes
+under `/api/content-changes/text/`.
+
+Verification: `pnpm exec jest --config apps/web/jest.client.config.ts --runInBand apps/web/components/feedback/text-edit/__tests__` and the server suite `apps/web/app/api/content-changes/__tests__/text-edit.test.ts`. On the rig: sign in as the super admin, press ⌥⌘E on the homepage, click the H1, type, Enter; reload — the text persists; ⌘Z; open History and Restore.

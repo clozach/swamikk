@@ -118,4 +118,5 @@ export type {
 } from "./feedback-review";
 
 export * from "./purchase-access";
+export * from "./page-text-edit";
 export * from "./site-identity";

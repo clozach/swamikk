@@ -1,0 +1,174 @@
+/* The entry pill and the edit bar share the ? control's corner, to its left. */
+.kk-text-edit-pill,
+.kk-text-edit-bar {
+    position: fixed;
+    z-index: 45;
+    right: calc(max(16px, env(safe-area-inset-right)) + 56px);
+    bottom: calc(
+        var(--kk-mobile-pay-bar-height, 0px) +
+            max(16px, env(safe-area-inset-bottom))
+    );
+    max-width: calc(100vw - 96px);
+}
+.kk-text-edit-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 14px 0 12px;
+    border-radius: 22px;
+    background: #2f4f3a;
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
+    box-shadow: 0 5px 18px #0003;
+    white-space: nowrap;
+}
+.kk-text-edit-pill:hover {
+    background: #26402f;
+}
+.kk-text-edit-pill:focus-visible {
+    outline: 3px solid #8c4515;
+    outline-offset: 4px;
+}
+.kk-text-edit-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    padding: 6px;
+    border-radius: 14px;
+    font-size: 14px;
+}
+.kk-text-edit-bar button {
+    min-height: 44px;
+}
+.kk-text-edit-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 10px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.kk-text-edit-key {
+    display: inline-block;
+    margin-left: 4px;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: #0000001a;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 18px;
+    opacity: 0.9;
+}
+.kk-text-edit-pill .kk-text-edit-key {
+    background: #ffffff33;
+}
+.kk-text-edit-chip {
+    align-self: center;
+    padding: 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Runs. The affordances exist only while the mode is on. */
+html[data-kk-text-edit] [data-kk-editable] {
+    cursor: text;
+    outline: 1px dashed #c76f1d99;
+    outline-offset: 3px;
+    border-radius: 3px;
+    transition:
+        outline-color 0.15s ease,
+        background-color 0.15s ease;
+}
+html[data-kk-text-edit] [data-kk-editable]:hover,
+html[data-kk-text-edit] [data-kk-editable]:focus-visible {
+    outline: 2px solid #c76f1d;
+    background-color: #c76f1d14;
+}
+html[data-kk-text-edit] [data-kk-editing] {
+    outline: 2px solid #c76f1d;
+    background-color: #c76f1d1f;
+    caret-color: #c76f1d;
+    box-shadow: 0 0 0 4px #c76f1d26;
+}
+html[data-kk-text-edit] [data-kk-editing]:focus {
+    outline: 2px solid #c76f1d;
+}
+html[data-kk-text-edit] [data-kk-saving] {
+    outline-style: dotted;
+    opacity: 0.75;
+}
+html[data-kk-text-edit] [data-kk-shared] {
+    outline-color: #2f4f3a99;
+}
+html[data-kk-text-edit] [data-kk-shared]:hover,
+html[data-kk-text-edit] [data-kk-shared][data-kk-editing] {
+    outline-color: #2f4f3a;
+    background-color: #2f4f3a14;
+}
+html[data-kk-text-edit] [data-kk-ambiguous] {
+    outline: 1px dotted #8a8a8a;
+    outline-offset: 3px;
+    cursor: help;
+}
+
+/* History */
+.kk-text-history {
+    display: grid;
+    gap: 12px;
+}
+.kk-text-history-list {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.kk-text-history-row {
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid #0000001a;
+    border-radius: 10px;
+}
+.kk-text-history-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    font-size: 13px;
+    opacity: 0.8;
+}
+.kk-text-history-diff {
+    display: grid;
+    gap: 4px;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+.kk-text-history-diff del {
+    color: #8a3b12;
+    background: #c76f1d14;
+    text-decoration: line-through;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+.kk-text-history-diff ins {
+    color: #1f3a2a;
+    background: #2f4f3a14;
+    text-decoration: none;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+@media (max-width: 640px) {
+    .kk-text-edit-bar {
+        left: max(12px, env(safe-area-inset-left));
+        right: calc(max(16px, env(safe-area-inset-right)) + 56px);
+        max-width: none;
+    }
+    .kk-text-edit-bar .kk-text-edit-key {
+        display: none;
+    }
+}

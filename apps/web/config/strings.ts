@@ -439,3 +439,48 @@ export const purchaseRemovalUi = {
             "Membership has changed. Ask support to review removal.",
     },
 } as const;
+
+/** Inline (WYSIWYG) text editing for site managers. Shortcuts sit in the labels: a magnet button says how to reach it without a mouse. */
+export const textEditUi = {
+    toggle: "Edit text",
+    toggleShortcut: "⌥⌘E",
+    toggleTitle: "Edit page text in place (⌥⌘E)",
+    loading: "Finding editable text…",
+    editing: "Editing text",
+    count: "{n} editable",
+    none: "No editable text found on this page",
+    done: "Done",
+    doneShortcut: "⎋",
+    undo: "Undo",
+    undoShortcut: "⌘Z",
+    redo: "Redo",
+    redoShortcut: "⇧⌘Z",
+    history: "History",
+    historyTitle: "Text edits on this page",
+    historyIntro:
+        "Every inline change, newest first, with who made it and the exact before and after. Restore brings that text back; the restore is recorded too. Site-wide edits (header and footer) show on every page.",
+    historyEmpty: "No inline edits on this page yet.",
+    historyMore: "Show earlier edits",
+    historyGone:
+        "That text is no longer on this page, so it cannot be restored from here.",
+    restore: "Restore this text",
+    restored: "Earlier text restored. Undo with ⌘Z or from History.",
+    you: "you",
+    other: "another editor",
+    sitewide: "site-wide",
+    saved: "Saved. Undo with ⌘Z or from History.",
+    undone: "Undone. Redo with ⇧⌘Z.",
+    redone: "Redone. Undo with ⌘Z.",
+    unchanged: "No change.",
+    stale: "This text changed elsewhere; the page now shows the current version.",
+    failed: "The change was not saved. The page shows the previous text.",
+    noPage: "This page has no inline-editable text.",
+    runLabel: "Editable text. Press Enter to edit.",
+    runHint: "Click to edit · Enter saves · Shift+Enter new line · Esc cancels",
+    sharedHint:
+        "Site-wide text (header or footer): a change here shows on every page",
+    ambiguous:
+        "This text appears in more than one field of this block. Edit it in the page builder.",
+    changed: "Changed",
+    dismiss: "Dismiss",
+} as const;

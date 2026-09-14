@@ -34,6 +34,9 @@ import { SelectionTools } from "./selection-tools";
 import { useVisualViewport } from "./viewport";
 import { SelectionChoices } from "./selection-choices";
 import { usePanelFocusReturn } from "./focus-return";
+// Static on purpose: several suites stub next/dynamic with a fixed stand-in,
+// and the session renders nothing for anyone who cannot edit.
+import TextEditSession from "./text-edit";
 import "./feedback.css";
 
 const PageWidgetEditor = dynamic(() => import("./page-widget-editor"));
@@ -74,10 +77,12 @@ function FeedbackSession({ path }: { path: string }) {
     const [panel, setPanel] = useState<Panel>({ kind: "closed" });
     const [notice, setNotice] = useFeedbackNotice();
     const [copying, setCopying] = useState(false);
+    // Inline text editing owns the page while it is on; the comment layer waits.
+    const [textEditing, setTextEditing] = useState(false);
     const focusReturn = usePanelFocusReturn(panel.kind !== "closed");
     const { mode, setMode, selected, rect } = useSelection(
         path,
-        panel.kind !== "closed",
+        panel.kind !== "closed" || textEditing,
     );
     const expanded = mode.kind !== "closed";
     const viewport = useVisualViewport();
@@ -115,10 +120,13 @@ function FeedbackSession({ path }: { path: string }) {
                     aria-label={expanded ? copy.close : copy.open}
                     aria-expanded={expanded}
                     aria-keyshortcuts="Shift+/ Escape"
+                    disabled={textEditing}
                     title={
-                        expanded
-                            ? "Close (? or Escape)"
-                            : "Comment on this page (?)"
+                        textEditing
+                            ? "Finish editing text first (Done or Escape)"
+                            : expanded
+                              ? "Close (? or Escape)"
+                              : "Comment on this page (?)"
                     }
                     onClick={() => {
                         setMode(
@@ -134,6 +142,14 @@ function FeedbackSession({ path }: { path: string }) {
                     </span>
                 </button>
             </FeedbackControlPlacement>
+            {canEdit && (
+                <TextEditSession
+                    canEdit={canEdit}
+                    hidden={expanded}
+                    profile={profile as Profile | null}
+                    onModeChange={setTextEditing}
+                />
+            )}
             {rect && panel.kind === "closed" && <FeedbackOutline rect={rect} />}
             {notice && (
                 <FeedbackNotice

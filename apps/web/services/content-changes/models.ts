@@ -3,6 +3,8 @@ import {
     ContentChangeSchema,
     FeedbackSchema,
     FeedbackRateLimitSchema,
+    PageTextEditSchema,
+    type InternalPageTextEdit,
     type InternalContentChange,
     type InternalFeedback,
     type InternalFeedbackRateLimit,
@@ -21,3 +23,6 @@ export const FeedbackRateLimitModel =
         "FeedbackRateLimit",
         FeedbackRateLimitSchema,
     );
+export const PageTextEditModel =
+    (mongoose.models.PageTextEdit as mongoose.Model<InternalPageTextEdit>) ||
+    mongoose.model<InternalPageTextEdit>("PageTextEdit", PageTextEditSchema);

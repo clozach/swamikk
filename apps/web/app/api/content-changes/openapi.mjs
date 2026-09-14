@@ -7,6 +7,7 @@ import {
     pageWidgetPatch,
     pageWidgetPaths,
 } from "./page-widget/openapi.mjs";
+import { textEditPaths } from "./text/openapi.mjs";
 const json = (schema) => ({ content: { "application/json": { schema } } });
 const session = [{ CourseLitSession: [] }];
 const patch = {
@@ -103,6 +104,7 @@ export const contentChangesApiOpenApi = {
     ],
     paths: {
         ...pageWidgetPaths,
+        ...textEditPaths,
         "/api/content-changes": {
             post: {
                 tags: ["Content Changes"],
