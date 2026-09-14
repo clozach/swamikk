@@ -37,6 +37,7 @@ const paymentPlan = new GraphQLObjectType({
         subscriptionMonthlyAmount: { type: GraphQLFloat },
         subscriptionYearlyAmount: { type: GraphQLFloat },
         description: { type: GraphQLString },
+        currencyISOCode: { type: GraphQLString },
         includedProducts: { type: new GraphQLList(GraphQLString) },
     },
 });

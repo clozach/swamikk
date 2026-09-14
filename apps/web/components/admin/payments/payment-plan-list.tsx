@@ -34,6 +34,9 @@ function getPlanAmount(
     plan: PaymentPlan,
     currencySymbol: string,
 ): string | { amount: string; installments: number } {
+    currencySymbol = plan.currencyISOCode
+        ? `${plan.currencyISOCode.toUpperCase()} `
+        : currencySymbol;
     switch (plan.type) {
         case paymentPlanType.FREE:
             return capitalize(paymentPlanType.FREE);

@@ -93,6 +93,7 @@ export default function ProductCheckout() {
                         oneTimeAmount
                         emiAmount
                         emiTotalInstallments
+                        currencyISOCode
                         subscriptionMonthlyAmount
                         subscriptionYearlyAmount
                         description
@@ -152,6 +153,7 @@ export default function ProductCheckout() {
                         oneTimeAmount
                         emiAmount
                         emiTotalInstallments
+                        currencyISOCode
                         subscriptionMonthlyAmount
                         subscriptionYearlyAmount
                         description

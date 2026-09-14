@@ -795,6 +795,12 @@ export const productsApiOpenApi = {
                     oneTimeAmount: { type: "number" },
                     emiAmount: { type: "number" },
                     emiTotalInstallments: { type: "number" },
+                    currencyISOCode: {
+                        type: "string",
+                        pattern: "^[a-zA-Z]{3}$",
+                        description:
+                            "Optional plan currency; omitted plans inherit the site currency. Currency overrides require Stripe.",
+                    },
                     subscriptionMonthlyAmount: { type: "number" },
                     subscriptionYearlyAmount: { type: "number" },
                     description: { type: "string" },
@@ -826,6 +832,12 @@ export const productsApiOpenApi = {
                     emiTotalInstallments: {
                         type: "number",
                         description: "Required when `type` is `emi`.",
+                    },
+                    currencyISOCode: {
+                        type: "string",
+                        pattern: "^[a-zA-Z]{3}$",
+                        description:
+                            "Optional plan currency; omitted plans inherit the site currency. Currency overrides require Stripe.",
                     },
                     subscriptionMonthlyAmount: {
                         type: "number",
@@ -863,6 +875,12 @@ export const productsApiOpenApi = {
                     emiTotalInstallments: {
                         type: "number",
                         description: "Required when `type` is `emi`.",
+                    },
+                    currencyISOCode: {
+                        type: "string",
+                        pattern: "^[a-zA-Z]{3}$",
+                        description:
+                            "Optional plan currency; omitted plans inherit the site currency. Currency overrides require Stripe.",
                     },
                     subscriptionMonthlyAmount: {
                         type: "number",

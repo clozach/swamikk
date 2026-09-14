@@ -37,6 +37,7 @@ export function useProducts(
                         oneTimeAmount
                         emiAmount
                         emiTotalInstallments
+                        currencyISOCode
                         subscriptionMonthlyAmount
                         subscriptionYearlyAmount
                     }

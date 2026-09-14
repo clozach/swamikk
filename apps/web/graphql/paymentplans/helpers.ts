@@ -5,6 +5,7 @@ import GQLContext from "@models/GQLContext";
 import PaymentPlanModel, { InternalPaymentPlan } from "@models/PaymentPlan";
 import CourseModel from "@models/Course";
 import { ObjectId } from "mongodb";
+import { verifyCurrencyISOCode } from "../settings/helpers";
 
 export const validatePaymentPlan = async (
     paymentPlan: Partial<PaymentPlan>,
@@ -26,7 +27,15 @@ export const validatePaymentPlan = async (
         throw new Error("Included products are not allowed for course");
     }
 
-    const paymentMethod = await getPaymentMethodFromSettings(settings);
+    if (paymentPlan.currencyISOCode !== undefined) {
+        verifyCurrencyISOCode(paymentPlan.currencyISOCode);
+        paymentPlan.currencyISOCode = paymentPlan.currencyISOCode.toLowerCase();
+    }
+    const paymentMethod = await getPaymentMethodFromSettings(
+        settings,
+        undefined,
+        paymentPlan.currencyISOCode,
+    );
     if (!paymentMethod && paymentPlan.type !== Constants.PaymentPlanType.FREE) {
         throw new Error(responses.payment_info_required);
     }

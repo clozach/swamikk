@@ -233,6 +233,7 @@ export default function Page(props: {
                         oneTimeAmount
                         emiAmount
                         emiTotalInstallments
+                        currencyISOCode
                         subscriptionMonthlyAmount
                         subscriptionYearlyAmount
                     }
@@ -313,6 +314,7 @@ export default function Page(props: {
                         oneTimeAmount
                         emiAmount
                         emiTotalInstallments
+                        currencyISOCode
                         subscriptionMonthlyAmount
                         subscriptionYearlyAmount
                     }
@@ -456,6 +458,7 @@ export default function Page(props: {
                     oneTimeAmount
                     emiAmount
                     emiTotalInstallments
+                    currencyISOCode
                     subscriptionMonthlyAmount
                     subscriptionYearlyAmount
                 }   

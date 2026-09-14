@@ -34,6 +34,7 @@ const mutations = {
             subscriptionMonthlyAmount: { type: GraphQLFloat },
             subscriptionYearlyAmount: { type: GraphQLFloat },
             description: { type: GraphQLString },
+            currencyISOCode: { type: GraphQLString },
             includedProducts: { type: new GraphQLList(GraphQLString) },
         },
         resolve: async (
@@ -49,6 +50,7 @@ const mutations = {
                 entityId,
                 entityType,
                 description,
+                currencyISOCode,
                 includedProducts,
             }: {
                 name: string;
@@ -61,6 +63,7 @@ const mutations = {
                 entityId: string;
                 entityType: MembershipEntityType;
                 description?: string;
+                currencyISOCode?: string;
                 includedProducts?: string[];
             },
             ctx: any,
@@ -76,6 +79,7 @@ const mutations = {
                 entityId,
                 entityType,
                 description,
+                currencyISOCode,
                 ctx,
                 includedProducts,
             }),
@@ -92,6 +96,7 @@ const mutations = {
             subscriptionMonthlyAmount: { type: GraphQLFloat },
             subscriptionYearlyAmount: { type: GraphQLFloat },
             description: { type: GraphQLString },
+            currencyISOCode: { type: GraphQLString },
             includedProducts: { type: new GraphQLList(GraphQLString) },
         },
         resolve: async (
@@ -106,6 +111,7 @@ const mutations = {
                 subscriptionMonthlyAmount,
                 subscriptionYearlyAmount,
                 description,
+                currencyISOCode,
                 includedProducts,
             }: {
                 planId: string;
@@ -117,6 +123,7 @@ const mutations = {
                 subscriptionMonthlyAmount?: number;
                 subscriptionYearlyAmount?: number;
                 description?: string;
+                currencyISOCode?: string;
                 includedProducts?: string[];
             },
             ctx: any,
@@ -131,6 +138,7 @@ const mutations = {
                 subscriptionMonthlyAmount,
                 subscriptionYearlyAmount,
                 description,
+                currencyISOCode,
                 ctx,
                 includedProducts,
             }),

@@ -45,6 +45,7 @@ export const useCommunity = (id?: string | null) => {
                         oneTimeAmount
                         emiAmount
                         emiTotalInstallments
+                        currencyISOCode
                         subscriptionMonthlyAmount
                         subscriptionYearlyAmount
                         includedProducts

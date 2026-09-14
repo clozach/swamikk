@@ -122,6 +122,7 @@ export async function getPageResponse(
                             ctx,
                         })
                     ).map((p) => ({
+                        currencyISOCode: p.currencyISOCode,
                         emiAmount: p.emiAmount,
                         emiTotalInstallments: p.emiTotalInstallments,
                         subscriptionMonthlyAmount: p.subscriptionMonthlyAmount,
@@ -156,6 +157,7 @@ export async function getPageResponse(
                             ctx,
                         })
                     ).map((p) => ({
+                        currencyISOCode: p.currencyISOCode,
                         emiAmount: p.emiAmount,
                         emiTotalInstallments: p.emiTotalInstallments,
                         subscriptionMonthlyAmount: p.subscriptionMonthlyAmount,

@@ -132,7 +132,11 @@ export async function POST(req: NextRequest) {
 
                         const siteinfo = domain.settings;
                         const paymentMethod =
-                            await getPaymentMethodFromSettings(siteinfo);
+                            await getPaymentMethodFromSettings(
+                                siteinfo,
+                                undefined,
+                                paymentPlan.currencyISOCode,
+                            );
 
                         if (
                             !paymentMethod &&

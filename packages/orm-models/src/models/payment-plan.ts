@@ -31,6 +31,7 @@ export const PaymentPlanSchema = new mongoose.Schema<InternalPaymentPlan>(
             enum: Object.values(Constants.MembershipEntityType),
         },
         userId: { type: String, required: true },
+        currencyISOCode: { type: String, lowercase: true, match: /^[a-z]{3}$/ },
         oneTimeAmount: { type: Number },
         emiAmount: { type: Number },
         emiTotalInstallments: { type: Number },

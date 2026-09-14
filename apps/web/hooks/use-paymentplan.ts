@@ -33,6 +33,7 @@ export const usePaymentPlan = (
                     oneTimeAmount
                     emiAmount
                     emiTotalInstallments
+                    currencyISOCode
                     subscriptionMonthlyAmount
                     subscriptionYearlyAmount
                     description

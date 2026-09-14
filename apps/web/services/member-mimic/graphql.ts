@@ -101,6 +101,7 @@ const course: FieldRules = {
         emiAmount: true,
         emiTotalInstallments: true,
         subscriptionMonthlyAmount: true,
+        currencyISOCode: true,
         subscriptionYearlyAmount: true,
     },
     defaultPaymentPlan: true,

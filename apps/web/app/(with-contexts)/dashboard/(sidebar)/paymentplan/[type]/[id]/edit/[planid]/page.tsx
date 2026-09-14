@@ -101,6 +101,7 @@ export default function EditPaymentPlanPage() {
                     paymentPlan
                         ? {
                               planId: paymentPlan.planId,
+                              currencyISOCode: paymentPlan.currencyISOCode,
                               name: paymentPlan.name,
                               description: paymentPlan.description || "",
                               type: paymentPlan.type,

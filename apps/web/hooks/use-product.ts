@@ -94,6 +94,7 @@ export default function useProduct(id?: string | null): {
                         oneTimeAmount
                         emiAmount
                         emiTotalInstallments
+                        currencyISOCode
                         subscriptionMonthlyAmount
                         subscriptionYearlyAmount
                         entityId

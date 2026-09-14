@@ -41,6 +41,7 @@ export function serializePaymentPlan(
         subscriptionMonthlyAmount: paymentPlan.subscriptionMonthlyAmount,
         subscriptionYearlyAmount: paymentPlan.subscriptionYearlyAmount,
         description: paymentPlan.description,
+        currencyISOCode: paymentPlan.currencyISOCode,
         isDefault: paymentPlan.planId === defaultPaymentPlan,
     };
 }

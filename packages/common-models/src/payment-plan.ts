@@ -17,4 +17,6 @@ export interface PaymentPlan {
     subscriptionYearlyAmount?: number;
     includedProducts?: string[];
     description?: string;
+    /** Omitted plans inherit the site currency. Existing receipts retain their own currency. */
+    currencyISOCode?: string;
 }

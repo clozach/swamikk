@@ -15,7 +15,7 @@ const currencyISOCodes = currencies.map((currency) =>
     currency.isoCode?.toLowerCase(),
 );
 
-const verifyCurrencyISOCode = (isoCode: string) => {
+export const verifyCurrencyISOCode = (isoCode: string) => {
     if (!currencyISOCodes.includes(isoCode.toLowerCase())) {
         throw new Error(responses.unrecognised_currency_code);
     }

@@ -62,6 +62,10 @@ export const formSchema = z
         planId: z.string().optional(),
         name: z.string().min(1, "Name is required"),
         description: z.string().optional(),
+        currencyISOCode: z
+            .string()
+            .regex(/^[a-zA-Z]{3}$/)
+            .optional(),
         type: z.enum([
             paymentPlanType.FREE,
             paymentPlanType.ONE_TIME,
@@ -156,9 +160,13 @@ export function PaymentPlanForm({
     const siteinfo = useContext(SiteInfoContext);
     const fetch = useGraphQLFetch();
     const currencySymbol = getSymbolFromCurrency(
-        siteinfo.currencyISOCode || "USD",
+        initialData?.currencyISOCode || siteinfo.currencyISOCode || "USD",
     );
-    const currencyISOCode = siteinfo.currencyISOCode?.toUpperCase() || "USD";
+    const currencyISOCode = (
+        initialData?.currencyISOCode ||
+        siteinfo.currencyISOCode ||
+        "USD"
+    ).toUpperCase();
 
     const form = useForm<PaymentPlanFormData>({
         resolver: zodResolver(formSchema as any),
@@ -209,6 +217,7 @@ export function PaymentPlanForm({
                     oneTimeAmount
                     emiAmount
                     emiTotalInstallments
+                    currencyISOCode
                     subscriptionMonthlyAmount
                     subscriptionYearlyAmount
                     description
@@ -268,6 +277,7 @@ export function PaymentPlanForm({
                     oneTimeAmount
                     emiAmount
                     emiTotalInstallments
+                    currencyISOCode
                     subscriptionMonthlyAmount
                     subscriptionYearlyAmount
                     description

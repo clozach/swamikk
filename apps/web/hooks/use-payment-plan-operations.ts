@@ -32,6 +32,7 @@ export function usePaymentPlanOperations({
                     oneTimeAmount
                     emiAmount
                     emiTotalInstallments
+                    currencyISOCode
                     subscriptionMonthlyAmount
                     subscriptionYearlyAmount
                     description

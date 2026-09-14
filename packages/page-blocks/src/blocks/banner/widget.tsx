@@ -11,7 +11,6 @@ import {
     Image,
     Link,
     useToast,
-    getSymbolFromCurrency,
     MediaPlayer,
 } from "@courselit/components-library";
 import { TextRenderer } from "../../components";
@@ -178,11 +177,15 @@ export default function Widget({
         product.leadMagnet &&
         product.paymentPlans.length === 1 &&
         product.paymentPlans[0].type === Constants.PaymentPlanType.FREE;
-    const displayedPlanPrice = getPlanPrice(
-        product.paymentPlans.find(
-            (plan) => plan.planId === product.defaultPaymentPlan,
-        ),
+    const displayedPlan = product.paymentPlans.find(
+        (plan) => plan.planId === product.defaultPaymentPlan,
     );
+    const displayedPlanPrice = getPlanPrice(displayedPlan);
+    const displayedCurrency = (
+        displayedPlan?.currencyISOCode ||
+        state.siteinfo.currencyISOCode ||
+        "USD"
+    ).toUpperCase();
 
     const titleText: string = (title ||
         (type === Constants.PageType.SITE
@@ -227,9 +230,7 @@ export default function Widget({
                         {type === Constants.PageType.PRODUCT &&
                             !isLeadMagnet && (
                                 <Preheader theme={overiddenTheme}>
-                                    {getSymbolFromCurrency(
-                                        state.siteinfo.currencyISOCode,
-                                    )}
+                                    {displayedCurrency}{" "}
                                     {displayedPlanPrice.amount}
                                     {displayedPlanPrice.period && (
                                         <span className="ml-1">

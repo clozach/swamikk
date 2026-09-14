@@ -18,6 +18,7 @@ const paymentPlanFields = new Set([
     "subscriptionMonthlyAmount",
     "subscriptionYearlyAmount",
     "description",
+    "currencyISOCode",
 ]);
 
 function getUnsupportedField(body: Record<string, unknown>) {

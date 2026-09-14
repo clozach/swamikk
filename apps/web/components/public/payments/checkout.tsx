@@ -33,7 +33,7 @@ import {
 } from "@components/contexts";
 import { FetchBuilder } from "@courselit/utils";
 import { useRouter } from "next/navigation";
-import { getSymbolFromCurrency, useToast } from "@courselit/components-library";
+import { useToast } from "@courselit/components-library";
 import Script from "next/script";
 import {
     Button,
@@ -87,8 +87,6 @@ export default function Checkout({
     const siteinfo = useContext(SiteInfoContext);
     const { profile } = useContext(ProfileContext);
     const address = useContext(AddressContext);
-    const currencySymbol =
-        getSymbolFromCurrency(siteinfo.currencyISOCode || "USD") || "$";
 
     // Resolve the plan the checkout opens on, SYNCHRONOUSLY, so the submit
     // button is never transiently disabled on first paint waiting for the
@@ -111,6 +109,7 @@ export default function Checkout({
     const [selectedPlan, setSelectedPlan] = useState<PaymentPlan | null>(
         initialPlan,
     );
+    const currencySymbol = `${(selectedPlan?.currencyISOCode || siteinfo.currencyISOCode || "USD").toUpperCase()} `;
     const [isLoggedIn, setIsLoggedIn] = useState(!!profile?.email);
     const [userEmail, setUserEmail] = useState(profile?.email || "");
     const [userName, setUserName] = useState(profile?.name || "");
@@ -674,9 +673,7 @@ export default function Checkout({
                                                                                 isLoggedIn={
                                                                                     isLoggedIn
                                                                                 }
-                                                                                currencySymbol={
-                                                                                    currencySymbol
-                                                                                }
+                                                                                currencySymbol={`${(plan.currencyISOCode || siteinfo.currencyISOCode || "USD").toUpperCase()} `}
                                                                                 includedProducts={
                                                                                     includedProducts
                                                                                 }

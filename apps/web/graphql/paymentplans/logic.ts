@@ -153,6 +153,7 @@ export async function createPlan({
     entityId,
     entityType,
     description,
+    currencyISOCode,
     ctx,
     includedProducts,
 }: {
@@ -166,6 +167,7 @@ export async function createPlan({
     entityId: string;
     entityType: MembershipEntityType;
     description?: string;
+    currencyISOCode?: string;
     ctx: GQLContext;
     includedProducts?: string[];
 }): Promise<PaymentPlan> {
@@ -191,6 +193,7 @@ export async function createPlan({
         subscriptionMonthlyAmount,
         subscriptionYearlyAmount,
         description,
+        currencyISOCode,
         includedProducts,
     };
 
@@ -219,6 +222,7 @@ export async function updatePlan({
     subscriptionMonthlyAmount,
     subscriptionYearlyAmount,
     description,
+    currencyISOCode,
     ctx,
     includedProducts,
 }: {
@@ -231,6 +235,7 @@ export async function updatePlan({
     subscriptionMonthlyAmount?: number;
     subscriptionYearlyAmount?: number;
     description?: string;
+    currencyISOCode?: string;
     ctx: GQLContext;
     includedProducts?: string[];
 }): Promise<PaymentPlan> {
@@ -269,6 +274,8 @@ export async function updatePlan({
     if (subscriptionYearlyAmount !== undefined)
         paymentPlan.subscriptionYearlyAmount = subscriptionYearlyAmount;
     if (description !== undefined) paymentPlan.description = description;
+    if (currencyISOCode !== undefined)
+        paymentPlan.currencyISOCode = currencyISOCode;
     if (includedProducts !== undefined)
         paymentPlan.includedProducts = includedProducts;
 

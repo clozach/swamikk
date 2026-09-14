@@ -43,5 +43,5 @@ export function catalogProductPrice(course: Course, currency: string) {
                 `${catalogMediaUi.monthly} × ${plan.emiTotalInstallments ?? ""}`.trim();
             break;
     }
-    return `${currency.toUpperCase()} ${amount.toFixed(2)}${period ? ` ${period}` : ""}`;
+    return `${(plan?.currencyISOCode || currency).toUpperCase()} ${amount.toFixed(2)}${period ? ` ${period}` : ""}`;
 }

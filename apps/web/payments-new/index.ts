@@ -22,9 +22,28 @@ export const getPaymentMethod = async (domainName: string) => {
 export const getPaymentMethodFromSettings = async (
     siteInfo: Domain["settings"] | null,
     name?: string,
+    currencyISOCode?: string,
 ) => {
     if (!siteInfo || !siteInfo.paymentMethod) {
         return null;
+    }
+
+    if (
+        currencyISOCode &&
+        currencyISOCode.toLowerCase() !==
+            siteInfo.currencyISOCode?.toLowerCase()
+    ) {
+        if (
+            (name || siteInfo.paymentMethod) !==
+            UIConstants.PAYMENT_METHOD_STRIPE
+        ) {
+            throw new Error("Per-plan currency is supported only with Stripe.");
+        }
+        // Mongoose settings are subdocuments; spreading them omits their persisted fields.
+        siteInfo = {
+            ...(JSON.parse(JSON.stringify(siteInfo)) as SiteInfo),
+            currencyISOCode: currencyISOCode.toLowerCase(),
+        };
     }
 
     switch (name || siteInfo.paymentMethod) {
