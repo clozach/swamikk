@@ -59,6 +59,8 @@ export function pageWidgetFields(widget: WidgetInstance): PageWidgetField[] {
         });
     };
     if (widget.name === "rich-text") add("text", "rich-text", "Text");
+    if (widget.name === "banner")
+        add("description", "rich-text", "Description");
     if (widget.name === "content") {
         add("title", "text", "Heading");
         add("description", "rich-text", "Description");

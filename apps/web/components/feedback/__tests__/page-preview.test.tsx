@@ -74,3 +74,59 @@ test("native preview receives frozen defaults, scopes its theme and holds fallba
         "social-rotation",
     );
 });
+
+test("banner description review excludes checkout and renders the exact selected rich text", () => {
+    jest.mocked(WidgetByName).mockClear();
+    const content = {
+        type: "doc",
+        content: [
+            {
+                type: "paragraph",
+                content: [
+                    {
+                        type: "text",
+                        text: "Includes monthly live theory and practice classes.",
+                    },
+                ],
+            },
+        ],
+    };
+    const snapshot = {
+        kind: "page-widget",
+        widget: {
+            widgetId: "membership",
+            name: "banner",
+            settings: { description: content, title: "Members' Library" },
+        },
+        renderSettings: {
+            description: content,
+            title: "Members' Library",
+            textAlignment: "left",
+        },
+        fieldValue: content,
+    };
+    render(
+        <PageProposalPreview
+            change={
+                {
+                    preview: { before: snapshot, after: snapshot },
+                    baseline: {
+                        theme: defaultState.theme,
+                        typefaces: [],
+                        pageType: "product",
+                        draft: "mirrored-leaf",
+                    },
+                } as any
+            }
+        />,
+    );
+    expect(screen.getByText(/Description preview/)).toBeInTheDocument();
+    for (const [props] of jest.mocked(WidgetByName).mock.calls) {
+        expect(props.name).toBe("rich-text");
+        expect(props.settings).toMatchObject({
+            text: content,
+            alignment: "left",
+        });
+        expect(props.settings).not.toHaveProperty("title");
+    }
+});

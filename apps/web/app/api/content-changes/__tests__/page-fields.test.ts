@@ -323,3 +323,53 @@ it.each([
     ).rejects.toThrow("public image");
     expect(deps.seal).not.toHaveBeenCalled();
 });
+
+it("proposes a banner description without changing product or purchase settings", () => {
+    const description = {
+        type: "doc",
+        content: [
+            {
+                type: "paragraph",
+                content: [
+                    { type: "text", text: "Membership is USD 11 a month." },
+                ],
+            },
+        ],
+    };
+    const banner = {
+        ...hero(),
+        name: "banner",
+        settings: {
+            title: "Members' Library",
+            description,
+            buttonCaption: "Join",
+            alignment: "left",
+        },
+    } as WidgetInstance;
+    const content = JSON.parse(JSON.stringify(description));
+    content.content.push({
+        type: "paragraph",
+        content: [
+            {
+                type: "text",
+                text: "Includes monthly live theory and practice classes.",
+            },
+        ],
+    });
+    const after = patchPageWidget(banner, "description", {
+        kind: "rich-text",
+        content,
+    });
+    expect(pageWidgetFields(banner).map((field) => field.field)).toEqual([
+        "description",
+    ]);
+    expect(after.settings).toEqual({
+        ...banner.settings,
+        description: content,
+    });
+    expect(banner.settings!.description).toEqual(description);
+    expect(() =>
+        patchPageWidget(banner, "buttonCaption", { kind: "text", text: "Buy" }),
+    ).toThrow("supported");
+    expect(pageWidgetFields({ ...banner, shared: true })).toEqual([]);
+});

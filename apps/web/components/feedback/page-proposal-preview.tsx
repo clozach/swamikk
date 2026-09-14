@@ -38,6 +38,12 @@ export default function PageProposalPreview({
     const fallback = change.preview.after.rotatingFallback;
     return (
         <div className="space-y-5" data-feedback-ui>
+            {change.preview.before.widget.name === "banner" && (
+                <p className="text-sm">
+                    Description preview. The membership price, title and
+                    purchase button are outside this text proposal.
+                </p>
+            )}
             {fallback && (
                 <p className="rounded-lg border p-4 text-sm">
                     This edits the banner opening and fallback image. These
@@ -55,7 +61,7 @@ export default function PageProposalPreview({
             <div className="grid gap-5 xl:grid-cols-2">
                 {(["before", "after"] as const).map((side) => {
                     const snapshot = change.preview[side];
-                    const settings = {
+                    const settings: Record<string, unknown> = {
                         ...(snapshot.renderSettings ||
                             snapshot.widget.settings),
                         ...(snapshot.rotatingFallback
@@ -93,8 +99,23 @@ export default function PageProposalPreview({
                             >
                                 <WidgetByName
                                     id={`${snapshot.widget.widgetId}-${side}`}
-                                    name={snapshot.widget.name}
-                                    settings={settings as WidgetDefaultSettings}
+                                    name={
+                                        snapshot.widget.name === "banner"
+                                            ? "rich-text"
+                                            : snapshot.widget.name
+                                    }
+                                    settings={
+                                        (snapshot.widget.name === "banner"
+                                            ? {
+                                                  text: snapshot.fieldValue,
+                                                  alignment:
+                                                      settings.textAlignment,
+                                                  maxWidth: settings.maxWidth,
+                                                  verticalPadding:
+                                                      settings.verticalPadding,
+                                              }
+                                            : settings) as unknown as WidgetDefaultSettings
+                                    }
                                     state={state}
                                     pageData={{
                                         pageType: change.baseline.pageType,
