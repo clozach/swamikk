@@ -84,10 +84,13 @@ html[data-kk-text-edit] [data-kk-editable] {
         outline-color 0.15s ease,
         background-color 0.15s ease;
 }
-html[data-kk-text-edit] [data-kk-editable]:hover,
-html[data-kk-text-edit] [data-kk-editable]:focus-visible {
+html[data-kk-text-edit] [data-kk-editable]:hover {
     outline: 2px solid #c76f1d;
     background-color: #c76f1d14;
+}
+/* A saved run keeps focus for the keyboard; only typing tints it. */
+html[data-kk-text-edit] [data-kk-editable]:focus-visible {
+    outline: 2px solid #c76f1d;
 }
 html[data-kk-text-edit] [data-kk-editing] {
     outline: 2px solid #c76f1d;
