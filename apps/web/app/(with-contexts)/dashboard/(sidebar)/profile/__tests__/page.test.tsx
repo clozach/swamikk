@@ -10,6 +10,7 @@ import { authClient } from "@/lib/auth-client";
 
 const mockToast = jest.fn();
 const mockExec = jest.fn();
+const mockSetPayload = jest.fn();
 const mockSetProfile = jest.fn();
 const mockClosureFetch = jest.fn();
 const originalFetch = global.fetch;
@@ -126,7 +127,10 @@ jest.mock("@courselit/utils", () => ({
     checkPermission: () => false,
     FetchBuilder: jest.fn().mockImplementation(() => ({
         setUrl: jest.fn().mockReturnThis(),
-        setPayload: jest.fn().mockReturnThis(),
+        setPayload: function (payload: unknown) {
+            mockSetPayload(payload);
+            return this;
+        },
         setIsGraphQLEndpoint: jest.fn().mockReturnThis(),
         build: jest.fn().mockReturnThis(),
         exec: mockExec,
@@ -378,6 +382,94 @@ describe("ProfilePage", () => {
             screen.queryByRole("heading", { name: "Your account is closed" }),
         ).not.toBeInTheDocument();
         expect(authClient.signOut).not.toHaveBeenCalled();
+    });
+
+    it("keeps the details Save disabled on a fresh profile whose name and bio are empty", async () => {
+        mockExec.mockReset().mockResolvedValueOnce({
+            user: {
+                name: "",
+                bio: null,
+                email: "jane@example.com",
+                subscribedToUpdates: false,
+                avatar: null,
+            },
+        });
+        renderPage();
+        await screen.findByRole("checkbox", {
+            name: "Receive newsletter and marketing emails",
+        });
+        expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+        expect(
+            screen.getByRole("button", { name: "Save newsletter preference" }),
+        ).toBeDisabled();
+    });
+
+    it("sends a changed newsletter choice with the details Save and marks it saved", async () => {
+        mockExec.mockReset();
+        mockExec
+            .mockResolvedValueOnce({
+                user: {
+                    name: "Jane Doe",
+                    bio: "Old bio",
+                    email: "jane@example.com",
+                    subscribedToUpdates: false,
+                    avatar: null,
+                },
+            })
+            .mockResolvedValueOnce({
+                user: {
+                    id: "db-user-1",
+                    name: "Jane Updated",
+                    userId: "user-1",
+                    email: "jane@example.com",
+                    permissions: [],
+                    purchases: [],
+                    bio: "Old bio",
+                    subscribedToUpdates: true,
+                    avatar: null,
+                },
+            });
+        renderPage();
+        const checkbox = await screen.findByRole("checkbox", {
+            name: "Receive newsletter and marketing emails",
+        });
+        fireEvent.click(checkbox);
+        fireEvent.change(await screen.findByDisplayValue("Jane Doe"), {
+            target: { value: "Jane Updated" },
+        });
+        fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+        await waitFor(() => expect(mockSetProfile).toHaveBeenCalledTimes(1));
+        expect(mockSetPayload.mock.calls[1][0].variables).toEqual({
+            id: "user-1",
+            name: "Jane Updated",
+            bio: "Old bio",
+            subscribedToUpdates: true,
+        });
+        expect(await screen.findByRole("status")).toHaveTextContent(
+            "Newsletter preference saved.",
+        );
+        expect(
+            screen.getByRole("button", { name: "Save newsletter preference" }),
+        ).toBeDisabled();
+        expect(checkbox).toBeChecked();
+    });
+
+    it("leaves an unchanged newsletter choice out of the details Save", async () => {
+        renderPage();
+        fireEvent.change(await screen.findByDisplayValue("Jane Doe"), {
+            target: { value: "Jane Updated" },
+        });
+        fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+        await waitFor(() => expect(mockSetProfile).toHaveBeenCalledTimes(1));
+        expect(mockSetPayload.mock.calls[1][0].variables).toEqual({
+            id: "user-1",
+            name: "Jane Updated",
+            bio: "Old bio",
+            subscribedToUpdates: undefined,
+        });
+        expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
 
     it("preserves fetched profile state after saving details", async () => {

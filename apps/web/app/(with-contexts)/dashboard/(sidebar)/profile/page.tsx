@@ -109,8 +109,8 @@ export default function Page() {
                 const response = await fetch.exec();
                 if (response.user) {
                     // setUser(response.user);
-                    setName(response.user.name);
-                    setBio(response.user.bio);
+                    setName(response.user.name ?? "");
+                    setBio(response.user.bio ?? "");
                     setAvatar(response.user.avatar);
                     setSubscribedToUpdates(response.user.subscribedToUpdates);
                     initialNewsRef.current = response.user.subscribedToUpdates;
@@ -187,12 +187,16 @@ export default function Page() {
         if (isMimic) return;
 
         setIsSaving(true);
+        // A newsletter change made on this page rides along with the details
+        // save; an unchanged choice is left out so consent is not re-recorded.
+        const newsChanged = subscribedToUpdates !== initialNewsRef.current;
         const mutation = `
-          mutation ($id: ID!, $name: String, $bio: String) {
+          mutation ($id: ID!, $name: String, $bio: String, $subscribedToUpdates: Boolean) {
             user: updateUser(userData: {
               id: $id
               name: $name
               bio: $bio
+              subscribedToUpdates: $subscribedToUpdates
             }) {
                 id,
                 name,
@@ -229,6 +233,9 @@ export default function Page() {
                     id: profile!.userId,
                     name,
                     bio,
+                    subscribedToUpdates: newsChanged
+                        ? subscribedToUpdates
+                        : undefined,
                 },
             })
             .setIsGraphQLEndpoint(true)
@@ -246,6 +253,13 @@ export default function Page() {
                     name,
                     bio,
                 };
+                if (
+                    newsChanged &&
+                    typeof response.user.subscribedToUpdates === "boolean"
+                ) {
+                    initialNewsRef.current = response.user.subscribedToUpdates;
+                    setNewsNotice(contactCopy.newsSaved);
+                }
             }
         } catch (err: any) {
             toast({
