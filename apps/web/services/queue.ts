@@ -141,6 +141,9 @@ async function queueMailOrFallback({
                     subject,
                     html: body,
                     headers,
+                    ...(process.env.EMAIL_REPLY_TO
+                        ? { replyTo: process.env.EMAIL_REPLY_TO }
+                        : {}),
                 });
                 atLeastOneSuccessfulSend = true;
             } catch (err: any) {

@@ -26,8 +26,19 @@ export async function sendMail({
     const transportMode =
         process.env.NODE_ENV === "production" ? "smtp" : "console";
 
+    // The sender address has no mailbox of its own; EMAIL_REPLY_TO points
+    // member replies at one that is read (kk-web-tools decision 3, 2026-09-06).
+    const replyTo = process.env.EMAIL_REPLY_TO || undefined;
+
     if (process.env.NODE_ENV === "production") {
-        await transporter.sendMail({ from, to, subject, html, headers });
+        await transporter.sendMail({
+            from,
+            to,
+            subject,
+            html,
+            headers,
+            ...(replyTo ? { replyTo } : {}),
+        });
     } else {
         // eslint-disable-next-line no-console
         console.log("Mail sent", from, to, subject, html, headers, new Date());

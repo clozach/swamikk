@@ -102,6 +102,7 @@ export * from "./drip-change";
 export * from "./contact-preferences";
 export * from "./publication-observation";
 export * from "./page-content-change";
+export * from "./page-text-edit";
 export * from "./stripe-lifecycle";
 export * from "./stripe-refunds";
 export * from "./purchase-removal";
@@ -118,3 +119,4 @@ export type {
 } from "./feedback-review";
 
 export * from "./purchase-access";
+export * from "./site-identity";

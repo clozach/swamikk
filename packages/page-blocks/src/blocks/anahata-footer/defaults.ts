@@ -1,6 +1,7 @@
 import { placeholderSource } from "../../components/image-source";
 import { PALETTE } from "../../components/palette";
 import type { BackToTop, FooterColumn } from "./settings";
+import { BUSINESS_NAME } from "@courselit/common-models";
 
 /* ------------------------------------------------------------------
    Type — the two families that actually load on anahata-retreat.org.nz.
@@ -74,7 +75,7 @@ export const DECOR_RIGHT_WIDTH = 387;
    Copy. Verbatim from the live footer.
    ------------------------------------------------------------------ */
 export const copyrightPrefix = "Copyright © 2026";
-export const copyrightOwner = "Anahata Yoga Retreat";
+export const copyrightOwner = BUSINESS_NAME;
 export const copyrightLinkPrefix = "";
 export const copyrightLinkLabel = "";
 export const copyrightLinkHref = "";
