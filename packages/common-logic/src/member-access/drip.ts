@@ -308,11 +308,13 @@ export async function projectDripAccess(
     })
         .select("purchases")
         .lean();
-    const purchase = Array.isArray(user?.purchases)
-        ? user.purchases.find((item) => item.courseId === key.courseId)
-        : undefined;
+    const purchase =
+        user && Array.isArray(user.purchases)
+            ? user.purchases.find((item) => item.courseId === key.courseId)
+            : undefined;
     const sameGroups =
-        Array.isArray(purchase?.accessibleGroups) &&
+        !!purchase &&
+        Array.isArray(purchase.accessibleGroups) &&
         purchase.accessibleGroups.length === groupIds.length &&
         purchase.accessibleGroups.every((id, index) => id === groupIds[index]);
     const sameDate = period.lastRelativeReleaseAt
