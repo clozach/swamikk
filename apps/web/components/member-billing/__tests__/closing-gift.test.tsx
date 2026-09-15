@@ -16,6 +16,7 @@ jest.mock(
     () => () => require("@/components/feedback/comment-form").default,
 );
 jest.mock("@courselit/components-library", () => ({
+    useMediaLit: () => ({ uploadFile: jest.fn(), isUploading: false }),
     MediaSelector: () => {
         throw new Error("Member feedback must not mount photo controls");
     },
