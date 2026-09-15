@@ -17,7 +17,7 @@
     min-height: 44px;
     padding: 0 14px 0 12px;
     border-radius: 22px;
-    background: #2f4f3a;
+    background: #5b3d2a;
     color: #fff;
     font-weight: 600;
     font-size: 14px;
@@ -25,7 +25,7 @@
     white-space: nowrap;
 }
 .kk-text-edit-pill:hover {
-    background: #26402f;
+    background: #3f2a1c;
 }
 .kk-text-edit-pill:focus-visible {
     outline: 3px solid #8c4515;
@@ -94,12 +94,12 @@ html[data-kk-text-edit] [data-kk-saving] {
     opacity: 0.75;
 }
 html[data-kk-text-edit] [data-kk-shared] {
-    outline-color: #2f4f3a99;
+    outline-color: #5b3d2a99;
 }
 html[data-kk-text-edit] [data-kk-shared]:hover,
 html[data-kk-text-edit] [data-kk-shared][data-kk-editing] {
-    outline-color: #2f4f3a;
-    background-color: #2f4f3a14;
+    outline-color: #5b3d2a;
+    background-color: #5b3d2a14;
 }
 html[data-kk-text-edit] [data-kk-ambiguous] {
     outline: 1px dotted #8a8a8a;
@@ -183,7 +183,7 @@ html[data-kk-text-edit] [data-kk-editing] a {
 }
 .kk-text-history-diff ins {
     color: #1f3a2a;
-    background: #2f4f3a1f;
+    background: #5b3d2a1f;
 }
 /* BEFORE / AFTER as cut-outs: a solid strip on the band's right edge with the
    word punched through it in the dialog's own background, reading upward. */
@@ -201,7 +201,7 @@ html[data-kk-text-edit] [data-kk-editing] a {
     overflow: hidden;
 }
 .kk-text-history-diff ins .kk-text-history-cut {
-    background: #2f4f3a;
+    background: #5b3d2a;
 }
 .kk-text-history-cut > span {
     writing-mode: vertical-rl;

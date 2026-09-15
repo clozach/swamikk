@@ -10,9 +10,9 @@ import { PALETTE } from "../../../components/palette";
  * reference `var(--nav-*)`, so no hex needs to appear literally in a class
  * for Tailwind to emit it, and a colour changes in exactly one place.
  *
- *   bone #e4e9d8 · ink #262b27 · pine #1f4d3b · pine-deep #153627
- *   moss #9aab74 · moss-light #c2cfa6 · edge #6f7d6b · card #f8f9f5
- *   pine-dark #12291f · footer-edge #6b8776
+ *   v1.1 Clay & Saffron (2026-09-14): sand #ebe4d6 · ink #2a2420 · umber #5b3d2a · umber-deep #3f2a1c
+ *   saffron #ff9900 · saffron-light #ffb84d · edge #8a7a6a · card #faf7f1
+ *   close #2f2118 · footer-edge #8c7a68 (keys keep their v1.0 role names)
  *
  * Contrast, computed with the WCAG relative-luminance formula against the
  * exact hexes (scratchpad, 2026-09-10):

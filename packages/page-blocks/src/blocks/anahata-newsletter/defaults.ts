@@ -33,16 +33,16 @@ export const DEFAULT_SUBMISSION_ERROR_MESSAGE =
 export const DEFAULT_DISCLAIMER = "";
 
 /* ------------------------------------------------------------------ *
- * Background — the "Stay in Touch" band is a solid fern ground (Forest &
- * Bone; homepage-redesign CONTRACT § anahataNewsletter): no photograph and
+ * Background — the "Stay in Touch" band is a solid clay ground (v1.1 Clay &
+ * Saffron, the `fern` role; homepage-redesign CONTRACT § anahataNewsletter): no photograph and
  * no overlay, so the band's contrast is a fixed property of the palette
  * rather than of whatever pixels a photo happens to put under the text.
  * Editable through the standard Background panel; the layout script writes
- * this same shape — `{ type: "color", backgroundColor: "#d6e0c3" }`.
+ * this same shape — `{ type: "color", backgroundColor: "#e2d6c1" }`.
  *
  * No `backgroundColorDark` on purpose: the heading, body and field colours
  * below are fixed palette values, not theme tokens, so `Section` falls back
- * to the light fern in dark mode and the text keeps its measured contrast.
+ * to the light band in dark mode and the text keeps its measured contrast.
  * ------------------------------------------------------------------ */
 
 export const DEFAULT_BACKGROUND: SectionBackground = {
