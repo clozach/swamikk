@@ -285,7 +285,14 @@ export default function UsersHub() {
             window.removeEventListener("keydown", keydown, { capture: true });
     }, [activeUserId, openPanel, closePanel]);
 
-    // A click anywhere but the magnet or the selected row puts the magnet away.
+    // A click anywhere but the magnet or the selected row puts the magnet
+    // away. Capture phase: Permissions and Done both swap their own
+    // container's children synchronously on click (toolbar <-> panel), so a
+    // bubble-phase listener would see the clicked element already detached
+    // from the tree by the time it runs, with no ancestors left to find —
+    // exactly what made the Permissions button look unresponsive (Al,
+    // 2026-09-14). Every other "click outside" listener in this fork
+    // already uses capture; this one was the exception.
     useEffect(() => {
         if (selection.kind === "none") return;
         const click = (event: MouseEvent) => {
@@ -298,8 +305,8 @@ export default function UsersHub() {
                 return;
             setSelection({ kind: "none" });
         };
-        document.addEventListener("click", click);
-        return () => document.removeEventListener("click", click);
+        document.addEventListener("click", click, true);
+        return () => document.removeEventListener("click", click, true);
     }, [selection.kind]);
 
     const onRowKeyDown = (

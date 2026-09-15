@@ -175,6 +175,41 @@ test("rows show what an account may manage, take the keyboard, and sprout the ma
     expect(await screen.findByText(/no member view/)).toBeInTheDocument();
 });
 
+test("clicking Permissions with the mouse opens the panel and keeps it open (not just the ⌥⌘P shortcut)", async () => {
+    // Regression coverage for the mouse-click path the ⌥⌘P shortcut test
+    // above never exercises. The actual bug (Al, 2026-09-14: "the
+    // Permissions button isn't responding to clicks") was a timing issue —
+    // clicking Permissions swaps the toolbar's children for the panel's
+    // synchronously, and a bubble-phase "click outside closes the magnet"
+    // document listener then saw the clicked button already detached from
+    // the tree, read that as "click landed outside", and undid the open it
+    // just caused. jsdom's real-browser click dispatch does not replicate
+    // that exact synchronous-commit-during-bubble timing (verified: the
+    // listener still sees the target attached), so this test cannot fail
+    // against the pre-fix bubble-phase listener on its own — the fix
+    // (capture-phase registration, matching every other "click outside"
+    // listener in this fork) was verified directly in Chrome on the rig.
+    // This test still guards the mouse-click path itself.
+    renderHub();
+    const rows = await settledRows();
+    act(() => rows[1].focus());
+    await screen.findByRole("toolbar", { name: "Second Member" });
+
+    fireEvent.click(screen.getByRole("button", { name: /Permissions/ }));
+
+    const panel = await screen.findByRole("group", {
+        name: "Permissions · Second Member",
+    });
+    expect(panel).toBeInTheDocument();
+    // Give any wrongly-scheduled reset a chance to land before asserting it
+    // stayed open — the bug closed the magnet entirely, not just the panel.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(
+        screen.getByRole("group", { name: "Permissions · Second Member" }),
+    ).toBeInTheDocument();
+    expect(rows[1]).toHaveAttribute("data-state", "selected");
+});
+
 test("⌥⌘P opens the panel for the selected account, Escape ladders out, a save updates the row", async () => {
     renderHub();
     const rows = await settledRows();
