@@ -2,6 +2,7 @@ import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import PermissionsMagnet from "../permissions-magnet";
 import { responses } from "@config/strings";
+import { ADMIN_PERMISSIONS } from "@ui-config/constants";
 
 const mockExec = jest.fn();
 const mockSetPayload = jest.fn();
@@ -65,21 +66,132 @@ beforeEach(() => {
     document.body.innerHTML = "";
 });
 
-test("the closed magnet names both actions with their chords", async () => {
+test("the closed magnet is a single Admin checkbox plus a way into the advanced view, not a Permissions button", async () => {
     const { onOpenPanel } = renderMagnet();
-    const open = await screen.findByRole("button", {
-        name: /Permissions/,
-    });
-    expect(open).toHaveTextContent("⌥⌘P");
-    expect(open).toHaveAttribute("aria-keyshortcuts", "Alt+Meta+P");
+    // The old "Permissions" button is gone outright — Al, 2026-09-14: "far
+    // too complex for KK."
+    expect(screen.queryByRole("button", { name: /^Permissions/ })).toBeNull();
+
+    const admin = await screen.findByRole("checkbox", { name: "Admin" });
+    expect(admin).not.toBeChecked(); // member.permissions holds none of ADMIN_PERMISSIONS
+
+    const advanced = screen.getByRole("button", { name: /More permissions/ });
+    expect(advanced).toHaveTextContent("`");
+    expect(advanced).toHaveAttribute("aria-keyshortcuts", "Alt+Meta+P `");
+    fireEvent.click(advanced);
+    expect(onOpenPanel).toHaveBeenCalledTimes(1);
+
     const mimic = screen.getByRole("link", { name: /View as member/ });
     expect(mimic).toHaveTextContent("↩");
     expect(mimic).toHaveAttribute(
         "href",
         "/dashboard/users/u2?returnTo=%2Fdashboard%2Fusers",
     );
-    fireEvent.click(open);
-    expect(onOpenPanel).toHaveBeenCalledTimes(1);
+});
+
+test("the Admin checkbox reads checked, unchecked or indeterminate from what the account actually holds", async () => {
+    const { unmount } = renderMagnet({
+        user: { ...member, permissions: ["course:enroll"] },
+    });
+    expect(
+        await screen.findByRole("checkbox", { name: "Admin" }),
+    ).not.toBeChecked();
+    unmount();
+
+    const { unmount: unmountChecked } = renderMagnet({
+        user: { ...member, permissions: [...ADMIN_PERMISSIONS] },
+    });
+    expect(
+        await screen.findByRole("checkbox", { name: "Admin" }),
+    ).toBeChecked();
+    unmountChecked();
+
+    // Some but not all six is real — the advanced panel can produce it one
+    // box at a time — and gets an honest tri-state box, not a coerced one.
+    renderMagnet({
+        user: { ...member, permissions: [ADMIN_PERMISSIONS[0]] },
+    });
+    const partial = await screen.findByRole("checkbox", { name: "Admin" });
+    expect(partial).not.toBeChecked();
+    expect(partial.getAttribute("data-state")).toBe("indeterminate");
+});
+
+test("checking Admin grants the whole bundle; unchecking removes it — the non-admin baseline is untouched either way", async () => {
+    mockExec.mockResolvedValueOnce({
+        user: { permissions: ["course:enroll", ...ADMIN_PERMISSIONS] },
+    });
+    const { onSaved } = renderMagnet({
+        user: { ...member, permissions: ["course:enroll"] },
+    });
+    fireEvent.click(await screen.findByRole("checkbox", { name: "Admin" }));
+    await waitFor(() =>
+        expect(onSaved).toHaveBeenCalledWith([
+            "course:enroll",
+            ...ADMIN_PERMISSIONS,
+        ]),
+    );
+    expect(sentPermissions()[0]).toEqual(
+        expect.arrayContaining(["course:enroll", ...ADMIN_PERMISSIONS]),
+    );
+    expect(screen.getByRole("status")).toHaveTextContent("Admin: on");
+    expect(screen.getByRole("checkbox", { name: "Admin" })).toBeChecked();
+
+    mockExec.mockResolvedValueOnce({
+        user: { permissions: ["course:enroll"] },
+    });
+    fireEvent.click(screen.getByRole("checkbox", { name: "Admin" }));
+    await waitFor(() =>
+        expect(onSaved).toHaveBeenLastCalledWith(["course:enroll"]),
+    );
+    expect(sentPermissions()[1]).toEqual(["course:enroll"]);
+    expect(screen.getByRole("status")).toHaveTextContent("Admin: off");
+    expect(screen.getByRole("checkbox", { name: "Admin" })).not.toBeChecked();
+});
+
+test("Undo reverses the Admin toggle without ever opening the advanced panel", async () => {
+    mockExec
+        .mockResolvedValueOnce({
+            user: { permissions: ["course:enroll", ...ADMIN_PERMISSIONS] },
+        })
+        .mockResolvedValueOnce({ user: { permissions: ["course:enroll"] } });
+    const { onSaved } = renderMagnet({
+        user: { ...member, permissions: ["course:enroll"] },
+    });
+    fireEvent.click(await screen.findByRole("checkbox", { name: "Admin" }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
+
+    // The way back has to work here, at the pill — not only after opening
+    // the advanced panel (that gate was the whole point of this fix).
+    fireEvent.keyDown(window, { code: "KeyZ", key: "z", metaKey: true });
+    await waitFor(() =>
+        expect(onSaved).toHaveBeenLastCalledWith(["course:enroll"]),
+    );
+    expect(screen.getByRole("checkbox", { name: "Admin" })).not.toBeChecked();
+    expect(screen.getByRole("button", { name: /Redo/ })).toBeInTheDocument();
+});
+
+test("your own account: the Admin checkbox is disabled with the reason on the pill, and the advanced view stays reachable", async () => {
+    renderMagnet({ selfUserId: "u2" });
+    const admin = await screen.findByRole("checkbox", { name: "Admin" });
+    expect(admin).toBeDisabled();
+    expect(admin.closest(".kk-permissions-admin")).toHaveAttribute(
+        "title",
+        expect.stringContaining("another admin"),
+    );
+    expect(
+        screen.getByRole("button", { name: /More permissions/ }),
+    ).toBeEnabled();
+});
+
+test("a refusal from the checkbox marks the account protected, on the closed pill too", async () => {
+    mockExec.mockRejectedValueOnce(new Error(responses.action_not_allowed));
+    const { onSaved } = renderMagnet();
+    fireEvent.click(await screen.findByRole("checkbox", { name: "Admin" }));
+    await waitFor(() =>
+        expect(screen.getByRole("checkbox", { name: "Admin" })).toBeDisabled(),
+    );
+    expect(onSaved).not.toHaveBeenCalled();
+    expect(screen.getByRole("checkbox", { name: "Admin" })).not.toBeChecked();
 });
 
 test("a restricted account says it has no member view instead of hiding the fact", async () => {

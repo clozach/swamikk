@@ -156,9 +156,10 @@ test("rows show what an account may manage, take the keyboard, and sprout the ma
     expect(
         await screen.findByRole("toolbar", { name: "Karuna" }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Admin" })).toBeInTheDocument();
     expect(
-        screen.getByRole("button", { name: /Permissions/ }),
-    ).toHaveTextContent("⌥⌘P");
+        screen.getByRole("button", { name: /More permissions/ }),
+    ).toHaveTextContent("`");
     expect(rows[0]).toHaveAttribute("data-state", "selected");
 
     fireEvent.keyDown(rows[0], { key: "ArrowDown" });
@@ -175,27 +176,28 @@ test("rows show what an account may manage, take the keyboard, and sprout the ma
     expect(await screen.findByText(/no member view/)).toBeInTheDocument();
 });
 
-test("clicking Permissions with the mouse opens the panel and keeps it open (not just the ⌥⌘P shortcut)", async () => {
+test("clicking the advanced button with the mouse opens the panel and keeps it open (not just the ⌥⌘P shortcut)", async () => {
     // Regression coverage for the mouse-click path the ⌥⌘P shortcut test
-    // above never exercises. The actual bug (Al, 2026-09-14: "the
-    // Permissions button isn't responding to clicks") was a timing issue —
-    // clicking Permissions swaps the toolbar's children for the panel's
-    // synchronously, and a bubble-phase "click outside closes the magnet"
-    // document listener then saw the clicked button already detached from
-    // the tree, read that as "click landed outside", and undid the open it
-    // just caused. jsdom's real-browser click dispatch does not replicate
-    // that exact synchronous-commit-during-bubble timing (verified: the
-    // listener still sees the target attached), so this test cannot fail
-    // against the pre-fix bubble-phase listener on its own — the fix
-    // (capture-phase registration, matching every other "click outside"
-    // listener in this fork) was verified directly in Chrome on the rig.
-    // This test still guards the mouse-click path itself.
+    // below never exercises. The actual bug this guards (Al, 2026-09-14:
+    // "the Permissions button isn't responding to clicks", against the
+    // control this one replaced) was a timing issue — clicking it swapped
+    // the toolbar's children for the panel's synchronously, and a
+    // bubble-phase "click outside closes the magnet" document listener then
+    // saw the clicked control already detached from the tree, read that as
+    // "click landed outside", and undid the open it just caused. jsdom's
+    // real-browser click dispatch does not replicate that exact
+    // synchronous-commit-during-bubble timing (verified: the listener still
+    // sees the target attached), so this test cannot fail against the
+    // pre-fix bubble-phase listener on its own — the fix (capture-phase
+    // registration, matching every other "click outside" listener in this
+    // fork) was verified directly in Chrome on the rig. This test still
+    // guards the mouse-click path itself, now via the "…" advanced button.
     renderHub();
     const rows = await settledRows();
     act(() => rows[1].focus());
     await screen.findByRole("toolbar", { name: "Second Member" });
 
-    fireEvent.click(screen.getByRole("button", { name: /Permissions/ }));
+    fireEvent.click(screen.getByRole("button", { name: /More permissions/ }));
 
     const panel = await screen.findByRole("group", {
         name: "Permissions · Second Member",
@@ -208,6 +210,34 @@ test("clicking Permissions with the mouse opens the panel and keeps it open (not
         screen.getByRole("group", { name: "Permissions · Second Member" }),
     ).toBeInTheDocument();
     expect(rows[1]).toHaveAttribute("data-state", "selected");
+});
+
+test("the backtick key opens the advanced panel too, and does nothing while typing", async () => {
+    renderHub();
+    const rows = await settledRows();
+    act(() => rows[1].focus());
+    await screen.findByRole("toolbar", { name: "Second Member" });
+
+    fireEvent.keyDown(window, { key: "`" });
+    expect(
+        await screen.findByRole("group", {
+            name: "Permissions · Second Member",
+        }),
+    ).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: "`" });
+    await screen.findByRole("toolbar", { name: "Second Member" });
+    expect(screen.queryByRole("group", { name: /Permissions ·/ })).toBeNull();
+
+    // Typing a literal backtick into a text field must not open it (the
+    // real search box is mocked away in this suite via FilterContainer, so
+    // a bare input stands in for "somewhere the guard has to hold").
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+    input.focus();
+    fireEvent.keyDown(input, { key: "`" });
+    expect(screen.queryByRole("group", { name: /Permissions ·/ })).toBeNull();
+    input.remove();
 });
 
 test("⌥⌘P opens the panel for the selected account, Escape ladders out, a save updates the row", async () => {

@@ -3,12 +3,18 @@
 .kk-permissions-tools,
 .kk-permissions-panel {
     display: flex;
+    flex-direction: column;
     gap: 4px;
     font-size: 14px;
 }
-.kk-permissions-tools {
+/* The closed view's one row: the Admin pill, then View as member. Any status
+   line from a prior change (in either view) sits on its own line below,
+   handled by the shared column above — this row never wraps *into* it. */
+.kk-permissions-tools-row {
+    display: flex;
     align-items: center;
     flex-wrap: wrap;
+    gap: 4px;
 }
 .kk-permissions-tools a {
     display: inline-flex;
@@ -16,10 +22,58 @@
     gap: 6px;
 }
 .kk-permissions-panel {
-    flex-direction: column;
     gap: 8px;
     padding: 4px 6px 6px;
     min-width: min(280px, 100%);
+}
+/* The Admin pill: reads as one button-shaped control (same height and
+   rounding as its size="sm" siblings) that is actually a tiny form —
+   a checkbox with auto-save, and a small way into the advanced view. */
+.kk-permissions-admin {
+    display: flex;
+    align-items: stretch;
+    height: 36px;
+    border: 1px solid hsl(var(--input));
+    border-radius: 6px;
+    overflow: hidden;
+}
+.kk-permissions-admin-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.kk-permissions-admin-label [role="checkbox"] {
+    width: 18px;
+    height: 18px;
+    min-width: 0;
+    min-height: 0;
+}
+.kk-permissions-admin-label [role="checkbox"] svg {
+    width: 14px;
+    height: 14px;
+}
+.kk-permissions-advanced {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 10px;
+    border: none;
+    border-left: 1px solid hsl(var(--input));
+    background: transparent;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    min-width: 44px;
+}
+.kk-permissions-advanced:hover {
+    background: hsl(var(--accent));
+}
+.kk-permissions-advanced:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: -2px;
 }
 .kk-permissions-head {
     display: flex;

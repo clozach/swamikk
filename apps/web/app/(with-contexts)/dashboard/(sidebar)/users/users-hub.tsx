@@ -271,6 +271,27 @@ export default function UsersHub() {
                 else openPanel(userId);
                 return;
             }
+            // The advanced view's other door in (Al, 2026-09-14): same
+            // target, same toggle, as ⌥⌘P — just a bare key, reachable
+            // without a chord, for the rare case that needs more than the
+            // one Admin checkbox.
+            if (
+                event.key === "`" &&
+                !event.metaKey &&
+                !event.ctrlKey &&
+                !event.altKey &&
+                !isTyping(event.target)
+            ) {
+                const current = selectionRef.current;
+                const userId =
+                    current.kind === "none" ? activeUserId : current.userId;
+                if (!userId) return;
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                if (current.kind === "panel") closePanel();
+                else openPanel(userId);
+                return;
+            }
             if (event.key === "Escape" && !isTyping(event.target)) {
                 const current = selectionRef.current;
                 if (current.kind === "none") return;

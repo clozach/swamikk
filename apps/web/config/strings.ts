@@ -500,6 +500,13 @@ export const permissionsUi = {
     open: "Permissions",
     openShortcut: "⌥⌘P",
     openTitle: "Change what this account may manage (⌥⌘P)",
+    /** The simple control: one box for the one choice most accounts ever need. */
+    adminLabel: "Admin",
+    adminOn: "Admin: on",
+    adminOff: "Admin: off",
+    advanced: "…",
+    advancedShortcut: "`",
+    advancedTitle: "More permissions (` or ⌥⌘P)",
     mimic: "View as member",
     mimicShortcut: "↩",
     mimicTitle: "Open the read-only member view (Enter)",
