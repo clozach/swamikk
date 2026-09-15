@@ -328,3 +328,131 @@ it("makes decorative wells hit-testable only in Edit page and saves the nested s
         style.remove();
     }
 });
+
+describe("image geometry after loading", () => {
+    beforeEach(() => jest.useFakeTimers());
+    afterEach(() => jest.useRealTimers());
+    const frame = () => act(() => jest.advanceTimersByTime(32));
+
+    it.each(["image", "wrapper"])(
+        "discovers all three late-loading %s slots without a scroll, resize or DOM replacement",
+        (marker) => {
+            const paths = [4, 8, 12].map(
+                (position) => `text.content.${position}.attrs.kkImageSource`,
+            );
+            const content = leaves();
+            content.widgets.push({
+                widgetId: "rich",
+                name: "richText",
+                shared: false,
+                leaves: [],
+                images: paths.map((path, position) => ({
+                    path,
+                    label: `Portrait ${position + 1}`,
+                    value: { kind: "media", media },
+                })),
+            });
+            const article = document.createElement("article");
+            article.dataset.feedbackId = "rich";
+            article.innerHTML = paths
+                .map((path) =>
+                    marker === "image"
+                        ? `<img data-kk-image-path="${path}" loading="lazy" src="/portrait.png">`
+                        : `<div data-kk-image-path="${path}"><img loading="lazy" src="/portrait.png"></div>`,
+                )
+                .join("");
+            document.querySelector("[data-feedback-page]")!.append(article);
+            const loaded = new Set<Element>();
+            rect.mockImplementation(function (this: HTMLElement) {
+                const image =
+                    this instanceof HTMLImageElement
+                        ? this
+                        : this.querySelector("img");
+                return {
+                    width: image && !loaded.has(image) ? 0 : 468,
+                    height: image && !loaded.has(image) ? 0 : 655,
+                    left: 24,
+                    top: 45,
+                } as DOMRect;
+            });
+            const ui = render(
+                <ImageEditControls
+                    pageId="home"
+                    index={indexLeaves(content)}
+                    disabled={false}
+                    onSave={onSave}
+                    onBusy={onBusy}
+                />,
+            );
+            frame();
+            expect(
+                screen.queryAllByRole("button", { name: /Portrait/ }),
+            ).toHaveLength(0);
+            article.querySelectorAll("img").forEach((image, position) => {
+                loaded.add(image);
+                frame();
+                expect(
+                    screen.queryByRole("button", {
+                        name: `Replace Portrait ${position + 1}`,
+                    }),
+                ).not.toBeInTheDocument();
+                // Native image load does not bubble; intrinsic dimensions can
+                // appear without any child-list mutation or scrolling.
+                fireEvent(image, new Event("load", { bubbles: false }));
+                frame();
+                const button = screen.getByRole("button", {
+                    name: `Replace Portrait ${position + 1}`,
+                });
+                expect(button.closest("[data-kk-image-control]")).toHaveStyle({
+                    width: "468px",
+                    height: "655px",
+                });
+            });
+            expect(
+                screen.getAllByRole("button", { name: /Replace Portrait/ }),
+            ).toHaveLength(3);
+            const reads = rect.mock.calls.length;
+            frame();
+            expect(rect).toHaveBeenCalledTimes(reads);
+            ui.unmount();
+            fireEvent.load(article.querySelector("img")!);
+            frame();
+            expect(rect).toHaveBeenCalledTimes(reads);
+        },
+    );
+
+    it("remeasures other slots when page images load, without reacting to its own picker previews", () => {
+        const image = document.createElement("img");
+        document.querySelector("[data-feedback-page]")!.prepend(image);
+        let top = 45;
+        rect.mockImplementation(
+            () => ({ width: 40, height: 40, left: 24, top }) as DOMRect,
+        );
+        render(
+            <ImageEditControls
+                pageId="home"
+                index={indexLeaves(leaves())}
+                disabled={false}
+                onSave={onSave}
+                onBusy={onBusy}
+            />,
+        );
+        frame();
+        const control = () =>
+            document.querySelector(
+                '[data-kk-image-control="header:logoSource"]',
+            );
+        expect(control()).toHaveStyle({ top: "45px" });
+        top = 200;
+        fireEvent.load(image);
+        frame();
+        expect(control()).toHaveStyle({ top: "200px" });
+        const preview = document.createElement("img");
+        control()!.append(preview);
+        frame();
+        const reads = rect.mock.calls.length;
+        fireEvent.load(preview);
+        frame();
+        expect(rect).toHaveBeenCalledTimes(reads);
+    });
+});

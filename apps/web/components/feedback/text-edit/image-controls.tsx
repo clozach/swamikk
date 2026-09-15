@@ -195,7 +195,17 @@ export function ImageEditControls({
                     : null,
             );
         };
+        const imageLoaded = (event: Event) => {
+            if (
+                event.target instanceof HTMLImageElement &&
+                !event.target.closest("[data-feedback-ui]")
+            )
+                scan();
+        };
         scan();
+        // Intrinsic image sizes can appear without a DOM mutation, and move
+        // other slots too. Load does not bubble, so listen during capture.
+        document.addEventListener("load", imageLoaded, true);
         window.addEventListener("pointerover", hover);
         window.addEventListener("scroll", scan, true);
         window.addEventListener("resize", scan);
@@ -218,6 +228,7 @@ export function ImageEditControls({
         return () => {
             cancelAnimationFrame(frame);
             observer.disconnect();
+            document.removeEventListener("load", imageLoaded, true);
             window.removeEventListener("pointerover", hover);
             window.removeEventListener("scroll", scan, true);
             window.removeEventListener("resize", scan);
