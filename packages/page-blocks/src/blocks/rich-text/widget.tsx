@@ -56,7 +56,11 @@ const Widget = ({
                 className={`${twFontSize[fontSize]}`}
                 component="span"
             >
-                <TextRenderer json={text} theme={overiddenTheme} />
+                <TextRenderer
+                    json={text}
+                    theme={overiddenTheme}
+                    imagePathRoot="text"
+                />
             </Text1>
         </Section>
     );

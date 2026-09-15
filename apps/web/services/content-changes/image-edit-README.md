@@ -11,6 +11,7 @@ Undo/History restore is a new edit naming `undoOf`. Image recovery must match an
 ## Included image slots
 
 - Header mark; hero banner/mark/photo source; gathering photos; post thumbnails; private-session photo and enabled decoration; footer contact marks and active decorations; a native raster media block; a stored click-to-load tour poster.
+- Embedded TipTap pictures in `rich-text.text` retain their native `attrs.src`, alt/title, sizing and surrounding prose. A managed replacement also carries `attrs.kkImageSource`; the reader uses it only while it agrees with `src`. Restoring a prior native URL removes that added metadata. The renderer marks original document indexes before filtering empty text nodes, so duplicate images and nested content have distinct stable targets. Its annotation is render-only. Managed pictures use the bounded public optimizer with native image geometry; no source-width descriptor claims pixels the source does not have.
 - A newsletter has no image slot. The stock banner renders `Domain.logo` or a Course/Community featured image rather than page settings. Those retain their entity's native authoring route; this API deliberately does not write a misleading banner setting.
 - Image alt/caption values remain separate from the source. This increment changes the image while preserving their existing values.
 

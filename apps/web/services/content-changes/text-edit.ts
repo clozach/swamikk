@@ -228,10 +228,16 @@ function applyChanges(
     if (stale.length) return { kind: "stale", current: stale };
     const original = (widget.settings || {}) as Record<string, unknown>;
     let settings = { ...original };
+    let imageBaseline = { ...original };
     for (const change of changes) {
         const working = { ...widget, settings };
         if (change.kind === "image") {
             settings = setImageLeaf(working, change.path, change.after);
+            imageBaseline = setImageLeaf(
+                { ...widget, settings: imageBaseline },
+                change.path,
+                change.after,
+            );
         } else if (change.kind === "text") {
             requireCondition(
                 !change.path.endsWith(".linkText") ||
@@ -259,7 +265,9 @@ function applyChanges(
     for (const key of Array.from(
         new Set(changes.map((change) => change.path.split(".")[0])),
     )) {
-        const before = original[key] ?? settings[key];
+        // Ignore only image mutations produced by the allowlisted setter;
+        // all prose, links and other rich-text structure retain validation.
+        const before = imageBaseline[key] ?? settings[key];
         if (isRichTextDoc(before) && isRichTextDoc(settings[key]))
             validateTextEdit(before as never, settings[key] as never);
     }

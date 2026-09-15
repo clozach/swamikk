@@ -15,11 +15,14 @@ import {
     Text1,
 } from "@courselit/page-primitives";
 import { TextEditorContent } from "@courselit/common-models";
+import { getImageProps } from "next/image";
+import { markRichTextImages, richTextImages } from "./rich-text-images";
 
 interface TextRendererProps {
     json: TextEditorContent;
     className?: string;
     theme?: ThemeStyle;
+    imagePathRoot?: string;
 }
 
 function removeEmptyTextNodes(node: any): any {
@@ -45,10 +48,35 @@ function removeEmptyTextNodes(node: any): any {
     };
 }
 
-export function TextRenderer({ json, className, theme }: TextRendererProps) {
-    const extensions = createExtensions();
+export function TextRenderer({
+    json,
+    className,
+    theme,
+    imagePathRoot,
+}: TextRendererProps) {
+    const slots = new Map(
+        imagePathRoot
+            ? richTextImages(json, imagePathRoot).map((slot) => [
+                  slot.path,
+                  slot,
+              ])
+            : [],
+    );
+    const extensions = createExtensions().map((extension) =>
+        imagePathRoot && extension.name === "image"
+            ? extension.extend({
+                  addAttributes() {
+                      return {
+                          ...this.parent?.(),
+                          kkImagePath: { default: null },
+                      };
+                  },
+              })
+            : extension,
+    );
     const content = removeEmptyTextNodes(
-        (json as any) ?? (emptyDoc as any),
+        (imagePathRoot ? markRichTextImages(json, imagePathRoot) : json) ??
+            (emptyDoc as any),
     ) as TextEditorContent;
 
     const rendered = renderToReactElement({
@@ -56,6 +84,39 @@ export function TextRenderer({ json, className, theme }: TextRendererProps) {
         content,
         options: {
             nodeMapping: {
+                ...(imagePathRoot
+                    ? {
+                          image: ({ node }: any) => {
+                              const slot = slots.get(node.attrs.kkImagePath);
+                              const src =
+                                  slot?.value.kind === "media"
+                                      ? getImageProps({
+                                            src: node.attrs.src,
+                                            alt: node.attrs.alt || "",
+                                            width: 960,
+                                            height: 640,
+                                            quality: 75,
+                                        }).props.src
+                                      : node.attrs.src;
+                              // Preserve native image geometry. A managed image negotiates
+                              // AVIF/WebP through the same bounded public optimizer; no
+                              // width descriptors claim pixels the original may not have.
+                              return (
+                                  <img
+                                      data-kk-image-path={slot?.path}
+                                      src={src}
+                                      alt={node.attrs.alt || ""}
+                                      title={node.attrs.title || undefined}
+                                      width={node.attrs.width || undefined}
+                                      height={node.attrs.height || undefined}
+                                      loading="lazy"
+                                      decoding="async"
+                                      className="max-w-full h-auto rounded-md"
+                                  />
+                              );
+                          },
+                      }
+                    : {}),
                 text: ({ node, parent }) => {
                     const text = node.text ?? "";
                     const link = node.marks.find(

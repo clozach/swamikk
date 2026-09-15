@@ -40,6 +40,56 @@ const wire = (name: string, settings = {}): any => ({
 });
 
 describe("page image registry", () => {
+    it("registers nested embedded pictures without accepting arbitrary attributes", () => {
+        const metadata = { id: new ObjectId(), at: new Date("2026-01-01") };
+        const node = {
+            type: "image",
+            attrs: {
+                src: "/old.jpg",
+                alt: "Portrait",
+                title: "Kept",
+                width: 280,
+                metadata,
+            },
+        };
+        const widget = wire("rich-text", {
+            text: {
+                type: "doc",
+                content: [{ type: "blockquote", content: [node] }],
+            },
+            metadata,
+        });
+        const leaf = widgetImageLeaves(widget)[0];
+        expect(leaf).toEqual({
+            path: "text.content.0.content.0.attrs.kkImageSource",
+            label: "Portrait",
+            value: { kind: "url", url: "/old.jpg" },
+        });
+        const source = {
+            kind: "media",
+            media: {
+                mediaId: "new",
+                file: "https://media.example/p/new/main.jpg",
+            },
+        } as any;
+        const next: any = setImageLeaf(widget, leaf.path, source);
+        expect(next.text.content[0].content[0].attrs).toEqual({
+            ...node.attrs,
+            src: source.media.file,
+            kkImageSource: source,
+        });
+        expect(next.metadata).toBe(metadata);
+        expect(next.text.content[0].content[0].attrs.metadata).toBe(metadata);
+        expect(() =>
+            setImageLeaf(widget, "text.content.0.content.0.attrs.src", source),
+        ).toThrow();
+        const restored: any = setImageLeaf(
+            { ...widget, settings: next },
+            leaf.path,
+            leaf.value,
+        );
+        expect(restored).toEqual(widget.settings);
+    });
     it.each([
         ["anahataHeader", "logoSource"],
         ["anahataHero", "bannerImage.source"],
@@ -492,6 +542,117 @@ describe("live page image edits", () => {
             expect(sealMedia).not.toHaveBeenCalled();
         },
     );
+    it("replaces embedded pictures canonically, preserves prose/attributes/BSON, and restores through retained history", async () => {
+        const image = {
+            type: "image",
+            attrs: {
+                src: "/anahata/original.jpg",
+                alt: "Original portrait",
+                title: "Remembered title",
+                width: 280,
+                height: 400,
+            },
+        };
+        const metadata = { id: new ObjectId(), at: new Date("2026-01-01") };
+        const layout = [
+            wire("rich-text", {
+                text: {
+                    type: "doc",
+                    content: [
+                        {
+                            type: "paragraph",
+                            content: [
+                                {
+                                    type: "text",
+                                    text: "Unchanged words",
+                                    marks: [
+                                        {
+                                            type: "link",
+                                            attrs: { href: "/keep" },
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                        image,
+                    ],
+                },
+                metadata,
+            }),
+        ];
+        await PageModel.collection.updateOne(
+            { _id: page._id },
+            { $set: { layout, draftLayout: layout } },
+        );
+        const leaf = widgetImageLeaves(layout[0])[0];
+        const response = await post([
+            change(
+                leaf.value,
+                {
+                    kind: "media",
+                    media: {
+                        mediaId: "new-picture",
+                        file: "https://attacker.example/ignored",
+                    },
+                },
+                leaf.path,
+            ),
+        ]);
+        expect(response.status).toBe(200);
+        const saved = await response.json();
+        const current: any = await PageModel.collection.findOne({
+            _id: page._id,
+        });
+        expect(current.layout[0].settings.text.content[0]).toEqual(
+            layout[0].settings.text.content[0],
+        );
+        expect(current.layout[0].settings.text.content[1].attrs).toEqual({
+            ...image.attrs,
+            src: native("new-picture").file,
+            kkImageSource: saved.edit.changes[0].after,
+        });
+        expect(current.layout[0].settings.metadata).toEqual(metadata);
+        expect(current.draftLayout).toEqual(current.layout);
+        expect(widgetImageLeaves(current.layout[0])[0].value).toEqual(
+            saved.edit.changes[0].after,
+        );
+        const restored = await post(
+            [change(saved.edit.changes[0].after, leaf.value, leaf.path)],
+            { undoOf: saved.edit.editId },
+        );
+        expect(restored.status).toBe(200);
+        const final: any = await PageModel.collection.findOne({
+            _id: page._id,
+        });
+        expect(final.layout[0].settings).toEqual(layout[0].settings);
+        expect(
+            await PageTextEditModel.countDocuments({
+                domain: domain._id,
+                state: "applied",
+            }),
+        ).toBe(2);
+        // A text change still cannot smuggle an image source into its paragraph.
+        const body = {
+            type: "paragraph",
+            content: [
+                { type: "text", text: "Unchanged words" },
+                {
+                    type: "image",
+                    attrs: { src: "https://attacker.example/image.jpg" },
+                },
+            ],
+        };
+        const rejected = await post([
+            {
+                kind: "rich-text",
+                path: "text.content.0",
+                before: layout[0].settings.text.content[0],
+                after: body,
+            },
+        ]);
+        expect(rejected.status).toBe(400);
+    });
+
     it("keeps native captions separate while replacing and reversing the media source", async () => {
         const old = native("original");
         delete (old as any).group;

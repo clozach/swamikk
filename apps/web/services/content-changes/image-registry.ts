@@ -5,7 +5,11 @@ import type {
 } from "@courselit/common-models";
 import { defaultsFor } from "./text-leaves";
 import { requireCondition } from "./errors";
-import { normalizeImageSource } from "../../../../packages/page-blocks/src/components/image-source";
+import {
+    normalizeImageSource,
+    resolveImageSrc,
+} from "../../../../packages/page-blocks/src/components/image-source";
+import { richTextImages } from "../../../../packages/page-blocks/src/components/rich-text-images";
 import { headerLogoSource } from "../../../../packages/page-blocks/src/blocks/anahata-header/logo-source";
 import { normalizePostThumbnail } from "../../../../packages/page-blocks/src/blocks/anahata-posts/thumbnail";
 import { eventImage } from "../../../../packages/page-blocks/src/blocks/anahata-gatherings/normalize";
@@ -42,6 +46,9 @@ export function widgetImageLeaves(widget: WidgetInstance): PageImageLeaf[] {
         }
     };
     switch (widget.name) {
+        case "rich-text":
+            images.push(...richTextImages(settings.text, "text"));
+            break;
         case "anahataHeader":
             add(
                 "logoSource",
@@ -159,6 +166,24 @@ export function setImageLeaf(
         settings[root] === undefined
             ? defaultsFor(widget.name)[root]
             : settings[root];
+    if (widget.name === "rich-text") {
+        requireCondition(
+            source.kind !== "placeholder",
+            "unsupported_target",
+            "This embedded picture needs an image.",
+        );
+        const segments = path.split(".").slice(1, -1);
+        const attrs = segments.reduce(
+            (node: any, key) => node?.[key],
+            effective,
+        );
+        // The initial preflight may carry only an upload identity. Canonical
+        // preparation supplies its URL before any native write is possible.
+        const src = resolveImageSrc(source) ?? attrs.src;
+        const nextAttrs = { ...attrs, src, kkImageSource: source };
+        if (source.kind === "url") delete nextAttrs.kkImageSource;
+        return { ...settings, [root]: put(effective, segments, nextAttrs) };
+    }
     if (widget.name === "media" || widget.name === "anahataTour") {
         requireCondition(
             source.kind === "media",
