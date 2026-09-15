@@ -1,3 +1,4 @@
+import { meetingQuestionsApiOpenApi } from "../app/api/meeting-questions/openapi.mjs";
 import { userApiOpenApi } from "../app/api/user/openapi.mjs";
 import { productsApiOpenApi } from "../app/api/products/openapi.mjs";
 import { mediaApiOpenApi } from "../app/api/media/openapi.mjs";
@@ -21,6 +22,7 @@ import { feedbackReviewOpenApi } from "../app/api/feedback-review/openapi.mjs";
 import { classCheckoutApiOpenApi } from "../app/api/class-checkout/openapi.mjs";
 
 const routeSpecs = [
+    meetingQuestionsApiOpenApi,
     userApiOpenApi,
     productsApiOpenApi,
     mediaApiOpenApi,

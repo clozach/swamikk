@@ -1,6 +1,7 @@
 "use server";
 
 import { deleteUserContactPreferences } from "@/services/contact-preferences/cleanup";
+import { redactMeetingQuestionAuthor } from "@/services/meeting-questions/cleanup";
 import { purgeMemberEdits } from "@/services/member-edits/cleanup";
 import { deleteUserDripChanges } from "@/services/drip-admin/cleanup";
 import { deleteUserMemberAccess } from "@/services/member-access";
@@ -289,6 +290,10 @@ export async function cleanupPersonalData(
             userToDelete.userId,
         ),
         purgeMemberEdits(String(ctx.subdomain._id), userToDelete.userId),
+        redactMeetingQuestionAuthor(
+            String(ctx.subdomain._id),
+            userToDelete.userId,
+        ),
         revokeMemberMimicForUser(
             String(ctx.subdomain._id),
             userToDelete.userId,

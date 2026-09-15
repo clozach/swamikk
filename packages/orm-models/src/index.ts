@@ -58,3 +58,5 @@ export { FeedbackReviewGrantSchema } from "./models/feedback-review-grant";
 export type { InternalFeedbackReviewGrant } from "./models/feedback-review-grant";
 
 export * from "./models/purchase-access";
+
+export * from "./models/meeting-question";

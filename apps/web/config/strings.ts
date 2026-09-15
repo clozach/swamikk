@@ -652,3 +652,43 @@ export const sectionEditUi = {
     you: "you",
     other: "another editor",
 } as const;
+
+export const meetingQuestionsUi = {
+    retry: "Retry save",
+    refreshFailed: "Saved. The other answers could not be refreshed yet.",
+    retryPending:
+        "The previous save may have reached the server. Retry it before saving newer changes.",
+    title: "Questions for KK · with Sunnie",
+    questions: "Questions",
+    all: "All meeting questions",
+    here: "Questions beside this content",
+    context: "See this in context",
+    intro: "Choose any question, open its context, and add your answer. Everyone with Admin access can read the answers. Each person edits their own.",
+    yourAnswer: "Your answer",
+    save: "Save answer",
+    saving: "Saving…",
+    saved: "Saved for everyone",
+    unsaved: "Draft — not saved yet",
+    history: "Your answer history",
+    useAnswer: "Use this answer",
+    formerAdmin: "Former admin",
+    emptyAnswer: "Answer cleared",
+    conflict:
+        "This answer changed in another tab. Your draft is kept. Read the latest saved answer below, then continue with your draft or revise it before saving.",
+    keepDraft: "Keep my draft and continue",
+    draftKept: "Your draft is kept here.",
+    tooLong: "Keep your answer within 4,000 characters.",
+    loadFailed: "The questions could not be loaded. Try again.",
+    saveFailed: "The answer could not be saved. Try again.",
+    loading: "Loading meeting questions…",
+    restricted:
+        "Sign in with your existing Admin account to read and answer the meeting questions.",
+    signIn: "Sign in",
+    home: "Back to the site",
+    refresh: "Refresh answers",
+    empty: "No meeting questions have been added to this site yet.",
+    candidates:
+        "Choose, combine or reject these directions; they are candidates for discussion.",
+    onIce: "Optional Humanitix discussion · implementation is on ice",
+    close: "Close questions",
+};

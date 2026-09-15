@@ -1,6 +1,7 @@
 import LayoutWithContext from "./layout-with-context";
 import MediaDebugOverlay from "@components/public/media-debug-overlay";
 import ContextualFeedback from "@components/feedback";
+import ContextualMeetingQuestions from "@components/meeting-questions";
 import { FeedbackPlacementProvider } from "@components/feedback/placement";
 import React from "react";
 import { auth } from "@/auth";
@@ -69,6 +70,9 @@ export default async function Layout({
                 <FeedbackPlacementProvider>
                     <HideDuringMimic>
                         <ContextualFeedback />
+                        <React.Suspense fallback={null}>
+                            <ContextualMeetingQuestions />
+                        </React.Suspense>
                     </HideDuringMimic>
                     {mimicView.kind === "inactive" ||
                     (mimicView.kind === "active" &&

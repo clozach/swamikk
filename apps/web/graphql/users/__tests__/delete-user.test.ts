@@ -7,6 +7,7 @@ import { AccountLifecycleModel } from "../../../../../packages/common-logic/src/
 import UserModel from "@models/User";
 import { MembershipAccessModel } from "../../../../../packages/common-logic/src/member-access/models";
 import { MemberMimicModel } from "@/services/member-mimic/model";
+import { MeetingQuestionAnswerModel } from "@/services/meeting-questions/models";
 import { MemberEditModel } from "@/services/member-edits/model";
 import { FeedbackModel } from "@/services/content-changes/models";
 import CourseModel from "@models/Course";
@@ -139,6 +140,7 @@ describe("deleteUser - Comprehensive Test Suite", () => {
             AccountLifecycleModel.deleteMany({ domain: testDomain._id }),
             MemberMimicModel.deleteMany({ domain: testDomain._id }),
             MemberEditModel.deleteMany({ domain: testDomain._id }),
+            MeetingQuestionAnswerModel.deleteMany({ domain: testDomain._id }),
             MembershipAccessModel.deleteMany({ domain: testDomain._id }),
             FeedbackModel.deleteMany({ domain: testDomain._id }),
             UserModel.deleteMany({ domain: testDomain._id }),
@@ -1262,6 +1264,27 @@ describe("deleteUser - Comprehensive Test Suite", () => {
                 entityId: "post-123",
             });
 
+            const meetingHistory = [
+                {
+                    revision: 1,
+                    baseRevision: 0,
+                    mutationId: "native-erasure",
+                    text: "Shared meeting decision",
+                    at: new Date().toISOString(),
+                },
+            ];
+            for (const author of [targetUser, adminUser])
+                await MeetingQuestionAnswerModel.create({
+                    domain: testDomain._id,
+                    id: duId(`answer-${author.userId}`),
+                    setId: "meeting",
+                    questionId: "q01",
+                    authorId: author.userId,
+                    text: "Shared meeting decision",
+                    revision: 1,
+                    history: meetingHistory,
+                });
+
             // The normal erasure path also removes personal support history,
             // while retaining history for another member in the same tenant.
             for (const subject of [targetUser, adminUser])
@@ -1323,6 +1346,19 @@ describe("deleteUser - Comprehensive Test Suite", () => {
                     subjectUserId: adminUser.userId,
                 }),
             ).toBe(1);
+
+            const erasedAnswer = await MeetingQuestionAnswerModel.findOne({
+                domain: testDomain._id,
+                id: duId(`answer-${targetUser.userId}`),
+            }).lean();
+            expect(erasedAnswer?.authorId).toBeUndefined();
+            expect(erasedAnswer?.text).toBe("Shared meeting decision");
+            expect(erasedAnswer?.history).toEqual(meetingHistory);
+            const retainedAnswer = await MeetingQuestionAnswerModel.findOne({
+                domain: testDomain._id,
+                id: duId(`answer-${adminUser.userId}`),
+            }).lean();
+            expect(retainedAnswer?.authorId).toBe(adminUser.userId);
 
             // Verify user deleted
             const user = await UserModel.findOne({ userId: targetUser.userId });
