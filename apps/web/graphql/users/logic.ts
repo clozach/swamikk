@@ -1,5 +1,6 @@
+"use server";
+
 import { COMMUNITIES_ENABLED } from "@config/release-features";
-("use server");
 
 import { setNewsletterConsent } from "@/services/newsletter/consent";
 import { linkedMemberIds } from "@/services/member-mimic/member-links";
