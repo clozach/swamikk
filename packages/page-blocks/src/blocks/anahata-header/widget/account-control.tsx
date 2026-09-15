@@ -203,10 +203,10 @@ async function requestSignOut(): Promise<void> {
 }
 
 /* Inline two-click logout confirm with the Figma "wipe" animation. First click
- * arms; an accent panel (--nav-fg-hover — the same colour as the Log in pill)
- * wipes in left→right via clip-path over the resting row, flipping the text to
- * the accent-foreground colour as it passes; the logout icon slides right and
- * fades to 0 before the edge; a "?" fades in where it lands. A second click on the armed
+ * arms; a rust panel (#993300 — the same red as the Log in pill) wipes in
+ * left→right via clip-path over the resting row, flipping the text to the
+ * light menu colour as it passes; the logout icon slides right and fades to 0
+ * before the edge; a "?" fades in where it lands. A second click on the armed
  * control signs out. Arming is owned by the parent so Escape / a click
  * elsewhere can cancel it (reverses the same animation) without closing the
  * menu; `stopPropagation` lets an ancestor treat "any other click" as cancel.
@@ -214,7 +214,7 @@ async function requestSignOut(): Promise<void> {
  * Two stacked layers share one row layout so the reveal reads as an in-place
  * recolour: the REST layer (dark, icon + label + an invisible "?" that just
  * reserves width so the control never resizes) sits under the WIPE layer
- * (accent ground, accent-foreground content), which is clip-revealed. */
+ * (rust ground, light content), which is clip-revealed. */
 function LogoutButton({
     armed,
     onArm,
@@ -252,7 +252,7 @@ function LogoutButton({
                     "relative z-[1]",
                     isMenu
                         ? "text-[var(--nav-fg)] group-hover:bg-[color-mix(in_srgb,var(--nav-fg-hover)_10%,transparent)] group-hover:text-[var(--nav-fg-hover)]"
-                        : "text-[var(--nav-fg)] group-hover:text-[var(--nav-fg-hover)]",
+                        : "text-white group-hover:text-[#ff9900]",
                 )}
             >
                 <LogoutIcon />
@@ -263,13 +263,12 @@ function LogoutButton({
                     </span>
                 </span>
             </span>
-            {/* WIPE layer — accent ground + accent-foreground content,
-                clip-revealed L→R. */}
+            {/* WIPE layer — rust ground + light content, clip-revealed L→R. */}
             <span
                 aria-hidden="true"
                 className={clsx(
                     row,
-                    "pointer-events-none absolute inset-0 z-[2] bg-[var(--nav-fg-hover)] text-[var(--nav-accent-fg)]",
+                    "pointer-events-none absolute inset-0 z-[2] bg-[#993300] text-[#f7f4eb]",
                 )}
                 style={{
                     clipPath: armed ? "inset(0 0 0 0)" : "inset(0 100% 0 0)",
@@ -578,7 +577,7 @@ export function MobileAccountSection({
 
     if (!loggedIn || !profile) {
         return (
-            <div className="flex flex-col gap-[9px] border-b border-solid border-[var(--nav-edge)] px-5 pb-[14px] pt-[6px]">
+            <div className="flex flex-col gap-[9px] border-b border-solid border-[rgba(255,255,255,0.09)] px-5 pb-[14px] pt-[6px]">
                 <a
                     href={accountLoginHref}
                     onClick={onNavigate}
@@ -587,7 +586,7 @@ export function MobileAccountSection({
                     <PersonIcon />
                     {accountLoginMobileLabel}
                 </a>
-                <span className="text-center text-[11.5px] text-[var(--nav-fg)] opacity-70">
+                <span className="text-center text-[11.5px] text-[#c9c1b2]">
                     {accountLoginMobileHint}
                 </span>
             </div>
@@ -596,7 +595,7 @@ export function MobileAccountSection({
 
     return (
         <div
-            className="border-b border-solid border-[var(--nav-edge)] px-5 pb-[10px] pt-[2px]"
+            className="border-b border-solid border-[rgba(255,255,255,0.09)] px-5 pb-[10px] pt-[2px]"
             // A tap anywhere in the block that isn't the (stopPropagation)
             // logout button disarms the confirm — the mobile "click elsewhere".
             onClick={() => {
@@ -609,11 +608,11 @@ export function MobileAccountSection({
                 <Avatar profile={profile} />
                 <span className="min-w-0">
                     {profile.name && (
-                        <span className="block truncate text-[14px] font-bold text-[var(--nav-fg)]">
+                        <span className="block truncate text-[14px] font-bold text-white">
                             {profile.name}
                         </span>
                     )}
-                    <span className="block truncate text-[12px] text-[var(--nav-fg)] opacity-70">
+                    <span className="block truncate text-[12px] text-[#c9c1b2]">
                         {profile.email}
                     </span>
                 </span>

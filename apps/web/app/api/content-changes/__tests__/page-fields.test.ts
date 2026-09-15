@@ -200,23 +200,28 @@ it("replaces a placeholder baseline with a resolved library image through the or
     );
     expect((mirrored.settings!.photo as any).source.kind).toBe("media");
 });
-it("lists the hero's kicker and second button text beside the heading and first button", () => {
-    const fields = pageWidgetFields(hero()).map((item) => [
-        item.field,
-        item.label,
-        item.value,
-        item.defaultDerived,
-    ]);
+it("lists explicitly saved hero extras while classic defaults keep them absent", () => {
+    const classicFields = pageWidgetFields(hero()).map((item) => item.field);
+    expect(classicFields).not.toContain("kicker");
+    expect(classicFields).not.toContain("ctaCaption");
+    expect(classicFields).not.toContain("secondaryCtaCaption");
+    const fields = pageWidgetFields(
+        hero({
+            kicker: "With Swami Karma Karuna",
+            ctaCaption: "Explore the membership",
+            secondaryCtaCaption: "Book a private session",
+        }),
+    ).map((item) => [item.field, item.label, item.value, item.defaultDerived]);
     expect(fields).toEqual(
         expect.arrayContaining([
-            ["kicker", "Kicker", defaults.kicker, true],
+            ["kicker", "Kicker", "With Swami Karma Karuna", false],
             ["heading", "Welcome heading", defaults.heading, true],
-            ["ctaCaption", "Button text", defaults.ctaCaption, true],
+            ["ctaCaption", "Button text", "Explore the membership", false],
             [
                 "secondaryCtaCaption",
                 "Second button text",
-                defaults.secondaryCtaCaption,
-                true,
+                "Book a private session",
+                false,
             ],
         ]),
     );

@@ -65,11 +65,8 @@ export type HeroAnimation = "none" | "fade";
 export type BannerMode = { kind: "static" } | { kind: "social-rotation" };
 
 /**
- * Button recipes. `pine` (primary: pine fill, bone text) and `moss`
- * (secondary: moss fill, ink text, pine edge) are the swamikk v1.0 pair.
- * The three older Anahata names still resolve — `saffron` and `saffron-big`
- * now paint the pine recipe (regular / large), `white` the outline recipe —
- * so a stored layout keeps rendering without ever showing the old palette.
+ * Classic button recipes. Saved `pine` and `moss` values remain compatible
+ * aliases for rust and saffron fills; the original three recipes are unchanged.
  */
 export type CtaStyle = "saffron" | "saffron-big" | "white" | "pine" | "moss";
 
@@ -118,19 +115,17 @@ export default interface Settings extends WidgetDefaultSettings {
     ctaCaption?: string;
     ctaAction?: string;
     ctaStyle?: CtaStyle;
-    /** Second button, always the moss recipe. Empty caption hides it. */
+    /** Second button uses saffron. Empty caption hides it. */
     secondaryCtaCaption?: string;
     secondaryCtaAction?: string;
 
     /* ---- design ---- */
-    /** Page ground behind the whole block. Bone by default. */
+    /** Page ground behind the whole block. Cream by default. */
     groundColor?: string;
     headingColor?: string;
     bodyColor?: string;
     /**
-     * Inline links in the body copy. Pine by default (8.22:1 on bone); links
-     * are always underlined because pine against ink is only 1.5:1, so colour
-     * alone could never carry them.
+     * Inline links use classic rust by default, deepening on hover.
      */
     linkColor?: string;
     linkHoverColor?: string;

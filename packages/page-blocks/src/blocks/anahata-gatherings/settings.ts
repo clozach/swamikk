@@ -41,8 +41,7 @@ export type HeadingLink = { kind: "linked"; href: string } | { kind: "plain" };
 /**
  * How the cards lay out. `row` = one horizontal card (16:9 well left, text
  * right; stacked on phones). `grid` = the 1/2/4-up card grid. When the
- * setting is absent the widget picks `row` for exactly one event and `grid`
- * otherwise (`resolveLayout` in `normalize.ts`).
+ * setting is absent the main renderer retains the classic grid.
  */
 export type GatheringsLayout = "grid" | "row";
 
@@ -59,11 +58,11 @@ export default interface Settings extends WidgetDefaultSettings {
     intro?: string;
     /** Whether the heading navigates, and to where. */
     headingLink?: HeadingLink;
-    /** A short pine rule beneath the heading. */
+    /** A centered rust rule beneath the heading. */
     showDivider?: boolean;
     /** Cards, in render order. */
     events?: GatheringEvent[];
-    /** Absent = automatic (row for one event, grid for more). */
+    /** Absent = classic grid, including a single event. */
     layout?: GatheringsLayout;
     /** Link rendered under the cards. Empty label or href hides it. */
     moreLink?: MoreLink;

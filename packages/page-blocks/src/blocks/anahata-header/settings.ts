@@ -53,7 +53,7 @@ export default interface Settings extends WidgetDefaultSettings {
     /** Where the logo links to. */
     homeHref?: string;
 
-    /** Pine-dark utility strip above the header band. */
+    /** Cocoa utility strip above the header band. */
     showTopBar?: boolean;
     topBarLeftItems?: TopBarItem[];
     topBarRightItems?: TopBarItem[];

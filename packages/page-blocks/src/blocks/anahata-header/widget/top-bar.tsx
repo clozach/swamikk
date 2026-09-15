@@ -5,16 +5,10 @@ import {
 import React from "react";
 import clsx from "clsx";
 import { TopBarItem } from "../settings";
-import {
-    DARK_SURFACE_VARS,
-    DRAWER,
-    TOP_BAR_CONTAINER,
-    TOP_BAR_LINK,
-} from "./tokens";
+import { COCOA, TOP_BAR_CONTAINER, TOP_BAR_LINK } from "./tokens";
 
 /* ------------------------------------------------------------------ *
- * Pine-dark utility strip. Sets DARK_SURFACE_VARS so its links paint from
- * the same --nav-* variables as the drawer (bone / moss-light).
+ * Cocoa utility strip
  * ------------------------------------------------------------------ */
 export default function TopBar({
     left,
@@ -27,13 +21,7 @@ export default function TopBar({
         // The whole strip drops out below 560px, as on the live site.
         <div
             className="max-[559px]:hidden"
-            style={
-                {
-                    backgroundColor: DRAWER,
-                    color: "var(--nav-fg)",
-                    ...DARK_SURFACE_VARS,
-                } as React.CSSProperties
-            }
+            style={{ backgroundColor: COCOA, color: "#ffffff" }}
         >
             <div
                 className={clsx(

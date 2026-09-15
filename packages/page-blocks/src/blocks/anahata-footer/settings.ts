@@ -91,18 +91,17 @@ export default interface Settings extends WidgetDefaultSettings {
     columns?: FooterColumn[];
 
     /* --- ground --- */
-    /** Pine-dark — the palette's dark close. */
+    /** Ocean blue by default. */
     groundColor?: string;
-    /** Footer text (bone) on the pine-dark ground. */
+    /** White by default. */
     textColor?: string;
-    /** Footer-edge, for the menu-list rules. */
+    /** Lightened ocean for the menu-list rules. */
     hairlineColor?: string;
-    /** Moss-light: link hover/active text and every focus ring. */
+    /** Optional hover/focus foreground for saved footer settings. */
     linkHoverColor?: string;
 
     /* --- decorative edges --- */
-    /** Empty by default: the old side ornaments are gone. Set a URL to
-     *  paint one back in. */
+    /** Bundled classic side ornaments; an empty URL hides an edge. */
     decorLeftUrl?: string;
     decorRightUrl?: string;
 

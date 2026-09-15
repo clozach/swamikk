@@ -578,7 +578,7 @@ export default function AdminWidget({
                 </Form>
                 <ImageEditor
                     label="Photo"
-                    tooltip="The 3:2 column beside the text. Shown when no banner is set; with a banner, the banner arrives in this column as you scroll."
+                    tooltip="The 4:3 column beside the text. Shown when no banner is set; with a banner, the banner arrives in this column as you scroll."
                     urlPlaceholder="/anahata/hero-silentmed.jpg"
                     value={photo}
                     onChange={setPhoto}
@@ -628,23 +628,23 @@ export default function AdminWidget({
                 </Form>
                 <Select
                     title="Button style"
-                    tooltip="Pine is the primary recipe (pine fill, bone text); Moss the secondary (moss fill, ink text, pine edge). The three older names still render: Saffron and Saffron (large) paint the pine recipe, White the outline."
+                    tooltip="Classic Saffron and White recipes. Saved Pine and Moss values remain available as rust and saffron variants."
                     value={ctaStyle}
                     options={[
-                        { label: "Pine (primary)", value: "pine" },
-                        { label: "Moss (secondary)", value: "moss" },
-                        { label: "Saffron → pine", value: "saffron" },
+                        { label: "Rust (saved Pine)", value: "pine" },
+                        { label: "Saffron (saved Moss)", value: "moss" },
+                        { label: "Saffron", value: "saffron" },
                         {
-                            label: "Saffron (large) → pine, large",
+                            label: "Saffron (large)",
                             value: "saffron-big",
                         },
-                        { label: "White → outline", value: "white" },
+                        { label: "White", value: "white" },
                     ]}
                     onChange={(value: CtaStyle) => setCtaStyle(value)}
                 />
                 <PageBuilderPropertyHeader
                     label="Secondary button"
-                    tooltip="Always the moss recipe. Leave the caption empty to hide it."
+                    tooltip="Saffron fill with cocoa text. Leave the caption empty to hide it."
                 />
                 <Form>
                     <FormField
@@ -728,7 +728,7 @@ export default function AdminWidget({
                 />
                 <ColorSelector
                     title="Link colour"
-                    tooltip="Inline links in the body copy. Default is pine (8.22:1 on the bone ground); links are always underlined so colour never has to carry them alone."
+                    tooltip="Inline links in the body copy. Rust by default (6.75:1 on cream), deepening on hover."
                     value={linkColor}
                     onChange={(value?: string) =>
                         setLinkColor(value || defaults.linkColor)

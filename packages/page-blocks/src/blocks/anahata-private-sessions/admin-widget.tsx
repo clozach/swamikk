@@ -411,7 +411,7 @@ export default function AdminWidget({
                 />
                 <ColorSelector
                     title="Panel background"
-                    tooltip="Bone by default, so the block sits on the page ground with no callout panel."
+                    tooltip="Marigold by default, matching the classic callout panel."
                     value={panelColor}
                     onChange={(value?: string) =>
                         setPanelColor(value || defaults.panelColor)
@@ -419,7 +419,7 @@ export default function AdminWidget({
                 />
                 <ColorSelector
                     title="Heading, lead and bullet markers"
-                    tooltip="The display voice: pine by default (7.76:1 on bone)."
+                    tooltip="Rust by default, for the heading and lead."
                     value={leadColor}
                     onChange={(value?: string) =>
                         setLeadColor(value || defaults.leadColor)
@@ -442,7 +442,7 @@ export default function AdminWidget({
                 />
                 <ColorSelector
                     title="Button hover / pressed"
-                    tooltip="The ground on hover and while pressed. Pine-deep by default; the focus ring stays pine."
+                    tooltip="Rust by default on hover, while pressed, and for the focus ring."
                     value={buttonHoverColor}
                     onChange={(value?: string) =>
                         setButtonHoverColor(value || defaults.buttonHoverColor)
@@ -450,7 +450,7 @@ export default function AdminWidget({
                 />
                 <ColorSelector
                     title="Button text"
-                    tooltip="Rest-state text, against the button background above. Bone on pine measures 7.76:1."
+                    tooltip="Rest-state text against the button background. Cocoa on saffron measures 7.24:1."
                     value={buttonTextColor}
                     onChange={(value?: string) =>
                         setButtonTextColor(value || defaults.buttonTextColor)
@@ -458,7 +458,7 @@ export default function AdminWidget({
                 />
                 <ColorSelector
                     title="Button hover/active text"
-                    tooltip="Text once the background moves to the hover colour above (hover AND active/pressed). Bone on pine-deep measures 10.67:1."
+                    tooltip="Text against the hover and pressed background. White on rust measures 7.43:1."
                     value={buttonHoverTextColor}
                     onChange={(value?: string) =>
                         setButtonHoverTextColor(

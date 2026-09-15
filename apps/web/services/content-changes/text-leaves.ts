@@ -70,7 +70,7 @@ const denyKeys = new Set([
     "originalFileName",
 ]);
 const denySuffix =
-    /(Href|Url|Src|Id|Color|Colour|Mode|Kind|Icon|Class|Width|Height|Size|Font|Align|Style|Variant|Key|Slug|Path|Position)$/;
+    /(Href|Url|Src|Alt|Id|Color|Colour|Mode|Kind|Icon|Class|Width|Height|Size|Font|Align|Style|Variant|Key|Slug|Path|Position)$/;
 const looksLikeAddress = (value: string) =>
     /^(https?:\/\/|mailto:|tel:|#|\/[^\s]*$)/i.test(value.trim());
 const imageSourceKinds = new Set(["url", "media", "placeholder"]);
@@ -194,10 +194,18 @@ export function widgetTextLeaves(widget: WidgetInstance): TextLeaf[] {
     const settings = widget.settings || {};
     const defaults = defaultsFor(widget.name);
     const out: TextLeaf[] = [];
+    // The current posts link takes precedence over its legacy pair, including
+    // a deliberately empty label. Hidden fallback copy must not make the
+    // actual caption ambiguous or appear as an editable field.
+    const hiddenLegacyPostLink = (key: string) =>
+        widget.name === "anahataPosts" &&
+        settings.moreLink != null &&
+        (key === "buttonCaption" || key === "buttonAction");
     for (const [key, value] of Object.entries(settings))
-        walk(value, key, key, out, "settings", 0);
+        if (!hiddenLegacyPostLink(key))
+            walk(value, key, key, out, "settings", 0);
     for (const [key, value] of Object.entries(defaults))
-        if (settings[key] === undefined)
+        if (settings[key] === undefined && !hiddenLegacyPostLink(key))
             walk(value, key, key, out, "default", 0);
     return out;
 }

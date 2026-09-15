@@ -74,7 +74,8 @@ export function pageWidgetFields(widget: WidgetInstance): PageWidgetField[] {
     )
         add("media", "image", "Image");
     if (widget.name === "anahataHero") {
-        add("kicker", "text", "Kicker", hero.kicker);
+        if (String(settings.kicker ?? hero.kicker).trim())
+            add("kicker", "text", "Kicker", hero.kicker);
         add("heading", "text", "Welcome heading", hero.heading);
         if (String(settings.ctaCaption ?? hero.ctaCaption).trim())
             add("ctaCaption", "text", "Button text", hero.ctaCaption);

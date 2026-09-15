@@ -62,7 +62,7 @@ interface AdminWidgetProps {
 type LayoutChoice = GatheringsLayout | "auto";
 
 const LAYOUT_OPTIONS: { label: string; value: LayoutChoice }[] = [
-    { label: "Automatic (row for one event, grid for more)", value: "auto" },
+    { label: "Default (grid)", value: "auto" },
     { label: "Row — one wide card, picture left", value: "row" },
     { label: "Grid — up to four across", value: "grid" },
 ];
@@ -195,7 +195,7 @@ export default function AdminWidget({
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                             setTitle(e.target.value)
                         }
-                        tooltip="The pine heading above the event cards."
+                        tooltip="The heading above the event cards."
                     />
                     <FormField
                         label="Intro"
@@ -250,7 +250,7 @@ export default function AdminWidget({
                 <div className="flex justify-between items-center gap-2">
                     <PageBuilderPropertyHeader
                         label="Show divider"
-                        tooltip="A short pine rule beneath the heading."
+                        tooltip="A centered rust rule beneath the heading."
                     />
                     <Checkbox
                         checked={showDivider}
