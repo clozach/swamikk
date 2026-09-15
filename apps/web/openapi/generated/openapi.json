@@ -4212,6 +4212,7 @@
                 ],
                 "responses": {
                     "200": {
+                        "description": "Editable text leaves for the page and its shared blocks.",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -4498,6 +4499,7 @@
                 },
                 "responses": {
                     "200": {
+                        "description": "The applied text edit and its retained history record.",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -4565,6 +4567,7 @@
                 ],
                 "responses": {
                     "200": {
+                        "description": "Applied page and shared-text edits with the next history cursor.",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -6725,6 +6728,7 @@
                 "description": "Requires an active Member Mimic view (cookie) held by an admin with user:manage. Recovers outstanding record receipts and retries pending email effects, then returns the member's name, sign-in email, preferred contact and check-ins, any email lock, the admin's identity, pending code request and pending email-effect status. Limited to 60/minute per admin.",
                 "responses": {
                     "200": {
+                        "description": "The current editable member snapshot after recovery.",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -6939,6 +6943,7 @@
                 },
                 "responses": {
                     "200": {
+                        "description": "The applied edit or pending email verification, with the current member snapshot.",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -7452,6 +7457,7 @@
                 ],
                 "responses": {
                     "200": {
+                        "description": "Applied member edits with the next history cursor.",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -7661,6 +7667,7 @@
                 },
                 "responses": {
                     "200": {
+                        "description": "The email confirmation, resend or cancellation result.",
                         "content": {
                             "application/json": {
                                 "schema": {

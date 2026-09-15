@@ -175,11 +175,15 @@ export const memberEditsApiOpenApi = {
                 description:
                     "Requires an active Member Mimic view (cookie) held by an admin with user:manage. Recovers outstanding record receipts and retries pending email effects, then returns the member's name, sign-in email, preferred contact and check-ins, any email lock, the admin's identity, pending code request and pending email-effect status. Limited to 60/minute per admin.",
                 responses: {
-                    200: json({
-                        type: "object",
-                        required: ["snapshot"],
-                        properties: { snapshot },
-                    }),
+                    200: {
+                        description:
+                            "The current editable member snapshot after recovery.",
+                        ...json({
+                            type: "object",
+                            required: ["snapshot"],
+                            properties: { snapshot },
+                        }),
+                    },
                     ...errors,
                 },
             },
@@ -208,23 +212,27 @@ export const memberEditsApiOpenApi = {
                     }),
                 },
                 responses: {
-                    200: json({
-                        oneOf: [
-                            applied,
-                            {
-                                type: "object",
-                                required: ["kind", "pending", "snapshot"],
-                                properties: {
-                                    kind: {
-                                        type: "string",
-                                        enum: ["verify"],
+                    200: {
+                        description:
+                            "The applied edit or pending email verification, with the current member snapshot.",
+                        ...json({
+                            oneOf: [
+                                applied,
+                                {
+                                    type: "object",
+                                    required: ["kind", "pending", "snapshot"],
+                                    properties: {
+                                        kind: {
+                                            type: "string",
+                                            enum: ["verify"],
+                                        },
+                                        pending,
+                                        snapshot,
                                     },
-                                    pending,
-                                    snapshot,
                                 },
-                            },
-                        ],
-                    }),
+                            ],
+                        }),
+                    },
                     409: {
                         description:
                             "`stale`: body carries `error {code, message}` and `current [{field, value}]`; `conflict`: the address belongs to another account; `unsettled`: a history transition needs a fresh read; or the record changed while saving.",
@@ -273,14 +281,18 @@ export const memberEditsApiOpenApi = {
                     },
                 ],
                 responses: {
-                    200: json({
-                        type: "object",
-                        required: ["edits", "nextCursor"],
-                        properties: {
-                            edits: { type: "array", items: edit },
-                            nextCursor: { type: ["string", "null"] },
-                        },
-                    }),
+                    200: {
+                        description:
+                            "Applied member edits with the next history cursor.",
+                        ...json({
+                            type: "object",
+                            required: ["edits", "nextCursor"],
+                            properties: {
+                                edits: { type: "array", items: edit },
+                                nextCursor: { type: ["string", "null"] },
+                            },
+                        }),
+                    },
                     ...errors,
                 },
             },
@@ -335,47 +347,51 @@ export const memberEditsApiOpenApi = {
                     }),
                 },
                 responses: {
-                    200: json({
-                        oneOf: [
-                            applied,
-                            {
-                                type: "object",
-                                required: ["kind", "attemptsLeft"],
-                                properties: {
-                                    kind: {
-                                        type: "string",
-                                        enum: ["wrong-code"],
-                                    },
-                                    attemptsLeft: {
-                                        type: "integer",
-                                        minimum: 1,
+                    200: {
+                        description:
+                            "The email confirmation, resend or cancellation result.",
+                        ...json({
+                            oneOf: [
+                                applied,
+                                {
+                                    type: "object",
+                                    required: ["kind", "attemptsLeft"],
+                                    properties: {
+                                        kind: {
+                                            type: "string",
+                                            enum: ["wrong-code"],
+                                        },
+                                        attemptsLeft: {
+                                            type: "integer",
+                                            minimum: 1,
+                                        },
                                     },
                                 },
-                            },
-                            {
-                                type: "object",
-                                required: ["kind", "snapshot"],
-                                properties: {
-                                    kind: {
-                                        type: "string",
-                                        enum: ["expired", "cancelled"],
+                                {
+                                    type: "object",
+                                    required: ["kind", "snapshot"],
+                                    properties: {
+                                        kind: {
+                                            type: "string",
+                                            enum: ["expired", "cancelled"],
+                                        },
+                                        snapshot,
                                     },
-                                    snapshot,
                                 },
-                            },
-                            {
-                                type: "object",
-                                required: ["kind", "pending"],
-                                properties: {
-                                    kind: {
-                                        type: "string",
-                                        enum: ["resent"],
+                                {
+                                    type: "object",
+                                    required: ["kind", "pending"],
+                                    properties: {
+                                        kind: {
+                                            type: "string",
+                                            enum: ["resent"],
+                                        },
+                                        pending,
                                     },
-                                    pending,
                                 },
-                            },
-                        ],
-                    }),
+                            ],
+                        }),
+                    },
                     404: {
                         description:
                             "No email change of this member and admin is waiting for a code (`not_found`).",

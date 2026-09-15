@@ -91,41 +91,45 @@ export const textEditPaths = {
                 { name: "pageId", in: "query", required: true, schema: id },
             ],
             responses: {
-                200: json({
-                    type: "object",
-                    properties: {
-                        pageId: id,
-                        revision: { type: "integer" },
-                        widgets: {
-                            type: "array",
-                            items: {
-                                type: "object",
-                                properties: {
-                                    widgetId: id,
-                                    name: { type: "string" },
-                                    shared: { type: "boolean" },
-                                    leaves: {
-                                        type: "array",
-                                        items: {
-                                            type: "object",
-                                            properties: {
-                                                path,
-                                                value: text,
-                                                kind: {
-                                                    type: "string",
-                                                    enum: [
-                                                        "text",
-                                                        "rich-text-leaf",
-                                                        "rich-text-node",
-                                                    ],
-                                                },
-                                                node: richNode,
-                                                source: {
-                                                    type: "string",
-                                                    enum: [
-                                                        "settings",
-                                                        "default",
-                                                    ],
+                200: {
+                    description:
+                        "Editable text leaves for the page and its shared blocks.",
+                    ...json({
+                        type: "object",
+                        properties: {
+                            pageId: id,
+                            revision: { type: "integer" },
+                            widgets: {
+                                type: "array",
+                                items: {
+                                    type: "object",
+                                    properties: {
+                                        widgetId: id,
+                                        name: { type: "string" },
+                                        shared: { type: "boolean" },
+                                        leaves: {
+                                            type: "array",
+                                            items: {
+                                                type: "object",
+                                                properties: {
+                                                    path,
+                                                    value: text,
+                                                    kind: {
+                                                        type: "string",
+                                                        enum: [
+                                                            "text",
+                                                            "rich-text-leaf",
+                                                            "rich-text-node",
+                                                        ],
+                                                    },
+                                                    node: richNode,
+                                                    source: {
+                                                        type: "string",
+                                                        enum: [
+                                                            "settings",
+                                                            "default",
+                                                        ],
+                                                    },
                                                 },
                                             },
                                         },
@@ -133,8 +137,8 @@ export const textEditPaths = {
                                 },
                             },
                         },
-                    },
-                }),
+                    }),
+                },
                 403: { description: "Not a site manager, or in Member Mimic." },
                 404: { description: "Page not found in this site." },
             },
@@ -171,13 +175,17 @@ export const textEditPaths = {
                 }),
             },
             responses: {
-                200: json({
-                    type: "object",
-                    properties: {
-                        kind: { type: "string", enum: ["applied"] },
-                        edit: textEdit,
-                    },
-                }),
+                200: {
+                    description:
+                        "The applied text edit and its retained history record.",
+                    ...json({
+                        type: "object",
+                        properties: {
+                            kind: { type: "string", enum: ["applied"] },
+                            edit: textEdit,
+                        },
+                    }),
+                },
                 400: {
                     description:
                         "Unsupported field, empty text, or invalid input.",
@@ -211,13 +219,17 @@ export const textEditPaths = {
                 },
             ],
             responses: {
-                200: json({
-                    type: "object",
-                    properties: {
-                        edits: { type: "array", items: textEdit },
-                        nextCursor: { type: ["string", "null"] },
-                    },
-                }),
+                200: {
+                    description:
+                        "Applied page and shared-text edits with the next history cursor.",
+                    ...json({
+                        type: "object",
+                        properties: {
+                            edits: { type: "array", items: textEdit },
+                            nextCursor: { type: ["string", "null"] },
+                        },
+                    }),
+                },
             },
         },
     },

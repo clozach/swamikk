@@ -1,6 +1,29 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { buildOpenApiRoutes } from "../index.mjs";
+
+test("every inline OpenAPI response has its required description", () => {
+    const { paths } = buildOpenApiRoutes();
+    let checked = 0;
+    for (const [path, item] of Object.entries(paths)) {
+        for (const [method, operation] of Object.entries(item)) {
+            for (const [status, response] of Object.entries(
+                operation.responses ?? {},
+            )) {
+                if (response.$ref) continue;
+                checked += 1;
+                assert.equal(
+                    typeof response.description,
+                    "string",
+                    `${method.toUpperCase()} ${path} ${status} requires a description`,
+                );
+                assert.ok(response.description.trim());
+            }
+        }
+    }
+    assert.ok(checked > 0);
+});
+
 test("the assembled API includes feedback delivery, cancellation and read-only receipts", () => {
     const { paths } = buildOpenApiRoutes();
     for (const path of [
