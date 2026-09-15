@@ -646,6 +646,12 @@ export default function UsersHub() {
                             ),
                         )
                     }
+                    onOutcomeElsewhere={(message) =>
+                        toast({
+                            title: permissionsUi.title,
+                            description: message,
+                        })
+                    }
                 />
             )}
         </DashboardContent>

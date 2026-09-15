@@ -38,17 +38,25 @@ function identifyChange(before: string[], after: string[]) {
     const added = after.filter((p) => !before.includes(p));
     const removed = before.filter((p) => !after.includes(p));
     if (!added.length && !removed.length) return null;
-    const isAdminBundle =
-        (added.length === ADMIN_PERMISSIONS.length &&
-            removed.length === 0 &&
-            ADMIN_PERMISSIONS.every((p) => added.includes(p))) ||
-        (removed.length === ADMIN_PERMISSIONS.length &&
-            added.length === 0 &&
-            ADMIN_PERMISSIONS.every((p) => removed.includes(p)));
-    if (isAdminBundle)
+    // The Admin checkbox itself can start from indeterminate (some but not
+    // all six already granted, reachable one box at a time from the advanced
+    // panel) — a click from there unions in only the missing ones, so
+    // "every admin permission that moved" is the right bundle test, not
+    // "moved from none to all six": ending at all six (or all zero), having
+    // touched nothing but admin permissions, is what "Admin: on/off" means.
+    const touchedOnlyAdmin = [...added, ...removed].every((p) =>
+        ADMIN_PERMISSIONS.includes(p),
+    );
+    const afterAdminCount = ADMIN_PERMISSIONS.filter((p) =>
+        after.includes(p),
+    ).length;
+    if (
+        touchedOnlyAdmin &&
+        (afterAdminCount === ADMIN_PERMISSIONS.length || afterAdminCount === 0)
+    )
         return {
             id: "__admin_bundle__",
-            message: added.length ? copy.adminOn : copy.adminOff,
+            message: afterAdminCount ? copy.adminOn : copy.adminOff,
         };
     if (added.length + removed.length === 1) {
         const only = added[0] ?? removed[0];
@@ -121,6 +129,7 @@ export default function PermissionsMagnet({
     onOpenPanel,
     onClosePanel,
     onSaved,
+    onOutcomeElsewhere,
 }: {
     user: User;
     rowElement: HTMLElement | null;
@@ -134,6 +143,15 @@ export default function PermissionsMagnet({
     onClosePanel: () => void;
     /** The server's list after a change; the list row updates from it. */
     onSaved: (permissions: string[]) => void;
+    /**
+     * A save that finished after this account was deselected (a different
+     * row chosen, the list refreshed, the magnet dismissed) — there is no
+     * status line left to show it in, so the parent surfaces it some other
+     * way (a toast). The account's own row still updates via onSaved
+     * regardless; this is only for the confirmation the magnet itself can
+     * no longer display.
+     */
+    onOutcomeElsewhere?: (message: string) => void;
 }) {
     const bounds = useElementBounds(rowElement);
     // Whether ANY save is in flight (disables everything); which single box,
@@ -151,6 +169,24 @@ export default function PermissionsMagnet({
     // (The magnet is keyed by account, so the prop only ever restates a save.)
     const [known, setKnown] = useState(user.permissions);
     const current = useRef(user.permissions);
+    // True until this instance unmounts (a different row selected, the list
+    // refreshed, the magnet dismissed) — commit() checks it after its await,
+    // since React drops any setState the unmounted instance would otherwise
+    // make.
+    const mounted = useRef(true);
+    useEffect(
+        () => () => {
+            mounted.current = false;
+        },
+        [],
+    );
+    const adminCheckboxRef = useRef<HTMLButtonElement>(null);
+    const advancedButtonRef = useRef<HTMLButtonElement>(null);
+    // Whether the Admin checkbox held focus at the moment it disabled itself
+    // for the save — Radix's checkbox is a real <button>, and a disabled
+    // button is dropped from the focus area the instant `saving` flips true,
+    // so the browser blurs it to <body>. Restored below once the save clears.
+    const hadFocus = useRef(false);
     const self = selfUserId === user.userId;
     const locked = self || protectedAccount;
     const name = user.name || user.email;
@@ -175,6 +211,27 @@ export default function PermissionsMagnet({
             setSaving(true);
             setStatus({ kind: "idle" });
             const result = await savePermissions(address, user.userId, next);
+            if (!mounted.current) {
+                // Deselected mid-save. The row still updates for whoever is
+                // looking at the list (onSaved reaches into the still-live
+                // parent regardless of this instance); there is no status
+                // line left to show the outcome in, so the parent does it
+                // instead — never silently drop a change nobody saw land.
+                if (result.kind === "applied") {
+                    onSaved(result.permissions);
+                    const landed = identifyChange(before, result.permissions);
+                    onOutcomeElsewhere?.(
+                        `${name}: ${landed?.message ?? change.message}`,
+                    );
+                } else if (result.kind === "refused") {
+                    onOutcomeElsewhere?.(`${name}: ${copy.protected}`);
+                } else {
+                    onOutcomeElsewhere?.(
+                        `${name}: ${result.message || copy.failed}`,
+                    );
+                }
+                return;
+            }
             setSaving(false);
             setBusyId(null);
             if (result.kind === "applied") {
@@ -199,6 +256,13 @@ export default function PermissionsMagnet({
                 });
             } else if (result.kind === "refused") {
                 setProtectedAccount(true);
+                if (hadFocus.current) {
+                    // This account's checkbox can never re-enable now — send
+                    // focus to the next interactive control instead of
+                    // stranding it on <body>.
+                    hadFocus.current = false;
+                    advancedButtonRef.current?.focus();
+                }
             } else {
                 setStatus({
                     kind: "failed",
@@ -206,7 +270,7 @@ export default function PermissionsMagnet({
                 });
             }
         },
-        [address, onSaved, user.userId],
+        [address, name, onSaved, onOutcomeElsewhere, user.userId],
     );
     const toggle = (permission: string, on: boolean) =>
         void commit(
@@ -219,7 +283,8 @@ export default function PermissionsMagnet({
     // way, the non-admin baseline (Buy products, Manage files) is untouched.
     // Radix hands an indeterminate box's own click through as `true`, which
     // reads here as "fill in the missing ones" — a "select all" convention.
-    const toggleAdmin = (checked: boolean) =>
+    const toggleAdmin = (checked: boolean) => {
+        hadFocus.current = document.activeElement === adminCheckboxRef.current;
         void commit(
             checked
                 ? Array.from(
@@ -230,14 +295,35 @@ export default function PermissionsMagnet({
                   ),
             "do",
         );
+    };
+    // A rapid second ⌘Z/⇧⌘Z — OS key-repeat holds it well within typical
+    // save latency — would otherwise pop a second stack entry before the
+    // first commit's response lands, desyncing the rendered undo/redo counts
+    // from the actual stacks. Every other path into commit() already
+    // disables its own control while saving; this is the one path (a global
+    // keyboard shortcut) with no control to disable.
     const undo = useCallback(() => {
+        if (saving) return;
         const previous = past.current.pop();
         if (previous) void commit(previous, "undo");
-    }, [commit]);
+    }, [commit, saving]);
     const redo = useCallback(() => {
+        if (saving) return;
         const next = future.current.pop();
         if (next) void commit(next, "redo");
-    }, [commit]);
+    }, [commit, saving]);
+    // Give the Admin checkbox its keyboard focus back once a save that held
+    // it clears — a disabled control drops out of the browser's focus area,
+    // so without this a keyboard user's tab position is silently lost after
+    // every successful toggle. Skipped once the account is locked (the
+    // refused-save branch above hands focus onward instead, since this
+    // checkbox will not become focusable again).
+    useEffect(() => {
+        if (!saving && hadFocus.current && !locked) {
+            hadFocus.current = false;
+            adminCheckboxRef.current?.focus();
+        }
+    }, [saving, locked]);
 
     // ⌘Z / ⇧⌘Z reverse the last change whenever this account is selected —
     // the Admin checkbox alone can change permissions without ever opening
@@ -325,6 +411,7 @@ export default function PermissionsMagnet({
         </span>
     );
     const adminNote = locked ? (self ? copy.self : copy.protected) : undefined;
+    const adminNoteId = `kk-admin-note-${user.userId}`;
 
     return (
         <SelectionTools
@@ -369,17 +456,18 @@ export default function PermissionsMagnet({
             ) : (
                 <div className="kk-permissions-tools" data-kk-permissions>
                     <div className="kk-permissions-tools-row">
-                        <div
-                            className="kk-permissions-admin"
-                            title={adminNote}
-                        >
+                        <div className="kk-permissions-admin" title={adminNote}>
                             <label
                                 htmlFor={`kk-admin-${user.userId}`}
                                 className="kk-permissions-admin-label"
                             >
                                 <Checkbox
+                                    ref={adminCheckboxRef}
                                     id={`kk-admin-${user.userId}`}
                                     aria-label={copy.adminLabel}
+                                    aria-describedby={
+                                        locked ? adminNoteId : undefined
+                                    }
                                     checked={adminChecked}
                                     disabled={locked || saving}
                                     onCheckedChange={(value) =>
@@ -389,6 +477,7 @@ export default function PermissionsMagnet({
                                 <span>{copy.adminLabel}</span>
                             </label>
                             <button
+                                ref={advancedButtonRef}
                                 type="button"
                                 className="kk-permissions-advanced"
                                 data-kk-permissions-open
@@ -403,6 +492,15 @@ export default function PermissionsMagnet({
                         </div>
                         {mimicControl}
                     </div>
+                    {locked && (
+                        <p
+                            id={adminNoteId}
+                            className="kk-permissions-note kk-permissions-note--compact"
+                            role="note"
+                        >
+                            {adminNote}
+                        </p>
+                    )}
                     {statusLine}
                 </div>
             )}

@@ -142,6 +142,13 @@
     border: 1px solid #dd942d;
     border-radius: 8px;
     padding: 6px 10px;
+    font-size: 13px;
+}
+/* The closed toolbar's version: a keyboard/screen-reader-reachable reason
+   next to the tooltip on the pill, not a paragraph competing with the
+   Admin/View-as-member row for space. */
+.kk-permissions-note--compact {
+    padding: 4px 8px;
 }
 /* A selected account's row: the thing the magnet belongs to. */
 tr[data-kk-account] {
