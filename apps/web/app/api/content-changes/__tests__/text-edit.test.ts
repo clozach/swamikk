@@ -150,6 +150,239 @@ describe("inline text edits", () => {
         });
     });
 
+    afterEach(() => jest.restoreAllMocks());
+
+    describe.each(["page", "shared"] as const)(
+        "%s text source receipts",
+        (source) => {
+            const shared = source === "shared";
+            const initial = shared ? "Swami Karma Karuna" : hero.heading;
+            const target = () =>
+                shared
+                    ? {
+                          kind: "shared-widget-text",
+                          pageId: page.pageId,
+                          name: "anahataHeader",
+                      }
+                    : heroTarget();
+            const save = (before = initial, after = "First saved wording") =>
+                post({
+                    target: target(),
+                    changes: [
+                        text(shared ? "brandName" : "heading", before, after),
+                    ],
+                });
+            const collection = () =>
+                shared ? DomainModel.collection : PageModel.collection;
+            const sourceId = () => (shared ? domain._id : page._id);
+            const stored = async () => {
+                const document = await collection().findOne({
+                    _id: sourceId(),
+                });
+                if (!document)
+                    throw new Error("Text source fixture is missing");
+                return document;
+            };
+            const row = async () => {
+                const record = await PageTextEditModel.findOne({
+                    domain: domain._id,
+                }).lean();
+                if (!record) throw new Error("Text edit fixture is missing");
+                return record;
+            };
+            const currentText = (document: any) =>
+                shared
+                    ? document.sharedWidgets.anahataHeader.settings.brandName
+                    : document.layout[1].settings.heading;
+            const failSettlement = () =>
+                jest
+                    .spyOn(PageTextEditModel, "updateOne")
+                    .mockRejectedValue(
+                        new Error("History settlement unavailable"),
+                    );
+            const readLeaves = () =>
+                leaves(
+                    request(
+                        `/api/content-changes/text/leaves?pageId=${page.pageId}`,
+                    ),
+                );
+            const readHistory = () =>
+                history(
+                    request(
+                        `/api/content-changes/text/history?pageId=${page.pageId}`,
+                    ),
+                );
+
+            it("recovers History after settlement fails, retaining the original revision across a later unrelated write", async () => {
+                const baseline = await stored();
+                const expectedRevision = (baseline.__v || 0) + 1;
+                const failed = failSettlement();
+                expect((await save()).status).toBeGreaterThanOrEqual(500);
+                const pending = await row();
+                const appliedSource = await stored();
+                expect(currentText(appliedSource)).toBe("First saved wording");
+                expect(pending.state).toBe("applying");
+                expect(appliedSource.pageTextEditReceipts).toEqual([
+                    { editId: pending.editId, revision: expectedRevision },
+                ]);
+                failed.mockRestore();
+
+                // Another native writer can change this source before History
+                // is opened. Its newer revision is not this edit's revision.
+                await collection().updateOne(
+                    { _id: sourceId() },
+                    {
+                        $set: shared
+                            ? { themeId: "a-later-theme" }
+                            : { name: "A later page title" },
+                        $inc: { __v: 7 },
+                    },
+                );
+                const response = await readHistory();
+                expect(response.status).toBe(200);
+                expect((await response.json()).edits).toEqual([
+                    expect.objectContaining({
+                        editId: pending.editId,
+                        revision: expectedRevision,
+                    }),
+                ]);
+                expect(await row()).toMatchObject({
+                    state: "applied",
+                    revision: expectedRevision,
+                });
+                expect((await stored()).pageTextEditReceipts).toEqual([]);
+                expect((await stored()).__v).toBe(expectedRevision + 7);
+            });
+
+            it("recovers a successful source write whose database response was lost", async () => {
+                let failed: jest.SpyInstance;
+                if (shared) {
+                    const original =
+                        DomainModel.findOneAndUpdate.bind(DomainModel);
+                    failed = jest
+                        .spyOn(DomainModel, "findOneAndUpdate")
+                        .mockImplementationOnce(((...args: any[]) => ({
+                            lean: async () => {
+                                await (original as any)(...args).lean();
+                                throw new Error(
+                                    "Source response lost after write",
+                                );
+                            },
+                        })) as any);
+                } else {
+                    const original = PageModel.collection.updateOne.bind(
+                        PageModel.collection,
+                    );
+                    failed = jest
+                        .spyOn(PageModel.collection, "updateOne")
+                        .mockImplementationOnce(async (...args) => {
+                            await original(...args);
+                            throw new Error("Source response lost after write");
+                        });
+                }
+                expect((await save()).status).toBeGreaterThanOrEqual(500);
+                expect(currentText(await stored())).toBe("First saved wording");
+                const pending = await row();
+                expect(pending.state).toBe("applying");
+                failed.mockRestore();
+                const response = await readHistory();
+                expect(response.status).toBe(200);
+                expect((await response.json()).edits).toEqual([
+                    expect.objectContaining({
+                        editId: pending.editId,
+                        revision: 1,
+                    }),
+                ]);
+                expect((await stored()).pageTextEditReceipts).toEqual([]);
+                expect(
+                    await PageTextEditModel.countDocuments({
+                        domain: domain._id,
+                    }),
+                ).toBe(1);
+            });
+
+            it("recovers an interrupted edit before returning text leaves", async () => {
+                const failed = failSettlement();
+                expect((await save()).status).toBeGreaterThanOrEqual(500);
+                failed.mockRestore();
+                const response = await readLeaves();
+                expect(response.status).toBe(200);
+                const body = await response.json();
+                const widget = body.widgets.find(
+                    (item) => item.widgetId === (shared ? "header" : "hero"),
+                );
+                expect(widget.leaves).toContainEqual(
+                    expect.objectContaining({
+                        path: shared ? "brandName" : "heading",
+                        value: "First saved wording",
+                    }),
+                );
+                expect(await row()).toMatchObject({
+                    state: "applied",
+                    revision: 1,
+                });
+                expect((await stored()).pageTextEditReceipts).toEqual([]);
+            });
+
+            it("settles the previous receipt before accepting another text mutation", async () => {
+                const failed = failSettlement();
+                expect((await save()).status).toBeGreaterThanOrEqual(500);
+                const pending = await row();
+                failed.mockRestore();
+                const response = await save(
+                    "First saved wording",
+                    "Second saved wording",
+                );
+                expect(response.status).toBe(200);
+                expect((await response.json()).edit.revision).toBe(2);
+                const records = await PageTextEditModel.find({
+                    domain: domain._id,
+                })
+                    .sort({ revision: 1 })
+                    .lean();
+                expect(records).toHaveLength(2);
+                expect(records[0]).toMatchObject({
+                    editId: pending.editId,
+                    state: "applied",
+                    revision: 1,
+                });
+                expect(records[1]).toMatchObject({
+                    state: "applied",
+                    revision: 2,
+                });
+                expect(currentText(await stored())).toBe(
+                    "Second saved wording",
+                );
+                expect((await stored()).pageTextEditReceipts).toEqual([]);
+            });
+
+            it("retains its source receipt through repeated recovery failures", async () => {
+                const failed = failSettlement();
+                expect((await save()).status).toBeGreaterThanOrEqual(500);
+                const pending = await row();
+                const receipt = [{ editId: pending.editId, revision: 1 }];
+                expect((await stored()).pageTextEditReceipts).toEqual(receipt);
+                expect((await readLeaves()).status).toBeGreaterThanOrEqual(500);
+                expect((await stored()).pageTextEditReceipts).toEqual(receipt);
+                expect((await readHistory()).status).toBeGreaterThanOrEqual(
+                    500,
+                );
+                expect((await stored()).pageTextEditReceipts).toEqual(receipt);
+                expect(await row()).toMatchObject({
+                    state: "applying",
+                    revision: 0,
+                });
+                failed.mockRestore();
+                expect((await readHistory()).status).toBe(200);
+                expect(await row()).toMatchObject({
+                    state: "applied",
+                    revision: 1,
+                });
+                expect((await stored()).pageTextEditReceipts).toEqual([]);
+            });
+        },
+    );
+
     it("edits and reverses text on the full legacy homepage without recasting other stored blocks", async () => {
         const layouts = JSON.parse(
             readFileSync(

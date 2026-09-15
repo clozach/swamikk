@@ -1,4 +1,3 @@
-import { randomUUID } from "crypto";
 import type {
     PageTextLeaves,
     PageTextWidgetLeaves,
@@ -34,6 +33,11 @@ import {
     widgetTextLeaves,
 } from "./text-leaves";
 import type { EditablePage } from "./page-types";
+import {
+    createTextRecord,
+    recoverTextEditReceipts,
+    settleTextRecord,
+} from "./text-edit-records";
 
 const plain = <T>(value: T): T =>
     value === undefined ? value : JSON.parse(JSON.stringify(value));
@@ -76,6 +80,8 @@ export async function pageTextLeaves(
     pageId: string,
     ctx: GQLContext,
 ): Promise<PageTextLeaves> {
+    requirePageEditor(ctx);
+    await recoverTextEditReceipts(ctx);
     const page = await editablePage(pageId, ctx);
     const domain = await freshDomain(ctx);
     const widgets: PageTextWidgetLeaves[] = page.layout.map((widget) => {
@@ -256,41 +262,6 @@ const stale = (
         "This text changed elsewhere; the page now shows the current version.",
 });
 
-async function record(
-    input: TextEditInput,
-    widgetName: string,
-    ctx: GQLContext,
-) {
-    await PageTextEditModel.init();
-    return PageTextEditModel.create({
-        domain: ctx.subdomain._id,
-        editId: randomUUID(),
-        pageId: input.target.pageId,
-        target: input.target,
-        widgetName,
-        changes: input.changes,
-        userId: ctx.user.userId,
-        at: new Date().toISOString(),
-        revision: 0,
-        ...(input.undoOf ? { undoOf: input.undoOf } : {}),
-        state: "applying",
-    });
-}
-
-async function settleRecord(
-    entry: InternalPageTextEdit & { _id: unknown },
-    outcome:
-        | { state: "applied"; revision: number }
-        | { state: "failed"; reason: string },
-) {
-    await PageTextEditModel.updateOne(
-        { _id: entry._id },
-        outcome.state === "applied"
-            ? { $set: { state: "applied", revision: outcome.revision } }
-            : { $set: { state: "failed", failureReason: outcome.reason } },
-    );
-}
-
 async function applyPageWidgetEdit(
     input: TextEditInput & { target: { kind: "page-widget-text" } },
     ctx: GQLContext,
@@ -323,7 +294,13 @@ async function applyPageWidgetEdit(
             ? { ...item, settings: replaced.settings }
             : item,
     );
-    const entry = await record(input, widget.name, ctx);
+    const entry = await createTextRecord(
+        input,
+        widget.name,
+        String((page as EditablePage & { _id?: unknown })._id || page.id),
+        ctx,
+    );
+    const revision = pageRevision(page) + 1;
     // Text/settings were validated above. Preserve every stored block identity
     // instead of re-casting the complete layout through Mongoose.
     const saved = await PageModel.collection.updateOne(pageWriteFilter(page), {
@@ -333,9 +310,10 @@ async function applyPageWidgetEdit(
             updatedAt: new Date(),
         },
         $inc: { __v: 1 },
+        $addToSet: { pageTextEditReceipts: { editId: entry.editId, revision } },
     });
     if (saved.modifiedCount !== 1) {
-        await settleRecord(entry, {
+        await settleTextRecord(entry, {
             state: "failed",
             reason: "The page changed while saving.",
         });
@@ -345,8 +323,7 @@ async function applyPageWidgetEdit(
             409,
         );
     }
-    const revision = pageRevision(page) + 1;
-    await settleRecord(entry, { state: "applied", revision });
+    await settleTextRecord(entry, { state: "applied", revision });
     return { kind: "applied", edit: view({ ...entry.toObject(), revision }) };
 }
 
@@ -385,7 +362,7 @@ async function applySharedWidgetEdit(
                 ),
             },
         };
-    const entry = await record(input, name, ctx);
+    const entry = await createTextRecord(input, name, String(domain._id), ctx);
     const saved = (await DomainModel.findOneAndUpdate(
         {
             _id: domain._id,
@@ -413,17 +390,42 @@ async function applySharedWidgetEdit(
                 ],
             },
         },
-        {
-            $set: {
-                sharedWidgets,
-                ...(draftSharedWidgets ? { draftSharedWidgets } : {}),
+        [
+            {
+                $set: {
+                    sharedWidgets: { $literal: sharedWidgets },
+                    ...(draftSharedWidgets
+                        ? {
+                              draftSharedWidgets: {
+                                  $literal: draftSharedWidgets,
+                              },
+                          }
+                        : {}),
+                    __v: { $add: [{ $ifNull: ["$__v", 0] }, 1] },
+                },
             },
-            $inc: { __v: 1 },
-        },
+            {
+                $set: {
+                    // Compute the actual committed revision in this atomic write.
+                    // Unrelated site writes remain compatible with the maps CAS.
+                    pageTextEditReceipts: {
+                        $concatArrays: [
+                            { $ifNull: ["$pageTextEditReceipts", []] },
+                            [
+                                {
+                                    editId: { $literal: entry.editId },
+                                    revision: "$__v",
+                                },
+                            ],
+                        ],
+                    },
+                },
+            },
+        ],
         { new: true },
     ).lean()) as { __v?: number } | null;
     if (!saved) {
-        await settleRecord(entry, {
+        await settleTextRecord(entry, {
             state: "failed",
             reason: "The site's shared blocks changed while saving.",
         });
@@ -435,7 +437,7 @@ async function applySharedWidgetEdit(
     }
     invalidateDomainCache(domain.name);
     const revision = saved.__v || (domain.__v || 0) + 1;
-    await settleRecord(entry, { state: "applied", revision });
+    await settleTextRecord(entry, { state: "applied", revision });
     return { kind: "applied", edit: view({ ...entry.toObject(), revision }) };
 }
 
@@ -475,6 +477,7 @@ export async function applyTextEdit(
         "no_change",
         "This text already reads that way.",
     );
+    await recoverTextEditReceipts(ctx);
     return input.target.kind === "page-widget-text"
         ? applyPageWidgetEdit(
               input as TextEditInput & { target: { kind: "page-widget-text" } },
@@ -496,6 +499,7 @@ export async function textEditHistory(
     limit = 50,
 ): Promise<TextEditHistory> {
     requirePageEditor(ctx);
+    await recoverTextEditReceipts(ctx);
     const rows = (await PageTextEditModel.find({
         domain: ctx.subdomain._id,
         state: "applied",

@@ -8,6 +8,10 @@ import {
     Constants,
 } from "@courselit/common-models";
 import { MediaSchema } from "./media";
+import {
+    PageTextEditReceiptSchema,
+    type PageTextEditReceipt,
+} from "./page-text-edit";
 
 const { PageType } = Constants;
 
@@ -18,6 +22,7 @@ export interface InternalPage extends PublicPage {
     creatorId: string;
     contentChangeReceipt?: PageContentChangeReceipt;
     sectionEditReceipts?: string[];
+    pageTextEditReceipts?: PageTextEditReceipt[];
     draftTitle?: string;
     draftDescription?: string;
     draftSocialImage?: Media | null;
@@ -59,6 +64,11 @@ export const PageSchema = new mongoose.Schema<InternalPage>(
         publicationReceipt: { type: mongoose.Schema.Types.Mixed },
         contentChangeReceipt: { type: mongoose.Schema.Types.Mixed },
         sectionEditReceipts: { type: [String], default: undefined },
+        pageTextEditReceipts: {
+            type: [PageTextEditReceiptSchema],
+            default: undefined,
+            select: false,
+        },
     },
     {
         timestamps: true,

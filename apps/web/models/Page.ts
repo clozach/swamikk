@@ -1,5 +1,9 @@
 import type { PageContentChangeReceipt } from "@courselit/common-models";
 import mongoose from "mongoose";
+import {
+    PageTextEditReceiptSchema,
+    type PageTextEditReceipt,
+} from "@courselit/orm-models";
 import { WidgetSchema } from "./Widget";
 import constants from "../config/constants";
 import {
@@ -17,6 +21,7 @@ export interface Page extends PublicPage {
     creatorId: string;
     contentChangeReceipt?: PageContentChangeReceipt;
     sectionEditReceipts?: string[];
+    pageTextEditReceipts?: PageTextEditReceipt[];
     draftTitle?: string;
     draftDescription?: string;
     draftSocialImage?: Media | null;
@@ -53,6 +58,11 @@ const PageSchema = new mongoose.Schema<Page>(
         publicationReceipt: { type: mongoose.Schema.Types.Mixed },
         contentChangeReceipt: { type: mongoose.Schema.Types.Mixed },
         sectionEditReceipts: { type: [String], default: undefined },
+        pageTextEditReceipts: {
+            type: [PageTextEditReceiptSchema],
+            default: undefined,
+            select: false,
+        },
     },
     {
         timestamps: true,

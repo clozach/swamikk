@@ -1,6 +1,17 @@
 import type { TextEdit } from "@courselit/common-models";
 import mongoose from "mongoose";
 
+/** Committed alongside the source write; retained until history is durable. */
+export type PageTextEditReceipt = { editId: string; revision: number };
+export const PageTextEditReceiptSchema =
+    new mongoose.Schema<PageTextEditReceipt>(
+        {
+            editId: { type: String, required: true },
+            revision: { type: Number, required: true },
+        },
+        { _id: false },
+    );
+
 /**
  * Append-only history of inline text edits. A row is written before the
  * page/site write and settled after it, so every attempt leaves a record;
@@ -10,6 +21,8 @@ import mongoose from "mongoose";
 export type InternalPageTextEdit = TextEdit & {
     domain: mongoose.Types.ObjectId;
     pageId: string;
+    /** Immutable Page or Domain identity; absent on pre-receipt history. */
+    sourceDocumentId?: string;
     before?: string;
     after?: string;
     state: "applying" | "applied" | "failed";
@@ -23,6 +36,7 @@ export const PageTextEditSchema = new mongoose.Schema<InternalPageTextEdit>(
         domain: { type: mongoose.Schema.Types.ObjectId, required: true },
         editId: { type: String, required: true },
         pageId: { type: String, required: true },
+        sourceDocumentId: String,
         target: { type: mongoose.Schema.Types.Mixed, required: true },
         widgetName: { type: String, required: true },
         /** The edit's changes (text leaves and rich-text nodes), applied together. */

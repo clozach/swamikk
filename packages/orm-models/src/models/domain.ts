@@ -2,6 +2,10 @@ import mongoose from "mongoose";
 import { SettingsSchema } from "./site-info";
 import { TypefaceSchema } from "./typeface";
 import {
+    PageTextEditReceiptSchema,
+    type PageTextEditReceipt,
+} from "./page-text-edit";
+import {
     Constants,
     Features,
     Domain as PublicDomain,
@@ -12,6 +16,7 @@ export interface Domain extends PublicDomain {
     _id: mongoose.Types.ObjectId;
     lastEditedThemeId?: string;
     features?: Features[];
+    pageTextEditReceipts?: PageTextEditReceipt[];
 }
 
 export const defaultTypeface: Typeface = {
@@ -36,6 +41,11 @@ export const DomainSchema = new mongoose.Schema<Domain>(
         sharedWidgets: {
             type: mongoose.Schema.Types.Mixed,
             default: {},
+        },
+        pageTextEditReceipts: {
+            type: [PageTextEditReceiptSchema],
+            default: undefined,
+            select: false,
         },
         draftSharedWidgets: {
             type: mongoose.Schema.Types.Mixed,
