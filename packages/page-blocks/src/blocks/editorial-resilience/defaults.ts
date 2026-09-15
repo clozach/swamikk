@@ -28,7 +28,7 @@ export const signatureImage: BlockImage = {
 export const enrolCaption = "Enrol Now";
 /**
  * Deep-links straight into the resilience course checkout (courseId
- * UdMMb-qi21roGPY16kBiP — NZD $247 one-time). Carried over from the page's
+ * UdMMb-qi21roGPY16kBiP — USD $247 one-time). Carried over from the page's
  * previous hero/cta blocks so the button still lands on the buyer's path.
  */
 export const enrolAction = "/checkout?type=course&id=UdMMb-qi21roGPY16kBiP";

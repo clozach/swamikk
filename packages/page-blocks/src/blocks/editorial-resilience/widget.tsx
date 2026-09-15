@@ -474,7 +474,7 @@ ${S} .er-link:focus-visible{ outline:2px solid var(--rust); outline-offset:2px; 
                             </div>
                             <div className="er-glance-price">
                                 <div className="er-amt">
-                                    <small>NZD</small>$247
+                                    <small>USD</small>$247
                                 </div>
                                 <div className="er-plan">
                                     One-time enrolment
@@ -1008,7 +1008,7 @@ ${S} .er-link:focus-visible{ outline:2px solid var(--rust); outline-offset:2px; 
                                 2026 · 7:00 pm NZT
                             </p>
                             <div className="er-price-line">
-                                <small>NZD</small>&thinsp;$247
+                                <small>USD</small>&thinsp;$247
                                 <span className="er-plan">
                                     One-time enrolment · 3 months access · keep
                                     every download
