@@ -10,6 +10,8 @@ import {
     DomainSchema,
     LessonSchema,
     PageSchema,
+    PageTextEditSchema,
+    SectionEditSchema,
     UserSchema,
 } from "@courselit/orm-models";
 import { extractMediaIDs } from "@courselit/utils";
@@ -55,13 +57,6 @@ function getReferenceSources(): ReferenceSource[] {
             entityType: "contextualFeedback",
             idField: "id",
             labelField: "text",
-        },
-        {
-            model: getModel("ContentChange", ContentChangeSchema),
-            domainField: "domain",
-            entityType: "contentChange",
-            idField: "id",
-            labelField: "summary",
         },
         {
             model: getModel("Lesson", LessonSchema),
@@ -111,6 +106,30 @@ function getReferenceSources(): ReferenceSource[] {
             entityType: "certificateTemplate",
             idField: "templateId",
             labelField: "title",
+        },
+        {
+            // Recovery history follows live entities: a reference moved during
+            // the scan is held by either its live source or its write-ahead row.
+            model: getModel("ContentChange", ContentChangeSchema),
+            domainField: "domain",
+            entityType: "contentChange",
+            idField: "id",
+            labelField: "summary",
+        },
+        {
+            // Unsettled and failed attempts retain their snapshots too.
+            model: getModel("SectionEdit", SectionEditSchema),
+            domainField: "domain",
+            entityType: "sectionEdit",
+            idField: "editId",
+            labelField: "label",
+        },
+        {
+            model: getModel("PageTextEdit", PageTextEditSchema),
+            domainField: "domain",
+            entityType: "pageTextEdit",
+            idField: "editId",
+            labelField: "widgetName",
         },
     ];
 }
@@ -210,6 +229,17 @@ export function usageHref(
         case "contentChange":
             // The admin hub owns these records; do not use submitted target URLs.
             return "/dashboard/changes";
+        case "sectionEdit":
+        case "pageTextEdit": {
+            // Use the stored page identity, never a submitted target URL.
+            const id = doc.target?.pageId ?? doc.pageId;
+            return typeof id === "string" &&
+                id.trim() &&
+                id !== "." &&
+                id !== ".."
+                ? `/dashboard/page/${encodeURIComponent(id)}`
+                : undefined;
+        }
         case "course": {
             const id = seg(doc.courseId);
             return id ? `/dashboard/product/${id}` : undefined;

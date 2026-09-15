@@ -219,6 +219,8 @@ export default function HistoryPanel({
     current,
     onRestore,
     refreshKey,
+    beforeEntries,
+    disabled = false,
 }: {
     pageId: string;
     userId?: string;
@@ -227,6 +229,8 @@ export default function HistoryPanel({
     onRestore: (edit: TextEdit) => Promise<TextEdit | null>;
     /** Bumped by the caller after any save so the list reloads. */
     refreshKey: number;
+    beforeEntries?: React.ReactNode;
+    disabled?: boolean;
 }) {
     // Rows stay on screen while a newer key reloads; only the first load reads as loading.
     const [state, setState] = useState<{ key: number; load: Load }>({
@@ -285,6 +289,8 @@ export default function HistoryPanel({
         >
             <DialogTitle>{copy.historyTitle}</DialogTitle>
             <DialogDescription>{copy.historyIntro}</DialogDescription>
+            {beforeEntries}
+            <h3 className="font-semibold">{copy.textHistoryTitle}</h3>
             {load.kind === "loading" && <p role="status">{copy.loading}</p>}
             {load.kind === "failed" && <p role="alert">{load.message}</p>}
             {load.kind === "ready" && !load.edits.length && (
@@ -298,11 +304,14 @@ export default function HistoryPanel({
                             edit={edit}
                             userId={userId}
                             current={current}
-                            busy={busy === edit.editId}
+                            busy={disabled || busy !== null}
                             onRestore={async () => {
                                 setBusy(edit.editId);
-                                await onRestore(edit);
-                                setBusy(null);
+                                try {
+                                    await onRestore(edit);
+                                } finally {
+                                    setBusy(null);
+                                }
                             }}
                         />
                     ))}

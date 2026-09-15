@@ -5,16 +5,27 @@ import {
     render,
     screen,
     waitFor,
+    within,
 } from "@testing-library/react";
 import { AppRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import TextEditSession from "../index";
 import { fetchLeaves, submitEdit, fetchHistory } from "../api";
+import {
+    fetchSections,
+    submitSectionEdit,
+    fetchSectionHistory,
+} from "@/components/section-edit/api";
 
 const refresh = jest.fn();
 jest.mock("../api", () => ({
     fetchLeaves: jest.fn(),
     submitEdit: jest.fn(),
     fetchHistory: jest.fn(),
+}));
+jest.mock("@/components/section-edit/api", () => ({
+    fetchSections: jest.fn(),
+    submitSectionEdit: jest.fn(),
+    fetchSectionHistory: jest.fn(),
 }));
 jest.mock("../../selection-tools", () => ({
     SelectionTools: ({ children, label }) => (
@@ -103,6 +114,21 @@ beforeEach(() => {
         edits: [],
         nextCursor: null,
     });
+    jest.mocked(fetchSections).mockResolvedValue({
+        pageId: "home",
+        documentId: "page-doc",
+        revision: 1,
+        sections: [],
+        removed: [],
+    });
+    jest.mocked(fetchSectionHistory).mockResolvedValue({
+        edits: [],
+        nextCursor: null,
+    });
+    Object.defineProperty(global.crypto, "randomUUID", {
+        configurable: true,
+        value: () => "f924bf16-8a86-4e1d-a886-6666d79d5c7b",
+    });
 });
 
 async function enterMode() {
@@ -116,18 +142,155 @@ async function enterMode() {
             />
         </AppRouterContext.Provider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: /Edit text/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Edit page/ }));
     await waitFor(() =>
         expect(h1().getAttribute("data-kk-editable")).toBe("heading"),
     );
     // The mode's listeners attach after the state commits; let that render land.
-    await screen.findByText(/Editing text/);
+    await screen.findByText(/Editing page/);
     await act(async () => {});
     expect(onModeChange).toHaveBeenLastCalledWith(true);
     expect(document.documentElement.hasAttribute("data-kk-text-edit")).toBe(
         true,
     );
 }
+
+test.each(["keyboard", "in-place"])(
+    "one journal restores a section through %s before undoing earlier text",
+    async (method) => {
+        const removable = {
+            widgetId: "extra",
+            widgetName: "richText",
+            label: "Extra",
+            fingerprint: "current",
+            index: 1,
+        };
+        const removedEdit = {
+            editId: "removed-extra",
+            target: {
+                pageId: "home",
+                documentId: "page-doc",
+                widgetId: "extra",
+            },
+            action: "remove",
+            widgetName: "richText",
+            label: "Extra",
+            widget: { widgetId: "extra", name: "richText", settings: {} },
+            position: { beforeId: "hero", afterId: null, index: 1 },
+            userId: "admin",
+            at: "2026-09-15T08:00:00Z",
+            revision: 3,
+        };
+        let removed = false;
+        document
+            .querySelector("[data-feedback-page]")!
+            .insertAdjacentHTML(
+                "beforeend",
+                '<div data-feedback-widget="extra"><h2>Extra section</h2></div>',
+            );
+        jest.mocked(fetchSections).mockImplementation(
+            async () =>
+                ({
+                    pageId: "home",
+                    documentId: "page-doc",
+                    revision: 3,
+                    sections: removed ? [] : [removable],
+                    removed: removed ? [removedEdit] : [],
+                }) as any,
+        );
+        jest.mocked(submitSectionEdit).mockImplementation(async (input) => {
+            removed = input.action === "remove";
+            return {
+                kind: "applied",
+                edit: removed
+                    ? removedEdit
+                    : {
+                          ...removedEdit,
+                          editId: "restored-extra",
+                          action: "restore",
+                          undoOf: removedEdit.editId,
+                      },
+            } as any;
+        });
+        jest.mocked(submitEdit).mockImplementation(async (input) => {
+            const heading = input.changes[0].after as string;
+            jest.mocked(fetchLeaves).mockResolvedValue({
+                ...leaves,
+                widgets: [
+                    {
+                        ...leaves.widgets[0],
+                        leaves: [
+                            { ...leaves.widgets[0].leaves[0], value: heading },
+                            ...leaves.widgets[0].leaves.slice(1),
+                        ],
+                    },
+                ],
+            } as any);
+            return applied(input.changes, input.undoOf) as any;
+        });
+        await enterMode();
+        fireEvent.pointerDown(h1(), { button: 0 });
+        await act(async () => {});
+        h1().textContent = "Welcome back";
+        fireEvent.keyDown(h1(), { key: "Enter" });
+        await waitFor(() => expect(submitEdit).toHaveBeenCalledTimes(1));
+        const remove = await screen.findByRole("button", {
+            name: "Remove Extra section",
+        });
+        await waitFor(() => expect(remove).not.toBeDisabled());
+        fireEvent.click(remove);
+        await waitFor(() =>
+            expect(
+                document.querySelector('[data-feedback-widget="extra"]'),
+            ).toHaveAttribute("data-kk-section-removed"),
+        );
+        await waitFor(() =>
+            expect(
+                within(
+                    screen.getByRole("toolbar", { name: "Editing page" }),
+                ).getByRole("button", { name: "Undo" }),
+            ).not.toBeDisabled(),
+        );
+        if (method === "keyboard")
+            fireEvent.keyDown(window, {
+                key: "z",
+                code: "KeyZ",
+                metaKey: true,
+            });
+        else
+            fireEvent.click(
+                within(
+                    document.querySelector(
+                        '[data-kk-removed-section="extra"]',
+                    ) as HTMLElement,
+                ).getByRole("button", { name: "Undo removal" }),
+            );
+        await waitFor(() => expect(submitSectionEdit).toHaveBeenCalledTimes(2));
+        await waitFor(() =>
+            expect(
+                document.querySelector('[data-feedback-widget="extra"]'),
+            ).not.toHaveAttribute("data-kk-section-removed"),
+        );
+        expect(h1().textContent).toBe("Welcome back");
+        await waitFor(() =>
+            expect(
+                within(
+                    screen.getByRole("toolbar", { name: "Editing page" }),
+                ).getByRole("button", { name: "Redo" }),
+            ).not.toBeDisabled(),
+        );
+        fireEvent.keyDown(window, { key: "z", code: "KeyZ", metaKey: true });
+        await waitFor(() => expect(submitEdit).toHaveBeenCalledTimes(2));
+        expect(h1().textContent).toBe("Welcome home");
+        fireEvent.keyDown(window, {
+            key: "z",
+            code: "KeyZ",
+            metaKey: true,
+            repeat: true,
+        });
+        expect(submitSectionEdit).toHaveBeenCalledTimes(2);
+    },
+);
 
 test("a click edits the run in place; Enter saves one change and leaves an undo chip", async () => {
     const first = applied([change("heading", "Welcome home", "Welcome back")]);
@@ -242,7 +405,7 @@ test("a stale answer resyncs the run to the current text; Escape cancels an edit
     );
     expect(h1().hasAttribute("data-kk-editable")).toBe(false);
     expect(onModeChange).toHaveBeenLastCalledWith(false);
-    expect(screen.getByRole("button", { name: /Edit text/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Edit page/ })).toBeTruthy();
 });
 
 test("an unchanged edit sends nothing; History restores the red text against the current one, and says so when it already shows", async () => {
@@ -296,5 +459,5 @@ test("visitors and members see nothing", () => {
         />,
     );
     expect(container.innerHTML).toBe("");
-    expect(screen.queryByRole("button", { name: /Edit text/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Edit page/ })).toBeNull();
 });

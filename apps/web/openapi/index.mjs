@@ -3,6 +3,7 @@ import { productsApiOpenApi } from "../app/api/products/openapi.mjs";
 import { mediaApiOpenApi } from "../app/api/media/openapi.mjs";
 import { feedbackApiOpenApi } from "../app/api/feedback/openapi.mjs";
 import { contentChangesApiOpenApi } from "../app/api/content-changes/openapi.mjs";
+import { sectionEditsApiOpenApi } from "../app/api/section-edits/openapi.mjs";
 import { memberMimicApiOpenApi } from "../app/api/member-mimic/openapi.mjs";
 import { paymentWebhookOpenApi } from "../app/api/payment/webhook/openapi.mjs";
 import feedbackMailboxOpenApi from "../app/api/feedback-mailbox/openapi.mjs";
@@ -24,6 +25,7 @@ const routeSpecs = [
     mediaApiOpenApi,
     feedbackApiOpenApi,
     contentChangesApiOpenApi,
+    sectionEditsApiOpenApi,
     memberMimicApiOpenApi,
     paymentWebhookOpenApi,
     feedbackMailboxOpenApi,

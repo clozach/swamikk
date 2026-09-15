@@ -10,10 +10,12 @@ import {
 } from "react";
 import { AppRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import type {
+    SectionEdit,
     TextChange,
     TextEdit,
     TextEditTarget,
 } from "@courselit/common-models";
+import { useEditHistory } from "@/components/section-edit/use-edit-history";
 import { textEditUi as copy } from "@config/strings";
 import { fetchLeaves, submitEdit } from "./api";
 import {
@@ -215,26 +217,39 @@ export function writeSaved(
     });
 }
 
-export function useTextEdit(enabled: boolean) {
+export type SectionEditBridge = {
+    reverse: (edit: SectionEdit) => Promise<SectionEdit | null>;
+    busy: boolean;
+};
+
+export function useTextEdit(
+    enabled: boolean,
+    sectionBridge?: React.MutableRefObject<SectionEditBridge | null>,
+) {
     // Null outside the app router (tests, the pages router); a refresh is then a no-op.
     const router = useContext(AppRouterContext);
     const [mode, setMode] = useState<Mode>({ kind: "off" });
     const [editing, setEditing] = useState<Editing | null>(null);
     const [chip, setChip] = useState<Chip | null>(null);
-    const [undoStack, setUndoStack] = useState<TextEdit[]>([]);
-    const [redoStack, setRedoStack] = useState<TextEdit[]>([]);
+    const [saving, setSaving] = useState(false);
     const [notice, setNoticeState] = useState<Notice>(null);
     // Event handlers read the latest state through refs, synced right after each commit.
     const modeRef = useRef(mode);
     const editingRef = useRef(editing);
-    const stacksRef = useRef({ undo: undoStack, redo: redoStack });
     useLayoutEffect(() => {
         modeRef.current = mode;
         editingRef.current = editing;
-        stacksRef.current = { undo: undoStack, redo: redoStack };
-    }, [mode, editing, undoStack, redoStack]);
+    }, [mode, editing]);
     const suppressRef = useRef(0);
     const busyRef = useRef(false);
+    const reversalRef = useRef<
+        (edit: TextEdit | SectionEdit) => Promise<TextEdit | SectionEdit | null>
+    >(async () => null);
+    const journal = useEditHistory<TextEdit | SectionEdit>((edit) =>
+        reversalRef.current(edit),
+    );
+    const journalRef = useRef(journal);
+    journalRef.current = journal;
 
     const setNotice = useCallback((text: string, sticky = false) => {
         setNoticeState(text ? { text, sticky } : null);
@@ -431,7 +446,14 @@ export function useTextEdit(enabled: boolean) {
     const commitEdit = useCallback(async () => {
         const current = editingRef.current;
         const state = modeRef.current;
-        if (!current || state.kind !== "on" || busyRef.current) return;
+        if (
+            !current ||
+            state.kind !== "on" ||
+            busyRef.current ||
+            sectionBridge?.current?.busy ||
+            journalRef.current.pending
+        )
+            return;
         const { run } = current;
         const changes = changesFor(current, state.index);
         // The page's nodes go back first; saved words are written into them after.
@@ -443,94 +465,21 @@ export function useTextEdit(enabled: boolean) {
         }
         if (!changes.length) return;
         busyRef.current = true;
+        setSaving(true);
         run.element.setAttribute("data-kk-saving", "");
         const target = targetFor(run, state.pageId);
         quietly(() => writeSaved(run, changes));
-        const outcome = await submitEdit({ target, changes });
-        run.element.removeAttribute("data-kk-saving");
-        busyRef.current = false;
-        if (outcome.kind === "applied") {
-            applyLocally(target, outcome.edit.changes);
-            setUndoStack((stack) => [...stack, outcome.edit]);
-            setRedoStack([]);
-            setChip({ target, path: run.path, edit: outcome.edit });
-            setNotice(copy.saved);
-            router?.refresh();
-        } else if (outcome.kind === "stale") {
-            applyLocally(
-                target,
-                outcome.current.map((item) =>
-                    typeof item.value === "string"
-                        ? {
-                              kind: "text",
-                              path: item.path,
-                              before: "",
-                              after: item.value,
-                          }
-                        : {
-                              kind: "node",
-                              path: item.path,
-                              before: null,
-                              after: item.value,
-                          },
-                ),
-            );
-            setNotice(outcome.message, true);
-            router?.refresh();
-        } else {
-            quietly(() => restoreTree(current.snapshot));
-            setNotice(outcome.message, true);
-        }
-    }, [applyLocally, changesFor, quietly, restoreEditing, router, setNotice]);
-
-    const beginEdit = useCallback((run: Run, viaKeyboard: boolean) => {
-        const state = modeRef.current;
-        if (state.kind !== "on" || editingRef.current || busyRef.current)
-            return;
-        const leaf = state.index.get(run.widgetId)?.byPath.get(run.path);
-        if (!leaf) return;
-        const original = run.kind === "rich-node" ? leaf.node : leaf.value;
-        const { element } = run;
-        const snapshot = snapshotTree(element);
-        if (run.kind === "text") {
-            element.setAttribute("contenteditable", "plaintext-only");
-            if (!element.isContentEditable)
-                element.setAttribute("contenteditable", "true");
-        } else element.setAttribute("contenteditable", "true");
-        element.setAttribute("data-kk-editing", "");
-        element.setAttribute("spellcheck", "true");
-        if (element instanceof HTMLAnchorElement)
-            element.setAttribute("draggable", "false");
-        setEditing({ run, original, snapshot });
-        element.focus();
-        if (viaKeyboard) placeCaretAtEnd(element);
-    }, []);
-
-    /** Post the reversal of a recorded edit; the reversal is itself recorded. */
-    const reverse = useCallback(
-        async (edit: TextEdit, changes = reversed(edit.changes)) => {
-            const state = modeRef.current;
-            if (state.kind !== "on" || busyRef.current) return null;
-            busyRef.current = true;
-            const outcome = await submitEdit({
-                target: edit.target,
-                changes,
-                undoOf: edit.editId,
-            });
-            busyRef.current = false;
+        try {
+            const outcome = await submitEdit({ target, changes });
             if (outcome.kind === "applied") {
-                applyLocally(edit.target, outcome.edit.changes);
-                setChip({
-                    target: edit.target,
-                    path: changes[0].path,
-                    edit: outcome.edit,
-                });
+                applyLocally(target, outcome.edit.changes);
+                journalRef.current.record(outcome.edit);
+                setChip({ target, path: run.path, edit: outcome.edit });
+                setNotice(copy.saved);
                 router?.refresh();
-                return outcome.edit;
-            }
-            if (outcome.kind === "stale") {
+            } else if (outcome.kind === "stale") {
                 applyLocally(
-                    edit.target,
+                    target,
                     outcome.current.map((item) =>
                         typeof item.value === "string"
                             ? {
@@ -547,45 +496,185 @@ export function useTextEdit(enabled: boolean) {
                               },
                     ),
                 );
+                setNotice(outcome.message, true);
                 router?.refresh();
+            } else {
+                quietly(() => restoreTree(current.snapshot));
+                setNotice(outcome.message, true);
             }
-            setNotice(outcome.message, true);
-            return null;
+        } catch {
+            quietly(() => restoreTree(current.snapshot));
+            setNotice(copy.uncertain, true);
+            router?.refresh();
+        } finally {
+            run.element.removeAttribute("data-kk-saving");
+            busyRef.current = false;
+            setSaving(false);
+        }
+    }, [
+        applyLocally,
+        changesFor,
+        quietly,
+        restoreEditing,
+        router,
+        sectionBridge,
+        setNotice,
+    ]);
+
+    const beginEdit = useCallback(
+        (run: Run, viaKeyboard: boolean) => {
+            const state = modeRef.current;
+            if (
+                state.kind !== "on" ||
+                editingRef.current ||
+                busyRef.current ||
+                sectionBridge?.current?.busy ||
+                journalRef.current.pending
+            )
+                return;
+            const leaf = state.index.get(run.widgetId)?.byPath.get(run.path);
+            if (!leaf) return;
+            const original = run.kind === "rich-node" ? leaf.node : leaf.value;
+            const { element } = run;
+            const snapshot = snapshotTree(element);
+            if (run.kind === "text") {
+                element.setAttribute("contenteditable", "plaintext-only");
+                if (!element.isContentEditable)
+                    element.setAttribute("contenteditable", "true");
+            } else element.setAttribute("contenteditable", "true");
+            element.setAttribute("data-kk-editing", "");
+            element.setAttribute("spellcheck", "true");
+            if (element instanceof HTMLAnchorElement)
+                element.setAttribute("draggable", "false");
+            setEditing({ run, original, snapshot });
+            element.focus();
+            if (viaKeyboard) placeCaretAtEnd(element);
         },
-        [applyLocally, router, setNotice],
+        [sectionBridge],
     );
+
+    /** Post the reversal of a recorded edit; the reversal is itself recorded. */
+    const reverse = useCallback(
+        async (edit: TextEdit, changes = reversed(edit.changes)) => {
+            const state = modeRef.current;
+            if (
+                state.kind !== "on" ||
+                busyRef.current ||
+                sectionBridge?.current?.busy
+            )
+                return null;
+            busyRef.current = true;
+            setSaving(true);
+            try {
+                const outcome = await submitEdit({
+                    target: edit.target,
+                    changes,
+                    undoOf: edit.editId,
+                });
+                if (outcome.kind === "applied") {
+                    applyLocally(edit.target, outcome.edit.changes);
+                    setChip({
+                        target: edit.target,
+                        path: changes[0].path,
+                        edit: outcome.edit,
+                    });
+                    router?.refresh();
+                    return outcome.edit;
+                }
+                if (outcome.kind === "stale") {
+                    applyLocally(
+                        edit.target,
+                        outcome.current.map((item) =>
+                            typeof item.value === "string"
+                                ? {
+                                      kind: "text",
+                                      path: item.path,
+                                      before: "",
+                                      after: item.value,
+                                  }
+                                : {
+                                      kind: "node",
+                                      path: item.path,
+                                      before: null,
+                                      after: item.value,
+                                  },
+                        ),
+                    );
+                    router?.refresh();
+                }
+                setNotice(outcome.message, true);
+                return null;
+            } catch {
+                setNotice(copy.uncertain, true);
+                router?.refresh();
+                return null;
+            } finally {
+                busyRef.current = false;
+                setSaving(false);
+            }
+        },
+        [applyLocally, router, sectionBridge, setNotice],
+    );
+
+    const refresh = useCallback(async () => {
+        const state = modeRef.current;
+        if (state.kind !== "on") return;
+        try {
+            const index = indexLeaves(await fetchLeaves(state.pageId));
+            if (
+                modeRef.current.kind === "on" &&
+                modeRef.current.pageId === state.pageId
+            )
+                scan(state.pageId, index);
+        } catch (error) {
+            setNotice(
+                error instanceof Error ? error.message : copy.failed,
+                true,
+            );
+        } finally {
+            router?.refresh();
+        }
+    }, [router, scan, setNotice]);
+
+    reversalRef.current = async (edit) => {
+        if (busyRef.current || sectionBridge?.current?.busy) return null;
+        try {
+            if ("action" in edit) {
+                const result = await sectionBridge?.current?.reverse(edit);
+                if (result) setChip(null);
+                return result ?? null;
+            }
+            return await reverse(edit);
+        } catch (error) {
+            setNotice(
+                error instanceof Error ? error.message : copy.failed,
+                true,
+            );
+            return null;
+        }
+    };
 
     const undo = useCallback(async () => {
         if (editingRef.current) cancelEdit();
-        const stack = stacksRef.current.undo;
-        const last = stack[stack.length - 1];
-        if (!last) return;
-        setUndoStack((items) => items.filter((item) => item !== last));
-        const reversal = await reverse(last);
+        const reversal = await journalRef.current.undo();
         if (reversal) {
-            setRedoStack((items) => [...items, reversal]);
             setNotice(copy.undone);
         }
-    }, [cancelEdit, reverse, setNotice]);
+    }, [cancelEdit, setNotice]);
 
     const redo = useCallback(async () => {
         if (editingRef.current) cancelEdit();
-        const stack = stacksRef.current.redo;
-        const last = stack[stack.length - 1];
-        if (!last) return;
-        setRedoStack((items) => items.filter((item) => item !== last));
-        const reversal = await reverse(last);
+        const reversal = await journalRef.current.redo();
         if (reversal) {
-            setUndoStack((items) => [...items, reversal]);
             setNotice(copy.redone);
         }
-    }, [cancelEdit, reverse, setNotice]);
+    }, [cancelEdit, setNotice]);
 
     /** Restore a history row's earlier text (its red text) against whatever the page shows now. */
     const restore = useCallback(
         async (edit: TextEdit) => {
             const state = modeRef.current;
-            if (state.kind !== "on") return null;
+            if (state.kind !== "on" || journalRef.current.pending) return null;
             const changes: TextChange[] = [];
             for (const change of edit.changes) {
                 const current = currentAt(
@@ -617,8 +706,7 @@ export function useTextEdit(enabled: boolean) {
             }
             const reversal = await reverse(edit, changes);
             if (reversal) {
-                setUndoStack((items) => [...items, reversal]);
-                setRedoStack([]);
+                journalRef.current.record(reversal);
                 setNotice(copy.restored);
             }
             return reversal;
@@ -630,21 +718,12 @@ export function useTextEdit(enabled: boolean) {
     const undoChip = useCallback(async () => {
         const shown = chip?.edit;
         if (!shown) return;
-        const { undo: undos, redo: redos } = stacksRef.current;
-        const fromUndo = undos.includes(shown);
-        if (fromUndo)
-            setUndoStack((items) => items.filter((item) => item !== shown));
-        else setRedoStack((items) => items.filter((item) => item !== shown));
-        const reversal = await reverse(shown);
+        const reversal = await journalRef.current.reverseEntry(shown);
         if (reversal) {
-            if (fromUndo) setRedoStack((items) => [...items, reversal]);
-            else setUndoStack((items) => [...items, reversal]);
             setNotice(copy.undone);
             setChip(null);
-        } else if (fromUndo) setUndoStack((items) => [...items, shown]);
-        else if (redos.includes(shown))
-            setRedoStack((items) => [...items, shown]);
-    }, [chip, reverse, setNotice]);
+        }
+    }, [chip, setNotice]);
 
     // Pointer: make the run editable on pointerdown so the caret lands where
     // the finger is; swallow the click so a link run does not navigate. A
@@ -784,6 +863,7 @@ export function useTextEdit(enabled: boolean) {
             ) {
                 event.preventDefault();
                 event.stopImmediatePropagation();
+                if (event.repeat) return;
                 void (event.shiftKey ? redo() : undo());
                 return;
             }
@@ -843,8 +923,16 @@ export function useTextEdit(enabled: boolean) {
         editing,
         chip,
         notice,
-        canUndo: undoStack.length > 0,
-        canRedo: redoStack.length > 0,
+        canUndo: !saving && journal.canUndo,
+        canRedo: !saving && journal.canRedo,
+        busy: saving || journal.pending,
+        saving,
+        undoSection: (edit: SectionEdit) => journal.reverseEntry(edit, "undo"),
+        recordSectionEdit: (edit: SectionEdit) => {
+            journal.record(edit);
+            setChip(null);
+        },
+        refresh,
         start,
         stop,
         undo,

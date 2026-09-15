@@ -16,6 +16,7 @@ export interface Page extends PublicPage {
     draftLayout: WidgetInstance[];
     creatorId: string;
     contentChangeReceipt?: PageContentChangeReceipt;
+    sectionEditReceipts?: string[];
     draftTitle?: string;
     draftDescription?: string;
     draftSocialImage?: Media | null;
@@ -51,6 +52,7 @@ const PageSchema = new mongoose.Schema<Page>(
         creationReceipt: { type: mongoose.Schema.Types.Mixed },
         publicationReceipt: { type: mongoose.Schema.Types.Mixed },
         contentChangeReceipt: { type: mongoose.Schema.Types.Mixed },
+        sectionEditReceipts: { type: [String], default: undefined },
     },
     {
         timestamps: true,

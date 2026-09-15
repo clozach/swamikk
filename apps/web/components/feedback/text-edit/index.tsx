@@ -1,18 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { History, Pencil, Redo2, Undo2, X } from "lucide-react";
 import type { Profile } from "@courselit/common-models";
 import { textEditUi as copy } from "@config/strings";
 import { Button } from "@/components/ui/button";
+import { SectionControls } from "@/components/section-edit/controls";
+import { SectionHistory } from "@/components/section-edit/history";
+import { useSectionEdit } from "@/components/section-edit/use-section-edit";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { FeedbackNotice } from "../notice";
 import { Shortcut } from "../shortcut";
 import { SelectionTools } from "../selection-tools";
 import { usePortalHost, useVisualViewport } from "../viewport";
 import { currentAt, targetWidgetId } from "./leaves";
-import { useTextEdit } from "./use-text-edit";
+import { useTextEdit, type SectionEditBridge } from "./use-text-edit";
 import HistoryPanel from "./history";
 import "./text-edit.css";
 
@@ -37,7 +40,8 @@ export default function TextEditSession({
     profile?: Profile | null;
     onModeChange: (editing: boolean) => void;
 }) {
-    const state = useTextEdit(canEdit);
+    const sectionBridge = useRef<SectionEditBridge | null>(null);
+    const state = useTextEdit(canEdit, sectionBridge);
     const host = usePortalHost();
     const viewport = useVisualViewport();
     const [history, setHistory] = useState(false);
@@ -45,6 +49,35 @@ export default function TextEditSession({
     const [chipRect, setChipRect] = useState<DOMRect | null>(null);
     const on = state.mode.kind === "on";
     const dialogOpen = history && on;
+    const sections = useSectionEdit(
+        state.mode.kind === "on" ? state.mode.pageId : null,
+        {
+            onApplied: (edit) => {
+                state.recordSectionEdit(edit);
+                setHistoryKey((key) => key + 1);
+            },
+            onError: (message) => state.setNotice(message, true),
+            onRefresh: state.refresh,
+            beforeChange: () => !state.editing && !state.saving,
+        },
+    );
+    const sectionBusy = sections.pending.kind !== "idle";
+    const reverseSection = sections.reverse;
+    const refreshSections = sections.refresh;
+    useLayoutEffect(() => {
+        sectionBridge.current = {
+            busy: sectionBusy,
+            reverse: async (edit) => {
+                const result = await reverseSection(edit);
+                if (result) setHistoryKey((key) => key + 1);
+                return result;
+            },
+        };
+    }, [sectionBusy, reverseSection]);
+    const lastTextEdit = state.chip?.edit.editId;
+    useEffect(() => {
+        if (lastTextEdit) void refreshSections();
+    }, [lastTextEdit, refreshSections]);
     useEffect(
         () => onModeChange(state.mode.kind !== "off"),
         [onModeChange, state.mode.kind],
@@ -99,6 +132,16 @@ export default function TextEditSession({
 
     return (
         <>
+            {sections.state.kind === "ready" && (
+                <SectionControls
+                    enabled={on}
+                    page={sections.state.page}
+                    pending={sections.pending}
+                    disabled={!!state.editing || state.busy || dialogOpen}
+                    onRemove={sections.remove}
+                    onRestore={state.undoSection}
+                />
+            )}
             {createPortal(
                 state.mode.kind === "off" ? (
                     <button
@@ -132,7 +175,7 @@ export default function TextEditSession({
                             type="button"
                             variant="ghost"
                             size="sm"
-                            disabled={!state.canUndo}
+                            disabled={!state.canUndo || sectionBusy}
                             aria-keyshortcuts="Meta+Z"
                             onClick={() => void state.undo()}
                         >
@@ -143,7 +186,7 @@ export default function TextEditSession({
                             type="button"
                             variant="ghost"
                             size="sm"
-                            disabled={!state.canRedo}
+                            disabled={!state.canRedo || sectionBusy}
                             aria-keyshortcuts="Meta+Shift+Z"
                             onClick={() => void state.redo()}
                         >
@@ -231,6 +274,26 @@ export default function TextEditSession({
                                 state.mode.kind === "on"
                                     ? currentAt(state.mode.index, target, path)
                                     : undefined
+                            }
+                            disabled={
+                                state.busy || sections.pending.kind !== "idle"
+                            }
+                            beforeEntries={
+                                sections.state.kind === "ready" && (
+                                    <SectionHistory
+                                        pageId={state.mode.pageId}
+                                        userId={profile?.userId}
+                                        refreshKey={historyKey}
+                                        currentIds={sections.state.page.sections.map(
+                                            (section) => section.widgetId,
+                                        )}
+                                        disabled={
+                                            state.busy ||
+                                            sections.pending.kind !== "idle"
+                                        }
+                                        onRestore={sections.restore}
+                                    />
+                                )
                             }
                             onRestore={async (edit) => {
                                 const result = await state.restore(edit);

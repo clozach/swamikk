@@ -442,12 +442,12 @@ export const purchaseRemovalUi = {
 
 /** Inline (WYSIWYG) text editing for site managers. Shortcuts sit in the labels: a magnet button says how to reach it without a mouse. */
 export const textEditUi = {
-    toggle: "Edit text",
+    toggle: "Edit page",
     toggleShortcut: "⌥⌘E",
-    toggleTitle: "Edit page text in place (⌥⌘E)",
-    loading: "Finding editable text…",
-    editing: "Editing text",
-    count: "{n} editable",
+    toggleTitle: "Edit text and remove sections in place (⌥⌘E)",
+    loading: "Opening the page editor…",
+    editing: "Editing page",
+    count: "{n} text fields",
     none: "No editable text found on this page",
     done: "Done",
     doneShortcut: "⎋",
@@ -456,13 +456,14 @@ export const textEditUi = {
     redo: "Redo",
     redoShortcut: "⇧⌘Z",
     history: "History",
-    historyTitle: "Text edits on this page",
+    historyTitle: "Page history",
+    textHistoryTitle: "Text changes",
     historyIntro:
-        "Every inline change, newest first, with who made it and the exact before and after. Restore brings that text back; the restore is recorded too. Site-wide edits (header and footer) show on every page.",
+        "Restore sections or earlier text here. Each restore is recorded too. Site-wide text edits (header and footer) show on every page.",
     historyEmpty: "No inline edits on this page yet.",
     historyMore: "Show earlier edits",
     historyGone:
-        "That text is no longer on this page, so it cannot be restored from here.",
+        "That text is no longer on this page. If its section was removed, restore its section first.",
     restoreRed: "Restore the red text",
     alreadyCurrent: "The page already shows the red text",
     before: "BEFORE",
@@ -479,6 +480,8 @@ export const textEditUi = {
     unchanged: "No change.",
     stale: "This text changed elsewhere; the page now shows the current version.",
     failed: "The change was not saved. The page shows the previous text.",
+    uncertain:
+        "The connection dropped. Check the page and History before trying again.",
     noPage: "This page has no inline-editable text.",
     runLabel: "Editable text. Press Enter to edit.",
     runHint: "Click to edit · Enter saves · Shift+Enter new line · Esc cancels",
@@ -527,4 +530,34 @@ export const permissionsUi = {
     failed: "The change was not saved. The account keeps its previous permissions.",
     summary: "May manage:",
     rowLabel: "Select {name} for permissions and the member view",
+} as const;
+
+/** Authored section removal shares the inline editor's history and undo controls. */
+export const sectionEditUi = {
+    activateShortcut: "↵",
+    remove: "Remove {name} section",
+    removed: "{name} section removed",
+    saved: "Section removed. Undo here, with ⌘Z, or from History.",
+    restored: "Section restored with its content and images.",
+    undo: "Undo removal",
+    saving: "Removing…",
+    restoring: "Restoring…",
+    failed: "The section change was not saved. Please try again.",
+    uncertain:
+        "The connection dropped. Check the page and History before trying again.",
+    stale: "This section changed elsewhere. Review the current page before trying again.",
+    loading: "Finding removable sections…",
+    historyTitle: "Sections on this page",
+    historyIntro:
+        "Removed sections keep their content, images and place on the page. Restore brings the whole section back.",
+    historyEmpty: "No sections have been removed on this page yet.",
+    historyMore: "Show earlier section changes",
+    historyFailed: "Section history could not be loaded.",
+    retry: "Try again",
+    restore: "Restore section",
+    alreadyPresent: "Section is on the page",
+    historyRemoved: "Removed",
+    historyRestored: "Restored",
+    you: "you",
+    other: "another editor",
 } as const;

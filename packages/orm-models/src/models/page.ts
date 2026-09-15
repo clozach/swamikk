@@ -17,6 +17,7 @@ export interface InternalPage extends PublicPage {
     draftLayout: WidgetInstance[];
     creatorId: string;
     contentChangeReceipt?: PageContentChangeReceipt;
+    sectionEditReceipts?: string[];
     draftTitle?: string;
     draftDescription?: string;
     draftSocialImage?: Media | null;
@@ -57,6 +58,7 @@ export const PageSchema = new mongoose.Schema<InternalPage>(
         creationReceipt: { type: mongoose.Schema.Types.Mixed },
         publicationReceipt: { type: mongoose.Schema.Types.Mixed },
         contentChangeReceipt: { type: mongoose.Schema.Types.Mixed },
+        sectionEditReceipts: { type: [String], default: undefined },
     },
     {
         timestamps: true,
