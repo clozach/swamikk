@@ -1,4 +1,6 @@
 import React from "react";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import {
     act,
     createEvent,
@@ -286,4 +288,43 @@ it("preserves clicks on filled images but supports dropping their replacement", 
     drop(mark(), [file()]);
     await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
     expect(onSave.mock.calls[0][2]).toEqual(previous);
+});
+
+it("makes decorative wells hit-testable only in Edit page and saves the nested slot", async () => {
+    const style = document.createElement("style");
+    style.textContent = readFileSync(
+        join(__dirname, "../text-edit.css"),
+        "utf8",
+    );
+    document.head.append(style);
+    const slot = post();
+    // Hero wordmarks and footer/private decorations inherit this from their wrapper.
+    slot.style.pointerEvents = "none";
+    const well = slot.firstElementChild!;
+    const filled = document.createElement("img");
+    slot.append(filled);
+    // The outer banner is also an image slot, so a pointer-transparent inner
+    // well would otherwise let a real drop replace the banner behind it.
+    slot.parentElement!.setAttribute(
+        "data-kk-image-path",
+        "bannerImage.source",
+    );
+    try {
+        // jsdom does not resolve this inherited value; native Chrome supplies
+        // the actual hit-test proof. Assert only the mode-scoped override here.
+        expect(getComputedStyle(well).pointerEvents).not.toBe("auto");
+        document.documentElement.dataset.kkTextEdit = "";
+        expect(getComputedStyle(well).pointerEvents).toBe("auto");
+        expect(getComputedStyle(filled).pointerEvents).not.toBe("auto");
+        await mount();
+        drop(well, [file()]);
+        await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
+        expect(onSave.mock.calls[0][1]).toBe("posts.0.thumbnail");
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        delete document.documentElement.dataset.kkTextEdit;
+        expect(getComputedStyle(well).pointerEvents).not.toBe("auto");
+    } finally {
+        delete document.documentElement.dataset.kkTextEdit;
+        style.remove();
+    }
 });

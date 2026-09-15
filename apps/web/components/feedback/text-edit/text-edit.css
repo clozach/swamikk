@@ -63,6 +63,12 @@
 }
 
 /* Runs. The affordances exist only while the mode is on. */
+/* Wordmarks and decorative image wrappers normally ignore pointers. Their
+   empty wells must receive clicks/drops themselves, not the image behind them. */
+html[data-kk-text-edit] [data-kk-image-path] [data-asset="waiting"] {
+    pointer-events: auto;
+    cursor: pointer;
+}
 html[data-kk-text-edit] [data-kk-editable] {
     cursor: text;
     outline: 1px dashed #c76f1d99;
