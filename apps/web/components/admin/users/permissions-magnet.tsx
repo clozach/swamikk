@@ -238,8 +238,13 @@ export default function PermissionsMagnet({
                 if (move === "do") {
                     past.current.push(before);
                     future.current = [];
-                } else if (move === "undo") future.current.push(before);
-                else past.current.push(before);
+                } else if (move === "undo") {
+                    past.current.pop();
+                    future.current.push(before);
+                } else {
+                    future.current.pop();
+                    past.current.push(before);
+                }
                 setStacks({
                     undo: past.current.length,
                     redo: future.current.length,
@@ -297,19 +302,20 @@ export default function PermissionsMagnet({
         );
     };
     // A rapid second ⌘Z/⇧⌘Z — OS key-repeat holds it well within typical
-    // save latency — would otherwise pop a second stack entry before the
-    // first commit's response lands, desyncing the rendered undo/redo counts
-    // from the actual stacks. Every other path into commit() already
-    // disables its own control while saving; this is the one path (a global
+    // save latency — would otherwise send the same reversal twice before
+    // the first response lands. Keep the target on its stack until commit()
+    // confirms success so a failed or refused request cannot lose it.
+    // Every other path into commit() disables its control while saving;
+    // this is the one path (a global
     // keyboard shortcut) with no control to disable.
     const undo = useCallback(() => {
         if (saving) return;
-        const previous = past.current.pop();
+        const previous = past.current[past.current.length - 1];
         if (previous) void commit(previous, "undo");
     }, [commit, saving]);
     const redo = useCallback(() => {
         if (saving) return;
-        const next = future.current.pop();
+        const next = future.current[future.current.length - 1];
         if (next) void commit(next, "redo");
     }, [commit, saving]);
     // Give the Admin checkbox its keyboard focus back once a save that held

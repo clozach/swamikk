@@ -188,6 +188,118 @@ test("Undo reverses the Admin toggle without ever opening the advanced panel", a
     expect(screen.getByRole("button", { name: /Redo/ })).toBeInTheDocument();
 });
 
+test.each(["undo", "redo"] as const)(
+    "a failed %s keeps its entry for retry and moves it only after success",
+    async (move) => {
+        const granted = ["course:enroll", "user:manage"];
+        mockExec.mockResolvedValueOnce({ user: { permissions: granted } });
+        const { onSaved } = renderMagnet({ panel: true });
+        fireEvent.click(
+            await screen.findByRole("checkbox", { name: "Manage users" }),
+        );
+        await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
+        if (move === "redo") {
+            mockExec.mockResolvedValueOnce({
+                user: { permissions: member.permissions },
+            });
+            fireEvent.keyDown(window, {
+                code: "KeyZ",
+                key: "z",
+                metaKey: true,
+            });
+            await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(2));
+        }
+
+        const savedBeforeFailure = onSaved.mock.calls.length;
+        const target = move === "undo" ? member.permissions : granted;
+        mockExec.mockRejectedValueOnce(new Error("Network down"));
+        fireEvent.keyDown(window, {
+            code: "KeyZ",
+            key: "z",
+            metaKey: true,
+            shiftKey: move === "redo",
+        });
+        await waitFor(() =>
+            expect(screen.getByRole("status")).toHaveTextContent(
+                "Network down",
+            ),
+        );
+        expect(onSaved).toHaveBeenCalledTimes(savedBeforeFailure);
+        const retry = screen.getByRole("button", {
+            name: move === "undo" ? /Undo/ : /Redo/,
+        });
+        expect(retry).toBeEnabled();
+
+        mockExec.mockResolvedValueOnce({ user: { permissions: target } });
+        fireEvent.click(retry);
+        await waitFor(() =>
+            expect(onSaved).toHaveBeenCalledTimes(savedBeforeFailure + 1),
+        );
+        expect(sentPermissions().slice(-2)).toEqual([target, target]);
+        expect(onSaved).toHaveBeenLastCalledWith(target);
+        expect(
+            screen.queryByRole("button", {
+                name: move === "undo" ? /Undo/ : /Redo/,
+            }),
+        ).toBeNull();
+        expect(
+            screen.getByRole("button", {
+                name: move === "undo" ? /Redo/ : /Undo/,
+            }),
+        ).toBeEnabled();
+    },
+);
+
+test.each(["undo", "redo"] as const)(
+    "a refused %s protects the account without consuming the reversal entry",
+    async (move) => {
+        const granted = ["course:enroll", "user:manage"];
+        mockExec.mockResolvedValueOnce({ user: { permissions: granted } });
+        const { onSaved } = renderMagnet({ panel: true });
+        fireEvent.click(
+            await screen.findByRole("checkbox", { name: "Manage users" }),
+        );
+        await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
+        if (move === "redo") {
+            mockExec.mockResolvedValueOnce({
+                user: { permissions: member.permissions },
+            });
+            fireEvent.keyDown(window, {
+                code: "KeyZ",
+                key: "z",
+                metaKey: true,
+            });
+            await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(2));
+        }
+
+        const savedBeforeRefusal = onSaved.mock.calls.length;
+        const key = {
+            code: "KeyZ",
+            key: "z",
+            metaKey: true,
+            shiftKey: move === "redo",
+        };
+        mockExec.mockRejectedValueOnce(new Error(responses.action_not_allowed));
+        fireEvent.keyDown(window, key);
+        await waitFor(() =>
+            expect(screen.getByRole("note")).toHaveTextContent(/site owner/),
+        );
+        for (const box of screen.getAllByRole("checkbox"))
+            expect(box).toBeDisabled();
+
+        // The existing shortcut still asks the server, which remains the
+        // authority. A refusal must not turn its retained entry into a dead key.
+        mockExec.mockRejectedValueOnce(new Error(responses.action_not_allowed));
+        fireEvent.keyDown(window, key);
+        await waitFor(() =>
+            expect(sentPermissions()).toHaveLength(savedBeforeRefusal + 2),
+        );
+        const target = move === "undo" ? member.permissions : granted;
+        expect(sentPermissions().slice(-2)).toEqual([target, target]);
+        expect(onSaved).toHaveBeenCalledTimes(savedBeforeRefusal);
+    },
+);
+
 test("your own account: the Admin checkbox is disabled with the reason on the pill, and the advanced view stays reachable", async () => {
     renderMagnet({ selfUserId: "u2" });
     const admin = await screen.findByRole("checkbox", { name: "Admin" });
@@ -282,7 +394,7 @@ test("⌘Z ignores a second press while the first undo is still saving, so the r
     // The first press's commit() runs synchronously up to its own await, so
     // the send already happened — that's the one legitimate call. The second
     // and third presses land while `saving` is already true, and the guard
-    // drops both: no fourth or fifth send, and the popped value is the real
+    // drops both: no fourth or fifth send, and the requested value is the real
     // one (the state from before the second click), not a desynced stack.
     expect(sentPermissions()).toHaveLength(3);
     expect(sentPermissions()[2]).toEqual([
