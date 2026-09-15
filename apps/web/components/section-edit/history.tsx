@@ -154,7 +154,7 @@ export function SectionHistory({
                                             ·{" "}
                                             {edit.userId === userId
                                                 ? copy.you
-                                                : edit.userId || copy.other}
+                                                : copy.other}
                                         </p>
                                     </div>
                                     {edit.action === "remove" && (
