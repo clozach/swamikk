@@ -1,5 +1,7 @@
 "use client";
 
+import { COMMUNITIES_ENABLED } from "@config/release-features";
+
 import DashboardContent from "@components/admin/dashboard-content";
 import MemberMimicLink, {
     memberMimicHref,
@@ -407,9 +409,11 @@ export default function UsersHub() {
                             <TableHead className="text-muted-foreground font-medium">
                                 {USER_TABLE_HEADER_PRODUCTS}
                             </TableHead>
-                            <TableHead className="text-muted-foreground font-medium">
-                                {USER_TABLE_HEADER_COMMUNITIES}
-                            </TableHead>
+                            {COMMUNITIES_ENABLED && (
+                                <TableHead className="text-muted-foreground font-medium">
+                                    {USER_TABLE_HEADER_COMMUNITIES}
+                                </TableHead>
+                            )}
                             <TableHead
                                 align="right"
                                 className="text-muted-foreground font-medium hidden lg:table-cell"
@@ -445,9 +449,11 @@ export default function UsersHub() {
                                           <TableCell>
                                               <Skeleton className="h-4 w-8" />
                                           </TableCell>
-                                          <TableCell>
-                                              <Skeleton className="h-4 w-8" />
-                                          </TableCell>
+                                          {COMMUNITIES_ENABLED && (
+                                              <TableCell>
+                                                  <Skeleton className="h-4 w-8" />
+                                              </TableCell>
+                                          )}
                                           <TableCell className="hidden lg:table-cell">
                                               <Skeleton className="h-4 w-[100px] ml-auto" />
                                           </TableCell>
@@ -587,15 +593,19 @@ export default function UsersHub() {
                                                   ).length
                                               }
                                           </TableCell>
-                                          <TableCell>
-                                              {
-                                                  (user.content ?? []).filter(
-                                                      (content) =>
-                                                          content.entityType.toLowerCase() ===
-                                                          MembershipEntityType.COMMUNITY,
-                                                  ).length
-                                              }
-                                          </TableCell>
+                                          {COMMUNITIES_ENABLED && (
+                                              <TableCell>
+                                                  {
+                                                      (
+                                                          user.content ?? []
+                                                      ).filter(
+                                                          (content) =>
+                                                              content.entityType.toLowerCase() ===
+                                                              MembershipEntityType.COMMUNITY,
+                                                      ).length
+                                                  }
+                                              </TableCell>
+                                          )}
                                           <TableCell className="hidden lg:table-cell">
                                               {user.createdAt
                                                   ? formattedLocaleDate(

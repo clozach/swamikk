@@ -1,3 +1,4 @@
+import { COMMUNITIES_ENABLED } from "@config/release-features";
 import { responses } from "@/config/strings";
 import { checkIfAuthenticated } from "@/lib/graphql";
 import { getNotificationMessageAndHref } from "@courselit/common-logic";
@@ -201,6 +202,9 @@ export async function getNotification({
         domain: ctx.subdomain._id,
         forUserId: ctx.user.userId,
         notificationId,
+        ...(!COMMUNITIES_ENABLED
+            ? { activityType: { $not: /^community_/ } }
+            : {}),
     }).lean();
 
     if (!notification) {
@@ -234,6 +238,9 @@ export async function getNotifications({
     const query = {
         domain: ctx.subdomain._id,
         forUserId: ctx.user.userId,
+        ...(!COMMUNITIES_ENABLED
+            ? { activityType: { $not: /^community_/ } }
+            : {}),
     };
 
     const [notifications, total] = await Promise.all([

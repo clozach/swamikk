@@ -1,3 +1,4 @@
+import { COMMUNITIES_ENABLED } from "@config/release-features";
 import { assertApprovedPublication } from "./approved-publication";
 import type { PagePublicationGuard } from "@/services/content-changes/page-publication-types";
 import { withAccountWrite } from "../../../../packages/common-logic/src/account-lifecycle/gate";
@@ -93,7 +94,8 @@ export async function getPage({
                 draftRobotsAllowed: 1,
             },
         );
-        if (!page) return;
+        if (!page || (!COMMUNITIES_ENABLED && page.type === communityPage))
+            return;
 
         return getPageResponse(page, ctx);
     } else {
@@ -117,7 +119,8 @@ export async function getPage({
                 robotsAllowed: 1,
             },
         );
-        if (!page) return;
+        if (!page || (!COMMUNITIES_ENABLED && page.type === communityPage))
+            return;
 
         if (page.type === product) {
             const course = await Course.findOne({
@@ -401,8 +404,11 @@ export const getPages = async (
         deleted: { $ne: true },
     };
 
+    if (!COMMUNITIES_ENABLED && type === communityPage) return [];
     if (type) {
         filter.type = type;
+    } else if (!COMMUNITIES_ENABLED) {
+        filter.type = { $ne: communityPage };
     }
 
     const pages: Page[] = await PageModel.find(filter, {

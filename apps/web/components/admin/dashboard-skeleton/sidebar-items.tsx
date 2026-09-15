@@ -1,3 +1,4 @@
+import { COMMUNITIES_ENABLED } from "@config/release-features";
 import {
     BookUser,
     Box,
@@ -127,7 +128,10 @@ export function getSidebarItems({
             isActive: path === "/dashboard/content",
         });
     }
-    if (checkPermission(profile.permissions!, [permissions.manageCommunity])) {
+    if (
+        COMMUNITIES_ENABLED &&
+        checkPermission(profile.permissions!, [permissions.manageCommunity])
+    ) {
         contentItems.push({
             title: "Communities",
             beta: true,

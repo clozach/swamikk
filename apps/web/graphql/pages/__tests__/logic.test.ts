@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 
-import { updatePage, getPage, publish } from "../logic";
+import { updatePage, getPage, getPages, publish } from "../logic";
 import DomainModel from "@/models/Domain";
 import PageModel, { Page } from "@/models/Page";
 import Course from "@/models/Course";
@@ -532,7 +532,7 @@ describe("getPage entity validation", () => {
     });
 
     describe("community page validation", () => {
-        it("returns the page when community exists and is enabled", async () => {
+        it("hides community landing pages from public and admin reads without deleting records", async () => {
             const communityId = "test-community-id";
 
             await CommunityModel.create({
@@ -556,8 +556,23 @@ describe("getPage entity validation", () => {
 
             const result = await getPage({ id: page.pageId, ctx });
 
-            expect(result).toBeDefined();
-            expect(result?.pageId).toBe(page.pageId);
+            expect(result).toBeUndefined();
+            const adminCtx = {
+                ...ctx,
+                user: { ...ctx.user, permissions: [permissions.manageSite] },
+            } as GQLContext;
+            expect(
+                await getPage({ id: page.pageId, ctx: adminCtx }),
+            ).toBeUndefined();
+            expect(await getPages(adminCtx, constants.communityPage)).toEqual(
+                [],
+            );
+            expect(
+                (await getPages(adminCtx)).some(
+                    (item) => item.type === constants.communityPage,
+                ),
+            ).toBe(false);
+            expect(await PageModel.exists({ _id: page._id })).toBeTruthy();
         });
 
         it("returns undefined when community does not exist", async () => {
@@ -684,7 +699,7 @@ describe("getPage entity validation", () => {
             expect(result?.pageId).toBe(page.pageId);
         });
 
-        it("admin can view disabled community page", async () => {
+        it("admin cannot view disabled community pages in this release", async () => {
             const communityId = "admin-community-id";
 
             await CommunityModel.create({
@@ -717,8 +732,8 @@ describe("getPage entity validation", () => {
 
             const result = await getPage({ id: page.pageId, ctx: adminCtx });
 
-            expect(result).toBeDefined();
-            expect(result?.pageId).toBe(page.pageId);
+            expect(result).toBeUndefined();
+            expect(await PageModel.exists({ _id: page._id })).toBeTruthy();
         });
     });
 });

@@ -1,5 +1,6 @@
 "use client";
 
+import { COMMUNITIES_ENABLED } from "@config/release-features";
 import { useContext, useEffect, useState } from "react";
 import { AddressContext } from "@components/contexts";
 import { FetchBuilder } from "@courselit/utils";
@@ -7,9 +8,10 @@ import { FetchBuilder } from "@courselit/utils";
 export function useEnabledCommunities() {
     const address = useContext(AddressContext);
     const [hasEnabledCommunities, setHasEnabledCommunities] = useState(false);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(COMMUNITIES_ENABLED);
 
     useEffect(() => {
+        if (!COMMUNITIES_ENABLED) return;
         let cancelled = false;
 
         const loadEnabledCommunitiesCount = async () => {

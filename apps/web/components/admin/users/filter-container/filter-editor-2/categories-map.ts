@@ -1,3 +1,4 @@
+import { COMMUNITIES_ENABLED } from "@config/release-features";
 import { UserFilter } from "@courselit/common-models";
 import {
     USER_FILTER_CATEGORY_EMAIL,
@@ -10,10 +11,12 @@ import {
     USER_FILTER_CATEGORY_COMMUNITY,
 } from "@ui-config/strings";
 
-const categoriesMap: Record<UserFilter["name"], string> = {
+const categoriesMap: Partial<Record<UserFilter["name"], string>> = {
     email: USER_FILTER_CATEGORY_EMAIL,
     product: USER_FILTER_CATEGORY_PRODUCT,
-    community: USER_FILTER_CATEGORY_COMMUNITY,
+    ...(COMMUNITIES_ENABLED
+        ? { community: USER_FILTER_CATEGORY_COMMUNITY }
+        : {}),
     lastActive: USER_FILTER_CATEGORY_LAST_ACTIVE,
     signedUp: USER_FILTER_CATEGORY_SIGNED_UP,
     subscription: USER_FILTER_CATEGORY_SUBSCRIPTION,

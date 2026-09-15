@@ -1,3 +1,7 @@
+import {
+    COMMUNITIES_ENABLED,
+    isCommunityReleasePath,
+} from "./config/release-features";
 import { isPrivateImageUrl } from "./services/member-privacy";
 import { NextResponse, type NextRequest } from "next/server";
 import { getBackendAddress } from "@/app/actions";
@@ -9,6 +13,18 @@ import {
 } from "./services/member-mimic/constants";
 
 export async function proxy(request: NextRequest) {
+    if (
+        !COMMUNITIES_ENABLED &&
+        isCommunityReleasePath(
+            request.nextUrl.pathname,
+            request.nextUrl.searchParams.get("type"),
+        )
+    ) {
+        return new NextResponse(null, {
+            status: 404,
+            headers: { "Cache-Control": "private, no-store" },
+        });
+    }
     const requestHeaders = request.headers;
     requestHeaders.set(
         MEMBER_MIMIC_PATH_HEADER,
@@ -205,6 +221,9 @@ export const config = {
         "/_next/image",
         "/api/:path*",
         "/healthy",
+        "/communities/:path*",
+        "/community/:path*",
+        "/checkout",
         "/course/:path*",
         "/dashboard/:path*",
         { source: "/:path*", has: [{ type: "header", key: "next-action" }] },

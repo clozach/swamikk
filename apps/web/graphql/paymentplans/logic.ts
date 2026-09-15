@@ -1,3 +1,4 @@
+import { COMMUNITIES_ENABLED } from "@config/release-features";
 import { checkIfAuthenticated } from "@/lib/graphql";
 import { responses } from "@config/strings";
 import {
@@ -33,6 +34,8 @@ async function fetchEntity(
     entityId: string,
     ctx: any,
 ): Promise<InternalCourse | InternalCommunity | null> {
+    if (!COMMUNITIES_ENABLED && entityType === membershipEntityType.COMMUNITY)
+        throw new Error(responses.item_not_found);
     if (entityType === membershipEntityType.COURSE) {
         return (await CourseModel.findOne({
             domain: ctx.subdomain._id,
@@ -52,6 +55,8 @@ function checkEntityManagementPermission(
     entityType: MembershipEntityType,
     ctx: any,
 ) {
+    if (!COMMUNITIES_ENABLED && entityType === membershipEntityType.COMMUNITY)
+        throw new Error(responses.item_not_found);
     if (entityType === membershipEntityType.COURSE) {
         if (
             !checkPermission(ctx.user.permissions, [
@@ -105,6 +110,8 @@ export async function getPlans({
     entityType: MembershipEntityType;
     ctx: any;
 }): Promise<PaymentPlan[]> {
+    if (!COMMUNITIES_ENABLED && entityType === membershipEntityType.COMMUNITY)
+        return [];
     return PaymentPlanModel.find<PaymentPlan>({
         domain: ctx.subdomain._id,
         entityId,
@@ -401,6 +408,8 @@ export async function getIncludedProducts({
     entityType: MembershipEntityType;
     ctx: GQLContext;
 }) {
+    if (!COMMUNITIES_ENABLED && entityType === membershipEntityType.COMMUNITY)
+        return [];
     const paymentPlans = (await PaymentPlanModel.find(
         {
             domain: ctx.subdomain._id,

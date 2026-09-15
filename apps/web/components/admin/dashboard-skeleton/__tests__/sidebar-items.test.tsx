@@ -68,3 +68,13 @@ test("every entry with pages, and every page, leads somewhere", () => {
 test("the mailing entry is called Email", () => {
     expect(SIDEBAR_MENU_MAILS).toBe("Email");
 });
+
+test("Communities has no release navigation even for an administrator with every permission", () => {
+    expect(
+        railEntries.some(
+            (entry) =>
+                /communit/i.test("title" in entry ? entry.title : entry.name) ||
+                /communit/.test(entry.url),
+        ),
+    ).toBe(false);
+});

@@ -82,6 +82,27 @@ describe("Notification Preferences", () => {
         expect(preferences).toEqual([]);
     });
 
+    it("excludes saved community preferences and rejects new ones", async () => {
+        const stored = await NotificationPreferenceModel.create({
+            domain: domain._id,
+            userId: manager.userId,
+            activityType: Constants.ActivityType.COMMUNITY_POST_CREATED,
+            channels: [Constants.NotificationChannel.APP],
+        });
+        const ctx = { user: manager, subdomain: domain } as any;
+        expect(await getNotificationPreferences({ ctx })).toEqual([]);
+        expect(
+            await NotificationPreferenceModel.exists({ _id: stored._id }),
+        ).toBeTruthy();
+        await expect(
+            updateNotificationPreference({
+                ctx,
+                activityType: Constants.ActivityType.COMMUNITY_POST_CREATED,
+                channels: [Constants.NotificationChannel.APP],
+            }),
+        ).rejects.toThrow();
+    });
+
     it("should seed only general preferences", async () => {
         await seedNotificationPreferencesForUser({
             domain: domain._id,
@@ -103,7 +124,7 @@ describe("Notification Preferences", () => {
         const generalPreference = preferences.find(
             (preference) =>
                 preference.activityType ===
-                Constants.ActivityType.COMMUNITY_POST_CREATED,
+                Constants.ActivityType.COURSE_DISCUSSION_COMMENT_CREATED,
         );
         const courseDiscussionCommentPreference = preferences.find(
             (preference) =>
@@ -148,7 +169,7 @@ describe("Notification Preferences", () => {
         const generalPreference = preferences.find(
             (preference) =>
                 preference.activityType ===
-                Constants.ActivityType.COMMUNITY_POST_CREATED,
+                Constants.ActivityType.COURSE_DISCUSSION_COMMENT_CREATED,
         );
 
         expect(generalPreference).toBeTruthy();
@@ -162,7 +183,8 @@ describe("Notification Preferences", () => {
         await NotificationPreferenceModel.create({
             domain: domain._id,
             userId: manager.userId,
-            activityType: Constants.ActivityType.COMMUNITY_POST_CREATED,
+            activityType:
+                Constants.ActivityType.COURSE_DISCUSSION_COMMENT_CREATED,
             channels: [Constants.NotificationChannel.APP],
         });
 
@@ -176,7 +198,7 @@ describe("Notification Preferences", () => {
         const preference = preferences.find(
             (item) =>
                 item.activityType ===
-                Constants.ActivityType.COMMUNITY_POST_CREATED,
+                Constants.ActivityType.COURSE_DISCUSSION_COMMENT_CREATED,
         );
 
         expect(preference?.channels).toEqual([
@@ -190,19 +212,21 @@ describe("Notification Preferences", () => {
                 user: learner,
                 subdomain: domain,
             } as any,
-            activityType: Constants.ActivityType.COMMUNITY_POST_CREATED,
+            activityType:
+                Constants.ActivityType.COURSE_DISCUSSION_COMMENT_CREATED,
             channels: [Constants.NotificationChannel.APP],
         });
 
         expect(updated.activityType).toBe(
-            Constants.ActivityType.COMMUNITY_POST_CREATED,
+            Constants.ActivityType.COURSE_DISCUSSION_COMMENT_CREATED,
         );
         expect(updated.channels).toEqual([Constants.NotificationChannel.APP]);
 
         const persisted = await NotificationPreferenceModel.findOne({
             domain: domain._id,
             userId: learner.userId,
-            activityType: Constants.ActivityType.COMMUNITY_POST_CREATED,
+            activityType:
+                Constants.ActivityType.COURSE_DISCUSSION_COMMENT_CREATED,
         }).lean();
 
         expect(persisted?.channels).toEqual([
@@ -229,12 +253,13 @@ describe("Notification Preferences", () => {
                 user: manager,
                 subdomain: domain,
             } as any,
-            activityType: Constants.ActivityType.COMMUNITY_POST_CREATED,
+            activityType:
+                Constants.ActivityType.COURSE_DISCUSSION_COMMENT_CREATED,
             channels: [Constants.NotificationChannel.APP],
         });
 
         expect(updated.activityType).toBe(
-            Constants.ActivityType.COMMUNITY_POST_CREATED,
+            Constants.ActivityType.COURSE_DISCUSSION_COMMENT_CREATED,
         );
         expect(updated.channels).toEqual([Constants.NotificationChannel.APP]);
     });
@@ -243,7 +268,8 @@ describe("Notification Preferences", () => {
         await NotificationPreferenceModel.create({
             domain: domain._id,
             userId: learner.userId,
-            activityType: Constants.ActivityType.COMMUNITY_POST_CREATED,
+            activityType:
+                Constants.ActivityType.COURSE_DISCUSSION_COMMENT_CREATED,
             channels: [Constants.NotificationChannel.APP],
         });
 
@@ -252,25 +278,28 @@ describe("Notification Preferences", () => {
                 user: learner,
                 subdomain: domain,
             } as any,
-            activityType: Constants.ActivityType.COMMUNITY_POST_CREATED,
+            activityType:
+                Constants.ActivityType.COURSE_DISCUSSION_COMMENT_CREATED,
             channels: [],
         });
 
         expect(updated).toEqual({
-            activityType: Constants.ActivityType.COMMUNITY_POST_CREATED,
+            activityType:
+                Constants.ActivityType.COURSE_DISCUSSION_COMMENT_CREATED,
             channels: [],
         });
 
         const persisted = await NotificationPreferenceModel.findOne({
             domain: domain._id,
             userId: learner.userId,
-            activityType: Constants.ActivityType.COMMUNITY_POST_CREATED,
+            activityType:
+                Constants.ActivityType.COURSE_DISCUSSION_COMMENT_CREATED,
         }).lean();
 
         expect(persisted).toBeNull();
     });
 
-    it("should format notification message and href using shared formatter", async () => {
+    it("hides stored community notifications without deleting them", async () => {
         const community = await CommunityModel.create({
             domain: domain._id,
             communityId: id("community"),
@@ -306,12 +335,10 @@ describe("Notification Preferences", () => {
             notificationId: notification.notificationId,
         });
 
-        expect(response).toBeTruthy();
-        expect(response?.href).toBe(
-            `/dashboard/community/${community.communityId}/${post.postId}`,
-        );
-        expect(response?.message).toContain("created a post");
-        expect(response?.message).toContain("Community A");
+        expect(response).toBeNull();
+        expect(
+            await NotificationModel.exists({ _id: notification._id }),
+        ).toBeTruthy();
     });
 
     it("should add preview mode to unpublished course discussion notification hrefs for managers only", async () => {
@@ -420,7 +447,7 @@ describe("Notification Preferences", () => {
         );
     });
 
-    it("should return empty message and href when entity cannot be resolved", async () => {
+    it("also hides community notifications with missing entities", async () => {
         const notification = await NotificationModel.create({
             domain: domain._id,
             notificationId: id("missing-entity-notification"),
@@ -438,9 +465,7 @@ describe("Notification Preferences", () => {
             notificationId: notification.notificationId,
         });
 
-        expect(response).toBeTruthy();
-        expect(response?.href).toBe("");
-        expect(response?.message).toBe("");
+        expect(response).toBeNull();
     });
 
     it("should require activityType on notification documents", async () => {

@@ -1,5 +1,7 @@
 "use client";
 
+import { COMMUNITIES_ENABLED } from "@config/release-features";
+
 import DashboardContent from "@components/admin/dashboard-content";
 import { AddressContext, ProfileContext } from "@components/contexts";
 import { Card, CardContent, CardHeader, CardTitle } from "@components/ui/card";
@@ -81,6 +83,8 @@ function isActivityAllowedForPermissions(
     activityType: ActivityType,
     permissions: string[],
 ): boolean {
+    if (!COMMUNITIES_ENABLED && activityType.startsWith("community_"))
+        return false;
     if (isGeneralActivity(activityType)) {
         return true;
     }

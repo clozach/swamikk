@@ -21,6 +21,7 @@ import {
     getUser,
     updateUser,
     findMembership,
+    getUserContent,
 } from "../logic";
 import CertificateModel from "@models/Certificate";
 import UserModel from "@models/User";
@@ -1012,6 +1013,41 @@ describe("findMembership", () => {
         expect(result!.userId).toBe(testUser.userId);
         expect(result!.entityId).toBe(testCourse.courseId);
         expect(result!.status).toBe(Constants.MembershipStatus.ACTIVE);
+    });
+
+    it("excludes community memberships from user content while preserving records", async () => {
+        const community = await CommunityModel.create({
+            domain: testDomain._id,
+            communityId: fId("community"),
+            name: "Hidden community",
+            pageId: fId("page"),
+            slug: fId("slug"),
+        });
+        const membership = await MembershipModel.create({
+            domain: testDomain._id,
+            membershipId: fId("community-membership"),
+            sessionId: fId("community-session"),
+            userId: testUser.userId,
+            paymentPlanId: fId("community-plan"),
+            entityId: community.communityId,
+            entityType: Constants.MembershipEntityType.COMMUNITY,
+            status: Constants.MembershipStatus.ACTIVE,
+        });
+        const content = await getUserContent({
+            subdomain: testDomain,
+            user: testUser,
+        } as any);
+        expect(
+            content.some(
+                (item: any) =>
+                    item.entityType ===
+                    Constants.MembershipEntityType.COMMUNITY,
+            ),
+        ).toBe(false);
+        expect(
+            await MembershipModel.exists({ _id: membership._id }),
+        ).toBeTruthy();
+        await CommunityModel.deleteOne({ _id: community._id });
     });
 
     it("returns null when no membership exists", async () => {

@@ -1,4 +1,5 @@
-"use server";
+import { COMMUNITIES_ENABLED } from "@config/release-features";
+("use server");
 
 import { setNewsletterConsent } from "@/services/newsletter/consent";
 import { linkedMemberIds } from "@/services/member-mimic/member-links";
@@ -890,6 +891,7 @@ async function getUserContentInternal(ctx: GQLContext, user: User) {
     });
 
     const content = await memberCourseLibrary(ctx, user);
+    if (!COMMUNITIES_ENABLED) return content;
 
     for (const membership of memberships) {
         if (

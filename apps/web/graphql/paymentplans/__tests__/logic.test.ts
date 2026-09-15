@@ -145,3 +145,29 @@ describe("membership currency independent of the site", () => {
         ).rejects.toThrow("Per-plan currency");
     });
 });
+
+it("does not disclose plans for a dormant community", async () => {
+    const domain = await Domain.create({
+        name: "dormant-community-plans",
+        email: "dormant@example.test",
+    });
+    const plan = await Plan.create({
+        domain: domain._id,
+        planId: "dormant-community-plan",
+        entityId: "dormant-community",
+        entityType: "community",
+        name: "Stored plan",
+        type: "free",
+        userId: "owner",
+    });
+    expect(
+        await getPlans({
+            entityId: "dormant-community",
+            entityType: "community",
+            ctx: { subdomain: domain },
+        }),
+    ).toEqual([]);
+    expect(await Plan.exists({ _id: plan._id })).toBeTruthy();
+    await Plan.deleteOne({ _id: plan._id });
+    await Domain.deleteOne({ _id: domain._id });
+});

@@ -1,3 +1,4 @@
+import { COMMUNITIES_ENABLED } from "@config/release-features";
 import { UIConstants } from "@courselit/common-models";
 const { permissions } = UIConstants;
 import {
@@ -21,7 +22,9 @@ const permissionToCaptionMap = {
     [permissions.manageSite]: PERM_SITE,
     [permissions.manageSettings]: PERM_SETTINGS,
     [permissions.manageUsers]: PERM_USERS,
-    [permissions.manageCommunity]: PERM_MANAGE_COMMUNITY,
+    ...(COMMUNITIES_ENABLED
+        ? { [permissions.manageCommunity]: PERM_MANAGE_COMMUNITY }
+        : {}),
 };
 
 export default permissionToCaptionMap;

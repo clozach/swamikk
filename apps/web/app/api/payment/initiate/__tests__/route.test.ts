@@ -1,6 +1,8 @@
 /**
  * @jest-environment node
  */
+jest.mock("@config/release-features", () => ({ COMMUNITIES_ENABLED: true }));
+const releaseFeatures = jest.requireMock("@config/release-features");
 
 import { NextRequest } from "next/server";
 import { POST } from "../route";
@@ -45,6 +47,9 @@ describe("Payment Initiate Route", () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
+        (
+            releaseFeatures as { COMMUNITIES_ENABLED: boolean }
+        ).COMMUNITIES_ENABLED = true;
 
         (Domain.findOne as jest.Mock).mockResolvedValue({
             _id: new mongoose.Types.ObjectId("666666666666666666666666"),
@@ -617,5 +622,30 @@ describe("Payment Initiate Route", () => {
             const response = await POST(mockRequest);
             expect(response.status).toBe(200);
         });
+    });
+});
+
+describe("Communities excluded from this release", () => {
+    it("refuses free and paid community initiation before account or payment work", async () => {
+        (
+            releaseFeatures as { COMMUNITIES_ENABLED: boolean }
+        ).COMMUNITIES_ENABLED = false;
+        jest.clearAllMocks();
+        for (const planId of ["free", "paid"]) {
+            const response = await POST(
+                new NextRequest("https://school.example/api/payment/initiate", {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({
+                        id: "old-community",
+                        type: "community",
+                        planId,
+                    }),
+                }),
+            );
+            expect(response.status).toBe(404);
+        }
+        expect(Domain.findOne).not.toHaveBeenCalled();
+        expect(Invoice.create).not.toHaveBeenCalled();
     });
 });

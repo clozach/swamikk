@@ -1,3 +1,4 @@
+import { COMMUNITIES_ENABLED } from "@config/release-features";
 import { NextRequest } from "next/server";
 import DomainModel, { Domain } from "@models/Domain";
 import { auth } from "@/auth";
@@ -60,6 +61,16 @@ export async function POST(req: NextRequest) {
 
     try {
         assertNoMemberMimicMutation(req.headers);
+        if (
+            !COMMUNITIES_ENABLED &&
+            String(body.type).toLowerCase() ===
+                Constants.MembershipEntityType.COMMUNITY
+        ) {
+            return Response.json(
+                { message: responses.item_not_found },
+                { status: 404 },
+            );
+        }
         const domain = await getDomain(domainName);
         if (!domain) {
             return Response.json(

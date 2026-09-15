@@ -1,3 +1,4 @@
+import { COMMUNITIES_ENABLED } from "@config/release-features";
 const graphql = require("graphql");
 
 import users from "./users";
@@ -29,7 +30,7 @@ const schema = new graphql.GraphQLSchema({
             ...pages.queries,
             ...mails.queries,
             ...activities.queries,
-            ...communities.queries,
+            ...(COMMUNITIES_ENABLED ? communities.queries : {}),
             ...paymentplans.queries,
             ...notifications.queries,
             ...themes.queries,
@@ -50,7 +51,7 @@ const schema = new graphql.GraphQLSchema({
             ...pages.mutations,
             ...mails.mutations,
             ...activities.mutations,
-            ...communities.mutations,
+            ...(COMMUNITIES_ENABLED ? communities.mutations : {}),
             ...paymentplans.mutations,
             ...notifications.mutations,
             ...themes.mutations,

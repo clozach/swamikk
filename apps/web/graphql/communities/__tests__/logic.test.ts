@@ -761,3 +761,18 @@ describe("Community Logic - Enabled Communities Count Tests", () => {
         expect(count).toBe(2);
     });
 });
+
+describe("Communities are absent from the SwamiKK release schema", () => {
+    it("exports no community query or mutation while keeping course and user APIs", async () => {
+        const schema = (await import("../../index")).default;
+        const community = (await import("../index")).default;
+        const queries = schema.getQueryType()!.getFields();
+        const mutations = schema.getMutationType()!.getFields();
+        for (const name of Object.keys(community.queries))
+            expect(queries[name]).toBeUndefined();
+        for (const name of Object.keys(community.mutations))
+            expect(mutations[name]).toBeUndefined();
+        expect(queries.getCourse).toBeDefined();
+        expect(queries.getUser).toBeDefined();
+    });
+});

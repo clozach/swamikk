@@ -1,3 +1,4 @@
+import { COMMUNITIES_ENABLED } from "@config/release-features";
 import {
     ActivityType,
     Constants,
@@ -19,6 +20,8 @@ export function isActivityAllowedForPermissions(
     activityType: ActivityType,
     permissions: string[],
 ): boolean {
+    if (!COMMUNITIES_ENABLED && activityType.startsWith("community_"))
+        return false;
     if (isGeneralActivity(activityType)) {
         return true;
     }
@@ -60,7 +63,11 @@ export function getGeneralDefaultPreferences(): {
 }[] {
     return (
         Object.values(Constants.ActivityType)
-            .filter((activityType) => isGeneralActivity(activityType))
+            .filter(
+                (activityType) =>
+                    isGeneralActivity(activityType) &&
+                    isActivityAllowedForPermissions(activityType, []),
+            )
             .sort((a, b) => a.localeCompare(b)) as ActivityType[]
     ).map((activityType) => ({
         activityType,

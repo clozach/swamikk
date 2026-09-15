@@ -137,3 +137,34 @@ it("leaves the ordinary admin context available after the cookie is cleared", as
         ).headers.get("x-middleware-next"),
     ).toBe("1");
 });
+
+it("denies community routes and joining links before auth or tenant work for every actor", async () => {
+    for (const mimic of [false, true]) {
+        for (const path of [
+            "/communities",
+            "/communities/old",
+            "/dashboard/communities",
+            "/dashboard/community/new",
+            "/dashboard/community/old/post",
+            "/dashboard/my-content/feed",
+            "/checkout?type=community&id=old",
+            "/checkout?type=COMMUNITY&id=old",
+        ]) {
+            const response = await proxy(request(path, "GET", mimic));
+            expect(response.status).toBe(404);
+            expect(response.headers.get("cache-control")).toBe(
+                "private, no-store",
+            );
+        }
+    }
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(config.matcher).toContain("/communities/:path*");
+    expect(config.matcher).toContain("/checkout");
+    expect(
+        (
+            await proxy(
+                request("/checkout?type=course&id=course", "GET", false),
+            )
+        ).headers.get("x-middleware-next"),
+    ).toBe("1");
+});

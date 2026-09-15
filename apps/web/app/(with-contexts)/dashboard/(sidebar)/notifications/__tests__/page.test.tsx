@@ -65,7 +65,7 @@ describe("Notifications Page", () => {
             expect(checkbox).toHaveAccessibleName();
         expect(
             screen.getByRole("checkbox", {
-                name: "Community Post Created: Email",
+                name: "Course Discussion Comment Created: Email",
             }),
         ).toBeInTheDocument();
     });
@@ -82,13 +82,13 @@ describe("Notifications Page", () => {
 
         await waitFor(() => {
             expect(
-                screen.getByText("Community Post Created"),
+                screen.getByText("Course Discussion Comment Created"),
             ).toBeInTheDocument();
         });
 
         expect(
-            screen.getByText("Community Membership Granted"),
-        ).toBeInTheDocument();
+            screen.queryByText("Community Membership Granted"),
+        ).not.toBeInTheDocument();
         expect(
             screen.getByText("Course Discussion Comment Created"),
         ).toBeInTheDocument();
@@ -111,7 +111,10 @@ describe("Notifications Page", () => {
             expect(screen.getByText("Purchased")).toBeInTheDocument();
         });
 
-        expect(screen.getByText("Community Post Created")).toBeInTheDocument();
+        expect(
+            screen.getByText("Course Discussion Comment Created"),
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/Community/)).not.toBeInTheDocument();
         expect(FetchBuilder).toHaveBeenCalled();
     });
 });
