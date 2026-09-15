@@ -1,4 +1,7 @@
 import { randomUUID } from "crypto";
+import { readFileSync } from "fs";
+import { join } from "path";
+import { BSON } from "mongodb";
 import { NextRequest } from "next/server";
 import DomainModel from "@/models/Domain";
 import UserModel from "@/models/User";
@@ -145,6 +148,74 @@ describe("inline text edits", () => {
         (auth.api.getSession as unknown as jest.Mock).mockResolvedValue({
             user: { email: user.email },
         });
+    });
+
+    it("edits and reverses text on the full legacy homepage without recasting other stored blocks", async () => {
+        const layouts = JSON.parse(
+            readFileSync(
+                join(
+                    __dirname,
+                    "../../section-edits/__tests__/fixtures/legacy-homepage-layouts.json",
+                ),
+                "utf8",
+            ),
+        );
+        const original = BSON.serialize(layouts);
+        await PageModel.collection.updateOne(
+            { _id: page._id },
+            { $set: layouts },
+        );
+        const target = {
+            kind: "page-widget-text",
+            pageId: page.pageId,
+            widgetId: "ayr-anahataPrivateSessions",
+        };
+        const before = layouts.layout.find(
+            (widget) => widget.widgetId === target.widgetId,
+        ).settings.heading;
+        const after = "Reviewed private sessions heading";
+        const response = await post({
+            target,
+            changes: [text("heading", before, after)],
+        });
+        expect(response.status).toBe(200);
+        const { edit: applied } = await response.json();
+        for (const layout of [layouts.layout, layouts.draftLayout])
+            layout.find(
+                (widget) => widget.widgetId === target.widgetId,
+            ).settings.heading = after;
+        const saved: any = await PageModel.collection.findOne({
+            _id: page._id,
+        });
+        expect(
+            BSON.serialize({
+                layout: saved.layout,
+                draftLayout: saved.draftLayout,
+            }),
+        ).toEqual(BSON.serialize(layouts));
+        expect(saved.__v).toBe(1);
+        const reversed = await post({
+            target,
+            undoOf: applied.editId,
+            changes: [text("heading", after, before)],
+        });
+        expect(reversed.status).toBe(200);
+        const restored: any = await PageModel.collection.findOne({
+            _id: page._id,
+        });
+        expect(
+            BSON.serialize({
+                layout: restored.layout,
+                draftLayout: restored.draftLayout,
+            }),
+        ).toEqual(original);
+        expect(restored.__v).toBe(2);
+        expect(
+            await PageTextEditModel.countDocuments({
+                domain: domain._id,
+                state: "applied",
+            }),
+        ).toBe(2);
     });
 
     it("lists strings, link words and rich-text nodes; never addresses or image sources", async () => {

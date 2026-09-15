@@ -269,9 +269,11 @@ describe("durable section edits", () => {
     it("records before writing and resumes an interrupted pre-write attempt using its original baseline", async () => {
         const h = await harness();
         const input = await h.removal();
-        jest.spyOn(PageModel, "findOneAndUpdate").mockImplementationOnce(() => {
-            throw new Error("simulated database interruption");
-        });
+        jest.spyOn(PageModel.collection, "updateOne").mockImplementationOnce(
+            () => {
+                throw new Error("simulated database interruption");
+            },
+        );
         expect((await h.post(input)).status).toBe(503);
         expect(
             (await SectionEditModel.findOne({
@@ -280,9 +282,11 @@ describe("durable section edits", () => {
         ).toBe("applying");
         expect((await h.post(input)).status).toBe(200);
         const next = await h.removal("one");
-        jest.spyOn(PageModel, "findOneAndUpdate").mockImplementationOnce(() => {
-            throw new Error("second interruption");
-        });
+        jest.spyOn(PageModel.collection, "updateOne").mockImplementationOnce(
+            () => {
+                throw new Error("second interruption");
+            },
+        );
         expect((await h.post(next)).status).toBe(503);
         await PageModel.updateOne(
             { _id: h.page._id },

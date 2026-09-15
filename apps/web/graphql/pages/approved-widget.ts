@@ -25,6 +25,7 @@ import {
 } from "@/services/content-changes/page-media";
 import { requireCondition } from "@/services/content-changes/errors";
 import { stableJson } from "@/services/content-changes/stable";
+import type { EditablePage } from "@/services/content-changes/page-types";
 
 /** Native one-block edit: published leaf + matching draft leaf + receipt commit together.
  * It never promotes unrelated page drafts or writes shared widgets, typefaces or themes. */
@@ -80,9 +81,12 @@ export async function applyApprovedPageWidget(
     );
     const draftLayout = page.draftLayout?.map((widget) => {
         if (widget.widgetId !== target.widgetId) return widget;
-        return mirrorPageWidgetValue(widget, after, target.field);
+        const mirrored = mirrorPageWidgetValue(widget, after, target.field);
+        return { ...widget, settings: mirrored.settings };
     });
-    const saved = await PageModel.findOneAndUpdate(
+    // Approval/field validation is complete; stored layout identities must not
+    // be re-cast while changing the selected settings and durable receipt.
+    const saved = (await PageModel.collection.findOneAndUpdate(
         pageWriteFilter(page),
         {
             $set: {
@@ -94,11 +98,12 @@ export async function applyApprovedPageWidget(
                     revision: pageRevision(page) + 1,
                     appliedAt: new Date().toISOString(),
                 },
+                updatedAt: new Date(),
             },
             $inc: { __v: 1 },
         },
-        { new: true, runValidators: true },
-    ).lean();
+        { returnDocument: "after", includeResultMetadata: false },
+    )) as unknown as EditablePage | null;
     requireCondition(
         saved,
         "stale",

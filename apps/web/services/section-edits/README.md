@@ -28,6 +28,8 @@ The public types are in `packages/common-models/src/section-edit.ts`. The OpenAP
 
 This works with standalone Mongo; it does not depend on multi-document transactions. A process interruption after step 3 leaves a durable page receipt. GET or retry settles that receipt even after unrelated native/text edits. An interruption before the page write can retry the same operation against its original baseline; if the page moved meanwhile, it becomes `failed` and preserves the newer work. A lost response never requires guessing that a second deletion is the same action.
 
+The guarded layout write uses the native Mongo collection so Mongoose does not re-cast already-stored legacy block IDs. Snapshots are cloned through BSON, preserving native ObjectId, date and binary values along with legacy embedded identity objects. Inputs cannot supply replacement blocks; the write uses the current stored page and retained server history.
+
 Both web and shared Page schemas declare `sectionEditReceipts`. Native guarded saves and inline text edits preserve it because they update their own fields. `SectionEdit` history retains media references; shared media-reference collection must include it. Deploy matching app and queue versions containing that collector before enabling removals, so a queue on older code cannot collect media held only by section history.
 
 ## Drafts, ordering and limits
@@ -48,7 +50,7 @@ Run the native Mongo API suites from the repository root:
 pnpm exec jest --config apps/web/jest.server.config.ts apps/web/app/api/section-edits/__tests__ --runInBand
 ```
 
-The suites exercise full remove/restore/redo, media/settings/ID retention, adjacent removal order, final-block drafts, newer live/draft changes, origin/permission/Mimic/tenant boundaries, immutable page replacement, duplicate deliveries, receipt recovery, interrupted pre-write retries, native write races and equal-timestamp pagination.
+The suites exercise full remove/restore/redo, media/settings/ID retention, the complete legacy homepage fixture, native BSON preservation, adjacent removal order, final-block drafts, newer live/draft changes, origin/permission/Mimic/tenant boundaries, immutable page replacement, duplicate deliveries, receipt recovery, interrupted pre-write retries, native write races and equal-timestamp pagination.
 
 After deploying the matched app/queue build and mounting the section controls:
 

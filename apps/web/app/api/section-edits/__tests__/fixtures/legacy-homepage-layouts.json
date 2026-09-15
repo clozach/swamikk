@@ -1,0 +1,852 @@
+{
+    "layout": [
+        {
+            "widgetId": "anahataHeader-nxaand8gsq",
+            "name": "anahataHeader",
+            "deleteable": false,
+            "shared": true,
+            "_id": {
+                "buffer": {
+                    "0": 106,
+                    "1": 163,
+                    "2": 16,
+                    "3": 39,
+                    "4": 235,
+                    "5": 92,
+                    "6": 243,
+                    "7": 203,
+                    "8": 255,
+                    "9": 170,
+                    "10": 203,
+                    "11": 146
+                }
+            }
+        },
+        {
+            "widgetId": "ayr-anahataHero",
+            "name": "anahataHero",
+            "deleteable": true,
+            "shared": false,
+            "settings": {
+                "bannerImage": {
+                    "source": {
+                        "kind": "placeholder",
+                        "description": "Swami Karma Karuna teaching — seated, mid-gesture, eye contact with a student just out of frame. Warm natural light, indoors or on a veranda. Her face and hands are the subject. Not a landscape. Not the retreat buildings."
+                    },
+                    "alt": ""
+                },
+                "bannerHeightMode": "full-screen",
+                "bannerMode": {
+                    "kind": "static"
+                },
+                "wordmark": {
+                    "source": {
+                        "kind": "placeholder",
+                        "description": "Wordmark lockup — 'Swami Karma Karuna' with 'Yoga Solutions for Life™' beneath it. Flat vector, one ink colour, transparent background."
+                    },
+                    "alt": "Swami Karma Karuna — Yoga Solutions for Life"
+                },
+                "photo": {
+                    "source": {
+                        "kind": "placeholder",
+                        "description": "Swami Karma Karuna in a quiet moment — close portrait, soft daylight, plain background. Relaxed, present, looking at the camera."
+                    },
+                    "alt": ""
+                },
+                "photoPosition": "right",
+                "kicker": "with Swami Karma Karuna",
+                "heading": "Yoga Solutions for Life",
+                "offerings": [
+                    "Mentoring",
+                    "Coaching",
+                    "Teaching",
+                    "Membership",
+                    "Appearances"
+                ],
+                "paragraphs": [
+                    {
+                        "text": "Swami Karma Karuna has taught yoga for more than twenty-five years in the Satyananda tradition of the Bihar School of Yoga, under the guidance of Swami Niranjanananda Saraswati. She is a founding member and director of Anahata Yoga Retreat in Golden Bay, New Zealand, and teaches in India for part of each year.",
+                        "linkText": "Anahata Yoga Retreat",
+                        "linkHref": "https://www.anahata-retreat.org.nz"
+                    },
+                    {
+                        "text": "She works with people directly: one-to-one mentoring and coaching, yoga teaching online and in person, a membership with regular live sessions and a library of recorded practices, and appearances at retreats, trainings and events around the world."
+                    },
+                    {
+                        "text": "Simple, powerful techniques for transformation — practices that fit a real life, with family, work and everything else in it."
+                    }
+                ],
+                "ledeParagraphIndex": 2,
+                "ctaCaption": "Explore the membership",
+                "ctaAction": "/p/members-library-test",
+                "ctaStyle": "pine",
+                "secondaryCtaCaption": "Book a private session",
+                "secondaryCtaAction": "/p/private-sessions"
+            },
+            "_id": {
+                "buffer": {
+                    "0": 106,
+                    "1": 163,
+                    "2": 16,
+                    "3": 39,
+                    "4": 235,
+                    "5": 92,
+                    "6": 243,
+                    "7": 203,
+                    "8": 255,
+                    "9": 170,
+                    "10": 203,
+                    "11": 147
+                }
+            }
+        },
+        {
+            "widgetId": "ayr-anahataTour",
+            "name": "rich-text",
+            "deleteable": true,
+            "shared": false,
+            "settings": {
+                "alignment": "left",
+                "maxWidth": "max-w-4xl",
+                "verticalPadding": "py-8",
+                "background": {
+                    "type": "color",
+                    "backgroundColor": "#e2d6c1",
+                    "backgroundColorDark": "#3b2b20"
+                },
+                "text": {
+                    "type": "doc",
+                    "content": [
+                        {
+                            "type": "heading",
+                            "attrs": {
+                                "level": 2
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "Anahata, my home base"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "paragraph",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "Anahata Yoga Retreat sits in native forest above Golden Bay. The retreat has its own website, with accommodation, gatherings and an interactive tour."
+                                }
+                            ]
+                        },
+                        {
+                            "type": "paragraph",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "Visit the Anahata website ↗",
+                                    "marks": [
+                                        {
+                                            "type": "link",
+                                            "attrs": {
+                                                "href": "https://www.anahata-retreat.org.nz"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "paragraph",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "Open Anahata's virtual tour ↗",
+                                    "marks": [
+                                        {
+                                            "type": "link",
+                                            "attrs": {
+                                                "href": "https://tour.anahata-retreat.org.nz/index.htm"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "_id": {
+                "buffer": {
+                    "0": 106,
+                    "1": 163,
+                    "2": 16,
+                    "3": 39,
+                    "4": 235,
+                    "5": 92,
+                    "6": 243,
+                    "7": 203,
+                    "8": 255,
+                    "9": 170,
+                    "10": 203,
+                    "11": 148
+                }
+            }
+        },
+        {
+            "widgetId": "ayr-anahataPrivateSessions",
+            "name": "anahataPrivateSessions",
+            "deleteable": true,
+            "shared": false,
+            "settings": {
+                "heading": "Work with Swami one to one",
+                "lead": "Private yoga training, consultations and yogic cleansing practices with Swami Karma Karuna are offered online and in-person by appointment.",
+                "buttonCaption": "Private Sessions",
+                "buttonAction": "/p/private-sessions",
+                "buttonOpensInNewTab": false,
+                "photo": {
+                    "kind": "placeholder",
+                    "description": "Swami Karma Karuna with one student, seated facing each other in conversation. Soft light. Relaxed, attentive."
+                },
+                "photoAlt": "",
+                "showDecorImage": false,
+                "photoPosition": "left"
+            },
+            "_id": {
+                "buffer": {
+                    "0": 106,
+                    "1": 163,
+                    "2": 16,
+                    "3": 39,
+                    "4": 235,
+                    "5": 92,
+                    "6": 243,
+                    "7": 203,
+                    "8": 255,
+                    "9": 170,
+                    "10": 203,
+                    "11": 149
+                }
+            }
+        },
+        {
+            "widgetId": "ayr-anahataGatherings",
+            "name": "anahataGatherings",
+            "deleteable": true,
+            "shared": false,
+            "settings": {
+                "title": "Appearances and events",
+                "intro": "Swami Karma Karuna teaches at retreats, trainings and gatherings in New Zealand, India, Europe, Australia and the USA.",
+                "events": [
+                    {
+                        "id": "anahata-gathering-european-tour",
+                        "title": "European Tour 2026",
+                        "href": "https://www.anahata-retreat.org.nz/event/european-tour-2026",
+                        "image": {
+                            "kind": "placeholder",
+                            "description": "Tour poster — a map silhouette of Europe with the stops marked, the date range in bold, flat colour, no photograph."
+                        },
+                        "imageAlt": "",
+                        "hostLine": "Hosted by: Anahata Yoga Retreat",
+                        "dateRange": "Saturday 01 August, 2026 @ 12:00 am – Saturday 31 October, 2026 @ 11:59 pm",
+                        "excerpt": "Swami Karma Karuna returns to Europe this NZ Winter for another European Summer Tour."
+                    }
+                ],
+                "layout": "row",
+                "moreLink": {
+                    "label": "All Anahata events ↗",
+                    "href": "https://www.anahata-retreat.org.nz/gatherings"
+                }
+            },
+            "_id": {
+                "buffer": {
+                    "0": 106,
+                    "1": 163,
+                    "2": 16,
+                    "3": 39,
+                    "4": 235,
+                    "5": 92,
+                    "6": 243,
+                    "7": 203,
+                    "8": 255,
+                    "9": 170,
+                    "10": 203,
+                    "11": 150
+                }
+            }
+        },
+        {
+            "widgetId": "ayr-anahataPosts",
+            "name": "anahataPosts",
+            "deleteable": true,
+            "shared": false,
+            "settings": {
+                "heading": "Writing and recipes",
+                "posts": [
+                    {
+                        "id": "skk-post-roasted-vegetable-salad",
+                        "title": "Roasted Vegetable Salad",
+                        "date": "September 7, 2026",
+                        "href": "/blog/roasted-vegetable-salad",
+                        "thumbnail": {
+                            "kind": "placeholder",
+                            "description": "Overhead shot of the finished salad on a wooden table, natural light.",
+                            "alt": ""
+                        }
+                    },
+                    {
+                        "id": "skk-post-navigating-the-change",
+                        "title": "Navigating the Change: A Guide to Embracing Menopause",
+                        "date": "April 20, 2026",
+                        "href": "/blog/navigating-the-change-a-guide-to-embracing-menopause",
+                        "thumbnail": {
+                            "kind": "placeholder",
+                            "description": "A woman mid-life, seated in meditation outdoors, calm and unposed.",
+                            "alt": ""
+                        }
+                    },
+                    {
+                        "id": "skk-post-beyond-the-stretch",
+                        "title": "Beyond the Stretch: Why a Nervous System Reset is the Ultimate Life Cleaning",
+                        "date": "March 12, 2026",
+                        "href": "/blog/beyond-the-stretch-why-a-nervous-system-reset-is-the-ultimate-life-cleaning",
+                        "thumbnail": {
+                            "kind": "placeholder",
+                            "description": "A person lying in relaxation pose on a mat, eyes closed, soft light from a window.",
+                            "alt": ""
+                        }
+                    },
+                    {
+                        "id": "skk-post-crunchy-marinated-tempeh-salad",
+                        "title": "Crunchy Marinated Tempeh Salad",
+                        "date": "February 9, 2026",
+                        "href": "/blog/crunchy-marinated-tempeh-salad",
+                        "thumbnail": {
+                            "kind": "placeholder",
+                            "description": "Close-up of the tempeh salad in a bowl, crumbs of marinade visible.",
+                            "alt": ""
+                        }
+                    },
+                    {
+                        "id": "skk-post-from-india-with-love",
+                        "title": "From India with love – An update from Swami Karma Karuna",
+                        "date": "January 4, 2026",
+                        "href": "/blog/from-india-with-love-an-update-from-swami-karma-karuna",
+                        "thumbnail": {
+                            "kind": "placeholder",
+                            "description": "Swami Karma Karuna at the Bihar School of Yoga ashram, morning light, a letter in hand.",
+                            "alt": ""
+                        }
+                    },
+                    {
+                        "id": "skk-post-christmas-recipe",
+                        "title": "Christmas Recipe",
+                        "date": "November 26, 2025",
+                        "href": "/blog/christmas-recipe",
+                        "thumbnail": {
+                            "kind": "placeholder",
+                            "description": "A festive dish served on a plain cloth, a sprig of greenery beside it.",
+                            "alt": ""
+                        }
+                    }
+                ],
+                "moreLink": {
+                    "label": "Read the blog",
+                    "href": "/blog"
+                }
+            },
+            "_id": {
+                "buffer": {
+                    "0": 106,
+                    "1": 163,
+                    "2": 16,
+                    "3": 39,
+                    "4": 235,
+                    "5": 92,
+                    "6": 243,
+                    "7": 203,
+                    "8": 255,
+                    "9": 170,
+                    "10": 203,
+                    "11": 151
+                }
+            }
+        },
+        {
+            "widgetId": "ayr-anahataNewsletter",
+            "name": "anahataNewsletter",
+            "deleteable": true,
+            "shared": false,
+            "settings": {
+                "cssId": "stay-in-touch",
+                "background": {
+                    "type": "color",
+                    "backgroundColor": "#e2d6c1",
+                    "backgroundColorDark": "#3b2b20"
+                }
+            },
+            "_id": {
+                "buffer": {
+                    "0": 106,
+                    "1": 163,
+                    "2": 16,
+                    "3": 39,
+                    "4": 235,
+                    "5": 92,
+                    "6": 243,
+                    "7": 203,
+                    "8": 255,
+                    "9": 170,
+                    "10": 203,
+                    "11": 152
+                }
+            }
+        },
+        {
+            "widgetId": "anahataFooter-khrvql2s85",
+            "name": "anahataFooter",
+            "deleteable": false,
+            "shared": true,
+            "_id": {
+                "buffer": {
+                    "0": 106,
+                    "1": 163,
+                    "2": 16,
+                    "3": 39,
+                    "4": 235,
+                    "5": 92,
+                    "6": 243,
+                    "7": 203,
+                    "8": 255,
+                    "9": 170,
+                    "10": 203,
+                    "11": 153
+                }
+            }
+        }
+    ],
+    "draftLayout": [
+        {
+            "widgetId": "anahataHeader-nxaand8gsq",
+            "name": "anahataHeader",
+            "deleteable": false,
+            "shared": true,
+            "_id": {
+                "buffer": {
+                    "0": 106,
+                    "1": 163,
+                    "2": 16,
+                    "3": 39,
+                    "4": 235,
+                    "5": 92,
+                    "6": 243,
+                    "7": 203,
+                    "8": 255,
+                    "9": 170,
+                    "10": 203,
+                    "11": 146
+                }
+            }
+        },
+        {
+            "widgetId": "ayr-anahataHero",
+            "name": "anahataHero",
+            "deleteable": true,
+            "shared": false,
+            "settings": {
+                "bannerImage": {
+                    "source": {
+                        "kind": "placeholder",
+                        "description": "Swami Karma Karuna teaching — seated, mid-gesture, eye contact with a student just out of frame. Warm natural light, indoors or on a veranda. Her face and hands are the subject. Not a landscape. Not the retreat buildings."
+                    },
+                    "alt": ""
+                },
+                "bannerHeightMode": "full-screen",
+                "bannerMode": {
+                    "kind": "static"
+                },
+                "wordmark": {
+                    "source": {
+                        "kind": "placeholder",
+                        "description": "Wordmark lockup — 'Swami Karma Karuna' with 'Yoga Solutions for Life™' beneath it. Flat vector, one ink colour, transparent background."
+                    },
+                    "alt": "Swami Karma Karuna — Yoga Solutions for Life"
+                },
+                "photo": {
+                    "source": {
+                        "kind": "placeholder",
+                        "description": "Swami Karma Karuna in a quiet moment — close portrait, soft daylight, plain background. Relaxed, present, looking at the camera."
+                    },
+                    "alt": ""
+                },
+                "photoPosition": "right",
+                "kicker": "with Swami Karma Karuna",
+                "heading": "Yoga Solutions for Life",
+                "offerings": [
+                    "Mentoring",
+                    "Coaching",
+                    "Teaching",
+                    "Membership",
+                    "Appearances"
+                ],
+                "paragraphs": [
+                    {
+                        "text": "Swami Karma Karuna has taught yoga for more than twenty-five years in the Satyananda tradition of the Bihar School of Yoga, under the guidance of Swami Niranjanananda Saraswati. She is a founding member and director of Anahata Yoga Retreat in Golden Bay, New Zealand, and teaches in India for part of each year.",
+                        "linkText": "Anahata Yoga Retreat",
+                        "linkHref": "https://www.anahata-retreat.org.nz"
+                    },
+                    {
+                        "text": "She works with people directly: one-to-one mentoring and coaching, yoga teaching online and in person, a membership with regular live sessions and a library of recorded practices, and appearances at retreats, trainings and events around the world."
+                    },
+                    {
+                        "text": "Simple, powerful techniques for transformation — practices that fit a real life, with family, work and everything else in it."
+                    }
+                ],
+                "ledeParagraphIndex": 2,
+                "ctaCaption": "Explore the membership",
+                "ctaAction": "/p/members-library-test",
+                "ctaStyle": "pine",
+                "secondaryCtaCaption": "Book a private session",
+                "secondaryCtaAction": "/p/private-sessions"
+            },
+            "_id": {
+                "buffer": {
+                    "0": 106,
+                    "1": 163,
+                    "2": 16,
+                    "3": 39,
+                    "4": 235,
+                    "5": 92,
+                    "6": 243,
+                    "7": 203,
+                    "8": 255,
+                    "9": 170,
+                    "10": 203,
+                    "11": 147
+                }
+            }
+        },
+        {
+            "widgetId": "ayr-anahataTour",
+            "name": "rich-text",
+            "deleteable": true,
+            "shared": false,
+            "settings": {
+                "alignment": "left",
+                "maxWidth": "max-w-4xl",
+                "verticalPadding": "py-8",
+                "background": {
+                    "type": "color",
+                    "backgroundColor": "#e2d6c1",
+                    "backgroundColorDark": "#3b2b20"
+                },
+                "text": {
+                    "type": "doc",
+                    "content": [
+                        {
+                            "type": "heading",
+                            "attrs": {
+                                "level": 2
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "Anahata, my home base"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "paragraph",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "Anahata Yoga Retreat sits in native forest above Golden Bay. The retreat has its own website, with accommodation, gatherings and an interactive tour."
+                                }
+                            ]
+                        },
+                        {
+                            "type": "paragraph",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "Visit the Anahata website ↗",
+                                    "marks": [
+                                        {
+                                            "type": "link",
+                                            "attrs": {
+                                                "href": "https://www.anahata-retreat.org.nz"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "paragraph",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "Open Anahata's virtual tour ↗",
+                                    "marks": [
+                                        {
+                                            "type": "link",
+                                            "attrs": {
+                                                "href": "https://tour.anahata-retreat.org.nz/index.htm"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "_id": {
+                "buffer": {
+                    "0": 106,
+                    "1": 163,
+                    "2": 16,
+                    "3": 39,
+                    "4": 235,
+                    "5": 92,
+                    "6": 243,
+                    "7": 203,
+                    "8": 255,
+                    "9": 170,
+                    "10": 203,
+                    "11": 148
+                }
+            }
+        },
+        {
+            "widgetId": "ayr-anahataPrivateSessions",
+            "name": "anahataPrivateSessions",
+            "deleteable": true,
+            "shared": false,
+            "settings": {
+                "heading": "Work with Swami one to one",
+                "lead": "Private yoga training, consultations and yogic cleansing practices with Swami Karma Karuna are offered online and in-person by appointment.",
+                "buttonCaption": "Private Sessions",
+                "buttonAction": "/p/private-sessions",
+                "buttonOpensInNewTab": false,
+                "photo": {
+                    "kind": "placeholder",
+                    "description": "Swami Karma Karuna with one student, seated facing each other in conversation. Soft light. Relaxed, attentive."
+                },
+                "photoAlt": "",
+                "showDecorImage": false,
+                "photoPosition": "left"
+            },
+            "_id": {
+                "buffer": {
+                    "0": 106,
+                    "1": 163,
+                    "2": 16,
+                    "3": 39,
+                    "4": 235,
+                    "5": 92,
+                    "6": 243,
+                    "7": 203,
+                    "8": 255,
+                    "9": 170,
+                    "10": 203,
+                    "11": 149
+                }
+            }
+        },
+        {
+            "widgetId": "ayr-anahataGatherings",
+            "name": "anahataGatherings",
+            "deleteable": true,
+            "shared": false,
+            "settings": {
+                "title": "Appearances and events",
+                "intro": "Swami Karma Karuna teaches at retreats, trainings and gatherings in New Zealand, India, Europe, Australia and the USA.",
+                "events": [
+                    {
+                        "id": "anahata-gathering-european-tour",
+                        "title": "European Tour 2026",
+                        "href": "https://www.anahata-retreat.org.nz/event/european-tour-2026",
+                        "image": {
+                            "kind": "placeholder",
+                            "description": "Tour poster — a map silhouette of Europe with the stops marked, the date range in bold, flat colour, no photograph."
+                        },
+                        "imageAlt": "",
+                        "hostLine": "Hosted by: Anahata Yoga Retreat",
+                        "dateRange": "Saturday 01 August, 2026 @ 12:00 am – Saturday 31 October, 2026 @ 11:59 pm",
+                        "excerpt": "Swami Karma Karuna returns to Europe this NZ Winter for another European Summer Tour."
+                    }
+                ],
+                "layout": "row",
+                "moreLink": {
+                    "label": "All Anahata events ↗",
+                    "href": "https://www.anahata-retreat.org.nz/gatherings"
+                }
+            },
+            "_id": {
+                "buffer": {
+                    "0": 106,
+                    "1": 163,
+                    "2": 16,
+                    "3": 39,
+                    "4": 235,
+                    "5": 92,
+                    "6": 243,
+                    "7": 203,
+                    "8": 255,
+                    "9": 170,
+                    "10": 203,
+                    "11": 150
+                }
+            }
+        },
+        {
+            "widgetId": "ayr-anahataPosts",
+            "name": "anahataPosts",
+            "deleteable": true,
+            "shared": false,
+            "settings": {
+                "heading": "Writing and recipes",
+                "posts": [
+                    {
+                        "id": "skk-post-roasted-vegetable-salad",
+                        "title": "Roasted Vegetable Salad",
+                        "date": "September 7, 2026",
+                        "href": "/blog/roasted-vegetable-salad",
+                        "thumbnail": {
+                            "kind": "placeholder",
+                            "description": "Overhead shot of the finished salad on a wooden table, natural light.",
+                            "alt": ""
+                        }
+                    },
+                    {
+                        "id": "skk-post-navigating-the-change",
+                        "title": "Navigating the Change: A Guide to Embracing Menopause",
+                        "date": "April 20, 2026",
+                        "href": "/blog/navigating-the-change-a-guide-to-embracing-menopause",
+                        "thumbnail": {
+                            "kind": "placeholder",
+                            "description": "A woman mid-life, seated in meditation outdoors, calm and unposed.",
+                            "alt": ""
+                        }
+                    },
+                    {
+                        "id": "skk-post-beyond-the-stretch",
+                        "title": "Beyond the Stretch: Why a Nervous System Reset is the Ultimate Life Cleaning",
+                        "date": "March 12, 2026",
+                        "href": "/blog/beyond-the-stretch-why-a-nervous-system-reset-is-the-ultimate-life-cleaning",
+                        "thumbnail": {
+                            "kind": "placeholder",
+                            "description": "A person lying in relaxation pose on a mat, eyes closed, soft light from a window.",
+                            "alt": ""
+                        }
+                    },
+                    {
+                        "id": "skk-post-crunchy-marinated-tempeh-salad",
+                        "title": "Crunchy Marinated Tempeh Salad",
+                        "date": "February 9, 2026",
+                        "href": "/blog/crunchy-marinated-tempeh-salad",
+                        "thumbnail": {
+                            "kind": "placeholder",
+                            "description": "Close-up of the tempeh salad in a bowl, crumbs of marinade visible.",
+                            "alt": ""
+                        }
+                    },
+                    {
+                        "id": "skk-post-from-india-with-love",
+                        "title": "From India with love – An update from Swami Karma Karuna",
+                        "date": "January 4, 2026",
+                        "href": "/blog/from-india-with-love-an-update-from-swami-karma-karuna",
+                        "thumbnail": {
+                            "kind": "placeholder",
+                            "description": "Swami Karma Karuna at the Bihar School of Yoga ashram, morning light, a letter in hand.",
+                            "alt": ""
+                        }
+                    },
+                    {
+                        "id": "skk-post-christmas-recipe",
+                        "title": "Christmas Recipe",
+                        "date": "November 26, 2025",
+                        "href": "/blog/christmas-recipe",
+                        "thumbnail": {
+                            "kind": "placeholder",
+                            "description": "A festive dish served on a plain cloth, a sprig of greenery beside it.",
+                            "alt": ""
+                        }
+                    }
+                ],
+                "moreLink": {
+                    "label": "Read the blog",
+                    "href": "/blog"
+                }
+            },
+            "_id": {
+                "buffer": {
+                    "0": 106,
+                    "1": 163,
+                    "2": 16,
+                    "3": 39,
+                    "4": 235,
+                    "5": 92,
+                    "6": 243,
+                    "7": 203,
+                    "8": 255,
+                    "9": 170,
+                    "10": 203,
+                    "11": 151
+                }
+            }
+        },
+        {
+            "widgetId": "ayr-anahataNewsletter",
+            "name": "anahataNewsletter",
+            "deleteable": true,
+            "shared": false,
+            "settings": {
+                "cssId": "stay-in-touch",
+                "background": {
+                    "type": "color",
+                    "backgroundColor": "#e2d6c1",
+                    "backgroundColorDark": "#3b2b20"
+                }
+            },
+            "_id": {
+                "buffer": {
+                    "0": 106,
+                    "1": 163,
+                    "2": 16,
+                    "3": 39,
+                    "4": 235,
+                    "5": 92,
+                    "6": 243,
+                    "7": 203,
+                    "8": 255,
+                    "9": 170,
+                    "10": 203,
+                    "11": 152
+                }
+            }
+        },
+        {
+            "widgetId": "anahataFooter-khrvql2s85",
+            "name": "anahataFooter",
+            "deleteable": false,
+            "shared": true,
+            "_id": {
+                "buffer": {
+                    "0": 106,
+                    "1": 163,
+                    "2": 16,
+                    "3": 39,
+                    "4": 235,
+                    "5": 92,
+                    "6": 243,
+                    "7": 203,
+                    "8": 255,
+                    "9": 170,
+                    "10": 203,
+                    "11": 153
+                }
+            }
+        }
+    ]
+}

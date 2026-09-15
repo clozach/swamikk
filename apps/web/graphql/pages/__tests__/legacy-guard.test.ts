@@ -1,5 +1,8 @@
 import mongoose from "mongoose";
 import { randomUUID } from "crypto";
+import { readFileSync } from "fs";
+import { join } from "path";
+import { BSON } from "mongodb";
 import PageModel from "@/models/Page";
 import DomainModel from "@/models/Domain";
 import UserModel from "@/models/User";
@@ -19,6 +22,16 @@ jest.mock("@/services/medialit", () => ({
 
 let ctx: any, raw: any;
 const current = () => PageModel.collection.findOne({ _id: raw._id });
+const legacyHomepage = () =>
+    JSON.parse(
+        readFileSync(
+            join(
+                __dirname,
+                "../../../app/api/section-edits/__tests__/fixtures/legacy-homepage-layouts.json",
+            ),
+            "utf8",
+        ),
+    );
 beforeEach(async () => {
     jest.restoreAllMocks();
     const key = randomUUID();
@@ -98,6 +111,123 @@ test("legacy publish and block deletion use the same stored baseline", async () 
     expect(removed.draftLayout).toEqual([]);
     expect(removed.layout).toEqual(published.layout);
     expect(removed.__v).toBe(2);
+});
+
+test("native block deletion keeps the full homepage's legacy BSON identities intact", async () => {
+    const layouts = legacyHomepage();
+    await PageModel.collection.updateOne({ _id: raw._id }, { $set: layouts });
+    await deleteBlock({
+        context: ctx,
+        pageId: raw.pageId,
+        blockId: "ayr-anahataTour",
+    });
+    const removed: any = await current();
+    expect(BSON.serialize({ layout: removed.layout })).toEqual(
+        BSON.serialize({ layout: layouts.layout }),
+    );
+    expect(BSON.serialize({ layout: removed.draftLayout })).toEqual(
+        BSON.serialize({
+            layout: layouts.draftLayout.filter(
+                (widget) => widget.widgetId !== "ayr-anahataTour",
+            ),
+        }),
+    );
+    expect(removed.__v).toBe(1);
+});
+
+test.each([
+    "missing widget name",
+    "new invalid widget identity",
+    "changed invalid widget identity",
+    "invalid page type",
+])("native legacy saves still reject %s before writing", async (invalid) => {
+    await PageModel.collection.updateOne(
+        { _id: raw._id },
+        { $set: legacyHomepage() },
+    );
+    const page: any = await current();
+    const baseline = nativePageBaseline(page);
+    if (invalid === "missing widget name") {
+        page.draftLayout.push({ widgetId: "new-invalid", settings: {} });
+    } else if (invalid === "new invalid widget identity") {
+        page.draftLayout.push({
+            widgetId: "new-invalid",
+            name: "rich-text",
+            _id: page.draftLayout[0]._id,
+        });
+    } else if (invalid === "changed invalid widget identity") {
+        page.draftLayout[0]._id = { buffer: { "0": 0 } };
+    } else page.type = "unsupported-page-type";
+    await expect(guardedNativePageSave(page, baseline)).rejects.toThrow();
+    expect(await current()).toEqual(baseline);
+});
+
+test("native legacy saves keep schema casts and defaults for genuinely new widgets", async () => {
+    const layouts = legacyHomepage();
+    await PageModel.collection.updateOne({ _id: raw._id }, { $set: layouts });
+    const page: any = await current();
+    const baseline = nativePageBaseline(page);
+    page.draftLayout.push({
+        widgetId: "new-widget",
+        name: 123,
+        shared: "false",
+        deleteable: "true",
+        unknownInput: "discard this",
+    });
+    await guardedNativePageSave(page, baseline);
+    const saved: any = await current();
+    const added = saved.draftLayout[saved.draftLayout.length - 1];
+    expect(added).toMatchObject({
+        widgetId: "new-widget",
+        name: "123",
+        shared: false,
+        deleteable: true,
+    });
+    expect(added._id).toBeInstanceOf(mongoose.Types.ObjectId);
+    expect(added.unknownInput).toBeUndefined();
+    expect(BSON.serialize({ layout: saved.draftLayout.slice(0, -1) })).toEqual(
+        BSON.serialize({ layout: layouts.draftLayout }),
+    );
+});
+
+test("approved text changes on the full legacy homepage preserve other BSON and replay once", async () => {
+    const layouts = legacyHomepage();
+    await PageModel.collection.updateOne({ _id: raw._id }, { $set: layouts });
+    const change = await createChange(
+        {
+            target: {
+                kind: "page-widget",
+                pageId: raw.pageId,
+                widgetId: "ayr-anahataHero",
+                field: "heading",
+            },
+            patch: { kind: "text", text: "Reviewed homepage heading" },
+            summary: "Legacy homepage heading",
+        },
+        ctx,
+    );
+    const result = await approveChange(
+        change.id,
+        change.version,
+        change.previewHash,
+        ctx,
+    );
+    expect(result.state.kind).toBe("applied");
+    for (const layout of [layouts.layout, layouts.draftLayout])
+        layout.find(
+            (widget) => widget.widgetId === "ayr-anahataHero",
+        ).settings.heading = "Reviewed homepage heading";
+    const saved: any = await current();
+    expect(
+        BSON.serialize({
+            layout: saved.layout,
+            draftLayout: saved.draftLayout,
+        }),
+    ).toEqual(BSON.serialize(layouts));
+    expect(saved.__v).toBe(1);
+    expect(saved.contentChangeReceipt.outcome).toBe("applied");
+    await approveChange(change.id, change.version, change.previewHash, ctx);
+    expect(await current()).toEqual(saved);
 });
 
 test.each([

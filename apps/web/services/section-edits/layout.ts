@@ -10,8 +10,12 @@ import { fingerprint } from "@/services/content-changes/stable";
 import header from "../../../../packages/page-blocks/src/blocks/anahata-header/metadata";
 import footer from "../../../../packages/page-blocks/src/blocks/anahata-footer/metadata";
 import stockFooter from "../../../../packages/page-blocks/src/blocks/footer/metadata";
+import { BSON } from "mongodb";
 
-export const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value));
+// Preserve native and legacy BSON identities inside retained blocks.
+export const clone = <T>(value: T): T =>
+    BSON.deserialize(BSON.serialize({ value }, { ignoreUndefined: true }))
+        .value as T;
 const structural = new Set([
     "header",
     header.name,
@@ -30,12 +34,7 @@ export const widgetFingerprint = (widget: WidgetInstance) =>
         deleteable: widget.deleteable,
         settings: widget.settings,
     });
-export const sectionLabel = (widget: WidgetInstance) => {
-    const value = ["heading", "title", "name", "kicker"]
-        .map((key) => widget.settings?.[key])
-        .find((item) => typeof item === "string" && item.trim());
-    return typeof value === "string" ? value.trim().slice(0, 160) : widget.name;
-};
+export { sectionLabel } from "./labels";
 export function positionOf(snapshot: SectionLayoutSnapshot): SectionPosition {
     const index = snapshot.order.indexOf(snapshot.widget.widgetId);
     return {

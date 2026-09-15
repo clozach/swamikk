@@ -324,15 +324,17 @@ async function applyPageWidgetEdit(
             : item,
     );
     const entry = await record(input, widget.name, ctx);
-    const saved = (await PageModel.findOneAndUpdate(
-        pageWriteFilter(page),
-        {
-            $set: { layout, ...(draftLayout ? { draftLayout } : {}) },
-            $inc: { __v: 1 },
+    // Text/settings were validated above. Preserve every stored block identity
+    // instead of re-casting the complete layout through Mongoose.
+    const saved = await PageModel.collection.updateOne(pageWriteFilter(page), {
+        $set: {
+            layout,
+            ...(draftLayout ? { draftLayout } : {}),
+            updatedAt: new Date(),
         },
-        { new: true, runValidators: true },
-    ).lean()) as { __v?: number } | null;
-    if (!saved) {
+        $inc: { __v: 1 },
+    });
+    if (saved.modifiedCount !== 1) {
         await settleRecord(entry, {
             state: "failed",
             reason: "The page changed while saving.",
@@ -343,7 +345,7 @@ async function applyPageWidgetEdit(
             409,
         );
     }
-    const revision = saved.__v || pageRevision(page) + 1;
+    const revision = pageRevision(page) + 1;
     await settleRecord(entry, { state: "applied", revision });
     return { kind: "applied", edit: view({ ...entry.toObject(), revision }) };
 }

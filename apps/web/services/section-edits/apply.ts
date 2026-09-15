@@ -160,16 +160,16 @@ async function resume(
         return { kind: "applied", edit: view(await failed(row, ctx)) };
     const layouts = changedLayouts(page, row.snapshot, row.action);
     // The retained operation is written before this CAS. Page and receipt are one write.
-    const saved = await PageModel.findOneAndUpdate(
-        pageWriteFilter(page),
-        {
-            $set: layouts,
-            $inc: { __v: 1 },
-            $addToSet: { sectionEditReceipts: row.editId },
-        },
-        { new: true, runValidators: true },
-    ).lean();
-    const settled = saved ? await settleApplied(row) : await failed(row, ctx);
+    // Recasting these already-stored arrays rejects untouched legacy block IDs.
+    const saved = await PageModel.collection.updateOne(pageWriteFilter(page), {
+        $set: { ...layouts, updatedAt: new Date() },
+        $inc: { __v: 1 },
+        $addToSet: { sectionEditReceipts: row.editId },
+    });
+    const settled =
+        saved.modifiedCount === 1
+            ? await settleApplied(row)
+            : await failed(row, ctx);
     return { kind: "applied", edit: view(settled) };
 }
 

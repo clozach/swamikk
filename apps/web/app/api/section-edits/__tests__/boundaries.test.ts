@@ -163,23 +163,19 @@ describe("section edit boundaries", () => {
     it("wins no write when a simultaneous native edit changes the captured page", async () => {
         const h = await harness();
         const input = await h.removal();
-        const write = PageModel.findOneAndUpdate.bind(PageModel);
-        jest.spyOn(PageModel, "findOneAndUpdate").mockImplementationOnce(
-            (...args: any[]) =>
-                ({
-                    lean: async () => {
-                        await PageModel.updateOne(
-                            { _id: h.page._id },
-                            {
-                                $set: {
-                                    "layout.1.settings.heading":
-                                        "Concurrent words",
-                                },
-                            },
-                        );
-                        return write(...args).lean();
+        const write = PageModel.collection.updateOne.bind(PageModel.collection);
+        jest.spyOn(PageModel.collection, "updateOne").mockImplementationOnce(
+            async (...args: any[]) => {
+                await PageModel.updateOne(
+                    { _id: h.page._id },
+                    {
+                        $set: {
+                            "layout.1.settings.heading": "Concurrent words",
+                        },
                     },
-                }) as any,
+                );
+                return write(...args);
+            },
         );
         expect((await h.post(input)).status).toBe(409);
         const current: any = await h.fresh();
