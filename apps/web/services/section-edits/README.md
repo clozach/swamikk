@@ -62,3 +62,10 @@ After deploying the matched app/queue build and mounting the section controls:
 6. Use a member session or enter Member Mimic; confirm section controls are unavailable and direct API calls are denied.
 
 The owning project's Changes deck supplies browser evidence. API tests alone do not establish that a running baked image includes this source.
+
+
+### Local rehearsal — 15 September 2026
+
+App source `d43420eb` and queue source `54a5c4e4` passed the local rehearsal. Desktop removal, focused in-place Undo, toolbar Redo, reload-persistent recovery, History restoration and mixed text/section keyboard Undo/Redo all worked. At a 390×844 viewport, pointer removal and Undo remained in view with no horizontal overflow. The original homepage's eight published and eight draft blocks were restored exactly; all ten applied section operations have settled History entries and no outstanding page receipts.
+
+The final source checks passed 31 section tests and 195 content/page workflow tests, plus full web TypeScript and scoped lint/formatting. The earlier full repository checkpoint passed 254 suites and 2,171 tests. The owning vault evidence records build IDs, screenshots, baseline hashes and the separately retained failed pre-fix rehearsal; hosted rollout remains a separate release.
