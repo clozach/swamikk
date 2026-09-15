@@ -654,6 +654,13 @@ export const sectionEditUi = {
 } as const;
 
 export const meetingQuestionsUi = {
+    dashboardButton: "Questions for KK",
+    dashboard: "Back to the admin dashboard",
+    groups: {
+        start: "Start here",
+        optional: "If useful",
+        humanitix: "Humanitix ideas — optional; the build is on ice",
+    },
     retry: "Retry save",
     refreshFailed: "Saved. The other answers could not be refreshed yet.",
     retryPending:

@@ -32,8 +32,11 @@ export default function MeetingQuestionsPage() {
             data-feedback-ui
             className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6"
         >
-            <Link href="/" className="text-sm underline underline-offset-4">
-                {copy.home}
+            <Link
+                href="/dashboard"
+                className="text-sm underline underline-offset-4"
+            >
+                {copy.dashboard}
             </Link>
             <header className="my-6">
                 <h1 className="text-3xl font-semibold">{copy.title}</h1>
@@ -75,16 +78,35 @@ export default function MeetingQuestionsPage() {
                             <p className="mb-5 whitespace-pre-wrap">
                                 {set.intro}
                             </p>
-                            <QuestionList
-                                set={set}
-                                data={state.data}
-                                openQuestion={
-                                    set.id === requestedSetId
-                                        ? questionId
-                                        : undefined
-                                }
-                                onSaved={refresh}
-                            />
+                            {(["start", "optional", "humanitix"] as const).map(
+                                (group) => {
+                                    const questionIds = set.questions
+                                        .filter(
+                                            (question) =>
+                                                question.group === group,
+                                        )
+                                        .map((question) => question.id);
+                                    if (!questionIds.length) return null;
+                                    return (
+                                        <section key={group} className="mt-8">
+                                            <h2 className="mb-4 text-xl font-semibold">
+                                                {copy.groups[group]}
+                                            </h2>
+                                            <QuestionList
+                                                set={set}
+                                                data={state.data}
+                                                questionIds={questionIds}
+                                                openQuestion={
+                                                    set.id === requestedSetId
+                                                        ? questionId
+                                                        : undefined
+                                                }
+                                                onSaved={refresh}
+                                            />
+                                        </section>
+                                    );
+                                },
+                            )}
                         </section>
                     ))}
                 </>

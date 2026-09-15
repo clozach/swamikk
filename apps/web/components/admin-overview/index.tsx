@@ -3,7 +3,14 @@
 import { useContext, useEffect, useState } from "react";
 import { ProfileContext } from "@/components/contexts";
 import DashboardContent from "@/components/admin/dashboard-content";
-import { ADMIN_PERMISSIONS } from "@ui-config/constants";
+import {
+    ADMIN_PERMISSIONS,
+    FEEDBACK_ADMIN_PERMISSIONS,
+} from "@ui-config/constants";
+import { checkPermission } from "@courselit/utils";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { meetingQuestionsUi } from "@config/strings";
 import { UIConstants } from "@courselit/common-models";
 import { useMemberMimic } from "@/components/member-mimic/context";
 import type { AdminOverview } from "@/services/admin-overview/types";
@@ -25,12 +32,27 @@ export default function AdminOverviewPage({
         profile?.permissions?.includes(
             UIConstants.permissions.manageSettings,
         ) && mimic.kind === "inactive";
+    const showMeetingQuestions =
+        !diagnostics &&
+        mimic.kind === "inactive" &&
+        !!profile?.userId &&
+        checkPermission(profile.permissions || [], FEEDBACK_ADMIN_PERMISSIONS);
     return (
         <DashboardContent
             breadcrumbs={[{ label: title, href: "#" }]}
             permissions={ADMIN_PERMISSIONS}
         >
-            <h1 className="mb-6 text-3xl font-semibold">{title}</h1>
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+                <h1 className="text-3xl font-semibold">{title}</h1>
+                {/* Temporary meeting entry point; remove after the KK/Sunnie meeting. */}
+                {showMeetingQuestions && (
+                    <Button asChild variant="outline">
+                        <Link href="/meeting-questions">
+                            {meetingQuestionsUi.dashboardButton}
+                        </Link>
+                    </Button>
+                )}
+            </div>
             {!profile?.userId ? (
                 <p role="status">{copy.loading}</p>
             ) : allowed ? (
