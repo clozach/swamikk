@@ -23,7 +23,7 @@ export function projectMimicSubject(subject: InternalUser): InternalUser {
         name: subject.name,
         email: subject.email,
         bio: subject.bio,
-        avatar: subject.avatar,
+        avatar: undefined,
         active: subject.active,
         subscribedToUpdates: subject.subscribedToUpdates,
         permissions: [],

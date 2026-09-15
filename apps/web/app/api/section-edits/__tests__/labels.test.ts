@@ -113,11 +113,11 @@ test("an intentional empty heading uses the readable block name, not hidden defa
 });
 
 test.each([
-    ["anahataHero", "Welcome to Anahata"],
+    ["anahataHero", "Yoga Solutions for Life"],
     ["anahataTour", "Take a tour of Anahata"],
-    ["anahataPrivateSessions", "Anahata Private Sessions"],
-    ["anahataGatherings", "Upcoming Gatherings"],
-    ["anahataPosts", "Recent Posts"],
+    ["anahataPrivateSessions", "Work with Swami one to one"],
+    ["anahataGatherings", "Appearances and events"],
+    ["anahataPosts", "Writing and recipes"],
 ])("%s uses the heading its current renderer supplies", (name, expected) => {
     expect(sectionLabel(block(name))).toBe(expected);
 });

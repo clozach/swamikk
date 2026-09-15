@@ -6,7 +6,13 @@ import React, { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { Profile } from "@courselit/common-models";
 import { MenuItem, TopBarItem } from "../settings";
-import { DRAWER, FONT_BODY, MOBILE_LINK, SAFFRON } from "./tokens";
+import {
+    DARK_SURFACE_VARS,
+    DRAWER,
+    FONT_BODY,
+    MOBILE_ICON_BUTTON,
+    MOBILE_LINK,
+} from "./tokens";
 import Chevron from "./chevron";
 import { MobileAccountSection } from "./account-control";
 
@@ -30,7 +36,7 @@ function MobileBranch({
     return (
         <li
             className="m-0 list-none border-b border-solid p-0"
-            style={{ borderBottomColor: "rgba(255,255,255,0.06)" }}
+            style={{ borderBottomColor: "var(--nav-edge)" }}
         >
             <div className="flex items-stretch justify-between">
                 <a
@@ -57,7 +63,10 @@ function MobileBranch({
                             item.label
                         }`}
                         onClick={() => setExpanded((current) => !current)}
-                        className="flex w-14 shrink-0 items-center justify-center text-white transition-colors duration-100 ease-in hover:text-[#ff9900] focus-visible:text-[#ff9900] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#ff9900]"
+                        className={clsx(
+                            "flex w-14 shrink-0 items-center justify-center focus-visible:outline-offset-[-2px]",
+                            MOBILE_ICON_BUTTON,
+                        )}
                     >
                         <Chevron direction={expanded ? "down" : "right"} />
                     </button>
@@ -245,9 +254,10 @@ export default function MobileOverlay({
                     {
                         backgroundColor: DRAWER,
                         fontFamily: FONT_BODY,
-                        // The drawer is a sibling of the header band, so its
-                        // account controls need their own focus-color token.
-                        "--nav-fg-hover": SAFFRON,
+                        // The drawer sits outside the band, so it sets its own
+                        // --nav-* set: always the dark surface, whatever the
+                        // page theme.
+                        ...DARK_SURFACE_VARS,
                     } as React.CSSProperties
                 }
             >
@@ -255,7 +265,10 @@ export default function MobileOverlay({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-5 py-[10px] font-bold leading-none text-white transition-colors duration-100 ease-in hover:text-[#ff9900] focus-visible:text-[#ff9900] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff9900]"
+                        className={clsx(
+                            "px-5 py-[10px] font-bold leading-none focus-visible:outline-offset-2",
+                            MOBILE_ICON_BUTTON,
+                        )}
                         style={{
                             fontFamily: '"Times New Roman", Times, serif',
                             fontSize: "32px",

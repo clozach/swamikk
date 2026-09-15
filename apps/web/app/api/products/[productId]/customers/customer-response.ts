@@ -38,7 +38,7 @@ export function serializeCustomer(
         userId: user.userId,
         email: user.email,
         name: user.name,
-        avatar: user.avatar,
+        avatar: null,
         membershipId: membership?.membershipId,
         membershipStatus: membership?.status,
         subscriptionMethod: membership?.subscriptionMethod,

@@ -24,7 +24,36 @@ const path = z
     .regex(/^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+){0,23}$/);
 const text = z.string().max(MAX_TEXT);
 const node = z.object({ type: z.string().min(1).max(40) }).passthrough();
+const image = z.discriminatedUnion("kind", [
+    z.object({ kind: z.literal("url"), url: z.string().max(8192) }).strict(),
+    z
+        .object({
+            kind: z.literal("placeholder"),
+            description: z.string().max(20000),
+        })
+        .strict(),
+    z
+        .object({
+            kind: z.literal("media"),
+            media: z
+                .object({
+                    mediaId: z.string().min(1).max(200),
+                    originalFileName: z.string().max(1000).optional(),
+                    mimeType: z.string().max(120).optional(),
+                    size: z.number().nonnegative().optional(),
+                    access: z.enum(["public", "private"]).optional(),
+                    thumbnail: z.string().max(8192).optional(),
+                    file: z.string().max(8192).optional(),
+                    caption: z.string().max(20000).optional(),
+                })
+                .passthrough(),
+        })
+        .strict(),
+]);
 const change = z.discriminatedUnion("kind", [
+    z
+        .object({ kind: z.literal("image"), path, before: image, after: image })
+        .strict(),
     z
         .object({ kind: z.literal("text"), path, before: text, after: text })
         .strict(),
@@ -32,7 +61,7 @@ const change = z.discriminatedUnion("kind", [
         .object({ kind: z.literal("node"), path, before: node, after: node })
         .strict(),
 ]);
-const input = z
+const textEditInputSchema = z
     .object({
         target: z.discriminatedUnion("kind", [
             z
@@ -72,7 +101,7 @@ export async function POST(req: NextRequest) {
         assertNoMemberMimicMutation(req.headers);
         const ctx = await requestContext(req);
         await limitRequest(req, ctx, "text-edit", 120);
-        const body = input.parse(await readBoundedJson(req));
+        const body = textEditInputSchema.parse(await readBoundedJson(req));
         const result = await applyTextEdit(body, ctx);
         if (result.kind === "stale")
             staleBody = {

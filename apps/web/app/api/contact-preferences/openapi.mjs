@@ -57,7 +57,7 @@ export const contactPreferencesApiOpenApi = {
         {
             name: "Contact preferences",
             description:
-                "Optional private contact/check-in/photo sharing. Separate from newsletter consent and public avatars.",
+                "Optional private contact/check-in/photo sharing. Separate from newsletter consent; member photos are private recognition aids.",
         },
     ],
     paths: {
@@ -135,14 +135,84 @@ export const contactPreferencesApiOpenApi = {
             },
         },
         "/api/contact-preferences/photo": {
+            put: {
+                tags: ["Contact preferences"],
+                operationId: "saveContactPreferencePhoto",
+                security: [{ CourseLitSession: [] }],
+                summary: "Save an own private photo immediately",
+                description:
+                    "Same-origin JSON and active ownership required; Mimic cannot write. Shares the preference revision compare-and-swap. Reads the saved contact/check-in fields and preserves them, so pending form edits are not submitted by a photo change. Same bounded JPEG processing as preference saves. No external delivery or MediaLit object is created.",
+                requestBody: {
+                    required: true,
+                    ...json({
+                        type: "object",
+                        additionalProperties: false,
+                        required: ["revision", "photo"],
+                        properties: {
+                            revision: { type: "integer", minimum: 0 },
+                            photo: {
+                                oneOf: [
+                                    ...["keep", "remove"].map((kind) => ({
+                                        type: "object",
+                                        additionalProperties: false,
+                                        required: ["kind"],
+                                        properties: {
+                                            kind: {
+                                                type: "string",
+                                                enum: [kind],
+                                            },
+                                        },
+                                    })),
+                                    {
+                                        type: "object",
+                                        additionalProperties: false,
+                                        required: ["kind", "data"],
+                                        properties: {
+                                            kind: {
+                                                type: "string",
+                                                enum: ["replace"],
+                                            },
+                                            data: {
+                                                type: "string",
+                                                minLength: 1,
+                                                maxLength: 2800000,
+                                                description:
+                                                    "Base64 image bytes, without data URL prefix.",
+                                            },
+                                        },
+                                    },
+                                ],
+                            },
+                        },
+                    }),
+                },
+                responses: {
+                    200: {
+                        description:
+                            "Saved photo and unchanged saved contact preferences.",
+                        ...json(view),
+                    },
+                    ...errors,
+                },
+            },
             get: {
                 tags: ["Contact preferences"],
                 operationId: "getContactPreferencePhoto",
+                parameters: [
+                    {
+                        in: "query",
+                        name: "userId",
+                        required: false,
+                        schema: { type: "string" },
+                        description:
+                            "Same-tenant target for current member managers; omitted for self/Mimic.",
+                    },
+                ],
                 security: [{ CourseLitSession: [] }],
                 summary:
-                    "Read the private photo through current owner/Mimic authorization",
+                    "Read a private photo as its owner, current member manager or Mimic subject",
                 description:
-                    "No arbitrary member/media IDs. Private no-store JPEG response with same-origin resource policy. Removed/unshared photo returns 404; revoked or expired authorization cannot fetch it.",
+                    "Optional userId selects an active same-tenant member only for current member managers; ordinary members cannot select others, and Mimic is restricted to its subject. No media IDs or public URLs. Private no-store JPEG response with same-origin resource policy. Removed/unshared photo returns 404; revoked or expired authorization cannot fetch it.",
                 responses: {
                     200: {
                         description: "Private JPEG.",

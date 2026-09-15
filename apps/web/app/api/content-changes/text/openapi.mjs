@@ -22,8 +22,60 @@ const richNode = {
     description:
         "A rich-text block node in the stored TipTap shape, replaced whole; proven by the same structure validation as proposals (allowed marks only, embedded material retained).",
 };
+const imageSource = {
+    oneOf: [
+        {
+            type: "object",
+            additionalProperties: false,
+            required: ["kind", "url"],
+            properties: {
+                kind: { const: "url" },
+                url: { type: "string", maxLength: 8192 },
+            },
+        },
+        {
+            type: "object",
+            additionalProperties: false,
+            required: ["kind", "description"],
+            properties: {
+                kind: { const: "placeholder" },
+                description: { type: "string", maxLength: 20000 },
+            },
+        },
+        {
+            type: "object",
+            additionalProperties: false,
+            required: ["kind", "media"],
+            properties: {
+                kind: { const: "media" },
+                media: {
+                    type: "object",
+                    required: ["mediaId"],
+                    properties: {
+                        mediaId: {
+                            type: "string",
+                            minLength: 1,
+                            maxLength: 200,
+                        },
+                    },
+                },
+            },
+        },
+    ],
+};
 export const textChange = {
     oneOf: [
+        {
+            type: "object",
+            additionalProperties: false,
+            required: ["kind", "path", "before", "after"],
+            properties: {
+                kind: { const: "image" },
+                path,
+                before: imageSource,
+                after: imageSource,
+            },
+        },
         {
             type: "object",
             additionalProperties: false,
@@ -77,7 +129,7 @@ export const textEditTarget = {
 export const textEdit = {
     type: "object",
     description:
-        "One applied inline edit: editId, target, widgetName, changes (each with its exact before/after string or node), userId, at, the page/site revision it produced, and undoOf when it reverses another edit. Rows are append-only.",
+        "One applied inline edit: editId, target, widgetName, changes (each with its exact before/after string, node or image source), userId, at, the page/site revision it produced, and undoOf when it reverses another edit. Rows are append-only.",
 };
 export const textEditPaths = {
     "/api/content-changes/text/leaves": {
@@ -85,7 +137,7 @@ export const textEditPaths = {
             tags: ["Content changes"],
             summary: "Inline-editable text on a page",
             description:
-                "Every visible string a site manager may edit in place: each non-shared block's stored settings plus its defaults for unset fields, and the shared header/footer. Addresses, identities, image sources and presentation keys are never listed. Requires site:manage outside Member Mimic.",
+                "Every visible string a site manager may edit in place: each non-shared block's stored settings plus its defaults for unset fields, and the shared header/footer. Image sources are listed separately in images from an explicit block registry; they never appear as text leaves. Addresses, identities and presentation keys are never text targets. Requires site:manage outside Member Mimic.",
             security: session,
             parameters: [
                 { name: "pageId", in: "query", required: true, schema: id },
@@ -107,6 +159,22 @@ export const textEditPaths = {
                                         widgetId: id,
                                         name: { type: "string" },
                                         shared: { type: "boolean" },
+                                        images: {
+                                            type: "array",
+                                            items: {
+                                                type: "object",
+                                                required: [
+                                                    "path",
+                                                    "label",
+                                                    "value",
+                                                ],
+                                                properties: {
+                                                    path,
+                                                    label: { type: "string" },
+                                                    value: imageSource,
+                                                },
+                                            },
+                                        },
                                         leaves: {
                                             type: "array",
                                             items: {
@@ -147,9 +215,9 @@ export const textEditPaths = {
     "/api/content-changes/text/edit": {
         post: {
             tags: ["Content changes"],
-            summary: "Apply one inline text edit",
+            summary: "Apply one inline text or image edit",
             description:
-                "Applies one to eight changes on one widget together — string leaves and whole rich-text paragraphs/headings — immediately on the published page, mirrored into an existing draft of the same text. Each `before` must equal the stored value or node; otherwise 409 returns the current values. A draft that already changes the text, an emptied string, removed or lost link words, disallowed formatting or a control character is refused. Every attempt is recorded; applied edits form the page's history. Same-origin JSON only.",
+                "Applies one to eight changes on one widget together — string leaves, whole rich-text paragraphs/headings and registered image sources — immediately on the published page, mirrored into an existing draft of the same text. Each `before` must equal the stored value or node; otherwise 409 returns the current values. A draft that already changes the text, an emptied string, removed or lost link words, disallowed formatting or a control character is refused. Validation precedes the applying history row; the source write and receipt commit atomically, and applied edits form retained history. New images must be public raster assets from this site's MediaLit library; the server resolves their canonical metadata and seals them. URL and placeholder restoration requires undoOf to match the same retained source, image path and historical before value. Same-origin JSON only.",
             security: session,
             requestBody: {
                 required: true,

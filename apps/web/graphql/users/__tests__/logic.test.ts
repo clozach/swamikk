@@ -457,8 +457,7 @@ describe("Certificate generation", () => {
         expect(result.productTitle).toBe("Advanced Course");
         expect(result.userName).toBe("John Doe");
         expect(result.createdAt).toEqual(new Date("2024-01-01"));
-        expect(result.userImage).toBeDefined();
-        expect(result.userImage!.file).toBe("avatar.jpg");
+        expect(result.userImage).toBeNull();
         expect(result.productPageId).toBe("page-123");
     });
 

@@ -29,7 +29,7 @@ import { normalizePostThumbnail } from "./thumbnail";
 import {
     heading as defaultHeading,
     headingLink as defaultHeadingLink,
-    MORE_LINK as defaultMoreLink,
+    moreLink as defaultMoreLink,
     newPost,
     posts as defaultPosts,
     verticalPadding as defaultVerticalPadding,
@@ -85,7 +85,6 @@ export default function AdminWidget({
 
     useEffect(() => {
         onChange({
-            ...settings,
             heading,
             headingLink,
             posts,
@@ -312,7 +311,7 @@ function PostEditor({
 
             <ImageSourceField
                 label="Thumbnail"
-                tooltip="Shown as a square thumbnail, cropped to fill. Pick Placeholder to describe an unfinished image."
+                tooltip="Shown 3:2, cropped to fill. Pick Placeholder and describe the photo until the real one arrives."
                 value={thumbnail.source}
                 onChange={setSource}
                 urlPlaceholder="/anahata/post-roasted-vegetable-salad.jpg"

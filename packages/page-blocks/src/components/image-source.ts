@@ -1,4 +1,4 @@
-import type { Media } from "@courselit/common-models";
+import type { ImageSource, Media } from "@courselit/common-models";
 
 /**
  * Where a picture comes from — the ONE tagged union every block uses.
@@ -14,10 +14,7 @@ import type { Media } from "@courselit/common-models";
  * where it already lives (a wrapper, a sibling setting, inside the arm), and
  * `placeholderAlt` derives the well's accessible name in one place.
  */
-export type ImageSource =
-    | { kind: "url"; url: string }
-    | { kind: "media"; media: Partial<Media> }
-    | { kind: "placeholder"; description: string };
+export type { ImageSource } from "@courselit/common-models";
 
 export type ImageSourceKind = ImageSource["kind"];
 export type WaitingImageSource = Extract<ImageSource, { kind: "placeholder" }>;

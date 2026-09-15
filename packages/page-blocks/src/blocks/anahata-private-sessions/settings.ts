@@ -26,8 +26,8 @@ export interface Bullet {
 }
 
 /**
- * Which side the photograph sits on at >= 768px. Below that the photograph
- * leads, following the classic callout layout.
+ * Which side the photograph sits on at >= 768px. Below that the copy leads and
+ * the photograph follows it (the Forest & Bone split on phones).
  */
 export type PhotoPosition = "left" | "right";
 
@@ -59,7 +59,7 @@ export default interface Settings extends WidgetDefaultSettings {
     buttonAction?: string;
     buttonOpensInNewTab?: boolean;
 
-    /** Palette overrides. Defaults are the classic Anahata colors. */
+    /** Palette overrides. Defaults are the swamikk v1.0 tokens (Forest & Bone). */
     panelColor?: string;
     /** Heading, lead line and the bullet markers — the display voice. */
     leadColor?: string;

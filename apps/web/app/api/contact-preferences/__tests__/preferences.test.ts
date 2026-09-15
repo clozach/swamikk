@@ -21,7 +21,7 @@ import {
     deleteTenantContactPreferences,
 } from "@/services/contact-preferences/cleanup";
 import { GET, PUT } from "../route";
-import { GET as photoGet } from "../photo/route";
+import { GET as photoGet, PUT as photoPut } from "../photo/route";
 
 jest.mock("@/auth", () => ({ auth: { api: { getSession: jest.fn() } } }));
 
@@ -248,7 +248,7 @@ describe("private contact preferences", () => {
             status: 403,
         });
     });
-    it("ignores arbitrary target IDs and gates photo reads with no-store responses", async () => {
+    it("allows a current member manager to read the target photo with no-store responses", async () => {
         await saveContactPreferences(
             { ...choice(), photo: { kind: "replace", data: await jpeg() } },
             ctx,
@@ -262,7 +262,7 @@ describe("private contact preferences", () => {
         });
         expect(
             (await photoGet(request(`/photo?userId=${member.userId}`))).status,
-        ).toBe(404);
+        ).toBe(200);
         (auth.api.getSession as unknown as jest.Mock).mockResolvedValue(null);
         expect((await GET(request())).status).toBe(403);
     });
@@ -399,5 +399,114 @@ describe("private contact preferences", () => {
                 domain: domain._id,
             }),
         ).toBe(1);
+    });
+});
+
+describe("private photo access and immediate saving", () => {
+    it("refuses guest, another member, foreign tenant and inactive targets", async () => {
+        await saveContactPreferences(
+            { ...choice(), photo: { kind: "replace", data: await jpeg() } },
+            ctx,
+        );
+        (auth.api.getSession as unknown as jest.Mock).mockResolvedValue(null);
+        expect(
+            (await photoGet(request(`/photo?userId=${member.userId}`))).status,
+        ).toBe(403);
+        const stranger = await UserModel.create({
+            domain: domain._id,
+            userId: randomUUID(),
+            email: "stranger@example.com",
+            active: true,
+            permissions: [],
+        });
+        (auth.api.getSession as unknown as jest.Mock).mockResolvedValue({
+            user: { email: stranger.email },
+            session: { id: "stranger" },
+        });
+        expect(
+            (await photoGet(request(`/photo?userId=${member.userId}`))).status,
+        ).toBe(404);
+        (auth.api.getSession as unknown as jest.Mock).mockResolvedValue({
+            user: { email: actor.email },
+            session: { id: "admin" },
+        });
+        const foreign = await UserModel.create({
+            domain: otherDomain._id,
+            userId: randomUUID(),
+            email: "foreign@example.com",
+            active: true,
+        });
+        expect(
+            (await photoGet(request(`/photo?userId=${foreign.userId}`))).status,
+        ).toBe(404);
+        await member.updateOne({ active: false });
+        expect(
+            (await photoGet(request(`/photo?userId=${member.userId}`))).status,
+        ).toBe(404);
+    });
+    it("persists only the photo immediately, retains saved contact fields, and rejects stale or unauthorized changes", async () => {
+        await saveContactPreferences(
+            {
+                ...choice(),
+                contact: { kind: "voice", value: "+64 21 7654321" },
+                checkIns: "occasional",
+            },
+            ctx,
+        );
+        const write = (body: any, headers = {}) =>
+            photoPut(
+                request("/photo", {
+                    method: "PUT",
+                    body: JSON.stringify(body),
+                    headers,
+                }),
+            );
+        const result = await write({
+            revision: 1,
+            photo: { kind: "replace", data: await jpeg() },
+        });
+        expect(result.status).toBe(200);
+        expect(await result.json()).toMatchObject({
+            revision: 2,
+            contact: { kind: "voice", value: "+64 21 7654321" },
+            checkIns: "occasional",
+            photo: { kind: "shared", version: 2 },
+        });
+        expect(
+            (await write({ revision: 1, photo: { kind: "remove" } })).status,
+        ).toBe(409);
+        expect(
+            (
+                await write(
+                    { revision: 2, photo: { kind: "remove" } },
+                    { origin: "https://evil.example" },
+                )
+            ).status,
+        ).toBe(403);
+        expect(
+            (
+                await write(
+                    { revision: 2, photo: { kind: "remove" } },
+                    { cookie: `${MEMBER_MIMIC_COOKIE}=invalid` },
+                )
+            ).status,
+        ).toBe(403);
+        expect(
+            (
+                await write({
+                    revision: 2,
+                    photo: { kind: "remove" },
+                    contact: { kind: "email", value: "not-saved@example.com" },
+                })
+            ).status,
+        ).toBe(400);
+        expect(
+            (await write({ revision: 2, photo: { kind: "remove" } })).status,
+        ).toBe(200);
+        expect((await photoGet(request("/photo"))).status).toBe(404);
+        expect(await readContactPreferences(ctx)).toMatchObject({
+            contact: { kind: "voice", value: "+64 21 7654321" },
+            checkIns: "occasional",
+        });
     });
 });

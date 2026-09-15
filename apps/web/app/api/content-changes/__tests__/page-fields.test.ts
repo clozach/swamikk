@@ -200,11 +200,17 @@ it("replaces a placeholder baseline with a resolved library image through the or
     );
     expect((mirrored.settings!.photo as any).source.kind).toBe("media");
 });
-it("lists explicitly saved hero extras while classic defaults keep them absent", () => {
-    const classicFields = pageWidgetFields(hero()).map((item) => item.field);
-    expect(classicFields).not.toContain("kicker");
-    expect(classicFields).not.toContain("ctaCaption");
-    expect(classicFields).not.toContain("secondaryCtaCaption");
+it("lists wireframe hero defaults and saved extras while respecting explicitly empty text", () => {
+    const defaultFields = pageWidgetFields(hero()).map((item) => item.field);
+    expect(defaultFields).toEqual(
+        expect.arrayContaining(["kicker", "ctaCaption", "secondaryCtaCaption"]),
+    );
+    const hidden = pageWidgetFields(
+        hero({ kicker: "", ctaCaption: "", secondaryCtaCaption: "" }),
+    ).map((item) => item.field);
+    expect(hidden).not.toContain("kicker");
+    expect(hidden).not.toContain("ctaCaption");
+    expect(hidden).not.toContain("secondaryCtaCaption");
     const fields = pageWidgetFields(
         hero({
             kicker: "With Swami Karma Karuna",

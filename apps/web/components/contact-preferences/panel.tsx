@@ -54,6 +54,19 @@ export default function ContactPreferencesPanel({
             throw new Error(result.error?.message || copy.saveFailed);
         return result;
     }
+    async function savePhoto(
+        input: Pick<ContactPreferencesInput, "revision" | "photo">,
+    ): Promise<ContactPreferences> {
+        const response = await fetch("/api/contact-preferences/photo", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(input),
+        });
+        const result = await response.json();
+        if (!response.ok)
+            throw new Error(result.error?.message || copy.saveFailed);
+        return result;
+    }
     return (
         <Card className="mt-6" id="contact-preferences">
             <CardHeader>
@@ -76,6 +89,7 @@ export default function ContactPreferencesPanel({
                         initial={state.value}
                         readOnly={readOnly}
                         onSave={save}
+                        onSavePhoto={savePhoto}
                         onReload={reload}
                     />
                 )}

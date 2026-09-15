@@ -61,7 +61,8 @@ import CertificateTemplateModel, {
     CertificateTemplate,
 } from "@models/CertificateTemplate";
 const { permissions } = UIConstants;
-import { sealMedia } from "@/services/medialit";
+import { canReadMemberDetails } from "@/services/member-privacy";
+import { ContactPreferencesModel } from "@/services/contact-preferences/model";
 import { seedNotificationPreferencesForUser } from "../notifications/logic";
 import { sanitizeEmail } from "@/lib/sanitize-email";
 import { invalidateDomainCache } from "@/lib/domain-cache";
@@ -70,9 +71,6 @@ const removeAdminFieldsFromUserObject = (user: any) => ({
     id: user._id,
     name: user.name,
     userId: user.userId,
-    bio: user.bio,
-    email: user.email,
-    avatar: user.avatar,
 });
 
 export const getUser = async (
@@ -98,14 +96,12 @@ export const getUser = async (
         throw new Error(responses.item_not_found);
     }
 
-    if (
-        ctx.user &&
-        (user.userId === ctx.user.userId ||
-            checkPermission(ctx.user.permissions, [permissions.manageUsers]))
-    ) {
+    if (canReadMemberDetails(user, ctx)) {
         return {
             ...(typeof user.toObject === "function" ? user.toObject() : user),
             id: user.id || String(user._id),
+            // Legacy avatars remain stored, but their public URLs are retired.
+            avatar: undefined,
             purchases: await projectMemberPurchases(
                 String(ctx.subdomain._id),
                 user,
@@ -135,6 +131,11 @@ export const updateUser = async (userData: UserData, ctx: GQLContext) => {
     checkIfAuthenticated(ctx);
     const { id } = userData;
     const keys = Object.keys(userData);
+    if (keys.includes("avatar")) {
+        throw new Error(
+            "Use your private member photo in contact preferences.",
+        );
+    }
 
     const hasPermissionToManageUser = checkPermission(ctx.user.permissions, [
         permissions.manageUsers,
@@ -187,12 +188,6 @@ export const updateUser = async (userData: UserData, ctx: GQLContext) => {
     }
 
     validateUserProperties(user);
-
-    if (Object.prototype.hasOwnProperty.call(userData, "avatar")) {
-        user.avatar = userData.avatar?.mediaId
-            ? await sealMedia(userData.avatar.mediaId, ctx.subdomain._id)
-            : undefined;
-    }
 
     user = await user.save();
 
@@ -384,8 +379,22 @@ export const getUsers = async ({
         },
     );
 
+    const photos = await ContactPreferencesModel.find({
+        domain: ctx.subdomain._id,
+        userId: { $in: users.map((user) => user.userId) },
+        state: "active",
+        photoVersion: { $exists: true },
+    })
+        .select("userId photoVersion")
+        .lean();
+    const photoVersions = new Map(
+        photos.map((photo) => [photo.userId, photo.photoVersion]),
+    );
+
     return users.map(async (user) => ({
         ...user,
+        avatar: undefined,
+        privatePhotoVersion: photoVersions.get(user.userId),
         content: await getUserContentInternal(ctx, user),
     }));
 };
@@ -1173,7 +1182,8 @@ export const getCertificateInternal = async (
         productTitle: course?.title,
         userName: user?.name || user?.email,
         createdAt: certificate.createdAt,
-        userImage: user?.avatar || null,
+        // Certificates can be shared publicly; member photos are private.
+        userImage: null,
         productPageId: course?.pageId || null,
     };
 };

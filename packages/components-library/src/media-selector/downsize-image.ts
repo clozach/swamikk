@@ -126,56 +126,58 @@ export async function maybeDownsizeImage(
     const { source, width, height } = decoded;
     const originalDimensions: Dimensions = { width, height };
 
-    const scale = Math.min(1, maxDimension / Math.max(width, height));
-    const needsResize = scale < 1;
-    const needsReencode = file.size > softByteLimit;
-    if (!needsResize && !needsReencode) {
-        return passthrough(file, originalDimensions);
+    try {
+        const scale = Math.min(1, maxDimension / Math.max(width, height));
+        const needsResize = scale < 1;
+        const needsReencode = file.size > softByteLimit;
+        if (!needsResize && !needsReencode) {
+            return passthrough(file, originalDimensions);
+        }
+
+        const targetW = Math.max(1, Math.round(width * scale));
+        const targetH = Math.max(1, Math.round(height * scale));
+
+        const canvas = document.createElement("canvas");
+        canvas.width = targetW;
+        canvas.height = targetH;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+            return passthrough(file, originalDimensions);
+        }
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(source, 0, 0, targetW, targetH);
+
+        // Preserve format so PNG/WebP transparency survives; JPEG stays JPEG.
+        const outType = /png/i.test(file.type)
+            ? "image/png"
+            : /webp/i.test(file.type)
+              ? "image/webp"
+              : "image/jpeg";
+
+        const blob = await toBlob(canvas, outType, quality);
+        // Guard: never hand back something bigger than we were given.
+        if (!blob || blob.size >= file.size) {
+            return passthrough(file, originalDimensions);
+        }
+
+        const newName = renameForType(file.name, outType);
+        const downsizedFile = new File([blob], newName, {
+            type: outType,
+            lastModified: Date.now(),
+        });
+
+        return {
+            file: downsizedFile,
+            downsized: true,
+            originalBytes: file.size,
+            finalBytes: downsizedFile.size,
+            originalDimensions,
+            finalDimensions: { width: targetW, height: targetH },
+        };
+    } finally {
+        if (typeof (source as ImageBitmap).close === "function")
+            (source as ImageBitmap).close();
     }
-
-    const targetW = Math.max(1, Math.round(width * scale));
-    const targetH = Math.max(1, Math.round(height * scale));
-
-    const canvas = document.createElement("canvas");
-    canvas.width = targetW;
-    canvas.height = targetH;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-        return passthrough(file, originalDimensions);
-    }
-    ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(source, 0, 0, targetW, targetH);
-    if (typeof (source as ImageBitmap).close === "function") {
-        (source as ImageBitmap).close(); // release the ImageBitmap
-    }
-
-    // Preserve format so PNG/WebP transparency survives; JPEG stays JPEG.
-    const outType = /png/i.test(file.type)
-        ? "image/png"
-        : /webp/i.test(file.type)
-          ? "image/webp"
-          : "image/jpeg";
-
-    const blob = await toBlob(canvas, outType, quality);
-    // Guard: never hand back something bigger than we were given.
-    if (!blob || blob.size >= file.size) {
-        return passthrough(file, originalDimensions);
-    }
-
-    const newName = renameForType(file.name, outType);
-    const downsizedFile = new File([blob], newName, {
-        type: outType,
-        lastModified: Date.now(),
-    });
-
-    return {
-        file: downsizedFile,
-        downsized: true,
-        originalBytes: file.size,
-        finalBytes: downsizedFile.size,
-        originalDimensions,
-        finalDimensions: { width: targetW, height: targetH },
-    };
 }
 
 // Only rewrite the extension when the container type actually changed

@@ -1,3 +1,4 @@
+import { ImageFileInput, IMAGE_MIME_TYPES } from "../image-input";
 import React, { useState, useRef, useEffect } from "react";
 import {
     AlertDialog,
@@ -27,7 +28,7 @@ import { useToast } from "@/hooks/use-toast";
 import Access from "./access";
 import MediaType from "./type";
 import { AlertDialogAction } from "@radix-ui/react-alert-dialog";
-import { useMediaLit } from "@/hooks/use-medialit";
+import { useMediaLit } from "../hooks/use-medialit";
 import { maybeDownsizeImage, formatBytes } from "./downsize-image";
 import {
     typeErrorMessage,
@@ -47,7 +48,8 @@ interface FileUploadAlertDialogProps {
     address: Address;
     access: Access;
     type: MediaType;
-    onSuccess: (media: Media) => void;
+    onSuccess: (media: Media) => void | Promise<void>;
+    buttonLabel?: string;
     open: boolean;
     setOpen: (value: boolean) => void;
     maxSizeBytes?: number;
@@ -68,6 +70,7 @@ export function FileUploadAlertDialog({
     open,
     setOpen,
     maxSizeBytes = DEFAULT_MAX_SIZE_BYTES,
+    buttonLabel,
 }: FileUploadAlertDialogProps) {
     const [file, setFile] = useState<File | null>(null);
     const [pendingName, setPendingName] = useState("");
@@ -85,8 +88,8 @@ export function FileUploadAlertDialog({
         useMediaLit({
             signatureEndpoint: `${address.backend}/api/media/presigned`,
             access,
-            onUploadComplete: (media) => {
-                onSuccess(media as unknown as Media);
+            onUploadComplete: async (media) => {
+                await onSuccess(media as unknown as Media);
                 resetState();
                 setOpen(false);
             },
@@ -202,10 +205,11 @@ export function FileUploadAlertDialog({
 
     const handleUpload = async () => {
         if (!file || fileError) return;
-        await uploadFile(file, {
-            caption: caption || "",
-            type,
-        });
+        try {
+            await uploadFile(file, { caption: caption || "", type });
+        } catch {
+            /* The hook displays the upload error; keep this dialog open. */
+        }
     };
 
     const acceptAttribute =
@@ -220,6 +224,54 @@ export function FileUploadAlertDialog({
             ? "border-primary/60 bg-primary/5"
             : "border-muted-foreground/25 hover:border-muted-foreground/50";
 
+    const imageOnly =
+        acceptedMimeTypes.length > 0 &&
+        acceptedMimeTypes.every((value) => IMAGE_MIME_TYPES.includes(value));
+
+    if (imageOnly)
+        return (
+            <AlertDialog open={open}>
+                <AlertDialogTrigger asChild>
+                    <Button
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => setOpen(true)}
+                    >
+                        {buttonLabel || "Choose image"}
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="max-w-md">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {buttonLabel || "Add image"}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Paste, drop or choose an image. It saves when the
+                            upload finishes.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <ImageFileInput
+                        accept={acceptedMimeTypes}
+                        progress={uploadProgress}
+                        onFile={async (selected) => {
+                            const result = await maybeDownsizeImage(selected);
+                            await uploadFile(result.file, { type });
+                        }}
+                    />
+                    <AlertDialogFooter>
+                        <AlertDialogCancel
+                            onClick={() => {
+                                cancelUpload();
+                                resetState();
+                            }}
+                        >
+                            Close
+                        </AlertDialogCancel>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        );
+
     return (
         <AlertDialog open={open}>
             <AlertDialogTrigger asChild>
@@ -229,7 +281,7 @@ export function FileUploadAlertDialog({
                     disabled={disabled}
                     onClick={() => setOpen(true)}
                 >
-                    Upload file
+                    {buttonLabel || "Upload file"}
                 </Button>
             </AlertDialogTrigger>
 

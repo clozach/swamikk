@@ -2,7 +2,6 @@
 
 import { Media } from "@courselit/common-models";
 import {
-    mediaDeletionInProgress,
     mediaDeletionGracePeriodMs,
     mediaDeletionPending,
 } from "@courselit/orm-models";
@@ -74,25 +73,31 @@ export async function deleteMedia(
     return true;
 }
 
-async function cancelScheduledMediaDeletion(mediaId: string, domain: DomainId) {
-    const removed = await MediaDeletionCandidateModel.findOneAndDelete({
-        domain,
-        mediaId,
-        status: mediaDeletionPending,
-    });
-    if (removed) {
-        return;
-    }
-
-    const deletionInProgress = await MediaDeletionCandidateModel.exists({
-        domain,
-        mediaId,
-        status: mediaDeletionInProgress,
-    });
-    if (deletionInProgress) {
-        throw new Error(
-            "This media file is currently being deleted. Retry the operation.",
+async function protectPendingAttachment(mediaId: string, domain: DomainId) {
+    try {
+        // The unique domain/mediaId index fences a collector's deleting claim:
+        // a competing upsert fails instead of attaching a disappearing asset.
+        await MediaDeletionCandidateModel.findOneAndUpdate(
+            { domain, mediaId, status: mediaDeletionPending },
+            {
+                $set: {
+                    deleteAfter: new Date(
+                        Date.now() + mediaDeletionGracePeriodMs,
+                    ),
+                    rescheduleRequested: true,
+                },
+                $setOnInsert: { attempts: 0 },
+                $unset: { lastError: 1 },
+            },
+            { upsert: true },
         );
+    } catch (error) {
+        if ((error as { code?: number }).code === 11000) {
+            throw new Error(
+                "This media file is currently being deleted. Retry the operation.",
+            );
+        }
+        throw error;
     }
 }
 
@@ -100,7 +105,9 @@ export async function sealMedia(
     mediaId: string,
     domain: DomainId,
 ): Promise<Media> {
-    await cancelScheduledMediaDeletion(mediaId, domain);
+    // Keep cleanup durable across a crash between sealing and the native write.
+    // The collector removes this candidate when it finds the saved reference.
+    await protectPendingAttachment(mediaId, domain);
     const medialitClient = getMediaLitClient();
     const media = await medialitClient.seal(mediaId);
     return media as unknown as Media;

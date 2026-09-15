@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useState, type RefObject } from "react";
-import { Link } from "@courselit/components-library";
+import { Link, ResponsiveImage } from "@courselit/components-library";
 import { WaitingForAsset } from "../../components/waiting-for-asset";
 import { useSocialRotation } from "./use-social-rotation";
 import { networkLabel } from "./network-label";
@@ -14,6 +14,7 @@ import type {
 
 export interface SharedImageProps {
     frameRef: RefObject<HTMLDivElement>;
+    imagePath?: string;
     /** Resolved image URL; empty when the frame shows a placeholder well. */
     source: string;
     alt: string;
@@ -71,6 +72,7 @@ ${staticImageCss}
 /** One visual frame owns both the shown image's accessible name and its credit. */
 export default function SharedImage({
     frameRef,
+    imagePath,
     source,
     alt,
     fit,
@@ -116,16 +118,27 @@ export default function SharedImage({
                 aria-hidden="true"
                 className="absolute inset-0 bg-no-repeat transition-opacity duration-700 motion-reduce:transition-none"
                 style={{
-                    backgroundImage: `url("${layerA ? rotation.layerA : rotation.layerB}")`,
-                    backgroundSize: fit,
-                    backgroundPosition: position,
                     opacity: layerA === rotation.showA ? 1 : 0,
                 }}
-            />
+            >
+                {(layerA ? rotation.layerA : rotation.layerB) && (
+                    <ResponsiveImage
+                        src={layerA ? rotation.layerA : rotation.layerB}
+                        alt=""
+                        sizes="100vw"
+                        objectFit={fit}
+                        objectPosition={position}
+                    />
+                )}
+            </div>
         ));
     const showWordmark = Boolean(wordmarkSrc) || Boolean(wordmarkPlaceholder);
     return (
-        <div ref={frameRef} className="anahata-hero__shared-image">
+        <div
+            ref={frameRef}
+            data-kk-image-path={imagePath}
+            className="anahata-hero__shared-image"
+        >
             {waiting ? (
                 /* The well fills the frame's box exactly — the cover band
                    in scroll mode, the 3:2 slot in static mode — so the
@@ -147,13 +160,17 @@ export default function SharedImage({
                     role={shownAlt ? "img" : undefined}
                     aria-label={shownAlt || undefined}
                     className={`absolute inset-0 ${fadeIn}`}
-                    style={{
-                        backgroundImage: `url("${source}")`,
-                        backgroundSize: fit,
-                        backgroundPosition: position,
-                        backgroundRepeat: "no-repeat",
-                    }}
                 >
+                    {source && (
+                        <ResponsiveImage
+                            src={source}
+                            alt=""
+                            sizes="(min-width: 768px) 100vw, 100vw"
+                            priority
+                            objectFit={fit}
+                            objectPosition={position}
+                        />
+                    )}
                     {layers}
                 </div>
             )}
@@ -168,22 +185,29 @@ export default function SharedImage({
                             : "items-center py-[5%]"
                     }`}
                 >
-                    {wordmarkSrc ? (
-                        <img
-                            src={wordmarkSrc}
-                            alt={wordmark.alt}
-                            className="w-full h-auto max-h-full object-contain"
-                            style={{ maxWidth: wordmarkWidth }}
-                        />
-                    ) : (
-                        <WaitingForAsset
-                            tone="light"
-                            description={wordmarkPlaceholder || ""}
-                            width="100%"
-                            aspectRatio={WORDMARK_ASPECT_RATIO}
-                            style={{ maxWidth: wordmarkWidth }}
-                        />
-                    )}
+                    <div
+                        data-kk-image-path="wordmark.source"
+                        className="relative w-full"
+                        style={{
+                            maxWidth: wordmarkWidth,
+                            aspectRatio: WORDMARK_ASPECT_RATIO,
+                        }}
+                    >
+                        {wordmarkSrc ? (
+                            <ResponsiveImage
+                                src={wordmarkSrc}
+                                alt={wordmark.alt}
+                                sizes="(min-width: 768px) 835px, 90vw"
+                                objectFit="contain"
+                            />
+                        ) : (
+                            <WaitingForAsset
+                                tone="light"
+                                fill
+                                description={wordmarkPlaceholder || ""}
+                            />
+                        )}
+                    </div>
                 </div>
             )}
             {loaded && (

@@ -17,6 +17,7 @@ import { usePortalHost, useVisualViewport } from "../viewport";
 import { currentAt, targetWidgetId } from "./leaves";
 import { useTextEdit, type SectionEditBridge } from "./use-text-edit";
 import HistoryPanel from "./history";
+import { ImageEditControls } from "./image-controls";
 import "./text-edit.css";
 
 /** The run a chip belongs to may re-match under a path inside or around the saved one. */
@@ -41,7 +42,8 @@ export default function TextEditSession({
     onModeChange: (editing: boolean) => void;
 }) {
     const sectionBridge = useRef<SectionEditBridge | null>(null);
-    const state = useTextEdit(canEdit, sectionBridge);
+    const [imageBusy, setImageBusy] = useState(false);
+    const state = useTextEdit(canEdit, sectionBridge, imageBusy);
     const host = usePortalHost();
     const viewport = useVisualViewport();
     const [history, setHistory] = useState(false);
@@ -137,9 +139,29 @@ export default function TextEditSession({
                     enabled={on}
                     page={sections.state.page}
                     pending={sections.pending}
-                    disabled={!!state.editing || state.busy || dialogOpen}
+                    disabled={
+                        !!state.editing || state.busy || dialogOpen || imageBusy
+                    }
                     onRemove={sections.remove}
                     onRestore={state.undoSection}
+                />
+            )}
+            {state.mode.kind === "on" && (
+                <ImageEditControls
+                    pageId={state.mode.pageId}
+                    index={state.mode.index}
+                    disabled={
+                        !!state.editing ||
+                        state.busy ||
+                        dialogOpen ||
+                        sectionBusy
+                    }
+                    onBusy={setImageBusy}
+                    onSave={async (...args) => {
+                        const edit = await state.saveImage(...args);
+                        setHistoryKey((key) => key + 1);
+                        return edit;
+                    }}
                 />
             )}
             {createPortal(
@@ -175,7 +197,9 @@ export default function TextEditSession({
                             type="button"
                             variant="ghost"
                             size="sm"
-                            disabled={!state.canUndo || sectionBusy}
+                            disabled={
+                                !state.canUndo || sectionBusy || imageBusy
+                            }
                             aria-keyshortcuts="Meta+Z"
                             onClick={() => void state.undo()}
                         >
@@ -186,7 +210,9 @@ export default function TextEditSession({
                             type="button"
                             variant="ghost"
                             size="sm"
-                            disabled={!state.canRedo || sectionBusy}
+                            disabled={
+                                !state.canRedo || sectionBusy || imageBusy
+                            }
                             aria-keyshortcuts="Meta+Shift+Z"
                             onClick={() => void state.redo()}
                         >
@@ -198,7 +224,7 @@ export default function TextEditSession({
                             variant="ghost"
                             size="sm"
                             data-kk-history
-                            disabled={!on}
+                            disabled={!on || imageBusy}
                             onClick={() => setHistory(true)}
                         >
                             <History size={16} aria-hidden="true" />
@@ -210,6 +236,7 @@ export default function TextEditSession({
                             size="sm"
                             data-kk-text-edit-toggle
                             aria-keyshortcuts="Escape"
+                            disabled={imageBusy}
                             onClick={state.stop}
                         >
                             {copy.done} <Shortcut>{copy.doneShortcut}</Shortcut>

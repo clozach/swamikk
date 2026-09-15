@@ -1,5 +1,6 @@
 import type {
     PageTextLeaves,
+    PageImageLeaf,
     TextChange,
     TextEditTarget,
     TextLeaf,
@@ -53,6 +54,7 @@ export interface WidgetLeafIndex {
     name: string;
     shared: boolean;
     byPath: Map<string, TextLeaf>;
+    images: Map<string, PageImageLeaf>;
     /** normalized string value → every leaf path that reads that way (more than one = ambiguous). */
     byValue: Map<string, string[]>;
     /** normalized plain text of a rich-text node → every node path that reads that way. */
@@ -91,6 +93,12 @@ export function indexLeaves(page: PageTextLeaves): LeafIndex {
             name: widget.name,
             shared: widget.shared,
             byPath: new Map(),
+            images: new Map(
+                (widget.images || []).map((image) => [
+                    image.path,
+                    { ...image },
+                ]),
+            ),
             byValue: new Map(),
             byNodeValue: new Map(),
         };
@@ -109,6 +117,15 @@ export function applyChangesToIndex(
     const widget = index.get(widgetId);
     if (!widget) return;
     for (const change of changes) {
+        if (change.kind === "image") {
+            const image = widget.images.get(change.path);
+            if (image)
+                widget.images.set(change.path, {
+                    ...image,
+                    value: change.after,
+                });
+            continue;
+        }
         const leaf = widget.byPath.get(change.path);
         if (!leaf) continue;
         if (change.kind === "text") {
@@ -156,7 +173,10 @@ export function currentAt(
 ): unknown {
     const widgetId = targetWidgetId(index, target);
     const leaf = widgetId ? index.get(widgetId)?.byPath.get(path) : undefined;
-    if (!leaf) return undefined;
+    if (!leaf)
+        return widgetId
+            ? index.get(widgetId)?.images.get(path)?.value
+            : undefined;
     return leaf.kind === "rich-text-node" ? leaf.node : leaf.value;
 }
 

@@ -102,7 +102,7 @@ describe("/api/products/{productId}/customers", () => {
                         userId: "user-1",
                         email: "student@example.com",
                         name: "Student",
-                        avatar: { thumbnail: "avatar-thumbnail" },
+                        avatar: null,
                     },
                     status: "active",
                     subscriptionMethod: "internal",
@@ -188,4 +188,14 @@ describe("/api/products/{productId}/customers", () => {
             expect.objectContaining({ status: "active" }),
         );
     });
+});
+
+it("conceals legacy avatars from the shared customer serializer", async () => {
+    const { serializeCustomer } = await import("../customer-response");
+    const avatar = {
+        mediaId: "legacy",
+        file: "https://cdn.example/member.jpg",
+    };
+    expect(serializeCustomer({ userId: "member", avatar }).avatar).toBeNull();
+    expect(avatar.file).toBe("https://cdn.example/member.jpg");
 });

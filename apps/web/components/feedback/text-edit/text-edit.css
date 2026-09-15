@@ -247,3 +247,38 @@ html[data-theme="dark"] .kk-text-history-diff ins {
         color: #c4e1cc;
     }
 }
+
+/* Image controls remain reachable by touch and keyboard; the photo is still visible beneath them. */
+.kk-image-replace {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    min-height: 44px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #6b5549;
+    background: #fffaf3;
+    color: #34271f;
+    font: 600 14px/1.2 system-ui;
+    box-shadow: 0 2px 10px #0002;
+}
+.kk-image-replace:hover,
+.kk-image-replace:focus-visible {
+    outline: 2px solid #ad643f;
+    outline-offset: 2px;
+}
+.kk-image-replace:disabled {
+    opacity: 0.5;
+}
+
+.kk-image-control:not(.is-placeholder):not(.is-hovered) .kk-image-replace {
+    opacity: 0;
+}
+.kk-image-replace:focus-visible {
+    opacity: 1 !important;
+}
+@media (hover: none) {
+    .kk-image-control .kk-image-replace {
+        opacity: 1 !important;
+    }
+}

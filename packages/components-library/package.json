@@ -16,6 +16,9 @@
         "*": {
             "dialogs": [
                 "dist/dialogs.d.ts"
+            ],
+            "images": [
+                "dist/images.d.ts"
             ]
         }
     },
@@ -27,6 +30,11 @@
             "types": "./dist/dialogs.d.ts",
             "import": "./dist/dialogs.mjs",
             "default": "./dist/dialogs.mjs"
+        },
+        "./images": {
+            "types": "./dist/images.d.ts",
+            "import": "./dist/images.mjs",
+            "default": "./dist/images.mjs"
         }
     },
     "publishConfig": {

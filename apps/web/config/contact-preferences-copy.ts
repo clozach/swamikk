@@ -13,15 +13,17 @@ export const contactPreferencesCopy = {
     occasional: "Occasional personal check-ins",
     checkInNote:
         "This lets KK know you welcome an occasional check-in. It does not book a call or promise a schedule.",
-    photo: "Optional private photo",
+    photo: "Your private member photo",
     photoNote:
-        "Share a photo only if you would like KK and her support team to remember you. It stays private here and is not used in comments, your public avatar or outside messages.",
+        "Share a photo only if you would like KK and her support team to remember you. Only you, KK and her member administrators can view it. It is not used in comments, shared profiles or outside messages.",
     photoAlt: "Your optional photo shared with KK and support",
     noPhoto: "No private photo shared.",
     choosePhoto: "Choose or replace photo",
     removePhoto: "Remove private photo",
     photoHelp:
-        "A still JPEG, PNG or WebP photo, up to 2 MB. Save preferences to share, replace or remove it.",
+        "Choose, drop or paste a still JPEG, PNG or WebP photo. Your photo saves immediately and stays private.",
+    photoSaved: "Private photo saved.",
+    photoSaving: "Saving private photo…",
     photoError: "Choose a still JPEG, PNG or WebP photo smaller than 2 MB.",
     save: "Save preferences",
     saving: "Saving preferences…",
@@ -32,9 +34,6 @@ export const contactPreferencesCopy = {
     retry: "Try again",
     reload: "Reload saved preferences",
     readOnly: "Shared preferences are read-only in Member Mimic.",
-    publicAvatar: "Public avatar",
-    publicAvatarNote:
-        "This existing avatar can appear with your public activity. The optional private photo below is separate.",
     newsNote:
         "News is optional. Sign-in codes, receipts and essential service messages continue when news is off.",
     newsSaved: "Newsletter preference saved.",

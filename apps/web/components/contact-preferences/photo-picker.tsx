@@ -1,6 +1,10 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import {
+    ImageFileInput,
+    maybeDownsizeImage,
+} from "@courselit/components-library/images";
 import Image from "next/image";
 import type {
     ContactPreferences,
@@ -12,7 +16,7 @@ interface Props {
     photo: ContactPreferences["photo"];
     action: ContactPreferencesInput["photo"];
     readOnly: boolean;
-    onChange: (photo: ContactPreferencesInput["photo"]) => void;
+    onChange: (photo: ContactPreferencesInput["photo"]) => void | Promise<void>;
     onError: (message: string) => void;
 }
 
@@ -23,8 +27,14 @@ export default function PhotoPicker({
     onChange,
     onError,
 }: Props) {
-    const input = useRef<HTMLInputElement>(null);
-    const selection = useRef(0);
+    const [removing, setRemoving] = useState(false);
+    const mounted = useRef(true);
+    useEffect(() => {
+        mounted.current = true;
+        return () => {
+            mounted.current = false;
+        };
+    }, []);
     const src =
         action.kind === "replace"
             ? `data:image/jpeg;base64,${action.data}`
@@ -32,34 +42,42 @@ export default function PhotoPicker({
               ? `/api/contact-preferences/photo?v=${photo.version}`
               : undefined;
 
-    async function select(file?: File) {
-        if (!file || readOnly) return;
-        const selected = ++selection.current;
-        if (
-            !["image/jpeg", "image/png", "image/webp"].includes(file.type) ||
-            file.size > 2 * 1024 * 1024
-        ) {
-            onError(copy.photoError);
-            return;
-        }
-        const reader = new FileReader();
-        reader.onload = () => {
-            if (
-                selected === selection.current &&
+    async function select(file: File) {
+        if (readOnly) return;
+        const result = await maybeDownsizeImage(file, {
+            maxDimension: 1024,
+            softByteLimit: 500 * 1024,
+        });
+        if (result.file.size > 2 * 1024 * 1024)
+            throw new Error(copy.photoError);
+        const data = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () =>
                 typeof reader.result === "string"
-            ) {
-                onChange({
-                    kind: "replace",
-                    data: reader.result.split(",")[1],
-                });
-                onError("");
-            }
-        };
-        reader.onerror = () => {
-            if (selected === selection.current) onError(copy.photoError);
-        };
-        reader.readAsDataURL(file);
+                    ? resolve(reader.result.split(",")[1])
+                    : reject(new Error(copy.photoError));
+            reader.onerror = () => reject(new Error(copy.photoError));
+            reader.readAsDataURL(result.file);
+        });
+        if (!mounted.current)
+            throw new DOMException("Photo selection cancelled.", "AbortError");
+        await onChange({ kind: "replace", data });
     }
+
+    const preview = src ? (
+        <Image
+            unoptimized
+            width={128}
+            height={128}
+            src={src}
+            alt={copy.photoAlt}
+            className="h-32 w-32 rounded-lg object-cover"
+        />
+    ) : (
+        <span className="flex h-32 w-32 items-center justify-center rounded-lg bg-muted p-3 text-sm">
+            {copy.noPhoto}
+        </span>
+    );
 
     return (
         <section className="space-y-3" aria-labelledby="private-photo-title">
@@ -67,35 +85,17 @@ export default function PhotoPicker({
                 {copy.photo}
             </h3>
             <p className="text-sm text-muted-foreground">{copy.photoNote}</p>
-            {src ? (
-                <Image
-                    unoptimized
-                    width={128}
-                    height={128}
-                    src={src}
-                    alt={copy.photoAlt}
-                    className="h-32 w-32 rounded-lg object-cover"
-                />
-            ) : (
-                <p>{copy.noPhoto}</p>
-            )}
+            {readOnly && preview}
             {!readOnly && (
                 <>
-                    <label
-                        className="block min-h-11"
-                        htmlFor="private-photo-input"
-                    >
-                        {copy.choosePhoto}
-                    </label>
-                    <input
-                        ref={input}
-                        id="private-photo-input"
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        className="block min-h-11 max-w-full"
-                        onChange={(event) =>
-                            void select(event.target.files?.[0])
-                        }
+                    <ImageFileInput
+                        preview={preview}
+                        previewLabel={src ? "Replace photo" : copy.choosePhoto}
+                        label={copy.choosePhoto}
+                        accept={["image/jpeg", "image/png", "image/webp"]}
+                        disabled={removing}
+                        onFile={select}
+                        onError={onError}
                     />
                     <p className="text-sm text-muted-foreground">
                         {copy.photoHelp}
@@ -104,10 +104,20 @@ export default function PhotoPicker({
                         <button
                             type="button"
                             className="min-h-11 underline"
-                            onClick={() => {
-                                selection.current++;
-                                onChange({ kind: "remove" });
-                                if (input.current) input.current.value = "";
+                            disabled={removing}
+                            onClick={async () => {
+                                setRemoving(true);
+                                try {
+                                    await onChange({ kind: "remove" });
+                                } catch (error) {
+                                    onError(
+                                        error instanceof Error
+                                            ? error.message
+                                            : copy.photoError,
+                                    );
+                                } finally {
+                                    setRemoving(false);
+                                }
                             }}
                         >
                             {copy.removePhoto}

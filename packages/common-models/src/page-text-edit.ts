@@ -9,8 +9,21 @@
  * its plain-text projection, so a paragraph that mixes formatting can be
  * edited as one run and written back as one node. One edit is a set of
  * changes on one widget, applied together; every edit, undo and restore is an
- * append-only history row; the log is never rewritten.
+ * retained history row. Applying rows settle after the atomic source receipt; successful before/after history is immutable.
  */
+import type { Media } from "./media";
+
+/** One source for page pictures; URL/placeholder arms are accepted only from retained history when editing live. */
+export type ImageSource =
+    | { kind: "url"; url: string }
+    | { kind: "media"; media: Partial<Media> }
+    | { kind: "placeholder"; description: string };
+export interface PageImageLeaf {
+    path: string;
+    label: string;
+    value: ImageSource;
+}
+
 export type TextLeafKind = "text" | "rich-text-leaf" | "rich-text-node";
 export interface TextLeaf {
     path: string;
@@ -27,6 +40,8 @@ export interface PageTextWidgetLeaves {
     name: string;
     shared: boolean;
     leaves: TextLeaf[];
+    /** Explicit image registry; never matched by visible text. */
+    images?: PageImageLeaf[];
 }
 export interface PageTextLeaves {
     pageId: string;
@@ -41,7 +56,8 @@ export type TextChange =
     /** One string leaf; `before` is the exact stored value being replaced. */
     | { kind: "text"; path: string; before: string; after: string }
     /** One rich-text block node (paragraph or heading), replaced whole; `before` is the exact stored node. */
-    | { kind: "node"; path: string; before: unknown; after: unknown };
+    | { kind: "node"; path: string; before: unknown; after: unknown }
+    | { kind: "image"; path: string; before: ImageSource; after: ImageSource };
 export interface TextEditInput {
     target: TextEditTarget;
     changes: TextChange[];

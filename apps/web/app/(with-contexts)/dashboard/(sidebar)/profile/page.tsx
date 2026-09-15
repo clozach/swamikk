@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { Profile } from "@courselit/common-models";
 import ContactPreferencesPanel from "@/components/contact-preferences/panel";
 import AccountClosure from "@/components/account-closure";
 import { contactPreferencesCopy as contactCopy } from "@/config/strings";
@@ -9,15 +10,7 @@ import { useMemberMimic } from "@components/member-mimic/context";
 import DashboardContent from "@components/admin/dashboard-content";
 import { AddressContext, ProfileContext } from "@components/contexts";
 import { defaultState } from "@components/default-state";
-import { Media, Profile } from "@courselit/common-models";
-import {
-    Avatar,
-    AvatarFallback,
-    AvatarImage,
-    Checkbox,
-    MediaSelector,
-    useToast,
-} from "@courselit/components-library";
+import { Checkbox, useToast } from "@courselit/components-library";
 import {
     Field,
     FieldContent,
@@ -27,13 +20,10 @@ import {
     FieldSet,
 } from "@components/ui/field";
 import { FetchBuilder } from "@courselit/utils";
-import { MIMETYPE_IMAGE } from "@ui-config/constants";
 import {
     BUTTON_SAVE,
     BUTTON_SAVING,
     TOAST_TITLE_ERROR,
-    MEDIA_SELECTOR_REMOVE_BTN_CAPTION,
-    MEDIA_SELECTOR_UPLOAD_BTN_CAPTION,
     PROFILE_EMAIL_PREFERENCES,
     PROFILE_EMAIL_PREFERENCES_NEWSLETTER_OPTION_TEXT,
     PROFILE_PAGE_HEADER,
@@ -56,9 +46,6 @@ export default function Page() {
     const isMimic = useMemberMimic().kind !== "inactive";
     const [bio, setBio] = useState("");
     const [name, setName] = useState("");
-    // const [user, setUser] =
-    //     useState<Pick<Profile, "bio" | "name" | "avatar">>();
-    const [avatar, setAvatar] = useState<Partial<Media>>({});
     const [subscribedToUpdates, setSubscribedToUpdates] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isSavingNews, setIsSavingNews] = useState(false);
@@ -111,7 +98,6 @@ export default function Page() {
                     // setUser(response.user);
                     setName(response.user.name ?? "");
                     setBio(response.user.bio ?? "");
-                    setAvatar(response.user.avatar);
                     setSubscribedToUpdates(response.user.subscribedToUpdates);
                     initialNewsRef.current = response.user.subscribedToUpdates;
                     initialDetailsRef.current = {
@@ -131,56 +117,6 @@ export default function Page() {
             getUser(profile.userId);
         }
     }, [profile, address.backend]);
-
-    const updateProfilePic = async (media?: Media) => {
-        if (isMimic) return;
-        const mutation = `
-          mutation ($id: ID!, $avatar: MediaInput) {
-            user: updateUser(userData: {
-              id: $id
-              avatar: $avatar
-            }) {
-                avatar {
-                    mediaId,
-                    originalFileName,
-                    mimeType,
-                    size,
-                    access,
-                    file,
-                    thumbnail,
-                    caption
-                }
-            }
-          }
-        `;
-        const fetch = new FetchBuilder()
-            .setUrl(`${address.backend}/api/graph`)
-            .setPayload({
-                query: mutation,
-                variables: {
-                    id: profile!.userId,
-                    avatar: media || null,
-                },
-            })
-            .setIsGraphQLEndpoint(true)
-            .build();
-
-        try {
-            const response = await fetch.exec();
-            if (response.user) {
-                setProfile({
-                    ...profile!,
-                    avatar: response.user.avatar,
-                });
-            }
-        } catch (err: any) {
-            toast({
-                title: TOAST_TITLE_ERROR,
-                description: err.message,
-                variant: "destructive",
-            });
-        }
-    };
 
     const saveDetails = async (e: FormEvent) => {
         e.preventDefault();
@@ -359,51 +295,7 @@ export default function Page() {
                 {billingCopy.profileLink}
             </Link>
             <div className="flex flex-col lg:flex-row gap-4">
-                <Card className="w-full lg:w-2/6">
-                    <CardHeader>
-                        <CardTitle>{contactCopy.publicAvatar}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="flex flex-col items-center gap-4">
-                        <p className="text-sm text-muted-foreground">
-                            {contactCopy.publicAvatarNote}
-                        </p>
-                        <Avatar className="w-40 h-40">
-                            <AvatarImage src={avatar?.file} />
-                            <AvatarFallback className="text-5xl font-semibold text-foreground">
-                                {name?.trim()?.charAt(0)?.toUpperCase() || ""}
-                            </AvatarFallback>
-                        </Avatar>
-                        {!isMimic && (
-                            <MediaSelector
-                                title=""
-                                profile={profile as Profile}
-                                address={address}
-                                mediaId={avatar?.mediaId}
-                                src={avatar?.thumbnail || ""}
-                                srcTitle={avatar?.originalFileName || ""}
-                                onSelection={(media?: Media) => {
-                                    if (media) {
-                                        updateProfilePic(media);
-                                    }
-                                }}
-                                onRemove={() => {
-                                    updateProfilePic();
-                                }}
-                                access="public"
-                                strings={{
-                                    buttonCaption:
-                                        MEDIA_SELECTOR_UPLOAD_BTN_CAPTION,
-                                    removeButtonCaption:
-                                        MEDIA_SELECTOR_REMOVE_BTN_CAPTION,
-                                }}
-                                type="user"
-                                hidePreview={true}
-                                mimeTypesToShow={MIMETYPE_IMAGE}
-                            />
-                        )}
-                    </CardContent>
-                </Card>
-                <Card className="w-full lg:w-4/6">
+                <Card className="w-full">
                     <form onSubmit={saveDetails}>
                         <CardHeader>
                             <CardTitle>{PROFILE_SECTION_DETAILS}</CardTitle>

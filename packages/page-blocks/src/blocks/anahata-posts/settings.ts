@@ -3,8 +3,8 @@ import type { ImageSource } from "../../components/image-source";
 
 /**
  * A post's picture: the shared image source plus the post's own alt text.
- * `source` absent means no picture and no well; the square thumbnail keeps
- * its reserved geometry.
+ * `source` absent means no picture and no well — the 3:2 box stays, empty,
+ * so the card keeps its geometry.
  */
 export interface PostImage {
     source?: ImageSource;
@@ -40,12 +40,12 @@ export interface MoreLink {
 }
 
 /**
- * Classic presentation with both legacy and current editor image/link shapes.
+ * Keys a pre-redesign layout may still carry and this block now ignores:
+ * `showDivider` (the rust rule is gone) and `thumbnailSize` (the wells are
+ * 3:2 and fill their column).
  */
 export default interface Settings extends WidgetDefaultSettings {
-    showDivider?: boolean;
-    thumbnailSize?: number;
-    /** Section heading. Default "Recent Posts". */
+    /** Section heading. Default "Writing and recipes". */
     heading?: string;
     /** Optional href that wraps the heading. Empty string = plain heading. */
     headingLink?: string;

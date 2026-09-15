@@ -6,6 +6,7 @@ import {
     type ImageSource,
 } from "../../../../packages/page-blocks/src/components/image-source";
 import type { PageWidgetField, PageWidgetSnapshot } from "./page-types";
+import { copyNativeValue } from "./native-value";
 import { requireCondition } from "./errors";
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value));
@@ -147,7 +148,7 @@ export function pageWidgetSnapshot(
     const value = pageField(widget, field);
     return {
         kind: "page-widget",
-        widget: clone(widget),
+        widget: copyNativeValue(widget),
         fieldValue: value.value,
         renderSettings: pagePreviewSettings(widget),
         defaultDerived: value.defaultDerived,

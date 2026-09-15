@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type {
     TextChange,
+    ImageSource,
     TextEdit,
     TextEditTarget,
 } from "@courselit/common-models";
@@ -27,8 +28,32 @@ const when = (iso: string) => {
               timeStyle: "short",
           });
 };
+function ImageVersion({ source }: { source: ImageSource }) {
+    if (source.kind === "placeholder")
+        return <span>Placeholder: {source.description}</span>;
+    const src =
+        source.kind === "url"
+            ? source.url
+            : source.media.file || source.media.thumbnail;
+    // Saved page pictures are public; these small receipts never read private member photos.
+    return src ? (
+        <img
+            src={src}
+            alt="Saved page image"
+            className="max-h-32 max-w-full object-contain"
+        />
+    ) : (
+        <span>No image</span>
+    );
+}
 const shown = (change: TextChange, side: "before" | "after") =>
-    change.kind === "text" ? change[side] : nodePlain(change[side]);
+    change.kind === "text" ? (
+        change[side]
+    ) : change.kind === "image" ? (
+        <ImageVersion source={change[side]} />
+    ) : (
+        nodePlain(change[side])
+    );
 /** True when the page already shows this change's red (before) text. */
 const isCurrent = (change: TextChange, current: unknown) =>
     change.kind === "text"
@@ -196,14 +221,26 @@ function HistoryRow({
                 size="sm"
                 className="kk-text-history-restore"
                 disabled={busy || alreadyCurrent}
-                title={alreadyCurrent ? copy.alreadyCurrent : undefined}
+                title={
+                    alreadyCurrent
+                        ? edit.changes.some((change) => change.kind === "image")
+                            ? "This previous image is already shown"
+                            : copy.alreadyCurrent
+                        : undefined
+                }
                 onClick={async () => {
                     await onRestore();
                     // The button disables once its red text shows; keep the keyboard on the row.
                     row.current?.focus();
                 }}
             >
-                {alreadyCurrent ? copy.alreadyCurrent : copy.restoreRed}
+                {alreadyCurrent
+                    ? edit.changes.some((change) => change.kind === "image")
+                        ? "This previous image is already shown"
+                        : copy.alreadyCurrent
+                    : edit.changes.some((change) => change.kind === "image")
+                      ? "Restore previous image"
+                      : copy.restoreRed}
             </Button>
         </li>
     );

@@ -45,7 +45,8 @@ jest.mock("@courselit/components-library", () => {
     return {
         Avatar: Wrap,
         AvatarFallback: Wrap,
-        AvatarImage: () => null,
+        AvatarImage: ({ src, alt }: { src?: string; alt?: string }) =>
+            src ? <img src={src} alt={alt} /> : null,
         Badge: ({ children }: { children?: React.ReactNode }) => (
             <span>{children}</span>
         ),
@@ -297,4 +298,26 @@ test("a click on the row selects it, a click on its name link is left to the mem
 
     fireEvent.click(document.body);
     await waitFor(() => expect(screen.queryByRole("toolbar")).toBeNull());
+});
+
+test("Users displays only the authorized private photo route, never the old avatar URL", async () => {
+    mockExec.mockResolvedValue({
+        users: users.map((user, index) => ({
+            ...user,
+            avatar: { file: "https://cdn.example/public-old-avatar.jpg" },
+            ...(index === 1 ? { privatePhotoVersion: 7 } : {}),
+        })),
+        count: users.length,
+    });
+    renderHub();
+    await settledRows();
+    const photo = screen.getByRole("img", { name: "Private member photo" });
+    expect(photo).toHaveAttribute(
+        "src",
+        "/api/contact-preferences/photo?userId=u2&v=7",
+    );
+    expect(document.querySelector('[src*="public-old-avatar"]')).toBeNull();
+    expect(String(mockSetPayload.mock.calls[0][0].query)).toContain(
+        "privatePhotoVersion",
+    );
 });

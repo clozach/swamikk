@@ -6,6 +6,8 @@ const config: Config = {
     modulePathIgnorePatterns: ["<rootDir>/.next/"],
     testEnvironment: "node",
     moduleNameMapper: {
+        "^@courselit/components-library/images$":
+            "<rootDir>/../../packages/components-library/src/images.ts",
         "^@courselit/components-library/dialogs$":
             "<rootDir>/../../packages/components-library/src/dialogs.ts",
         "@courselit/utils": "<rootDir>/../../packages/utils/src",

@@ -1,3 +1,4 @@
+import { isPrivateImageUrl } from "./services/member-privacy";
 import { NextResponse, type NextRequest } from "next/server";
 import { getBackendAddress } from "@/app/actions";
 import { auth } from "./auth";
@@ -13,6 +14,27 @@ export async function proxy(request: NextRequest) {
         MEMBER_MIMIC_PATH_HEADER,
         `${request.nextUrl.pathname}${request.nextUrl.search}`,
     );
+    // The image optimizer has a shared cache and must not fetch member photos.
+    // This runs before its cache, including for previously optimized legacy URLs.
+    if (request.nextUrl.pathname === "/_next/image") {
+        try {
+            const source = request.nextUrl.searchParams.get("url");
+            if (
+                !source ||
+                (await isPrivateImageUrl(source, request.nextUrl.origin))
+            ) {
+                return new NextResponse("Image not found", {
+                    status: 404,
+                    headers: { "Cache-Control": "private, no-store" },
+                });
+            }
+        } catch {
+            return new NextResponse("Image not found", {
+                status: 404,
+                headers: { "Cache-Control": "private, no-store" },
+            });
+        }
+    }
     // Static framework assets carry the marker too, but do not render a member view.
     if (
         request.nextUrl.pathname.startsWith("/_next/") &&
@@ -180,6 +202,7 @@ export const config = {
     matcher: [
         "/",
         "/favicon.ico",
+        "/_next/image",
         "/api/:path*",
         "/healthy",
         "/course/:path*",

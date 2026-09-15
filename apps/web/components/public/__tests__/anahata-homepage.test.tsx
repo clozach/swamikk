@@ -7,6 +7,14 @@ import {
 import { useImageScroll } from "../../../../../packages/page-blocks/src/blocks/anahata-hero/use-image-scroll";
 import SharedImage from "../../../../../packages/page-blocks/src/blocks/anahata-hero/shared-image";
 jest.mock("@courselit/components-library", () => ({
+    ResponsiveImage: ({ src, alt, sizes, objectFit, objectPosition }) => (
+        <img
+            src={src}
+            alt={alt}
+            sizes={sizes}
+            style={{ objectFit, objectPosition }}
+        />
+    ),
     Link: ({
         children,
         ...props

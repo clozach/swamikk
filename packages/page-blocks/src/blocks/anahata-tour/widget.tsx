@@ -1,5 +1,7 @@
 "use client";
 
+import { ResponsiveImage } from "@courselit/components-library";
+
 import React, {
     useCallback,
     useEffect,
@@ -12,19 +14,20 @@ import { ThemeStyle } from "@courselit/page-models";
 import { Section } from "@courselit/page-primitives";
 import Settings from "./settings";
 import {
+    ACCENT,
     ASPECT_RATIO_OPTIONS,
-    CARD,
-    COCOA,
-    CREAM,
+    BUTTON_GROUND,
+    BUTTON_GROUND_PRESSED,
+    BUTTON_TEXT,
+    BUTTON_TEXT_PRESSED,
     FONT_BODY,
     FONT_DISPLAY,
+    GROUND,
     HOVER_DURATION_MS,
     IFRAME_ALLOW,
-    INK,
     MOBILE_BREAKPOINT_PX,
-    RUST,
-    RUST_PRESSED,
-    SAFFRON,
+    POSTER_CHIP,
+    TEXT_COLOR,
     aspectRatioToPaddingTop,
     caption as defaultCaption,
     captionPlacement as defaultCaptionPlacement,
@@ -131,18 +134,12 @@ export default function Widget({
 
     const alignment = headingAlignment === "left" ? "left" : "center";
     const posterFile = posterImage?.file || posterImage?.thumbnail;
-    /* A media URL can legally contain parentheses, quotes, or spaces, any of
-       which would terminate an unquoted url() early. Quote it and escape the
-       two characters that could still break out. */
-    const posterUrl = posterFile
-        ? `url("${posterFile.replace(/["\\]/g, "\\$&")}")`
-        : undefined;
     /* An iframe with an empty title is unlabelled to a screen reader, so an
        emptied Tour title falls back to the shipped one rather than to "". */
     const frameTitle = tourTitle?.trim() ? tourTitle : defaultTourTitle;
 
     /*
-     * Scoped stylesheet. The Anahata palette lives outside the CourseLit theme
+     * Scoped stylesheet. The palette lives outside the CourseLit theme
      * tokens, and this package's Tailwind build cannot express the source
      * site's exact type stack, hover chain, or the 767px reflow — so the
      * block ships its own CSS, namespaced by the widget instance id.
@@ -150,7 +147,7 @@ export default function Widget({
     const styles = `
 [data-anahata-tour="${scope}"] {
     font-family: ${FONT_BODY};
-    color: ${INK};
+    color: ${TEXT_COLOR};
     line-height: 1.65;
 }
 [data-anahata-tour="${scope}"] .anahata-tour__rule {
@@ -158,7 +155,7 @@ export default function Widget({
     max-width: 200px;
     height: 0;
     border: 0;
-    border-bottom: 2px solid ${RUST};
+    border-bottom: 2px solid ${ACCENT};
     margin: 0 auto 55px;
 }
 [data-anahata-tour="${scope}"][data-align="left"] .anahata-tour__rule {
@@ -169,7 +166,7 @@ export default function Widget({
     font-size: 32px;
     font-weight: 400;
     line-height: 1.2;
-    color: ${RUST};
+    color: ${ACCENT};
     text-align: ${alignment};
     margin: 0;
     padding: 0 0 15px;
@@ -181,7 +178,7 @@ export default function Widget({
 [data-anahata-tour="${scope}"] .anahata-tour__caption {
     font-size: 14px;
     line-height: 1.65;
-    color: ${INK};
+    color: ${TEXT_COLOR};
     text-align: ${alignment};
     margin: 0;
 }
@@ -200,7 +197,7 @@ export default function Widget({
     height: 0;
     padding-top: ${desktopPaddingTop.toFixed(4)}%;
     overflow: hidden;
-    background-color: ${CREAM};
+    background-color: ${GROUND};
 }
 [data-anahata-tour="${scope}"] .anahata-tour__iframe,
 [data-anahata-tour="${scope}"] .anahata-tour__poster {
@@ -224,7 +221,7 @@ export default function Widget({
        reach; scrolling inside the poster keeps it usable and cannot widen the
        page, since the poster is inset:0 within a fixed-ratio box. */
     overflow: auto;
-    background-color: ${CREAM};
+    background-color: ${GROUND};
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -234,15 +231,15 @@ export default function Widget({
     margin: 0;
     font-size: 14px;
     line-height: 1.65;
-    color: ${INK};
-    background-color: ${posterFile ? "rgba(255,255,255,0.88)" : "transparent"};
+    color: ${TEXT_COLOR};
+    background-color: ${posterFile ? POSTER_CHIP : "transparent"};
     border-radius: 4px;
     padding: ${posterFile ? "6px 12px" : "0"};
 }
 [data-anahata-tour="${scope}"] .anahata-tour__button {
     display: inline-block;
-    background-color: ${SAFFRON};
-    color: ${COCOA};
+    background-color: ${BUTTON_GROUND};
+    color: ${BUTTON_TEXT};
     font-family: ${FONT_BODY};
     font-size: 14px;
     font-weight: 700;
@@ -262,22 +259,22 @@ export default function Widget({
         transform ${HOVER_DURATION_MS}ms ease-in;
 }
 [data-anahata-tour="${scope}"] .anahata-tour__button:hover {
-    background-color: ${RUST};
-    color: ${CARD};
+    background-color: ${ACCENT};
+    color: ${BUTTON_TEXT_PRESSED};
 }
 [data-anahata-tour="${scope}"] .anahata-tour__button:focus-visible {
-    outline: 2px solid ${RUST};
+    outline: 2px solid ${ACCENT};
     outline-offset: 2px;
 }
 [data-anahata-tour="${scope}"] .anahata-tour__button:active {
-    background-color: ${RUST_PRESSED};
+    background-color: ${BUTTON_GROUND_PRESSED};
     /* Explicit, not inherited: a keyboard Enter/Space activation triggers
-       :active without :hover, and cocoa-on-rust-pressed is only 1.58:1. */
-    color: ${CARD};
+       :active without :hover, and ink-on-pine-deep is only 1.1:1. */
+    color: ${BUTTON_TEXT_PRESSED};
     transform: translateY(1px);
 }
 [data-anahata-tour="${scope}"] .anahata-tour__iframe:focus-visible {
-    outline: 2px solid ${RUST};
+    outline: 2px solid ${ACCENT};
     outline-offset: -2px;
 }
 @media (max-width: ${MOBILE_BREAKPOINT_PX}px) {
@@ -362,20 +359,30 @@ export default function Widget({
                     ) : (
                         <div
                             className="anahata-tour__poster"
-                            style={
-                                posterUrl
-                                    ? { backgroundImage: posterUrl }
+                            data-kk-image-path={
+                                posterFile &&
+                                /^image\/(png|jpeg|webp|gif|avif)$/.test(
+                                    posterImage?.mimeType || "",
+                                )
+                                    ? "posterImage"
                                     : undefined
                             }
                         >
+                            {posterFile && (
+                                <ResponsiveImage
+                                    src={posterFile}
+                                    alt=""
+                                    sizes="100vw"
+                                />
+                            )}
                             {posterHelpText && (
-                                <p className="anahata-tour__poster-help">
+                                <p className="anahata-tour__poster-help relative">
                                     {posterHelpText}
                                 </p>
                             )}
                             <button
                                 type="button"
-                                className="anahata-tour__button"
+                                className="anahata-tour__button relative"
                                 onClick={activate}
                             >
                                 {posterButtonLabel}

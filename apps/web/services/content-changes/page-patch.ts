@@ -4,7 +4,7 @@ import { pageField } from "./page-registry";
 import { requireCondition } from "./errors";
 import { validateTextEdit } from "./text-safety";
 import { stableJson } from "./stable";
-const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value));
+import { copyNativeValue as clone } from "./native-value";
 
 export function patchPageWidget(
     widget: WidgetInstance,

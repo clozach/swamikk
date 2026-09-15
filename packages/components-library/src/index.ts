@@ -103,3 +103,7 @@ export {
     DragAndDrop,
     getSymbolFromCurrency,
 };
+
+export { ImageFileInput, IMAGE_MIME_TYPES } from "./image-input";
+export { maybeDownsizeImage } from "./media-selector/downsize-image";
+export { ResponsiveImage } from "./responsive-image";

@@ -90,7 +90,9 @@ export default function UsersHub() {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [rowsPerPage, _] = useState(10);
-    const [users, setUsers] = useState<User[]>([]);
+    const [users, setUsers] = useState<
+        (User & { privatePhotoVersion?: number })[]
+    >([]);
     const [filters, setFilters] = useState<UserFilter[]>([]);
     const [filtersAggregator, setFiltersAggregator] =
         useState<UserFilterAggregator>("or");
@@ -134,16 +136,7 @@ export default function UsersHub() {
                         permissions
                         createdAt
                         updatedAt
-                        avatar {
-                            mediaId
-                            originalFileName
-                            mimeType
-                            size
-                            access
-                            file
-                            thumbnail
-                            caption
-                        },
+                        privatePhotoVersion
                         active 
                         content {
                             entityType
@@ -517,10 +510,14 @@ export default function UsersHub() {
                                                   <Avatar>
                                                       <AvatarImage
                                                           src={
-                                                              user.avatar
-                                                                  ? user.avatar
-                                                                        ?.file
-                                                                  : "/courselit_backdrop_square.webp"
+                                                              user.privatePhotoVersion
+                                                                  ? `/api/contact-preferences/photo?userId=${encodeURIComponent(user.userId)}&v=${user.privatePhotoVersion}`
+                                                                  : undefined
+                                                          }
+                                                          alt={
+                                                              user.privatePhotoVersion
+                                                                  ? "Private member photo"
+                                                                  : ""
                                                           }
                                                       />
                                                       <AvatarFallback>

@@ -11,6 +11,7 @@ import {
 import { AppRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import type {
     SectionEdit,
+    ImageSource,
     TextChange,
     TextEdit,
     TextEditTarget,
@@ -110,7 +111,9 @@ export const reversed = (changes: TextChange[]): TextChange[] =>
     changes.map((change) =>
         change.kind === "text"
             ? { ...change, before: change.after, after: change.before }
-            : { ...change, before: change.after, after: change.before },
+            : change.kind === "image"
+              ? { ...change, before: change.after, after: change.before }
+              : { ...change, before: change.after, after: change.before },
     );
 
 export function snapshotTree(root: Element): Snapshot {
@@ -225,6 +228,7 @@ export type SectionEditBridge = {
 export function useTextEdit(
     enabled: boolean,
     sectionBridge?: React.MutableRefObject<SectionEditBridge | null>,
+    externalBusy = false,
 ) {
     // Null outside the app router (tests, the pages router); a refresh is then a no-op.
     const router = useContext(AppRouterContext);
@@ -242,6 +246,8 @@ export function useTextEdit(
     }, [mode, editing]);
     const suppressRef = useRef(0);
     const busyRef = useRef(false);
+    const externalBusyRef = useRef(externalBusy);
+    externalBusyRef.current = externalBusy;
     const reversalRef = useRef<
         (edit: TextEdit | SectionEdit) => Promise<TextEdit | SectionEdit | null>
     >(async () => null);
@@ -341,7 +347,11 @@ export function useTextEdit(
             const widgetId = targetWidgetId(current.index, target);
             if (!widgetId) return;
             applyChangesToIndex(current.index, widgetId, changes);
-            const paths = new Set(changes.map((change) => change.path));
+            const paths = new Set(
+                changes
+                    .filter((change) => change.kind !== "image")
+                    .map((change) => change.path),
+            );
             quietly(() => {
                 for (const run of current.runs)
                     if (
@@ -585,19 +595,30 @@ export function useTextEdit(
                     applyLocally(
                         edit.target,
                         outcome.current.map((item) =>
-                            typeof item.value === "string"
+                            changes.some(
+                                (change) =>
+                                    change.path === item.path &&
+                                    change.kind === "image",
+                            )
                                 ? {
-                                      kind: "text",
+                                      kind: "image" as const,
                                       path: item.path,
-                                      before: "",
-                                      after: item.value,
+                                      before: item.value as ImageSource,
+                                      after: item.value as ImageSource,
                                   }
-                                : {
-                                      kind: "node",
-                                      path: item.path,
-                                      before: null,
-                                      after: item.value,
-                                  },
+                                : typeof item.value === "string"
+                                  ? {
+                                        kind: "text",
+                                        path: item.path,
+                                        before: "",
+                                        after: item.value,
+                                    }
+                                  : {
+                                        kind: "node",
+                                        path: item.path,
+                                        before: null,
+                                        after: item.value,
+                                    },
                         ),
                     );
                     router?.refresh();
@@ -691,6 +712,13 @@ export function useTextEdit(
                         changes.push({
                             ...change,
                             before: String(current),
+                            after: change.before,
+                        });
+                } else if (change.kind === "image") {
+                    if (!sameNode(current, change.before))
+                        changes.push({
+                            ...change,
+                            before: current as ImageSource,
                             after: change.before,
                         });
                 } else if (!sameNode(current, change.before))
@@ -835,6 +863,7 @@ export function useTextEdit(
     useEffect(() => {
         if (!enabled) return;
         const keydown = (event: KeyboardEvent) => {
+            if (externalBusyRef.current) return;
             const state = modeRef.current;
             if (
                 (event.metaKey || event.ctrlKey) &&
@@ -931,6 +960,48 @@ export function useTextEdit(
         recordSectionEdit: (edit: SectionEdit) => {
             journal.record(edit);
             setChip(null);
+        },
+        saveImage: async (
+            target: TextEditTarget,
+            path: string,
+            before: ImageSource,
+            after: ImageSource,
+        ) => {
+            if (
+                busyRef.current ||
+                journalRef.current.pending ||
+                editingRef.current
+            )
+                throw new Error("Finish the current edit first.");
+            busyRef.current = true;
+            setSaving(true);
+            try {
+                const outcome = await submitEdit({
+                    target,
+                    changes: [{ kind: "image", path, before, after }],
+                }).catch(async () => {
+                    router?.refresh();
+                    await refresh().catch(() => undefined);
+                    setNotice(copy.uncertain, true);
+                    throw new Error(copy.uncertain);
+                });
+                if (outcome.kind !== "applied") {
+                    router?.refresh();
+                    if (outcome.kind === "stale") void refresh();
+                    throw new Error(outcome.message);
+                }
+                applyLocally(target, outcome.edit.changes);
+                journalRef.current.record(outcome.edit);
+                setChip({ target, path, edit: outcome.edit });
+                setNotice(
+                    "Image saved. Undo and History can bring the previous image back.",
+                );
+                router?.refresh();
+                return outcome.edit;
+            } finally {
+                busyRef.current = false;
+                setSaving(false);
+            }
         },
         refresh,
         start,

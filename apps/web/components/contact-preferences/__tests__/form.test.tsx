@@ -17,6 +17,7 @@ function form(overrides = {}) {
             initial={initial}
             readOnly={false}
             onSave={jest.fn()}
+            onSavePhoto={jest.fn()}
             onReload={jest.fn()}
             {...overrides}
         />,
@@ -61,31 +62,57 @@ it("saves matching phone and explicit check-ins, confirms in place, and disables
     expect(await screen.findByText(copy.saved)).toBeVisible();
     expect(screen.getByRole("button", { name: copy.save })).toBeDisabled();
 });
-it("keeps edits when saving fails, including an explicit photo removal", async () => {
-    const onSave = jest.fn().mockRejectedValue(new Error("Save unavailable"));
+it("saves photo removal immediately while preserving unsaved contact edits and saved preview on failure", async () => {
+    const onSavePhoto = jest
+        .fn()
+        .mockRejectedValueOnce(new Error("Photo unavailable"))
+        .mockResolvedValueOnce({
+            ...initial,
+            revision: 3,
+            photo: { kind: "none" },
+        });
+    const onSave = jest.fn().mockResolvedValue({
+        ...initial,
+        revision: 4,
+        contact: { kind: "email", value: "reply@example.com" },
+    });
     form({
         initial: {
             ...initial,
             revision: 2,
             photo: { kind: "shared", version: 2 },
         },
+        onSavePhoto,
         onSave,
     });
-    expect(screen.getByRole("img")).toHaveAttribute(
-        "src",
-        "/api/contact-preferences/photo?v=2",
-    );
-    fireEvent.click(screen.getByRole("button", { name: copy.removePhoto }));
     fireEvent.click(screen.getByRole("button", { name: copy.edit }));
     fireEvent.change(screen.getByLabelText(copy.email), {
         target: { value: "reply@example.com" },
     });
-    fireEvent.click(screen.getByRole("button", { name: copy.save }));
-    expect(await screen.findByText("Save unavailable")).toBeVisible();
-    expect(screen.getByLabelText(copy.email)).toHaveValue("reply@example.com");
+    fireEvent.click(screen.getByRole("button", { name: copy.removePhoto }));
+    expect(await screen.findByText("Photo unavailable")).toBeVisible();
+    expect(screen.getByRole("img")).toHaveAttribute(
+        "src",
+        "/api/contact-preferences/photo?v=2",
+    );
+    expect(onSave).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: copy.removePhoto }));
+    expect(await screen.findByText(copy.photoSaved)).toBeVisible();
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
-    expect(onSave).toHaveBeenCalledWith(
-        expect.objectContaining({ photo: { kind: "remove" } }),
+    expect(screen.getByLabelText(copy.email)).toHaveValue("reply@example.com");
+    expect(onSavePhoto).toHaveBeenLastCalledWith({
+        revision: 2,
+        photo: { kind: "remove" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: copy.save }));
+    await waitFor(() =>
+        expect(onSave).toHaveBeenCalledWith(
+            expect.objectContaining({
+                revision: 3,
+                contact: { kind: "email", value: "reply@example.com" },
+                photo: { kind: "keep" },
+            }),
+        ),
     );
 });
 it("shows shared data in Mimic with all mutations unavailable", () => {

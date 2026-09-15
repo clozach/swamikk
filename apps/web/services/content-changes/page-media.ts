@@ -1,11 +1,21 @@
 import type { Media, WidgetInstance } from "@courselit/common-models";
 import type GQLContext from "@/models/GQLContext";
 import { getMedia, sealMedia } from "@/services/medialit";
+import { isLegacyAvatarMedia } from "@/services/member-privacy";
 import { requireCondition } from "./errors";
 import { stableJson } from "./stable";
 
 export const pageMediaDependencies = { get: getMedia, seal: sealMedia };
 export type PageMediaDependencies = typeof pageMediaDependencies;
+function isWebAddress(value: unknown): boolean {
+    if (typeof value !== "string" || !value) return false;
+    try {
+        const url = new URL(value);
+        return /^https?:$/.test(url.protocol) && !url.username && !url.password;
+    } catch {
+        return false;
+    }
+}
 function publicImage(media: Media & { group?: string }, group: string): Media {
     requireCondition(
         media &&
@@ -18,9 +28,11 @@ function publicImage(media: Media & { group?: string }, group: string): Media {
         400,
     );
     requireCondition(
-        /^https?:$/.test(new URL(media.file!).protocol),
+        isWebAddress(media.file) &&
+            (!media.thumbnail || isWebAddress(media.thumbnail)),
         "invalid_media",
         "This library image has no usable address.",
+        400,
     );
     const {
         mediaId,
@@ -55,13 +67,36 @@ export async function resolvePageImage(
         "bad_request",
         "Choose a library image and provide its alternative text.",
     );
+    const media = await resolvePublicImageMedia(ctx, mediaId, deps);
+    return widget.name === "anahataHero"
+        ? { source: { kind: "media", media }, alt }
+        : { ...media, caption: alt };
+}
+
+/** Validate the native tenant/public raster asset, then pin it before attachment. */
+export async function resolvePublicImageMedia(
+    ctx: GQLContext,
+    mediaId: string,
+    deps: PageMediaDependencies = pageMediaDependencies,
+): Promise<Media> {
+    requireCondition(
+        typeof mediaId === "string" && /^[\w-]{1,200}$/.test(mediaId),
+        "invalid_media",
+        "Choose an image from this site's media library.",
+    );
+    requireCondition(
+        !(await isLegacyAvatarMedia(mediaId)),
+        "invalid_media",
+        "Member recognition photos cannot be used as public page images.",
+        400,
+    );
     const selected = publicImage(await deps.get(mediaId), ctx.subdomain.name);
     requireCondition(
         selected.mediaId === mediaId,
         "invalid_media",
         "The public image lookup returned a different asset. Choose it again.",
     );
-    // Retain the chosen upload as a library asset; no page, access or publication changes here.
+    // The pending cleanup candidate remains until a live/history reference is saved.
     const media = publicImage(
         await deps.seal(mediaId, ctx.subdomain._id),
         ctx.subdomain.name,
@@ -71,9 +106,7 @@ export async function resolvePageImage(
         "invalid_media",
         "The public image lookup returned a different asset. Choose it again.",
     );
-    return widget.name === "anahataHero"
-        ? { source: { kind: "media", media }, alt }
-        : { ...media, caption: alt };
+    return media;
 }
 export async function verifyPageImage(
     value: unknown,

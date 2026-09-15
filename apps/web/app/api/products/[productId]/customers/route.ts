@@ -12,7 +12,7 @@ function serializeMember(member: any, user: any) {
             userId: user.userId,
             email: user.email,
             name: user.name,
-            avatar: user.avatar,
+            avatar: null,
         },
         status: member.status,
         completedLessons: member.completedLessons,

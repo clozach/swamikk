@@ -1,3 +1,5 @@
+import UserModel from "@/models/User";
+import { isLegacyAvatarMedia } from "@/services/member-privacy";
 import { Media } from "@courselit/common-models";
 import { collectMediaUsage, MediaUsageEntry } from "@courselit/common-logic";
 import { checkPermission } from "@courselit/utils";
@@ -10,6 +12,8 @@ import * as medialitService from "../../services/medialit";
 const { privateMedia, permissions } = constants;
 
 export const getMedia = async (media?: Media | Partial<Media>) => {
+    if (media?.mediaId && (await isLegacyAvatarMedia(media.mediaId)))
+        return null;
     if (media && media.access === privateMedia && media.mediaId) {
         return medialitService.getMedia(media.mediaId);
     }
@@ -62,8 +66,16 @@ export const getMedias = async (
     });
     const usageMap = await deps.collectUsage(ctx.subdomain._id);
 
-    return media.map((m) => ({
-        ...m,
-        usage: usageMap.get(m.mediaId as string) ?? [],
-    }));
+    const avatars = await UserModel.find({
+        "avatar.mediaId": { $in: media.map((item) => item.mediaId) },
+    })
+        .select("avatar.mediaId")
+        .lean();
+    const privateIds = new Set(avatars.map((user) => user.avatar?.mediaId));
+    return media
+        .filter((item) => !privateIds.has(item.mediaId))
+        .map((m) => ({
+            ...m,
+            usage: usageMap.get(m.mediaId as string) ?? [],
+        }));
 };

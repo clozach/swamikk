@@ -11,6 +11,7 @@ const { version } = require("./package.json");
 // build for this to take effect (see services/app/Dockerfile).
 function getImagesConfig() {
     const images = {
+        formats: ["image/avif", "image/webp"],
         remotePatterns: [
             {
                 protocol: "https",

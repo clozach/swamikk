@@ -5,9 +5,14 @@ import { Section } from "@courselit/page-primitives";
 import { FetchBuilder } from "@courselit/utils";
 import Settings from "./settings";
 import {
-    BORDER_WARM,
-    CALLOUT_INK,
-    CARD,
+    BODY_COLOR,
+    BUTTON_EDGE,
+    BUTTON_GROUND,
+    BUTTON_GROUND_DISABLED,
+    BUTTON_GROUND_PRESSED,
+    BUTTON_TEXT,
+    BUTTON_TEXT_DISABLED,
+    BUTTON_TEXT_PRESSED,
     DEFAULT_BACKGROUND,
     DEFAULT_BODY,
     DEFAULT_BUTTON_CAPTION,
@@ -24,10 +29,14 @@ import {
     DEFAULT_VERTICAL_PADDING,
     FEEDBACK_ERROR,
     FEEDBACK_SUCCESS,
+    FIELD_EDGE,
+    FIELD_GROUND,
+    FIELD_PLACEHOLDER,
+    FIELD_TEXT,
+    FOCUS_RING,
     FONT_BODY,
     FONT_DISPLAY,
-    INK,
-    INK_STRONG,
+    HEADING_COLOR,
 } from "./defaults";
 
 /**
@@ -65,39 +74,50 @@ const SUBSCRIBE_MUTATION = `
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 /**
- * The saffron/rust button recipe (visual spec §0.6, tokens.css `.an-button`).
+ * Colours reach Tailwind as CSS custom properties set on the band's root,
+ * not as literal hexes: the scanner is static, so every class name below is
+ * spelled out, but `var(--nl-…)` lets the values themselves stay in
+ * ./defaults (and so in components/palette) — one source, nothing to keep
+ * in step. Same pattern as anahata-private-sessions' `--ayr-btn-*`.
+ */
+const bandVars = {
+    "--nl-btn-bg": BUTTON_GROUND,
+    "--nl-btn-fg": BUTTON_TEXT,
+    "--nl-btn-edge": BUTTON_EDGE,
+    "--nl-btn-bg-pressed": BUTTON_GROUND_PRESSED,
+    "--nl-btn-fg-pressed": BUTTON_TEXT_PRESSED,
+    "--nl-btn-bg-disabled": BUTTON_GROUND_DISABLED,
+    "--nl-btn-fg-disabled": BUTTON_TEXT_DISABLED,
+    "--nl-focus": FOCUS_RING,
+    "--nl-placeholder": FIELD_PLACEHOLDER,
+} as React.CSSProperties;
+
+/**
+ * The moss/pine button recipe (Forest & Bone `.button--secondary`): moss
+ * fill, ink text and a 1.5px pine border at rest; pine-deep fill and border
+ * with bone text on hover and on press.
  *
- * The hexes are written out literally rather than interpolated from the
- * palette constants because Tailwind's scanner is static — a computed class
- * name would never make it into `dist/index.css`. They mirror SAFFRON, RUST
- * and RUST_PRESSED in ./defaults; keep the two in step.
- *
- * White text was unconditional here, which paired fine with the rust/
- * rust-pressed hover/active grounds (7.43:1 / 9.79:1) but failed at rest,
- * where the ground is still saffron (2.14:1). Rest now uses cocoa (7.24:1);
- * `hover:`/`active:` restore white explicitly rather than relying on any
- * implicit carry-over, since a keyboard Enter/Space press fires `:active`
- * without `:hover`.
+ * `active:` restates the pressed colours rather than relying on any
+ * carry-over from `hover:`, since a keyboard Enter/Space press fires
+ * `:active` without `:hover`.
  *
  * Disabled state (while a real submission is in flight) is a solid fill,
- * not `opacity-*`: this button sits directly on the band's photo
- * background with no card behind it, so any translucency lets the photo
- * bleed through and makes the resulting contrast a function of whatever
- * pixels happen to be there — exactly the un-guaranteed case flagged in
- * the AA pass. `#545454` (tokens --ink) with white text is 8.21:1, opaque,
- * photo-independent regardless of what the disabled button sits on top of.
+ * not `opacity-*`, so its contrast is a fixed property of the palette
+ * rather than a blend with whatever ground it sits on.
  */
 const BUTTON_CLASSES = [
     "inline-block max-w-full min-w-[200px] cursor-pointer select-none",
-    "rounded-[10px] border-none px-[20px] py-[15px]",
-    "text-center text-[16px] font-bold capitalize leading-[1.2] text-[#312110] no-underline",
-    "bg-[#ff9900] hover:bg-[#993300] hover:text-white active:bg-[#7a2900] active:text-white active:translate-y-[1px]",
-    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#993300]",
-    "transition-[background-color,color,transform] duration-100 ease-in",
+    "rounded-[10px] border-[1.5px] border-solid px-[20px] py-[15px]",
+    "text-center text-[16px] font-bold capitalize leading-[1.2] no-underline",
+    "bg-[var(--nl-btn-bg)] text-[var(--nl-btn-fg)] border-[var(--nl-btn-edge)]",
+    "hover:bg-[var(--nl-btn-bg-pressed)] hover:text-[var(--nl-btn-fg-pressed)] hover:border-[var(--nl-btn-bg-pressed)]",
+    "active:bg-[var(--nl-btn-bg-pressed)] active:text-[var(--nl-btn-fg-pressed)] active:border-[var(--nl-btn-bg-pressed)] active:translate-y-[1px]",
+    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--nl-focus)]",
+    "transition-[background-color,border-color,color,transform] duration-100 ease-in",
     "disabled:cursor-not-allowed disabled:pointer-events-none",
-    "disabled:bg-[#545454] disabled:text-white",
-    "disabled:hover:bg-[#545454] disabled:hover:text-white",
-    "disabled:active:bg-[#545454] disabled:active:text-white disabled:active:translate-y-0",
+    "disabled:bg-[var(--nl-btn-bg-disabled)] disabled:text-[var(--nl-btn-fg-disabled)] disabled:border-[var(--nl-btn-bg-disabled)]",
+    "disabled:hover:bg-[var(--nl-btn-bg-disabled)] disabled:hover:text-[var(--nl-btn-fg-disabled)] disabled:hover:border-[var(--nl-btn-bg-disabled)]",
+    "disabled:active:bg-[var(--nl-btn-bg-disabled)] disabled:active:text-[var(--nl-btn-fg-disabled)] disabled:active:border-[var(--nl-btn-bg-disabled)] disabled:active:translate-y-0",
 ].join(" ");
 
 function paragraphsOf(body: string): string[] {
@@ -282,7 +302,7 @@ export default function Widget({
                           : FEEDBACK_ERROR,
               }
             : submission.kind === "submitting"
-              ? { message: "Submitting…", color: INK }
+              ? { message: "Submitting…", color: FIELD_TEXT }
               : null;
 
     return (
@@ -295,12 +315,19 @@ export default function Widget({
         >
             <div
                 className="pb-[45px] pt-[40px] text-center text-[16px] leading-[1.65] md:text-[18px]"
-                style={{ fontFamily: FONT_BODY, color: CALLOUT_INK }}
+                style={{
+                    ...bandVars,
+                    fontFamily: FONT_BODY,
+                    color: BODY_COLOR,
+                }}
             >
                 {title && (
                     <h3
                         className="m-0 p-0 text-[30px] font-normal uppercase leading-[1.2]"
-                        style={{ fontFamily: FONT_DISPLAY, color: INK_STRONG }}
+                        style={{
+                            fontFamily: FONT_DISPLAY,
+                            color: HEADING_COLOR,
+                        }}
                     >
                         {title}
                     </h3>
@@ -360,17 +387,18 @@ export default function Widget({
                             aria-invalid={isInvalid}
                             aria-describedby={feedback ? feedbackId : undefined}
                             onChange={(e) => onEmailChange(e.target.value)}
-                            /* Focus ring was saffron — 2.14:1 against the white
-                               field, under the 3:1 UI-component floor. Rust is
-                               7.43:1 against the same white field. */
-                            className="w-full min-w-0 flex-1 rounded-[4px] border px-[12px] py-[6px] text-left text-[1em] leading-[1.65] outline-none placeholder:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#993300] disabled:cursor-not-allowed"
+                            /* Placeholder at full opacity in ink-soft rather than
+                               ink faded to 60%: the blend measured 3.8:1 on card,
+                               the solid colour 7.5:1. Focus ring is pine, 9.1:1
+                               on the card field. */
+                            className="w-full min-w-0 flex-1 rounded-[4px] border px-[12px] py-[6px] text-left text-[1em] leading-[1.65] outline-none placeholder:text-[var(--nl-placeholder)] placeholder:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--nl-focus)] disabled:cursor-not-allowed"
                             style={{
                                 fontFamily: FONT_BODY,
-                                backgroundColor: CARD,
-                                color: INK,
+                                backgroundColor: FIELD_GROUND,
+                                color: FIELD_TEXT,
                                 borderColor: isInvalid
                                     ? FEEDBACK_ERROR
-                                    : BORDER_WARM,
+                                    : FIELD_EDGE,
                             }}
                         />
                         <button
@@ -400,12 +428,12 @@ export default function Widget({
                                     ? "newsletter-subscribed"
                                     : undefined
                             }
-                            className="mx-auto mb-0 mt-[20px] max-w-[520px] rounded-[4px] border p-[20px] text-center text-[18px] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#993300]"
+                            className="mx-auto mb-0 mt-[20px] max-w-[520px] rounded-[4px] border p-[20px] text-center text-[18px] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--nl-focus)]"
                             style={{
-                                backgroundColor: CARD,
+                                backgroundColor: FIELD_GROUND,
                                 borderColor: isSubmissionError
                                     ? FEEDBACK_ERROR
-                                    : BORDER_WARM,
+                                    : FIELD_EDGE,
                                 color: feedback.color,
                             }}
                         >

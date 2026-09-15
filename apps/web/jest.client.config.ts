@@ -27,6 +27,8 @@ const config = {
     //     '!**/setupTests.ts',
     // ],
     moduleNameMapper: {
+        "^@courselit/components-library/images$":
+            "<rootDir>/../../packages/components-library/src/images.ts",
         "^@courselit/components-library/dialogs$":
             "<rootDir>/../../packages/components-library/src/dialogs.ts",
         // Ensure a single React instance is used in tests to avoid

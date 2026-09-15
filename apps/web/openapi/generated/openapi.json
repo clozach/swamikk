@@ -78,7 +78,7 @@
         },
         {
             "name": "Contact preferences",
-            "description": "Optional private contact/check-in/photo sharing. Separate from newsletter consent and public avatars."
+            "description": "Optional private contact/check-in/photo sharing. Separate from newsletter consent; member photos are private recognition aids."
         },
         {
             "name": "Newsletter",
@@ -4191,7 +4191,7 @@
             "get": {
                 "tags": ["Content changes"],
                 "summary": "Inline-editable text on a page",
-                "description": "Every visible string a site manager may edit in place: each non-shared block's stored settings plus its defaults for unset fields, and the shared header/footer. Addresses, identities, image sources and presentation keys are never listed. Requires site:manage outside Member Mimic.",
+                "description": "Every visible string a site manager may edit in place: each non-shared block's stored settings plus its defaults for unset fields, and the shared header/footer. Image sources are listed separately in images from an explicit block registry; they never appear as text leaves. Addresses, identities and presentation keys are never text targets. Requires site:manage outside Member Mimic.",
                 "security": [
                     {
                         "CourseLitSession": []
@@ -4243,6 +4243,93 @@
                                                     },
                                                     "shared": {
                                                         "type": "boolean"
+                                                    },
+                                                    "images": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "path",
+                                                                "label",
+                                                                "value"
+                                                            ],
+                                                            "properties": {
+                                                                "path": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 300,
+                                                                    "pattern": "^[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+){0,23}$",
+                                                                    "description": "Dot path of one string inside the block's settings (or its defaults), as listed by the leaves endpoint."
+                                                                },
+                                                                "label": {
+                                                                    "type": "string"
+                                                                },
+                                                                "value": {
+                                                                    "oneOf": [
+                                                                        {
+                                                                            "type": "object",
+                                                                            "additionalProperties": false,
+                                                                            "required": [
+                                                                                "kind",
+                                                                                "url"
+                                                                            ],
+                                                                            "properties": {
+                                                                                "kind": {
+                                                                                    "const": "url"
+                                                                                },
+                                                                                "url": {
+                                                                                    "type": "string",
+                                                                                    "maxLength": 8192
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        {
+                                                                            "type": "object",
+                                                                            "additionalProperties": false,
+                                                                            "required": [
+                                                                                "kind",
+                                                                                "description"
+                                                                            ],
+                                                                            "properties": {
+                                                                                "kind": {
+                                                                                    "const": "placeholder"
+                                                                                },
+                                                                                "description": {
+                                                                                    "type": "string",
+                                                                                    "maxLength": 20000
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        {
+                                                                            "type": "object",
+                                                                            "additionalProperties": false,
+                                                                            "required": [
+                                                                                "kind",
+                                                                                "media"
+                                                                            ],
+                                                                            "properties": {
+                                                                                "kind": {
+                                                                                    "const": "media"
+                                                                                },
+                                                                                "media": {
+                                                                                    "type": "object",
+                                                                                    "required": [
+                                                                                        "mediaId"
+                                                                                    ],
+                                                                                    "properties": {
+                                                                                        "mediaId": {
+                                                                                            "type": "string",
+                                                                                            "minLength": 1,
+                                                                                            "maxLength": 200
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            }
+                                                        }
                                                     },
                                                     "leaves": {
                                                         "type": "array",
@@ -4314,8 +4401,8 @@
         "/api/content-changes/text/edit": {
             "post": {
                 "tags": ["Content changes"],
-                "summary": "Apply one inline text edit",
-                "description": "Applies one to eight changes on one widget together — string leaves and whole rich-text paragraphs/headings — immediately on the published page, mirrored into an existing draft of the same text. Each `before` must equal the stored value or node; otherwise 409 returns the current values. A draft that already changes the text, an emptied string, removed or lost link words, disallowed formatting or a control character is refused. Every attempt is recorded; applied edits form the page's history. Same-origin JSON only.",
+                "summary": "Apply one inline text or image edit",
+                "description": "Applies one to eight changes on one widget together — string leaves, whole rich-text paragraphs/headings and registered image sources — immediately on the published page, mirrored into an existing draft of the same text. Each `before` must equal the stored value or node; otherwise 409 returns the current values. A draft that already changes the text, an emptied string, removed or lost link words, disallowed formatting or a control character is refused. Validation precedes the applying history row; the source write and receipt commit atomically, and applied edits form retained history. New images must be public raster assets from this site's MediaLit library; the server resolves their canonical metadata and seals them. URL and placeholder restoration requires undoOf to match the same retained source, image path and historical before value. Same-origin JSON only.",
                 "security": [
                     {
                         "CourseLitSession": []
@@ -4398,6 +4485,156 @@
                                         "maxItems": 8,
                                         "items": {
                                             "oneOf": [
+                                                {
+                                                    "type": "object",
+                                                    "additionalProperties": false,
+                                                    "required": [
+                                                        "kind",
+                                                        "path",
+                                                        "before",
+                                                        "after"
+                                                    ],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "const": "image"
+                                                        },
+                                                        "path": {
+                                                            "type": "string",
+                                                            "minLength": 1,
+                                                            "maxLength": 300,
+                                                            "pattern": "^[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+){0,23}$",
+                                                            "description": "Dot path of one string inside the block's settings (or its defaults), as listed by the leaves endpoint."
+                                                        },
+                                                        "before": {
+                                                            "oneOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "additionalProperties": false,
+                                                                    "required": [
+                                                                        "kind",
+                                                                        "url"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "kind": {
+                                                                            "const": "url"
+                                                                        },
+                                                                        "url": {
+                                                                            "type": "string",
+                                                                            "maxLength": 8192
+                                                                        }
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "additionalProperties": false,
+                                                                    "required": [
+                                                                        "kind",
+                                                                        "description"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "kind": {
+                                                                            "const": "placeholder"
+                                                                        },
+                                                                        "description": {
+                                                                            "type": "string",
+                                                                            "maxLength": 20000
+                                                                        }
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "additionalProperties": false,
+                                                                    "required": [
+                                                                        "kind",
+                                                                        "media"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "kind": {
+                                                                            "const": "media"
+                                                                        },
+                                                                        "media": {
+                                                                            "type": "object",
+                                                                            "required": [
+                                                                                "mediaId"
+                                                                            ],
+                                                                            "properties": {
+                                                                                "mediaId": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 200
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            ]
+                                                        },
+                                                        "after": {
+                                                            "oneOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "additionalProperties": false,
+                                                                    "required": [
+                                                                        "kind",
+                                                                        "url"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "kind": {
+                                                                            "const": "url"
+                                                                        },
+                                                                        "url": {
+                                                                            "type": "string",
+                                                                            "maxLength": 8192
+                                                                        }
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "additionalProperties": false,
+                                                                    "required": [
+                                                                        "kind",
+                                                                        "description"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "kind": {
+                                                                            "const": "placeholder"
+                                                                        },
+                                                                        "description": {
+                                                                            "type": "string",
+                                                                            "maxLength": 20000
+                                                                        }
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "additionalProperties": false,
+                                                                    "required": [
+                                                                        "kind",
+                                                                        "media"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "kind": {
+                                                                            "const": "media"
+                                                                        },
+                                                                        "media": {
+                                                                            "type": "object",
+                                                                            "required": [
+                                                                                "mediaId"
+                                                                            ],
+                                                                            "properties": {
+                                                                                "mediaId": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 1,
+                                                                                    "maxLength": 200
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            ]
+                                                        }
+                                                    }
+                                                },
                                                 {
                                                     "type": "object",
                                                     "additionalProperties": false,
@@ -4511,7 +4748,7 @@
                                         },
                                         "edit": {
                                             "type": "object",
-                                            "description": "One applied inline edit: editId, target, widgetName, changes (each with its exact before/after string or node), userId, at, the page/site revision it produced, and undoOf when it reverses another edit. Rows are append-only."
+                                            "description": "One applied inline edit: editId, target, widgetName, changes (each with its exact before/after string, node or image source), userId, at, the page/site revision it produced, and undoOf when it reverses another edit. Rows are append-only."
                                         }
                                     }
                                 }
@@ -4577,7 +4814,7 @@
                                             "type": "array",
                                             "items": {
                                                 "type": "object",
-                                                "description": "One applied inline edit: editId, target, widgetName, changes (each with its exact before/after string or node), userId, at, the page/site revision it produced, and undoOf when it reverses another edit. Rows are append-only."
+                                                "description": "One applied inline edit: editId, target, widgetName, changes (each with its exact before/after string, node or image source), userId, at, the page/site revision it produced, and undoOf when it reverses another edit. Rows are append-only."
                                             }
                                         },
                                         "nextCursor": {
@@ -9373,16 +9610,234 @@
             }
         },
         "/api/contact-preferences/photo": {
-            "get": {
+            "put": {
                 "tags": ["Contact preferences"],
-                "operationId": "getContactPreferencePhoto",
+                "operationId": "saveContactPreferencePhoto",
                 "security": [
                     {
                         "CourseLitSession": []
                     }
                 ],
-                "summary": "Read the private photo through current owner/Mimic authorization",
-                "description": "No arbitrary member/media IDs. Private no-store JPEG response with same-origin resource policy. Removed/unshared photo returns 404; revoked or expired authorization cannot fetch it.",
+                "summary": "Save an own private photo immediately",
+                "description": "Same-origin JSON and active ownership required; Mimic cannot write. Shares the preference revision compare-and-swap. Reads the saved contact/check-in fields and preserves them, so pending form edits are not submitted by a photo change. Same bounded JPEG processing as preference saves. No external delivery or MediaLit object is created.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["revision", "photo"],
+                                "properties": {
+                                    "revision": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "photo": {
+                                        "oneOf": [
+                                            {
+                                                "type": "object",
+                                                "additionalProperties": false,
+                                                "required": ["kind"],
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": ["keep"]
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "type": "object",
+                                                "additionalProperties": false,
+                                                "required": ["kind"],
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": ["remove"]
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "type": "object",
+                                                "additionalProperties": false,
+                                                "required": ["kind", "data"],
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": ["replace"]
+                                                    },
+                                                    "data": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 2800000,
+                                                        "description": "Base64 image bytes, without data URL prefix."
+                                                    }
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Saved photo and unchanged saved contact preferences.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "revision",
+                                        "contact",
+                                        "checkIns",
+                                        "photo"
+                                    ],
+                                    "properties": {
+                                        "revision": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                        },
+                                        "contact": {
+                                            "oneOf": [
+                                                {
+                                                    "type": "object",
+                                                    "additionalProperties": false,
+                                                    "required": [
+                                                        "kind",
+                                                        "value"
+                                                    ],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": ["email"]
+                                                        },
+                                                        "value": {
+                                                            "type": "string",
+                                                            "maxLength": 254
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "additionalProperties": false,
+                                                    "required": [
+                                                        "kind",
+                                                        "value"
+                                                    ],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": ["voice"]
+                                                        },
+                                                        "value": {
+                                                            "type": "string",
+                                                            "maxLength": 40
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "additionalProperties": false,
+                                                    "required": [
+                                                        "kind",
+                                                        "value"
+                                                    ],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": ["text"]
+                                                        },
+                                                        "value": {
+                                                            "type": "string",
+                                                            "maxLength": 40
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "checkIns": {
+                                            "type": "string",
+                                            "enum": ["none", "occasional"]
+                                        },
+                                        "photo": {
+                                            "oneOf": [
+                                                {
+                                                    "type": "object",
+                                                    "required": ["kind"],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": ["none"]
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "kind",
+                                                        "version"
+                                                    ],
+                                                    "properties": {
+                                                        "kind": {
+                                                            "type": "string",
+                                                            "enum": ["shared"]
+                                                        },
+                                                        "version": {
+                                                            "type": "integer",
+                                                            "minimum": 1
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid preference or undecodable photo."
+                    },
+                    "403": {
+                        "description": "Sign-in, same-origin request, or current Mimic authorization required. Mimic cannot write."
+                    },
+                    "409": {
+                        "description": "Stale revision: preserve input and reload before saving."
+                    },
+                    "413": {
+                        "description": "JSON exceeds 3 MB or decoded photo exceeds 2 MB."
+                    },
+                    "429": {
+                        "description": "Too many changes; retry later."
+                    },
+                    "503": {
+                        "description": "Request unavailable; preserve input and check saved status."
+                    }
+                }
+            },
+            "get": {
+                "tags": ["Contact preferences"],
+                "operationId": "getContactPreferencePhoto",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "userId",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Same-tenant target for current member managers; omitted for self/Mimic."
+                    }
+                ],
+                "security": [
+                    {
+                        "CourseLitSession": []
+                    }
+                ],
+                "summary": "Read a private photo as its owner, current member manager or Mimic subject",
+                "description": "Optional userId selects an active same-tenant member only for current member managers; ordinary members cannot select others, and Mimic is restricted to its subject. No media IDs or public URLs. Private no-store JPEG response with same-origin resource policy. Removed/unshared photo returns 404; revoked or expired authorization cannot fetch it.",
                 "responses": {
                     "200": {
                         "description": "Private JPEG.",

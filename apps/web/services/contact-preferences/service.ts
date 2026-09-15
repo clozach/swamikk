@@ -2,6 +2,7 @@ import type { ContactPreferences } from "@courselit/common-models";
 import type { InternalContactPreferences } from "@courselit/orm-models";
 import type GQLContext from "@/models/GQLContext";
 import UserModel from "@/models/User";
+import { canReadMemberDetails } from "@/services/member-privacy";
 import { requireCondition } from "@/services/content-changes/errors";
 import { ContactPreferencesModel } from "./model";
 import { contactPreferencesSchema } from "./validation";
@@ -109,14 +110,41 @@ export async function saveContactPreferences(
     return view(record, user.email);
 }
 
-export async function readContactPhoto(ctx: GQLContext): Promise<Buffer> {
-    const user = await preferenceOwner(ctx);
+export async function readContactPhoto(
+    ctx: GQLContext,
+    targetUserId?: string,
+): Promise<Buffer> {
+    let user = await preferenceOwner(ctx);
+    if (targetUserId && targetUserId !== user.userId) {
+        requireCondition(
+            !ctx.memberMimic &&
+                canReadMemberDetails(
+                    { userId: targetUserId, domain: ctx.subdomain._id },
+                    ctx,
+                ),
+            "not_found",
+            "No private photo is shared.",
+            404,
+        );
+        const target = await UserModel.findOne({
+            domain: ctx.subdomain._id,
+            userId: targetUserId,
+            active: true,
+        });
+        requireCondition(
+            target,
+            "not_found",
+            "No private photo is shared.",
+            404,
+        );
+        user = target;
+    }
     const record = await ContactPreferencesModel.findOne({
         domain: ctx.subdomain._id,
         userId: user.userId,
     }).select("+photoJpeg");
     requireCondition(
-        record?.photoVersion && record.photoJpeg,
+        record?.state === "active" && record.photoVersion && record.photoJpeg,
         "not_found",
         "No private photo is shared.",
         404,

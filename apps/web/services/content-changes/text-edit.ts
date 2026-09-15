@@ -39,6 +39,9 @@ import {
     settleTextRecord,
 } from "./text-edit-records";
 
+import { widgetImageLeaves, setImageLeaf } from "./image-registry";
+import { imageEditSession, type ImageEditSession } from "./image-edit";
+
 const plain = <T>(value: T): T =>
     value === undefined ? value : JSON.parse(JSON.stringify(value));
 
@@ -75,7 +78,7 @@ async function freshDomain(ctx: GQLContext) {
     return domain;
 }
 
-/** Every editable text leaf on a page, shared header/footer included. */
+/** Editable text leaves and explicit image slots, shared header/footer included. */
 export async function pageTextLeaves(
     pageId: string,
     ctx: GQLContext,
@@ -96,6 +99,7 @@ export async function pageTextLeaves(
             name: widget.name,
             shared: !!widget.shared,
             leaves: widgetTextLeaves(instance),
+            images: widgetImageLeaves(instance),
         };
     });
     return { pageId: page.pageId, revision: pageRevision(page), widgets };
@@ -183,8 +187,20 @@ function applyChanges(
     | { kind: "settings"; settings: Record<string, unknown> }
     | { kind: "stale"; current: Array<{ path: string; value: unknown }> } {
     const leaves = widgetTextLeaves(widget);
+    const images = widgetImageLeaves(widget);
     const stale: Array<{ path: string; value: unknown }> = [];
     for (const change of changes) {
+        if (change.kind === "image") {
+            const image = images.find((item) => item.path === change.path);
+            requireCondition(
+                image,
+                "unsupported_target",
+                "Choose an image on this page.",
+            );
+            if (stableJson(image.value) !== stableJson(change.before))
+                stale.push({ path: change.path, value: image.value });
+            continue;
+        }
         const entry = leaves.find((item) => item.path === change.path);
         requireCondition(
             entry,
@@ -211,10 +227,12 @@ function applyChanges(
     }
     if (stale.length) return { kind: "stale", current: stale };
     const original = (widget.settings || {}) as Record<string, unknown>;
-    let settings = plain(original);
+    let settings = { ...original };
     for (const change of changes) {
         const working = { ...widget, settings };
-        if (change.kind === "text") {
+        if (change.kind === "image") {
+            settings = setImageLeaf(working, change.path, change.after);
+        } else if (change.kind === "text") {
             requireCondition(
                 !change.path.endsWith(".linkText") ||
                     !change.before.trim() ||
@@ -265,10 +283,18 @@ const stale = (
 async function applyPageWidgetEdit(
     input: TextEditInput & { target: { kind: "page-widget-text" } },
     ctx: GQLContext,
+    images: ImageEditSession,
 ): Promise<TextEditResult> {
     const { pageId, widgetId } = input.target;
     const page: EditablePage = await editablePage(pageId, ctx);
     const widget = selectedPageWidget(page, widgetId);
+    const initial = applyChanges(widget, input.changes);
+    if (initial.kind === "stale") return stale(initial.current);
+    input = (await images.prepare(
+        input,
+        widget,
+        String((page as EditablePage & { _id?: unknown })._id || page.id),
+    )) as typeof input;
     const replaced = applyChanges(widget, input.changes);
     if (replaced.kind === "stale") return stale(replaced.current);
     let draftLayout: WidgetInstance[] | undefined;
@@ -330,6 +356,7 @@ async function applyPageWidgetEdit(
 async function applySharedWidgetEdit(
     input: TextEditInput & { target: { kind: "shared-widget-text" } },
     ctx: GQLContext,
+    images: ImageEditSession,
 ): Promise<TextEditResult> {
     const { name } = input.target;
     // The page only records where the edit was made; it must exist on this site.
@@ -343,19 +370,26 @@ async function applySharedWidgetEdit(
         404,
     );
     const widget = sharedWidgetInstance(name, current);
+    const initial = applyChanges(widget, input.changes);
+    if (initial.kind === "stale") return stale(initial.current);
+    input = (await images.prepare(
+        input,
+        widget,
+        String(domain._id),
+    )) as typeof input;
     const replaced = applyChanges(widget, input.changes);
     if (replaced.kind === "stale") return stale(replaced.current);
     const sharedWidgets: SharedWidgets = {
-        ...plain(domain.sharedWidgets),
-        [name]: { ...plain(current), settings: replaced.settings },
+        ...domain.sharedWidgets,
+        [name]: { ...current, settings: replaced.settings },
     };
     let draftSharedWidgets: SharedWidgets | undefined;
     const draft = own(domain.draftSharedWidgets, name);
     if (draft)
         draftSharedWidgets = {
-            ...plain(domain.draftSharedWidgets),
+            ...domain.draftSharedWidgets,
             [name]: {
-                ...plain(draft),
+                ...draft,
                 settings: applyToDraft(
                     sharedWidgetInstance(name, draft),
                     input.changes,
@@ -371,7 +405,7 @@ async function applySharedWidgetEdit(
                 $and: [
                     {
                         $eq: [
-                            { $literal: plain(domain.sharedWidgets) },
+                            { $literal: domain.sharedWidgets },
                             "$sharedWidgets",
                         ],
                     },
@@ -380,9 +414,7 @@ async function applySharedWidgetEdit(
                         : {
                               $eq: [
                                   {
-                                      $literal: plain(
-                                          domain.draftSharedWidgets,
-                                      ),
+                                      $literal: domain.draftSharedWidgets,
                                   },
                                   "$draftSharedWidgets",
                               ],
@@ -441,7 +473,7 @@ async function applySharedWidgetEdit(
     return { kind: "applied", edit: view({ ...entry.toObject(), revision }) };
 }
 
-/** One inline edit — every change on one widget together — validated, applied under the page/site revision guard, recorded either way. */
+/** One inline edit — every change on one widget together — validated, then recorded and applied under the page/site revision guard. */
 export async function applyTextEdit(
     input: TextEditInput,
     ctx: GQLContext,
@@ -478,17 +510,30 @@ export async function applyTextEdit(
         "This text already reads that way.",
     );
     await recoverTextEditReceipts(ctx);
-    return input.target.kind === "page-widget-text"
-        ? applyPageWidgetEdit(
-              input as TextEditInput & { target: { kind: "page-widget-text" } },
-              ctx,
-          )
-        : applySharedWidgetEdit(
-              input as TextEditInput & {
-                  target: { kind: "shared-widget-text" };
-              },
-              ctx,
-          );
+    const images = imageEditSession(ctx);
+    let applied = false;
+    try {
+        const result =
+            input.target.kind === "page-widget-text"
+                ? await applyPageWidgetEdit(
+                      input as TextEditInput & {
+                          target: { kind: "page-widget-text" };
+                      },
+                      ctx,
+                      images,
+                  )
+                : await applySharedWidgetEdit(
+                      input as TextEditInput & {
+                          target: { kind: "shared-widget-text" };
+                      },
+                      ctx,
+                      images,
+                  );
+        applied = result.kind === "applied";
+        return result;
+    } finally {
+        if (!applied) await images.abandon();
+    }
 }
 
 /** Applied edits on this page plus every site-wide (shared) edit, newest first. */

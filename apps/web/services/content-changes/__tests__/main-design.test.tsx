@@ -10,6 +10,8 @@ import Newsletter from "../../../../../packages/page-blocks/src/blocks/anahata-n
 import Posts from "../../../../../packages/page-blocks/src/blocks/anahata-posts/widget";
 import Footer from "../../../../../packages/page-blocks/src/blocks/anahata-footer/widget";
 import { pageWidgetFields, pagePreviewSettings } from "../page-registry";
+import { PALETTE } from "../../../../../packages/page-blocks/src/components/palette";
+import { widgetImageLeaves } from "../image-registry";
 import { widgetTextLeaves } from "../text-leaves";
 import { indexLeaves } from "../../../components/feedback/text-edit/leaves";
 import { findRuns } from "../../../components/feedback/text-edit/runs";
@@ -23,6 +25,15 @@ jest.mock("@courselit/components-library", () => ({
         <a href={href} className={className}>
             {children}
         </a>
+    ),
+    ResponsiveImage: ({ src, alt, sizes, objectFit }: any) => (
+        <img
+            src={src}
+            alt={alt}
+            sizes={sizes}
+            data-responsive="true"
+            style={{ objectFit }}
+        />
     ),
     Image: ({ src, media, alt }: any) => (
         <img src={src || media?.file || media?.thumbnail} alt={alt || ""} />
@@ -104,82 +115,49 @@ beforeEach(() => {
     } as any;
 });
 
-describe("main-site defaults retain the existing native design", () => {
+describe("main-site defaults use the resumed Clay & Saffron wireframe", () => {
     it.each([
-        [
-            "header",
-            Header,
-            "/swami-kk-logo.png",
-            /#f7f4eb|rgb\(247, 244, 235\)/i,
-        ],
-        ["hero", Hero, "/anahata/hp-hero-bg.jpg", /#993300|rgb\(153, 51, 0\)/i],
-        [
-            "tour",
-            Tour,
-            "https://tour.anahata-retreat.org.nz/index.htm",
-            /#993300|rgb\(153, 51, 0\)/i,
-        ],
-        [
-            "private sessions",
-            PrivateSessions,
-            "/anahata/swami-kk-bio.jpg",
-            /#993300|rgb\(153, 51, 0\)/i,
-        ],
-        [
-            "gatherings",
-            Gatherings,
-            "/anahata/course-building-resilience-2026.png",
-            /#993300|rgb\(153, 51, 0\)/i,
-        ],
-        [
-            "newsletter",
-            Newsletter,
-            "/anahata/footer-callout-bg.jpg",
-            /#252525|rgb\(37, 37, 37\)/i,
-        ],
-        [
-            "posts",
-            Posts,
-            "/anahata/post-kumara-salad.jpg",
-            /#f8ecdb|rgb\(248, 236, 219\)/i,
-        ],
-        [
-            "footer",
-            Footer,
-            "/anahata/footer-logo-2021.png",
-            /#216097|rgb\(33, 96, 151\)/i,
-        ],
+        ["header", Header, 1],
+        ["hero", Hero, 2],
+        ["tour", Tour, 0],
+        ["private sessions", PrivateSessions, 1],
+        ["gatherings", Gatherings, 1],
+        ["newsletter", Newsletter, 0],
+        ["posts", Posts, 6],
+        ["footer", Footer, 1],
     ] as const)(
-        "%s renders its real default asset and original palette",
-        (_name, Widget, asset, color) => {
+        "%s keeps unfinished image wells and the non-green palette",
+        (_name, Widget, wells) => {
             const { container } = paint(Widget);
-            expect(container.innerHTML).toContain(asset);
-            expect(container.innerHTML).toMatch(color);
-            expect(container.innerHTML).not.toMatch(/waiting for asset/i);
+            expect(
+                container.querySelectorAll('[data-asset="waiting"]'),
+            ).toHaveLength(wells);
+            expect(container.innerHTML).not.toMatch(
+                /#(?:0f1a15|1b2d24|1f3d2b)|rgb\(15, 26, 21\)|rgb\(27, 45, 36\)/i,
+            );
+            expect(container.innerHTML).not.toMatch(
+                /\/anahata\/(hp-hero-bg|footer-callout-bg|post-kumara-salad|footer-logo-2021)/,
+            );
         },
     );
 
-    it("keeps the banner and wordmark together, and the six original post thumbnails", () => {
+    it("keeps the shared hero frame and all six post slots ready for replacement", () => {
         const hero = paint(Hero);
-        expect(hero.container.innerHTML).toContain("/anahata/hp-hero-bg.jpg");
         expect(
-            hero.container.querySelector(
-                "img[src='/anahata/solutions-for-life.png']",
-            ),
-        ).toBeInTheDocument();
+            hero.container.querySelectorAll('[data-asset="waiting"]'),
+        ).toHaveLength(2);
         const posts = paint(Posts);
         expect(
-            Array.from(posts.container.querySelectorAll("img")).map((image) =>
-                image.getAttribute("src"),
+            Array.from(
+                posts.container.querySelectorAll("[data-kk-image-path]"),
+            ).map((node) => node.getAttribute("data-kk-image-path")),
+        ).toEqual(
+            Array.from(
+                { length: 6 },
+                (_, index) => `posts.${index}.thumbnail.source`,
             ),
-        ).toEqual([
-            "/anahata/post-kumara-salad.jpg",
-            "/anahata/post-menopause.png",
-            "/anahata/post-autumn-tonic.png",
-            "/anahata/post-nervous-system.png",
-            "/anahata/post-nourish-bowl.png",
-            "/anahata/post-tempeh-salad.png",
-        ]);
+        );
+        expect(posts.container.querySelectorAll("img")).toHaveLength(0);
     });
 });
 
@@ -222,7 +200,7 @@ describe.each([
         { kind: "placeholder", description: "Author's unfinished image" },
     ],
 ] as const)(
-    "saved %s images survive presentation restoration",
+    "saved %s images survive the wireframe baseline",
     (_kind, source) => {
         it.each([
             ["hero", Hero, { bannerImage: { source, alt: "Saved photo" } }],
@@ -326,6 +304,7 @@ it("lists the actual default image and text values seen by the native editor", (
     const widget = {
         name: "anahataHero",
         widgetId: "hero",
+        deleteable: true,
         shared: false,
         settings: {},
     } as WidgetInstance;
@@ -334,15 +313,15 @@ it("lists the actual default image and text values seen by the native editor", (
     const banner = fields.find((field) => field.field === "bannerImage")!;
     expect(banner).toMatchObject({
         defaultDerived: true,
-        value: { source: { kind: "url", url: "/anahata/hp-hero-bg.jpg" } },
+        value: { source: { kind: "placeholder" } },
     });
-    expect(banner.placeholder).toBeUndefined();
+    expect(banner.placeholder?.description).toBeTruthy();
     for (const field of fields.filter(
         (field) => !field.field.startsWith("paragraph:"),
     ))
         expect(preview[field.field]).toEqual(field.value);
     const { container } = paint(Hero, preview);
-    expect(container.innerHTML).toContain("/anahata/hp-hero-bg.jpg");
+    expect(container.innerHTML).toContain("waiting for asset");
     expect(container.textContent).toContain(
         String(fields.find((field) => field.field === "heading")!.value),
     );
@@ -362,6 +341,7 @@ it("keeps explicit placeholders intact in native records and previews", () => {
     const widget = {
         name: "anahataHero",
         widgetId: "hero",
+        deleteable: true,
         shared: false,
         settings,
     } as WidgetInstance;
@@ -377,7 +357,7 @@ it("keeps explicit placeholders intact in native records and previews", () => {
     expect(JSON.stringify(settings)).toBe(before);
 });
 
-describe("native text targets match the restored Posts renderer", () => {
+describe("native text targets match the resumed Posts renderer", () => {
     beforeEach(() => {
         // jsdom has no layout; expose the real rendered text to the matcher.
         jest.spyOn(Element.prototype, "getClientRects").mockReturnValue([
@@ -416,7 +396,7 @@ describe("native text targets match the restored Posts renderer", () => {
     };
 
     it.each([
-        ["omitted settings", {}, "Read More at Our Blog", "buttonCaption"],
+        ["omitted settings", {}, "Read the blog", "moreLink.label"],
         [
             "legacy button pair",
             { buttonCaption: "Browse stories", buttonAction: "/stories" },
@@ -527,8 +507,10 @@ it("keeps Menu and Contact legible in the dark header", () => {
         expect(control.classList).toContain("text-[var(--nav-fg)]");
         expect(control.classList).toContain("hover:text-[var(--nav-fg-hover)]");
         const band = control.closest<HTMLElement>('[style*="--nav-fg:"]')!;
-        expect(band.style.getPropertyValue("--nav-fg")).toBe("#f7f4eb");
-        expect(band.style.getPropertyValue("--nav-fg-hover")).toBe("#ff9900");
+        expect(band.style.getPropertyValue("--nav-fg")).toBe(PALETTE.bone);
+        expect(band.style.getPropertyValue("--nav-fg-hover")).toBe(
+            PALETTE.mossLight,
+        );
     }
 });
 
@@ -538,7 +520,10 @@ it.each(["light", "dark"] as const)(
         const view = render(
             <Header
                 id="main-design"
-                settings={{}}
+                name="anahataHeader"
+                pageData={{} as any}
+                toggleTheme={() => {}}
+                settings={{} as any}
                 state={{
                     ...state,
                     profile: { name: "Member", email: "member@example.test" },
@@ -562,9 +547,66 @@ it.each(["light", "dark"] as const)(
         expect(supplier).toBe(drawer);
         expect(
             window.getComputedStyle(drawer).getPropertyValue("--nav-fg-hover"),
-        ).toBe("#ff9900");
+        ).toBe(PALETTE.mossLight);
         expect(window.getComputedStyle(drawer).backgroundColor).toBe(
-            "rgb(38, 38, 38)",
+            "rgb(47, 33, 24)",
         );
     },
 );
+
+it.each([
+    ["anahataHeader", Header],
+    ["anahataGatherings", Gatherings],
+    ["anahataPosts", Posts],
+    ["anahataPrivateSessions", PrivateSessions],
+    ["anahataFooter", Footer],
+] as const)(
+    "%s visible picture markers resolve to the server's explicit image registry",
+    (name, Widget) => {
+        const { container } = paint(Widget);
+        const registered = new Set(
+            widgetImageLeaves({
+                name,
+                widgetId: "main-design",
+                settings: {},
+                deleteable: true,
+                shared: false,
+            }).map((image) => image.path),
+        );
+        const marked = Array.from(
+            container.querySelectorAll("[data-kk-image-path]"),
+        );
+        expect(marked.length).toBeGreaterThan(0);
+        for (const element of marked)
+            expect(
+                registered.has(element.getAttribute("data-kk-image-path")!),
+            ).toBe(true);
+    },
+);
+
+it("keeps saved footer decorations and their legacy URL fallback replaceable", () => {
+    const settings = {
+        decorLeftUrl: "/left.jpg",
+        decorRightSource: {
+            kind: "placeholder",
+            description: "Right decoration",
+        },
+    };
+    const { container } = paint(Footer, settings);
+    expect(
+        container.querySelector('[data-kk-image-path="decorLeftSource"] img'),
+    ).toHaveAttribute("src", "/left.jpg");
+    expect(
+        container.querySelector(
+            '[data-kk-image-path="decorRightSource"] [data-asset="waiting"]',
+        ),
+    ).toBeInTheDocument();
+});
+
+it("uses a dark brown header and drawer while retaining visible focus colors", () => {
+    const { container } = paint(Header, {}, "dark");
+    expect(container.innerHTML).not.toMatch(
+        /#0f1a15|#1b2d24|rgb\(15, 26, 21\)|rgb\(27, 45, 36\)/i,
+    );
+    expect(container.innerHTML).toContain("rgb(30, 21, 15)");
+});

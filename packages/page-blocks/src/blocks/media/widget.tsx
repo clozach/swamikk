@@ -47,6 +47,14 @@ export default function Widget({
         <Section theme={overiddenTheme} id={cssId}>
             <div className={`flex flex-col gap-4`}>
                 <div
+                    data-kk-image-path={
+                        !youtubeLink &&
+                        /^image\/(png|jpeg|webp|gif|avif)$/.test(
+                            media?.mimeType || "",
+                        )
+                            ? "media"
+                            : undefined
+                    }
                     className={clsx(
                         "w-full text-center overflow-hidden",
                         hasBorder &&

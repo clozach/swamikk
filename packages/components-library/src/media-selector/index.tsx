@@ -81,8 +81,8 @@ const MediaSelector = (props: MediaSelectorProps) => {
         type,
     } = props;
 
-    const onSelection = (media: Media) => {
-        props.onSelection(media);
+    const onSelection = async (media: Media) => {
+        await props.onSelection(media);
     };
 
     const removeFile = async () => {
@@ -143,9 +143,12 @@ const MediaSelector = (props: MediaSelectorProps) => {
                             : strings.removeButtonCaption || "Remove"}
                     </Button2>
                 )}
-                {!props.mediaId && (
+                {
                     <div>
                         <FileUploadAlertDialog
+                            buttonLabel={
+                                props.mediaId ? "Replace image" : undefined
+                            }
                             acceptedMimeTypes={props.mimeTypesToShow}
                             disabled={disabled}
                             address={address}
@@ -156,7 +159,7 @@ const MediaSelector = (props: MediaSelectorProps) => {
                             setOpen={setDialogOpened}
                         />
                     </div>
-                )}
+                }
             </div>
         </div>
     );

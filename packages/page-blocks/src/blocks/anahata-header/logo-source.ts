@@ -13,8 +13,9 @@ import type Settings from "./settings";
  * Precedence: an explicit `logoSource` (parsed at the boundary, so a
  * hand-edited document still yields one of the three arms); else the legacy
  * `logoMedia` + `logoSrc` pair folded into a single source, so every layout
- * saved before the union keeps rendering its mark; else the classic bundled
- * mark. Explicit saved placeholders remain editable data.
+ * saved before the union keeps rendering its mark; else the default — the
+ * placeholder well, because every picture on the site is a well until the
+ * real asset lands.
  */
 export function headerLogoSource(
     settings: Pick<Settings, "logoSource" | "logoSrc" | "logoMedia">,

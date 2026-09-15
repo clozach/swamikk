@@ -1,3 +1,4 @@
+import { isLegacyAvatarMedia } from "@/services/member-privacy";
 import { hasMemberMimicCookie } from "@/services/member-mimic/constants";
 import { resolveMemberReadContext } from "@/services/member-mimic/context";
 import { requestContext } from "@/services/content-changes/http";
@@ -86,6 +87,8 @@ export async function GET(
     }
 
     try {
+        // Never turn a retired avatar ID into another public or signed URL.
+        if (await isLegacyAvatarMedia(mediaId)) return mediaNotFound();
         const mimicContext = hasMemberMimicCookie(request.headers)
             ? await resolveMemberReadContext(
                   request.headers,

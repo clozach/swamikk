@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { ResponsiveImage } from "@courselit/components-library";
 import { WidgetProps } from "@courselit/common-models";
 import clsx from "clsx";
 import Settings from "../settings";
 import {
     accountLoginLabel as defaultAccountLoginLabel,
+    brandName as defaultBrandName,
     homeHref as defaultHomeHref,
     logoAlt as defaultLogoAlt,
     logoHeight as defaultLogoHeight,
@@ -21,29 +23,27 @@ import {
     topBarRightItems as defaultTopBarRightItems,
 } from "../defaults";
 import {
-    CREAM,
-    RUST,
-    RUST_PRESSED,
-    AMBER,
-    INK,
-    SAFFRON,
-    DARK_BG,
-    DARK_PANEL,
+    BAND_DARK,
+    BAND_LIGHT,
+    BRAND_LINK,
+    BRAND_NAME,
     HEADER_CONTAINER,
     FONT_BODY,
+    FONT_DISPLAY,
     STICKY_HEADER_BAND_BASE,
     STICKY_HEADER_BAND_FIXED,
     STICKY_HEADER_BAND_STUCK,
     NAV_THEME_TOGGLE,
+    bandVars,
 } from "./tokens";
+import { isWaiting, resolveImageSrc } from "../../../components/image-source";
+import { WaitingForAsset } from "../../../components/waiting-for-asset";
+import { headerLogoSource } from "../logo-source";
 import DesktopNavItem from "./desktop-nav";
 import TopBar from "./top-bar";
 import MobileOverlay, { MobileMenuState } from "./mobile-overlay";
 import ThemeToggle from "./theme-toggle";
 import AccountControl from "./account-control";
-import { headerLogoSource } from "../logo-source";
-import { isWaiting, resolveImageSrc } from "../../../components/image-source";
-import { WaitingForAsset } from "../../../components/waiting-for-asset";
 
 /* ------------------------------------------------------------------ *
  * Detects whether the header band should be pinned ("stuck") to the top
@@ -230,11 +230,16 @@ export default function Widget({
     // jump.
     const { ref: bandRef, height: bandHeight } =
         useMeasuredHeight(stickyEnabled);
+    // One source for the mark — explicit `logoSource`, else the legacy
+    // `logoMedia`/`logoSrc` pair folded, else the placeholder well.
     const logoSource = headerLogoSource(settings);
     const logoFile = resolveImageSrc(logoSource);
     const logoAlt = settings.logoAlt || defaultLogoAlt;
     const logoWidth = settings.logoWidth || defaultLogoWidth;
     const logoHeight = settings.logoHeight || defaultLogoHeight;
+    // `??`: an admin who clears the name gets a chip-only brand, not the
+    // default resurrected.
+    const brandName = settings.brandName ?? defaultBrandName;
     const homeHref = settings.homeHref || defaultHomeHref;
     const mobileMenuLabel = settings.mobileMenuLabel || defaultMobileMenuLabel;
     const mobileCtaLabel = settings.mobileCtaLabel || defaultMobileCtaLabel;
@@ -275,7 +280,9 @@ export default function Widget({
             <div
                 ref={bandRef}
                 className={clsx(
-                    "border-b border-t-[6px] border-solid",
+                    // One hairline at the bottom (edge on bone, footer-edge on
+                    // the dark band); the old 6px shoulder + amber rule is gone.
+                    "border-b border-solid",
                     // BASE already carries `relative`, FIXED is `fixed`; the
                     // non-sticky branch (editing / sticky off) also gets an
                     // explicit `relative` so the band is a positioned box in
@@ -289,67 +296,64 @@ export default function Widget({
                 )}
                 style={
                     {
-                        backgroundColor: isDarkTheme ? DARK_BG : CREAM,
-                        // Rust measures 2.49:1 on DARK_BG — under the 3:1
-                        // non-text floor — so the 6px top border promotes to
-                        // saffron in dark mode instead of staying rust.
-                        borderTopColor: isDarkTheme ? SAFFRON : RUST,
-                        borderBottomColor: AMBER,
+                        backgroundColor: isDarkTheme ? BAND_DARK : BAND_LIGHT,
+                        borderBottomColor: "var(--nav-edge)",
                         // Set once here and inherited by every descendant —
-                        // nav links, the flyouts, the theme toggle — so none
-                        // of them need nextTheme threaded through their own
-                        // props. See the contrast table in ./tokens.
-                        "--nav-fg": isDarkTheme ? CREAM : INK,
-                        "--nav-fg-hover": isDarkTheme ? SAFFRON : RUST,
-                        "--nav-fg-active": isDarkTheme ? AMBER : RUST_PRESSED,
-                        "--nav-panel-bg": isDarkTheme ? DARK_PANEL : "#ffffff",
-                        "--nav-panel-border": isDarkTheme ? SAFFRON : RUST,
+                        // nav links, the flyouts, the account control, the
+                        // theme toggle — so none of them need nextTheme
+                        // threaded through their own props. See the contrast
+                        // table in ./tokens.
+                        ...bandVars(isDarkTheme),
                     } as React.CSSProperties
                 }
             >
                 <div
                     className={clsx(
                         HEADER_CONTAINER,
-                        // One row, one masthead: the mark sits immediately left
-                        // of the first nav item rather than as a free-standing
-                        // wordmark centred on its own line above the menu. The
-                        // whole row is centred as a unit — logo and nav read as
-                        // one object rather than a chip stacked over a menu.
+                        // One row, one masthead: the mark + brand name sit
+                        // immediately left of the first nav item rather than
+                        // as a free-standing wordmark centred on its own line
+                        // above the menu. The whole row is centred as a unit —
+                        // brand and nav read as one object rather than a chip
+                        // stacked over a menu.
                         "flex items-center justify-center gap-x-[18px] py-[14px]",
                     )}
                 >
                     <a
                         href={homeHref}
                         aria-label={logoAlt}
-                        className="flex items-center gap-3 shrink-0 rounded-[6px] no-underline"
+                        className={BRAND_LINK}
                     >
-                        {isWaiting(logoSource) ? (
-                            <WaitingForAsset
-                                description={logoSource.description}
-                                width={logoWidth}
-                                height={logoHeight}
-                            />
-                        ) : logoFile ? (
-                            <img
-                                src={logoFile}
-                                alt=""
-                                width={logoWidth}
-                                height={logoHeight}
-                                className="block rounded-[6px]"
-                                style={{
-                                    width: `${logoWidth}px`,
-                                    height: `${logoHeight}px`,
-                                }}
-                            />
-                        ) : null}
-                        {settings.brandName && (
+                        {(isWaiting(logoSource) || logoFile) && (
                             <span
-                                className="font-playfair-display text-[17px] max-[479px]:sr-only"
-                                style={{ color: "var(--nav-fg)" }}
+                                data-kk-image-path="logoSource"
+                                className="relative block shrink-0 overflow-hidden rounded-[6px]"
+                                style={{ width: logoWidth, height: logoHeight }}
                             >
-                                {settings.brandName}
+                                {isWaiting(logoSource) ? (
+                                    <WaitingForAsset
+                                        fill
+                                        description={logoSource.description}
+                                    />
+                                ) : (
+                                    <ResponsiveImage
+                                        src={logoFile!}
+                                        alt=""
+                                        sizes={`${logoWidth}px`}
+                                        objectFit="contain"
+                                        priority
+                                    />
+                                )}
                             </span>
                         )}
+                        {brandName ? (
+                            <span
+                                className={BRAND_NAME}
+                                style={{ fontFamily: FONT_DISPLAY }}
+                            >
+                                {brandName}
+                            </span>
+                        ) : null}
                     </a>
 
                     {/* Grows to fill the space between the left-anchored logo

@@ -7,6 +7,7 @@ import * as newsletter from "../../../../packages/page-blocks/src/blocks/anahata
 import * as posts from "../../../../packages/page-blocks/src/blocks/anahata-posts/defaults";
 import * as privateSessions from "../../../../packages/page-blocks/src/blocks/anahata-private-sessions/defaults";
 import * as tour from "../../../../packages/page-blocks/src/blocks/anahata-tour/defaults";
+import { copyNativeValue } from "./native-value";
 import { requireCondition } from "./errors";
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value));
@@ -226,7 +227,10 @@ export function parsePath(path: string): string[] {
 
 /** Copy the stored settings, pulling a default-derived top-level branch in whole first. */
 function editableSettings(widget: WidgetInstance, top: string) {
-    const settings = clone(widget.settings || {}) as Record<string, unknown>;
+    const settings = copyNativeValue(widget.settings || {}) as Record<
+        string,
+        unknown
+    >;
     if (settings[top] === undefined) {
         const defaults = defaultsFor(widget.name);
         requireCondition(

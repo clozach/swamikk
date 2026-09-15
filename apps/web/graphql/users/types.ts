@@ -11,6 +11,8 @@ import {
 } from "graphql";
 import mediaTypes from "../media/types";
 import { getMedia } from "../media/logic";
+import { canReadMemberDetails } from "@/services/member-privacy";
+import type GQLContext from "@/models/GQLContext";
 import { Constants } from "@courselit/common-models";
 
 const memberStatusMap = {};
@@ -99,7 +101,7 @@ const userType = new GraphQLObjectType({
     name: "User",
     fields: {
         id: { type: new GraphQLNonNull(GraphQLID) },
-        email: { type: new GraphQLNonNull(GraphQLString) },
+        email: { type: GraphQLString },
         name: { type: GraphQLString },
         purchases: { type: new GraphQLList(progress) },
         active: { type: GraphQLBoolean },
@@ -112,11 +114,32 @@ const userType = new GraphQLObjectType({
         tags: { type: new GraphQLList(GraphQLString) },
         avatar: {
             type: mediaTypes.mediaType,
-            resolve: (user, _, __, ___) => getMedia(user.avatar),
+            // Retired public-avatar URLs must never become private-photo links.
+            resolve: () => null,
         },
         content: { type: new GraphQLList(userContent) },
+        privatePhotoVersion: { type: GraphQLInt },
     },
 });
+
+// This type is also used by discussion/author resolvers that return raw users.
+// Protect each private field here, so a nested query cannot bypass getUser.
+for (const name of [
+    "email",
+    "bio",
+    "purchases",
+    "active",
+    "permissions",
+    "subscribedToUpdates",
+    "createdAt",
+    "updatedAt",
+    "tags",
+    "content",
+    "privatePhotoVersion",
+]) {
+    userType.getFields()[name].resolve = (user, _, ctx: GQLContext) =>
+        canReadMemberDetails(user, ctx) ? (user[name] ?? null) : null;
+}
 
 const userUpdateInput = new GraphQLInputObjectType({
     name: "UserUpdateInput",
