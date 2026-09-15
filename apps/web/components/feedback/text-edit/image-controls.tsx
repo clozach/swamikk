@@ -193,6 +193,20 @@ export function ImageEditControls({
                             aria-keyshortcuts="Enter"
                             disabled={disabled || pending}
                             style={{ pointerEvents: "auto" }}
+                            onFocus={(event) => {
+                                const rect =
+                                    event.currentTarget.getBoundingClientRect();
+                                // Fixed portals cannot scroll their source into view on keyboard focus.
+                                if (
+                                    rect.top < 0 ||
+                                    rect.bottom > window.innerHeight
+                                ) {
+                                    slot.element.scrollIntoView({
+                                        block: "start",
+                                        inline: "nearest",
+                                    });
+                                }
+                            }}
                             onClick={() => setSelected(slot)}
                             aria-label={`${slot.before.kind === "placeholder" ? "Add" : "Replace"} ${slot.label}`}
                         >

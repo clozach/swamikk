@@ -311,3 +311,45 @@ it("uses refreshed image state when an open replacement dialog retries", async (
     );
     rect.mockRestore();
 });
+
+it("brings an off-screen image into view when its portal control receives keyboard focus", async () => {
+    const rect = jest
+        .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+        .mockReturnValue({
+            width: 200,
+            height: 100,
+            top: 1200,
+            bottom: 1300,
+            left: 0,
+        } as DOMRect);
+    const image = document.querySelector<HTMLElement>("[data-kk-image-path]")!;
+    image.scrollIntoView = jest.fn();
+    render(
+        <ImageEditControls
+            pageId="home"
+            index={indexLeaves(leaves(placeholder))}
+            disabled={false}
+            onSave={jest.fn()}
+            onBusy={jest.fn()}
+        />,
+    );
+    const button = await screen.findByRole("button", {
+        name: "Add Hero portrait",
+    });
+    fireEvent.focus(button);
+    expect(image.scrollIntoView).toHaveBeenCalledWith({
+        block: "start",
+        inline: "nearest",
+    });
+    jest.mocked(image.scrollIntoView).mockClear();
+    rect.mockReturnValue({
+        width: 200,
+        height: 100,
+        top: 100,
+        bottom: 200,
+        left: 0,
+    } as DOMRect);
+    fireEvent.focus(button);
+    expect(image.scrollIntoView).not.toHaveBeenCalled();
+    rect.mockRestore();
+});
