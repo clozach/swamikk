@@ -5,15 +5,10 @@
 .kk-member-edit {
     position: fixed;
     z-index: 2147482900;
-    top: calc(
-        var(--kk-mimic-banner-height, 76px) + env(safe-area-inset-top) + 8px
-    );
+    top: calc(var(--kk-mimic-banner-bottom, 76px) + 8px);
     right: 16px;
     width: min(380px, calc(100% - 32px));
-    max-height: calc(
-        100dvh - var(--kk-mimic-banner-height, 76px) -
-            env(safe-area-inset-top) - 24px
-    );
+    max-height: calc(100dvh - var(--kk-mimic-banner-bottom, 76px) - 24px);
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -192,14 +187,17 @@
 .kk-member-edit-dialog {
     z-index: 2147482960;
 }
-@media (max-width: 640px) {
+@media (max-width: 960px) {
     .kk-member-edit {
         top: auto;
         right: 0;
         left: 0;
         bottom: 0;
         width: auto;
-        max-height: 60dvh;
+        max-height: min(
+            60dvh,
+            calc(100dvh - var(--kk-mimic-banner-bottom, 92px) - 8px)
+        );
         padding: 12px max(14px, env(safe-area-inset-right))
             calc(14px + env(safe-area-inset-bottom))
             max(14px, env(safe-area-inset-left));

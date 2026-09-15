@@ -45,10 +45,35 @@ export default function MemberMimicProvider({
     current.current = view;
     const panel = useRef<MemberEditPanelHandle>(null);
     const editToggle = useRef<HTMLButtonElement>(null);
+    const banner = useRef<HTMLElement>(null);
     const editOpenRef = useRef(editOpen);
     editOpenRef.current = editOpen;
     // A saved record needs a fresh background page once drafts are safe.
     const editApplied = useRef(false);
+
+    // Names, zoom and phone widths change the fixed banner's actual height.
+    // Reserve that measured space for both the page and its editing controls.
+    useEffect(() => {
+        const element = banner.current;
+        if (!element) return;
+        const measure = () =>
+            document.documentElement.style.setProperty(
+                "--kk-mimic-banner-bottom",
+                `${Math.ceil(element.getBoundingClientRect().height)}px`,
+            );
+        measure();
+        const observer =
+            typeof ResizeObserver === "undefined"
+                ? undefined
+                : new ResizeObserver(measure);
+        observer?.observe(element);
+        return () => {
+            observer?.disconnect();
+            document.documentElement.style.removeProperty(
+                "--kk-mimic-banner-bottom",
+            );
+        };
+    }, [view.kind]);
 
     const verify = useCallback(async (hide = false) => {
         if (hide) setPhase("verifying");
@@ -292,6 +317,7 @@ export default function MemberMimicProvider({
                 <>
                     <div className="kk-mimic-watermark" aria-hidden="true" />
                     <aside
+                        ref={banner}
                         className="kk-mimic-banner"
                         data-member-mimic-tools
                         aria-label={copy.title}
@@ -366,6 +392,7 @@ export default function MemberMimicProvider({
                 </p>
             )}
             <div
+                data-member-edit-open={enabled && editOpen ? "true" : undefined}
                 className={
                     enabled
                         ? "kk-mimic-content kk-mimic-spacing"

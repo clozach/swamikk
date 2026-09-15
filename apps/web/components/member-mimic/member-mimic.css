@@ -33,6 +33,10 @@
     display: block;
     font-size: 12px;
 }
+.kk-mimic-banner > div:first-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
 .kk-mimic-banner button {
     min-height: 44px;
     padding: 8px 14px;
@@ -62,12 +66,15 @@
     background: #875b1e1f;
 }
 .kk-mimic-spacing {
-    padding-top: calc(var(--kk-mimic-banner-height) + env(safe-area-inset-top));
+    padding-top: var(
+        --kk-mimic-banner-bottom,
+        calc(var(--kk-mimic-banner-height) + env(safe-area-inset-top))
+    );
 }
 .kk-mimic-notice {
     position: fixed;
     z-index: 2147483000;
-    top: calc(82px + env(safe-area-inset-top));
+    top: calc(var(--kk-mimic-banner-bottom, 76px) + 8px);
     left: 16px;
     right: 16px;
     margin: 0;
@@ -118,9 +125,20 @@ html[data-member-mimic-suspended="true"] .kk-mimic-content {
     }
     .kk-mimic-banner {
         align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .kk-mimic-banner-tools {
+        width: 100%;
+        justify-content: flex-start;
     }
     .kk-mimic-banner .kk-key {
         display: none;
+    }
+}
+@media (min-width: 961px) {
+    .kk-mimic-content[data-member-edit-open="true"] {
+        padding-right: 412px;
     }
 }
 @media print {
