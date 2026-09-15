@@ -275,7 +275,7 @@ test("all copied resources exist as exact local bytes, with no guessed price-car
     for (const asset of provenance.assets) {
         expect(asset.path).toMatch(/^\/anahata\/[a-z0-9/.-]+$/);
         const bytes = readFileSync(
-            resolve(process.cwd(), "public", asset.path.slice(1)),
+            resolve(__dirname, "../../../../public", asset.path.slice(1)),
         );
         expect(bytes.length).toBe(asset.bytes);
         expect(

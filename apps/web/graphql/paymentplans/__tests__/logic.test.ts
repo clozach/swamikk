@@ -64,7 +64,7 @@ describe("membership currency independent of the site", () => {
         ).toBe("nzd");
         expect(
             catalogProductPrice({ paymentPlans: [plan] } as any, "nzd"),
-        ).toContain("USD 11.00");
+        ).toBe("USD 11 / month");
     });
     it("creates an 1100-cent USD monthly Stripe request with matching invoice currency", async () => {
         const provider: any = await getPaymentMethodFromSettings(
@@ -117,7 +117,7 @@ describe("membership currency independent of the site", () => {
                 } as any,
                 "nzd",
             ),
-        ).toBe("NZD 247.00");
+        ).toBe("NZD 247");
     });
     it("rejects invalid currencies and unprivileged updates without changing the saved plan", async () => {
         await expect(
