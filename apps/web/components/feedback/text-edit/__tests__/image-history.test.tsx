@@ -1,4 +1,6 @@
 import React from "react";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import {
     act,
     fireEvent,
@@ -352,4 +354,63 @@ it("brings an off-screen image into view when its portal control receives keyboa
     fireEvent.focus(button);
     expect(image.scrollIntoView).not.toHaveBeenCalled();
     rect.mockRestore();
+});
+
+it("keeps image portals above section controls and below the editing toolbars regardless of portal order", async () => {
+    const style = document.createElement("style");
+    style.textContent = [
+        "../text-edit.css",
+        "../../feedback.css",
+        "../../../section-edit/section-edit.css",
+    ]
+        .map((file) => readFileSync(join(__dirname, file), "utf8"))
+        .join("\n");
+    document.head.append(style);
+    const rect = jest
+        .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+        .mockReturnValue({
+            width: 200,
+            height: 100,
+            top: 400,
+            bottom: 500,
+            left: 0,
+        } as DOMRect);
+    try {
+        // The image's portal mounts after these controls, as after a page refresh.
+        const ui = render(
+            <>
+                <div className="kk-section-slot" data-testid="section" />
+                <div className="kk-text-edit-bar" data-testid="editing">
+                    <button>Undo</button>
+                </div>
+                <div className="kk-feedback-magnet" data-testid="selection" />
+                <ImageEditControls
+                    pageId="home"
+                    index={indexLeaves(leaves(placeholder))}
+                    disabled={false}
+                    onSave={jest.fn()}
+                    onBusy={jest.fn()}
+                />
+            </>,
+        );
+        const button = await screen.findByRole("button", {
+            name: "Add Hero portrait",
+        });
+        const image = button.closest<HTMLElement>(".kk-image-control")!;
+        const level = (element: Element) =>
+            Number(getComputedStyle(element).zIndex);
+        expect(level(image)).toBeGreaterThan(
+            level(screen.getByTestId("section")),
+        );
+        expect(level(image)).toBeLessThan(level(screen.getByTestId("editing")));
+        expect(level(image)).toBeLessThan(
+            level(screen.getByTestId("selection")),
+        );
+        expect(getComputedStyle(image).pointerEvents).toBe("none");
+        expect(getComputedStyle(button).pointerEvents).toBe("auto");
+        ui.unmount();
+    } finally {
+        style.remove();
+        rect.mockRestore();
+    }
 });

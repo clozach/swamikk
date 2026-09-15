@@ -182,7 +182,9 @@ export function ImageEditControls({
                             top: slot.rect.top,
                             width: slot.rect.width,
                             height: slot.rect.height,
-                            zIndex: 45,
+                            // Below the edit bar (45), selection tools (46) and dialogs (50).
+                            // Equal levels let later image portals intercept toolbar clicks.
+                            zIndex: 44,
                             pointerEvents: "none",
                         }}
                         key={slot.key}
