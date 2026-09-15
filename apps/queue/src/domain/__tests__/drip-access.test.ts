@@ -446,6 +446,118 @@ describe("durable drip delivery boundary in Mongo", () => {
 });
 
 describe("recoverable purchase projection", () => {
+    it.each([false, true])(
+        "leaves the complete stored user unchanged when the cache matches (released: %s)",
+        async (released) => {
+            if (released) await grant();
+            const userFilter = {
+                domain: new mongoose.Types.ObjectId(key.domainId),
+                userId: key.userId,
+            };
+            const old = new Date("2000-01-01T00:00:00Z");
+            await AccessUserModel.collection.updateOne(userFilter, {
+                $set: {
+                    updatedAt: old,
+                    purchases: [
+                        {
+                            courseId: key.courseId,
+                            accessibleGroups: released ? ["group-1"] : [],
+                            ...(released ? { lastDripAt: new Date(at) } : {}),
+                            createdAt: old,
+                            updatedAt: old,
+                        },
+                    ],
+                },
+            });
+            const before = await AccessUserModel.collection.findOne(userFilter);
+            const update = jest.spyOn(AccessUserModel, "updateOne");
+            await projectDripAccess(key);
+            await projectDripAccess(key);
+            expect(update).not.toHaveBeenCalled();
+            const after = await AccessUserModel.collection.findOne(userFilter);
+            expect(
+                mongoose.mongo.BSON.EJSON.serialize(after, { relaxed: false }),
+            ).toEqual(
+                mongoose.mongo.BSON.EJSON.serialize(before, { relaxed: false }),
+            );
+        },
+    );
+
+    it.each([
+        "groups",
+        "absent-groups",
+        "stale-date",
+        "null-date",
+        "wrong-date",
+        "string-date",
+        "duplicate-groups",
+    ])(
+        "repairs a different stored cache with normal Mongoose timestamps: %s",
+        async (difference) => {
+            const released = [
+                "wrong-date",
+                "string-date",
+                "duplicate-groups",
+            ].includes(difference);
+            if (released) await grant();
+            const userFilter = {
+                domain: new mongoose.Types.ObjectId(key.domainId),
+                userId: key.userId,
+            };
+            const old = new Date("2000-01-01T00:00:00Z");
+            await AccessUserModel.collection.updateOne(userFilter, {
+                $set: {
+                    updatedAt: old,
+                    purchases: [
+                        {
+                            courseId: key.courseId,
+                            ...(difference !== "absent-groups"
+                                ? {
+                                      accessibleGroups:
+                                          difference === "groups"
+                                              ? ["old"]
+                                              : difference ===
+                                                  "duplicate-groups"
+                                                ? ["group-1", "group-1"]
+                                                : released
+                                                  ? ["group-1"]
+                                                  : [],
+                                  }
+                                : {}),
+                            ...(difference === "null-date"
+                                ? { lastDripAt: null }
+                                : difference === "string-date"
+                                  ? { lastDripAt: at.toISOString() }
+                                  : difference.endsWith("date")
+                                    ? { lastDripAt: old }
+                                    : released
+                                      ? { lastDripAt: new Date(at) }
+                                      : {}),
+                            createdAt: old,
+                            updatedAt: old,
+                        },
+                    ],
+                },
+            });
+            const update = jest.spyOn(AccessUserModel, "updateOne");
+            await projectDripAccess(key);
+            expect(update).toHaveBeenCalledTimes(1);
+            const after = await AccessUserModel.collection.findOne(userFilter);
+            expect(after!.purchases[0].accessibleGroups).toEqual(
+                released ? ["group-1"] : [],
+            );
+            if (released) expect(after!.purchases[0].lastDripAt).toEqual(at);
+            else expect(after!.purchases[0]).not.toHaveProperty("lastDripAt");
+            expect(after!.updatedAt!.getTime()).toBeGreaterThan(old.getTime());
+            expect(after!.purchases[0].updatedAt.getTime()).toBeGreaterThan(
+                old.getTime(),
+            );
+            update.mockClear();
+            await projectDripAccess(key);
+            expect(update).not.toHaveBeenCalled();
+        },
+    );
+
     it("updates only this tenant/member/course and stops once the period freezes", async () => {
         const otherDomain = new mongoose.Types.ObjectId();
         await AccessUserModel.deleteMany({

@@ -299,6 +299,32 @@ export async function projectDripAccess(
         "state.kind": "active",
     }).lean();
     if (!period || !(await membershipIsActive(period))) return;
+    const groupIds = Array.from(
+        new Set(period.groupReleases.map((release) => release.groupId)),
+    );
+    const user = await AccessUserModel.findOne({
+        domain: key.domainId,
+        userId: key.userId,
+    })
+        .select("purchases")
+        .lean();
+    const purchase = Array.isArray(user?.purchases)
+        ? user.purchases.find((item) => item.courseId === key.courseId)
+        : undefined;
+    const sameGroups =
+        Array.isArray(purchase?.accessibleGroups) &&
+        purchase.accessibleGroups.length === groupIds.length &&
+        purchase.accessibleGroups.every((id, index) => id === groupIds[index]);
+    const sameDate = period.lastRelativeReleaseAt
+        ? period.lastRelativeReleaseAt instanceof Date &&
+          purchase?.lastDripAt instanceof Date &&
+          purchase.lastDripAt.getTime() ===
+              period.lastRelativeReleaseAt.getTime()
+        : !!purchase &&
+          !Object.prototype.hasOwnProperty.call(purchase, "lastDripAt");
+    // Even an identical $set advances User and purchase timestamps. Leave an
+    // already matching native cache untouched on ordinary future-drip scans.
+    if (sameGroups && sameDate) return;
     // A concurrent freeze can overtake this cross-document cache write. It cannot
     // create entitlement: authoritative reads use the period and its frozen IDs.
     await AccessUserModel.updateOne(
@@ -309,11 +335,7 @@ export async function projectDripAccess(
         },
         {
             $set: {
-                "purchases.$.accessibleGroups": Array.from(
-                    new Set(
-                        period.groupReleases.map((release) => release.groupId),
-                    ),
-                ),
+                "purchases.$.accessibleGroups": groupIds,
                 ...(period.lastRelativeReleaseAt
                     ? { "purchases.$.lastDripAt": period.lastRelativeReleaseAt }
                     : {}),
