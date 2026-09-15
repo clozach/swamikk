@@ -7,6 +7,7 @@ import { AccountLifecycleModel } from "../../../../../packages/common-logic/src/
 import UserModel from "@models/User";
 import { MembershipAccessModel } from "../../../../../packages/common-logic/src/member-access/models";
 import { MemberMimicModel } from "@/services/member-mimic/model";
+import { MemberEditModel } from "@/services/member-edits/model";
 import { FeedbackModel } from "@/services/content-changes/models";
 import CourseModel from "@models/Course";
 import PageModel from "@models/Page";
@@ -137,6 +138,7 @@ describe("deleteUser - Comprehensive Test Suite", () => {
         await Promise.all([
             AccountLifecycleModel.deleteMany({ domain: testDomain._id }),
             MemberMimicModel.deleteMany({ domain: testDomain._id }),
+            MemberEditModel.deleteMany({ domain: testDomain._id }),
             MembershipAccessModel.deleteMany({ domain: testDomain._id }),
             FeedbackModel.deleteMany({ domain: testDomain._id }),
             UserModel.deleteMany({ domain: testDomain._id }),
@@ -1260,6 +1262,26 @@ describe("deleteUser - Comprehensive Test Suite", () => {
                 entityId: "post-123",
             });
 
+            // The normal erasure path also removes personal support history,
+            // while retaining history for another member in the same tenant.
+            for (const subject of [targetUser, adminUser])
+                await MemberEditModel.create({
+                    domain: testDomain._id,
+                    editId: duId(`member-edit-${subject.userId}`),
+                    subjectUserId: subject.userId,
+                    editorUserId: adminUser.userId,
+                    mimicId: duId(`mimic-${subject.userId}`),
+                    at: new Date().toISOString(),
+                    changes: [
+                        {
+                            field: "name",
+                            before: "Previous name",
+                            after: subject.name,
+                        },
+                    ],
+                    state: "applied",
+                });
+
             await deleteUser(targetUser.userId, mockCtx);
 
             // Verify course migrated
@@ -1288,6 +1310,19 @@ describe("deleteUser - Comprehensive Test Suite", () => {
                 userId: targetUser.userId,
             });
             expect(notifications).toHaveLength(0);
+
+            expect(
+                await MemberEditModel.countDocuments({
+                    domain: testDomain._id,
+                    subjectUserId: targetUser.userId,
+                }),
+            ).toBe(0);
+            expect(
+                await MemberEditModel.countDocuments({
+                    domain: testDomain._id,
+                    subjectUserId: adminUser.userId,
+                }),
+            ).toBe(1);
 
             // Verify user deleted
             const user = await UserModel.findOne({ userId: targetUser.userId });
