@@ -41,7 +41,7 @@ const isCurrent = (change: TextChange, current: unknown) =>
  * coordinates (offsets within the row), which the dialog's opening zoom and
  * the page's scroll cannot disturb; remeasured whenever the row resizes.
  */
-function RestoreArrow({
+export function RestoreArrow({
     row,
     red,
     button,
