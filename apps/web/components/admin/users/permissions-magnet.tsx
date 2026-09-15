@@ -406,9 +406,9 @@ export default function PermissionsMagnet({
     );
     const mimicControl = mimicHref ? (
         <Button asChild variant="ghost" size="sm" title={copy.mimicTitle}>
-            <a href={mimicHref} aria-keyshortcuts="Enter">
+            <a href={mimicHref}>
                 <Eye size={16} aria-hidden="true" />
-                {copy.mimic} <Shortcut>{copy.mimicShortcut}</Shortcut>
+                {copy.mimic}
             </a>
         </Button>
     ) : (

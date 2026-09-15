@@ -10,7 +10,6 @@ import type {
 } from "@courselit/common-models";
 import { sectionEditUi as copy } from "@config/strings";
 import { Button } from "@/components/ui/button";
-import { Shortcut } from "@/components/feedback/shortcut";
 import type { SectionSlotInput } from "./slots";
 import { useSectionSlots } from "./use-section-slots";
 import type { SectionPending } from "./use-section-edit";
@@ -113,7 +112,6 @@ export function SectionControls({
                                 variant="outline"
                                 size="sm"
                                 disabled={busy || !edit}
-                                aria-keyshortcuts="Enter"
                                 onClick={() => {
                                     if (!edit) return;
                                     focusRef.current = widgetId;
@@ -126,9 +124,6 @@ export function SectionControls({
                                     : restoring
                                       ? copy.restoring
                                       : copy.undo}
-                                {!removing && !restoring && (
-                                    <Shortcut>{copy.activateShortcut}</Shortcut>
-                                )}
                             </Button>
                         </div>,
                         host,
@@ -143,7 +138,6 @@ export function SectionControls({
                         data-kk-remove-section={widgetId}
                         disabled={busy}
                         aria-label={label}
-                        aria-keyshortcuts="Enter"
                         title={label}
                         onClick={() => {
                             focusRef.current = widgetId;
@@ -151,7 +145,6 @@ export function SectionControls({
                         }}
                     >
                         <X size={20} aria-hidden="true" />
-                        <Shortcut>{copy.activateShortcut}</Shortcut>
                     </button>,
                     host,
                     widgetId,

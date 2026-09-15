@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import type { SectionEdit } from "@courselit/common-models";
 import { sectionEditUi as copy } from "@config/strings";
 import { Button } from "@/components/ui/button";
-import { Shortcut } from "@/components/feedback/shortcut";
 import { fetchSectionHistory, type SectionHistoryPage } from "./api";
 
 type Load =
@@ -162,7 +161,6 @@ export function SectionHistory({
                                             type="button"
                                             variant="outline"
                                             size="sm"
-                                            aria-keyshortcuts="Enter"
                                             disabled={
                                                 disabled ||
                                                 action.kind ===
@@ -177,12 +175,6 @@ export function SectionHistory({
                                                 : present
                                                   ? copy.alreadyPresent
                                                   : copy.restore}
-                                            {!present &&
-                                                pending !== edit.editId && (
-                                                    <Shortcut>
-                                                        {copy.activateShortcut}
-                                                    </Shortcut>
-                                                )}
                                         </Button>
                                     )}
                                 </li>

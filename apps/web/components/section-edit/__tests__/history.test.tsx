@@ -32,8 +32,8 @@ test("History restores a complete removed section with explicit Enter activation
     const restore = await screen.findByRole("button", {
         name: /Restore section/,
     });
-    expect(restore).toHaveAttribute("aria-keyshortcuts", "Enter");
-    expect(restore).toHaveTextContent("↵");
+    expect(restore).not.toHaveAttribute("aria-keyshortcuts");
+    expect(restore).not.toHaveTextContent("↵");
     fireEvent.click(restore);
     await waitFor(() =>
         expect(options.onRestore).toHaveBeenCalledWith(removal),

@@ -20,6 +20,10 @@ test("only eligible authored sections get visible pointer controls and callbacks
     );
     const buttons = screen.getAllByRole("button");
     expect(buttons).toHaveLength(2);
+    for (const button of buttons) {
+        expect(button).not.toHaveTextContent("↵");
+        expect(button).not.toHaveAttribute("aria-keyshortcuts");
+    }
     fireEvent.click(
         screen.getByRole("button", { name: "Remove Welcome section" }),
     );
@@ -54,8 +58,8 @@ test("pending removal hides immediately, saved Undo survives server rendering an
     document.querySelector('[data-feedback-widget="hero"]')!.remove();
     rerender(<SectionControls {...props} page={removedPage} />);
     const undo = await screen.findByRole("button", { name: /Undo removal/ });
-    expect(undo).toHaveAttribute("aria-keyshortcuts", "Enter");
-    expect(undo).toHaveTextContent("↵");
+    expect(undo).not.toHaveAttribute("aria-keyshortcuts");
+    expect(undo).not.toHaveTextContent("↵");
     expect(undo).not.toHaveTextContent("⌘Z");
     expect(undo).toHaveFocus();
     expect(

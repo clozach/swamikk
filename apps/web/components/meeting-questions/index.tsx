@@ -156,7 +156,7 @@ function PageQuestions({
                             className="min-h-11 rounded-full"
                             aria-label={`${copy.questions}: ${attachment.label} (${attachment.ids.length})`}
                             aria-keyshortcuts={
-                                index === 0 ? "Alt+Meta+Q" : "Enter"
+                                index === 0 ? "Alt+Meta+Q" : undefined
                             }
                             onClick={(event) => {
                                 remember(event.currentTarget);
@@ -171,9 +171,11 @@ function PageQuestions({
                             }}
                         >
                             {copy.questions} · {attachment.ids.length}
-                            <kbd className="ml-2 text-xs opacity-60">
-                                {index === 0 ? "⌥⌘Q" : "↵"}
-                            </kbd>
+                            {index === 0 && (
+                                <kbd className="ml-2 text-xs opacity-60">
+                                    ⌥⌘Q
+                                </kbd>
+                            )}
                         </Button>
                         <Link
                             className="px-2 text-sm underline underline-offset-4"

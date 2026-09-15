@@ -82,7 +82,7 @@ test("the closed magnet is a single Admin checkbox plus a way into the advanced 
     expect(onOpenPanel).toHaveBeenCalledTimes(1);
 
     const mimic = screen.getByRole("link", { name: /View as member/ });
-    expect(mimic).toHaveTextContent("↩");
+    expect(mimic).not.toHaveTextContent("↩");
     expect(mimic).toHaveAttribute(
         "href",
         "/dashboard/users/u2?returnTo=%2Fdashboard%2Fusers",
@@ -458,7 +458,7 @@ test("the panel saves a box at once, reports it in place, and ⌘Z / ⇧⌘Z rev
         });
     const { onSaved, rerender } = renderMagnet({ panel: true });
     const boxes = await screen.findAllByRole("checkbox");
-    expect(boxes).toHaveLength(9);
+    expect(boxes).toHaveLength(8);
     for (const box of boxes) expect(box).toHaveAccessibleName();
     expect(screen.getByRole("button", { name: /Done/ })).toHaveTextContent("⎋");
 

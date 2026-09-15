@@ -19,7 +19,6 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Shortcut } from "../shortcut";
 import { currentAt, type LeafIndex } from "./leaves";
 
 type Slot = {
@@ -192,7 +191,6 @@ export function ImageEditControls({
                         <button
                             type="button"
                             className="kk-image-replace"
-                            aria-keyshortcuts="Enter"
                             disabled={disabled || pending}
                             style={{ pointerEvents: "auto" }}
                             onFocus={(event) => {
@@ -214,8 +212,7 @@ export function ImageEditControls({
                         >
                             {slot.before.kind === "placeholder"
                                 ? "＋ Add image"
-                                : "Replace image"}{" "}
-                            <Shortcut>↵</Shortcut>
+                                : "Replace image"}
                         </button>
                     </div>,
                     document.body,

@@ -179,3 +179,5 @@ row selection lives in the Users hub. The chord chip is the shared
 Verification: `pnpm exec jest --config apps/web/jest.client.config.ts --runInBand "admin/users/__tests__" "users-hub.test" "checkbox-labels.test"`.
 On the rig: sign in as the super admin, open Users, click a member's email,
 press ⌥⌘P, tick a box, reload — the row's _May manage_ line keeps it; ⌘Z.
+
+Plain Return badges were removed from section removal/Undo/History, image controls, Mimic and secondary meeting-question controls. These use native focused-button/link activation, not global Return shortcuts. Real bound chords remain visible. Section removal uses a 44 × 44 px circle with a centered X.
