@@ -13,7 +13,7 @@ import {
 import { Text1 } from "@courselit/page-primitives";
 import { Star, Package } from "lucide-react";
 import { PaymentPlan, Course, Constants } from "@courselit/common-models";
-import { getPlanPrice } from "@ui-lib/utils";
+import { formatPlanPrice, formatPriceText } from "@courselit/utils";
 
 const { PaymentPlanType: paymentPlanType } = Constants;
 
@@ -54,7 +54,6 @@ export function PaymentPlanCard({
     includedProducts,
     theme,
 }: PaymentPlanCardProps) {
-    const planPrice = getPlanPrice(plan);
     const planIncludedProducts = getIncludedProductsDescription(
         plan,
         includedProducts,
@@ -120,17 +119,8 @@ export function PaymentPlanCard({
                             <div className="mb-4">
                                 <div className="flex items-baseline gap-1">
                                     <Header3 theme={theme.theme}>
-                                        {currencySymbol}
-                                        {planPrice.amount.toFixed(2)}
+                                        {formatPlanPrice(plan, currencySymbol)}
                                     </Header3>
-                                    {planPrice.period && (
-                                        <Text2
-                                            theme={theme.theme}
-                                            className="text-muted-foreground text-sm"
-                                        >
-                                            {planPrice.period}
-                                        </Text2>
-                                    )}
                                 </div>
                                 {plan.type === paymentPlanType.ONE_TIME && (
                                     <Text2
@@ -174,7 +164,7 @@ export function PaymentPlanCard({
                                         theme={theme.theme}
                                         className="text-sm text-muted-foreground whitespace-pre-wrap"
                                     >
-                                        {plan.description}
+                                        {formatPriceText(plan.description)}
                                     </Text1>
                                 </div>
                             )}

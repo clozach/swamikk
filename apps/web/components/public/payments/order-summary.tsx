@@ -12,7 +12,7 @@ import {
     Header4,
 } from "@courselit/page-primitives";
 import { PaymentPlan, Constants } from "@courselit/common-models";
-import { getPlanPrice } from "@ui-lib/utils";
+import { formatPlanPrice } from "@courselit/utils";
 import { CHECKOUT_PAGE_ORDER_SUMMARY } from "@ui-config/strings";
 import {
     Tooltip,
@@ -110,14 +110,11 @@ export function getPlanDescription(
         case paymentPlanType.FREE:
             return "Free plan";
         case paymentPlanType.ONE_TIME:
-            return `One-time payment of ${currencySymbol}${plan.oneTimeAmount?.toFixed(2)}`;
+            return `One-time payment of ${formatPlanPrice(plan, currencySymbol)}`;
         case paymentPlanType.SUBSCRIPTION:
-            if (plan.subscriptionYearlyAmount) {
-                return `Billed annually at ${currencySymbol}${plan.subscriptionYearlyAmount.toFixed(2)}`;
-            }
-            return `${currencySymbol}${plan.subscriptionMonthlyAmount?.toFixed(2)} per month`;
+            return formatPlanPrice(plan, currencySymbol);
         case paymentPlanType.EMI:
-            return `${currencySymbol}${plan.emiAmount?.toFixed(2)} per month for ${plan.emiTotalInstallments} months`;
+            return `${formatPlanPrice(plan, currencySymbol)} for ${plan.emiTotalInstallments} months`;
         default:
             return "N/A";
     }
@@ -174,7 +171,6 @@ export function PayPanel({
     submitBlockedReason,
 }: PayPanelProps) {
     const plan = selectedPlan || paymentPlans[0] || null;
-    const price = getPlanPrice(plan as PaymentPlan);
 
     return (
         <aside
@@ -225,13 +221,7 @@ export function PayPanel({
                             Total
                         </Text1>
                         <Header3 theme={theme.theme}>
-                            {currencySymbol}
-                            {price.amount.toFixed(2)}
-                            {price.period && (
-                                <span className="text-sm text-muted-foreground ml-1">
-                                    {price.period}
-                                </span>
-                            )}
+                            {formatPlanPrice(plan, currencySymbol)}
                         </Header3>
                     </div>
 
@@ -337,7 +327,6 @@ export function MobilePayBar({
         };
     }, []);
     const plan = selectedPlan || paymentPlans[0] || null;
-    const price = getPlanPrice(plan as PaymentPlan);
 
     return (
         <div
@@ -350,13 +339,7 @@ export function MobilePayBar({
         >
             <div className="flex flex-col leading-tight shrink-0">
                 <span className="text-lg font-semibold">
-                    {currencySymbol}
-                    {price.amount.toFixed(2)}
-                    {price.period && (
-                        <span className="text-xs text-muted-foreground ml-1">
-                            {price.period}
-                        </span>
-                    )}
+                    {formatPlanPrice(plan, currencySymbol)}
                 </span>
                 {plan?.type === paymentPlanType.ONE_TIME && (
                     <span className="text-xs text-muted-foreground">

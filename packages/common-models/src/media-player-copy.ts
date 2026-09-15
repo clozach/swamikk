@@ -31,8 +31,6 @@ export const catalogMediaUi = {
     class: "Class",
     download: "Download",
     preview: "Audio preview",
-    monthly: "/ month",
-    yearly: "/ year",
     installments: "monthly installments",
     previewSetting: "Public audio preview",
     previewHelp:

@@ -1,6 +1,11 @@
 import { Constants, PaymentPlan } from "@courselit/common-models";
 
-export function getPlanPrice(plan: PaymentPlan): {
+export const pricePeriods = {
+    monthly: "/ month",
+    yearly: "/ year",
+} as const;
+
+export function getPlanPrice(plan: PaymentPlan | null | undefined): {
     amount: number;
     period: string;
 } {
@@ -16,17 +21,17 @@ export function getPlanPrice(plan: PaymentPlan): {
             if (plan.subscriptionYearlyAmount) {
                 return {
                     amount: plan.subscriptionYearlyAmount,
-                    period: "/yr",
+                    period: pricePeriods.yearly,
                 };
             }
             return {
                 amount: plan.subscriptionMonthlyAmount || 0,
-                period: "/mo",
+                period: pricePeriods.monthly,
             };
         case Constants.PaymentPlanType.EMI:
             return {
                 amount: plan.emiAmount || 0,
-                period: "/mo",
+                period: pricePeriods.monthly,
             };
         default:
             return { amount: 0, period: "" };

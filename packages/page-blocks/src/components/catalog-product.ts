@@ -1,4 +1,5 @@
 import { Constants, Course, catalogMediaUi } from "@courselit/common-models";
+import { formatPrice, pricePeriods } from "@courselit/utils";
 
 export function catalogProductKind(course: Course) {
     if (course.type.toLowerCase() === Constants.CourseType.DOWNLOAD)
@@ -31,17 +32,17 @@ export function catalogProductPrice(course: Course, currency: string) {
         case Constants.PaymentPlanType.SUBSCRIPTION:
             if (plan.subscriptionMonthlyAmount != null) {
                 amount = plan.subscriptionMonthlyAmount;
-                period = catalogMediaUi.monthly;
+                period = pricePeriods.monthly;
             } else {
                 amount = plan.subscriptionYearlyAmount ?? 0;
-                period = catalogMediaUi.yearly;
+                period = pricePeriods.yearly;
             }
             break;
         case Constants.PaymentPlanType.EMI:
             amount = plan.emiAmount ?? 0;
             period =
-                `${catalogMediaUi.monthly} × ${plan.emiTotalInstallments ?? ""}`.trim();
+                `${pricePeriods.monthly} × ${plan.emiTotalInstallments ?? ""}`.trim();
             break;
     }
-    return `${(plan?.currencyISOCode || currency).toUpperCase()} ${amount.toFixed(2)}${period ? ` ${period}` : ""}`;
+    return formatPrice(amount, plan?.currencyISOCode || currency, period);
 }

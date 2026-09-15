@@ -182,13 +182,13 @@ it("shows an explicit monthly price when offered and omits once from one-time pu
             } as any,
             "NZD",
         ),
-    ).toBe("NZD 20.00 / month");
+    ).toBe("NZD 20 / month");
     expect(
         catalogProductPrice(
             { paymentPlans: [{ type: "ONEtime", oneTimeAmount: 12 }] } as any,
             "NZD",
         ),
-    ).toBe("NZD 12.00");
+    ).toBe("NZD 12");
     expect(
         catalogProductPrice(
             {
@@ -198,5 +198,5 @@ it("shows an explicit monthly price when offered and omits once from one-time pu
             } as any,
             "USD",
         ),
-    ).toBe("USD 200.00 / year");
+    ).toBe("USD 200 / year");
 });

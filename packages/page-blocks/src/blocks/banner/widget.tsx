@@ -14,7 +14,7 @@ import {
     MediaPlayer,
 } from "@courselit/components-library";
 import { TextRenderer } from "../../components";
-import { FetchBuilder, getPlanPrice } from "@courselit/utils";
+import { FetchBuilder, formatPlanPrice } from "@courselit/utils";
 import { DEFAULT_FAILURE_MESSAGE, DEFAULT_SUCCESS_MESSAGE } from "./constants";
 import Settings from "./settings";
 import { Users } from "lucide-react";
@@ -180,7 +180,6 @@ export default function Widget({
     const displayedPlan = product.paymentPlans.find(
         (plan) => plan.planId === product.defaultPaymentPlan,
     );
-    const displayedPlanPrice = getPlanPrice(displayedPlan);
     const displayedCurrency = (
         displayedPlan?.currencyISOCode ||
         state.siteinfo.currencyISOCode ||
@@ -229,13 +228,13 @@ export default function Widget({
                     >
                         {type === Constants.PageType.PRODUCT &&
                             !isLeadMagnet && (
-                                <Preheader theme={overiddenTheme}>
-                                    {displayedCurrency}{" "}
-                                    {displayedPlanPrice.amount}
-                                    {displayedPlanPrice.period && (
-                                        <span className="ml-1">
-                                            {displayedPlanPrice.period}
-                                        </span>
+                                <Preheader
+                                    theme={overiddenTheme}
+                                    className="normal-case"
+                                >
+                                    {formatPlanPrice(
+                                        displayedPlan,
+                                        displayedCurrency,
                                     )}
                                 </Preheader>
                             )}

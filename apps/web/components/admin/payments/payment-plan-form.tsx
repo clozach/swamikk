@@ -35,6 +35,7 @@ import {
 import { usePaymentPlanOperations } from "@/hooks/use-payment-plan-operations";
 import { useRouter } from "next/navigation";
 import { getSymbolFromCurrency, useToast } from "@courselit/components-library";
+import { formatPriceText } from "@courselit/utils";
 import { useGraphQLFetch } from "@/hooks/use-graphql-fetch";
 import {
     BUTTON_SAVE,
@@ -172,7 +173,6 @@ export function PaymentPlanForm({
         resolver: zodResolver(formSchema as any),
         defaultValues: {
             name: "",
-            description: "",
             type: paymentPlanType.FREE,
             oneTimeAmount: 0,
             emiAmount: 0,
@@ -182,6 +182,7 @@ export function PaymentPlanForm({
             subscriptionType: "monthly",
             includedProducts: [],
             ...initialData,
+            description: formatPriceText(initialData?.description || ""),
         },
     });
 

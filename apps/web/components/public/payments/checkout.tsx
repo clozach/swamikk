@@ -45,7 +45,7 @@ import {
 } from "@courselit/page-primitives";
 import { PaymentPlanCard } from "./payment-plan-card";
 import { PayPanel, MobilePayBar, getPlanDescription } from "./order-summary";
-import { getPlanPrice } from "@ui-lib/utils";
+import { formatPlanPrice } from "@courselit/utils";
 import type { RuntimeLoginProvider } from "@/lib/login-providers";
 import { LOGIN_FORM_PERSONAL_INFORMATION_LABEL } from "@ui-config/strings";
 const { PaymentPlanType: paymentPlanType } = Constants;
@@ -598,23 +598,10 @@ export default function Checkout({
                                                     <Header3
                                                         theme={theme.theme}
                                                     >
-                                                        {currencySymbol}
-                                                        {getPlanPrice(
+                                                        {formatPlanPrice(
                                                             selectedPlan ||
                                                                 paymentPlans[0],
-                                                        ).amount.toFixed(2)}
-                                                        {getPlanPrice(
-                                                            selectedPlan ||
-                                                                paymentPlans[0],
-                                                        ).period && (
-                                                            <span className="text-sm text-muted-foreground ml-1">
-                                                                {
-                                                                    getPlanPrice(
-                                                                        selectedPlan ||
-                                                                            paymentPlans[0],
-                                                                    ).period
-                                                                }
-                                                            </span>
+                                                            currencySymbol,
                                                         )}
                                                     </Header3>
                                                 </PageCardContent>
