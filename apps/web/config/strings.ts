@@ -493,3 +493,31 @@ export const textEditUi = {
     changed: "Changed",
     dismiss: "Dismiss",
 } as const;
+
+/** Changing what an account may manage, from the Users list. A magnet control: it follows the selected row, and every button says how to reach it without a mouse. */
+export const permissionsUi = {
+    hint: "Select an account to change what it may manage, or to view the site as that member.",
+    open: "Permissions",
+    openShortcut: "⌥⌘P",
+    openTitle: "Change what this account may manage (⌥⌘P)",
+    mimic: "View as member",
+    mimicShortcut: "↩",
+    mimicTitle: "Open the read-only member view (Enter)",
+    mimicRestricted: "A restricted account has no member view.",
+    title: "Permissions",
+    intro: "Each box saves at once.",
+    done: "Done",
+    doneShortcut: "⎋",
+    self: "Your own permissions can only be changed by another admin.",
+    protected:
+        "This is the site owner's account. Its permissions stay as they are.",
+    on: "on",
+    off: "off",
+    undo: "Undo",
+    undoShortcut: "⌘Z",
+    redo: "Redo",
+    redoShortcut: "⇧⌘Z",
+    failed: "The change was not saved. The account keeps its previous permissions.",
+    summary: "May manage:",
+    rowLabel: "Select {name} for permissions and the member view",
+} as const;

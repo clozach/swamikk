@@ -115,10 +115,10 @@ outline; clicking it edits it in place, Enter saves, Shift+Enter breaks a line,
 Escape cancels, Tab saves and steps to the next run. A save changes the
 published page at once and mirrors the same text into the page's draft; the
 page re-renders through `router.refresh()`. The run that changed keeps a
-*Changed · Undo ⌘Z · History* chip until it is dismissed or superseded; ⌘Z /
+_Changed · Undo ⌘Z · History_ chip until it is dismissed or superseded; ⌘Z /
 ⇧⌘Z work across the page while no run is being typed in; **History** lists
 every applied edit on the page (and every site-wide header/footer edit) with a
-permanent *Restore this text*. Every edit, undo and restore is an append-only
+permanent _Restore this text_. Every edit, undo and restore is an append-only
 row (`PageTextEdit`); nothing is rewritten.
 
 The comment layer is separate by design: a comment asks for a change, this
@@ -143,10 +143,39 @@ that row.
 
 History rows read BEFORE (red) over AFTER (green) with the words cut out of a
 strip on each band's right edge; **Restore the red text** is the only control,
-a penned arrow runs from it to the red text, and it reads *The page already
-shows the red text* (disabled) when that is so. Notices sit above dialogs. Source: `text-edit/` (`runs.ts` matches rendered
+a penned arrow runs from it to the red text, and it reads _The page already
+shows the red text_ (disabled) when that is so. Notices sit above dialogs. Source: `text-edit/` (`runs.ts` matches rendered
 text to leaves, `use-text-edit.ts` owns the mode, `history.tsx` the way back);
 server: `services/content-changes/text-leaves.ts` + `text-edit.ts`, routes
 under `/api/content-changes/text/`.
 
 Verification: `pnpm exec jest --config apps/web/jest.client.config.ts --runInBand apps/web/components/feedback/text-edit/__tests__` and the server suite `apps/web/app/api/content-changes/__tests__/text-edit.test.ts`. On the rig: sign in as the super admin, press ⌥⌘E on the homepage, click the H1, type, Enter; reload — the text persists; ⌘Z; open History and Restore.
+
+## Permissions magnet (Admin → Users)
+
+Selecting an account in the Users list once opened a Permissions screen; since
+Member Mimic, the name link opens the read-only member view instead, and that
+screen was orphaned. Its effect — changing what an account may manage — now
+lives in a magnet beside the selected row. Click a row (anywhere but its name
+link) or Tab into the list and move with ↑ ↓: the row takes an accent bar and
+the magnet sprouts beside it with **Permissions ⌥⌘P** and **View as member ↩**
+(a restricted account says it has no member view). Permissions grows the
+magnet into the panel in place: nine boxes that save at once (each toggle is
+one `updateUser` round trip; the server's list comes back as the truth), a
+status line where the click happened — _Manage pages: on · Undo ⌘Z_ — and
+⌘Z / ⇧⌘Z across the panel; **Done ⎋** hands back to the row, Escape ladders
+panel → toolbar → nothing, an outside click puts it away. Applying a change
+never dismisses the panel. Your own account is read-only with the reason on
+the panel; a server refusal (the site owner's account) marks the account
+protected and leaves the boxes as they were. The list row shows _May manage:
+…_ for every admin-level permission an account holds, so the effect is visible
+without opening anything. Name, active/restricted, tags and delete — the rest
+of the old screen — are not restored here.
+
+Source: `components/admin/users/permissions-magnet.tsx` (the magnet, undo,
+refusal), `permissions-editor.tsx` (the boxes), `use-permissions.ts` (the save);
+row selection lives in the Users hub. The chord chip is the shared
+`feedback/shortcut.tsx` (`.kk-key`), the same one the _Edit text_ pill uses.
+Verification: `pnpm exec jest --config apps/web/jest.client.config.ts --runInBand "admin/users/__tests__" "users-hub.test" "checkbox-labels.test"`.
+On the rig: sign in as the super admin, open Users, click a member's email,
+press ⌥⌘P, tick a box, reload — the row's _May manage_ line keeps it; ⌘Z.

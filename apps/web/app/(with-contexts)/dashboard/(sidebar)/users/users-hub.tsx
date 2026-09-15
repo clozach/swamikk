@@ -1,10 +1,14 @@
 "use client";
 
 import DashboardContent from "@components/admin/dashboard-content";
-import MemberMimicLink from "@components/member-mimic/link";
+import MemberMimicLink, {
+    memberMimicHref,
+} from "@components/member-mimic/link";
 import { readMemberListReturn } from "@components/member-mimic/list-return";
 import LoadingScreen from "@components/admin/loading-screen";
 import FilterContainer from "@components/admin/users/filter-container";
+import PermissionsMagnet from "@components/admin/users/permissions-magnet";
+import permissionToCaptionMap from "@components/admin/users/permissions-to-caption-map";
 import { AddressContext, ProfileContext } from "@components/contexts";
 import { PaginationControls } from "@components/public/pagination";
 import {
@@ -41,12 +45,45 @@ import {
     USER_TABLE_HEADER_STATUS,
     USERS_MANAGER_PAGE_HEADING,
 } from "@ui-config/strings";
+import { ADMIN_PERMISSIONS } from "@ui-config/constants";
+import { permissionsUi } from "@config/strings";
 import { formattedLocaleDate } from "@ui-lib/utils";
-import { useCallback, useContext, useEffect, useState } from "react";
+import {
+    KeyboardEvent as ReactKeyboardEvent,
+    MouseEvent as ReactMouseEvent,
+    useCallback,
+    useContext,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 
 const { permissions } = UIConstants;
 
 const breadcrumbs = [{ label: "Users", href: "#" }];
+
+/** Which account the magnet belongs to, and whether its panel is open. */
+type Selection =
+    | { kind: "none" }
+    | { kind: "row"; userId: string }
+    | { kind: "panel"; userId: string };
+
+const isTyping = (target: EventTarget | null) =>
+    target instanceof HTMLElement &&
+    !!target.closest("input,textarea,select,[contenteditable=true]");
+const inDialog = (target: EventTarget | null) =>
+    target instanceof HTMLElement && !!target.closest("[role=dialog]");
+
+/** The admin-level captions an account holds, in the editor's order; empty for a plain member. */
+export function adminSummary(userPermissions: string[] = []) {
+    return Object.keys(permissionToCaptionMap)
+        .filter(
+            (permission) =>
+                ADMIN_PERMISSIONS.includes(permission) &&
+                userPermissions.includes(permission),
+        )
+        .map((permission) => permissionToCaptionMap[permission]);
+}
 
 export default function UsersHub() {
     const address = useContext(AddressContext);
@@ -59,6 +96,13 @@ export default function UsersHub() {
         useState<UserFilterAggregator>("or");
     const [count, setCount] = useState(0);
     const [returnReady, setReturnReady] = useState(false);
+    const [activeUserId, setActiveUserId] = useState<string | null>(null);
+    const [selection, setSelection] = useState<Selection>({ kind: "none" });
+    const rows = useRef(new Map<string, HTMLTableRowElement>());
+    const selectionRef = useRef(selection);
+    useEffect(() => {
+        selectionRef.current = selection;
+    }, [selection]);
     const { toast } = useToast();
 
     const { profile } = useContext(ProfileContext);
@@ -66,7 +110,12 @@ export default function UsersHub() {
     useEffect(() => {
         const restored = readMemberListReturn(window.location.search);
         setPage(restored.page);
-        setFilters(restored.filter.filters);
+        // An identical filter set keeps its identity, or the list loads twice.
+        setFilters((current) =>
+            JSON.stringify(current) === JSON.stringify(restored.filter.filters)
+                ? current
+                : restored.filter.filters,
+        );
         setFiltersAggregator(restored.filter.aggregator);
         setReturnReady(true);
     }, []);
@@ -125,7 +174,16 @@ export default function UsersHub() {
         try {
             const response = await fetch.exec();
             if (response.users) {
-                setUsers(response.users);
+                const list: User[] = response.users;
+                setUsers(list);
+                // A fresh list drops the magnet and hands the keyboard to a row
+                // it still holds, else its first.
+                setSelection({ kind: "none" });
+                setActiveUserId((current) =>
+                    list.some((user) => user.userId === current)
+                        ? current
+                        : (list[0]?.userId ?? null),
+                );
             }
             if (typeof response.count !== "undefined") {
                 setCount(response.count);
@@ -164,6 +222,132 @@ export default function UsersHub() {
         [filters, filtersAggregator],
     );
 
+    const returnTo = `/dashboard/users?${new URLSearchParams({
+        page: String(page),
+        filters: JSON.stringify({ filters, aggregator: filtersAggregator }),
+    })}`;
+    const mimicHrefFor = (user: User) =>
+        user.active ? memberMimicHref(user.userId, returnTo) : null;
+
+    const select = (userId: string) => {
+        setActiveUserId(userId);
+        setSelection((current) =>
+            current.kind === "panel" && current.userId === userId
+                ? current
+                : { kind: "row", userId },
+        );
+    };
+    const focusRow = (userId: string | null) => {
+        if (userId) rows.current.get(userId)?.focus();
+    };
+    const openPanel = useCallback((userId: string) => {
+        setActiveUserId(userId);
+        setSelection({ kind: "panel", userId });
+    }, []);
+    const closePanel = useCallback(() => {
+        const current = selectionRef.current;
+        if (current.kind !== "panel") return;
+        setSelection({ kind: "row", userId: current.userId });
+        rows.current.get(current.userId)?.focus();
+    }, []);
+
+    // ⌥⌘P opens (or closes) the active account's permissions from anywhere on
+    // the page; Escape ladders out one level: panel → toolbar → nothing.
+    useEffect(() => {
+        const keydown = (event: KeyboardEvent) => {
+            if (inDialog(event.target)) return;
+            if (
+                (event.metaKey || event.ctrlKey) &&
+                event.altKey &&
+                event.code === "KeyP"
+            ) {
+                const current = selectionRef.current;
+                const userId =
+                    current.kind === "none" ? activeUserId : current.userId;
+                if (!userId) return;
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                if (current.kind === "panel") closePanel();
+                else openPanel(userId);
+                return;
+            }
+            if (event.key === "Escape" && !isTyping(event.target)) {
+                const current = selectionRef.current;
+                if (current.kind === "none") return;
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                if (current.kind === "panel") closePanel();
+                else setSelection({ kind: "none" });
+            }
+        };
+        window.addEventListener("keydown", keydown, { capture: true });
+        return () =>
+            window.removeEventListener("keydown", keydown, { capture: true });
+    }, [activeUserId, openPanel, closePanel]);
+
+    // A click anywhere but the magnet or the selected row puts the magnet away.
+    useEffect(() => {
+        if (selection.kind === "none") return;
+        const click = (event: MouseEvent) => {
+            const target = event.target as HTMLElement | null;
+            if (
+                !target ||
+                target.closest("[data-kk-permissions]") ||
+                target.closest("tr[data-state=selected]")
+            )
+                return;
+            setSelection({ kind: "none" });
+        };
+        document.addEventListener("click", click);
+        return () => document.removeEventListener("click", click);
+    }, [selection.kind]);
+
+    const onRowKeyDown = (
+        event: ReactKeyboardEvent<HTMLTableRowElement>,
+        index: number,
+        user: User,
+    ) => {
+        if (event.target !== event.currentTarget) return;
+        const step = (next: number) => {
+            event.preventDefault();
+            focusRow(
+                users[Math.max(0, Math.min(users.length - 1, next))]?.userId,
+            );
+        };
+        if (event.key === "ArrowDown") step(index + 1);
+        else if (event.key === "ArrowUp") step(index - 1);
+        else if (event.key === "Home") step(0);
+        else if (event.key === "End") step(users.length - 1);
+        else if (
+            event.key === "Enter" &&
+            !event.metaKey &&
+            !event.ctrlKey &&
+            !event.altKey
+        ) {
+            const href = mimicHrefFor(user);
+            if (!href) return;
+            event.preventDefault();
+            window.location.assign(href);
+        }
+    };
+    const onRowClick = (
+        event: ReactMouseEvent<HTMLTableRowElement>,
+        user: User,
+    ) => {
+        // Links and buttons in the row keep their own jobs; ⌘-click belongs to
+        // the page's comment layer.
+        const target = event.target as HTMLElement;
+        if (target.closest("a,button,input") || event.metaKey || event.ctrlKey)
+            return;
+        select(user.userId);
+        event.currentTarget.focus();
+    };
+
+    const selectedUser =
+        selection.kind === "none"
+            ? null
+            : users.find((user) => user.userId === selection.userId) || null;
+
     if (!profile) {
         return <LoadingScreen />;
     }
@@ -178,6 +362,9 @@ export default function UsersHub() {
                     {USERS_MANAGER_PAGE_HEADING}
                 </h1>
             </div>
+            <p className="text-sm text-muted-foreground">
+                {permissionsUi.hint}
+            </p>
             <div className="w-full mt-4 space-y-8">
                 <div className="mb-4">
                     {returnReady && (
@@ -248,96 +435,161 @@ export default function UsersHub() {
                                           </TableCell>
                                       </TableRow>
                                   ))
-                            : users.map((user) => (
-                                  <TableRow key={user.email}>
-                                      <TableCell className="py-2">
-                                          <div className="flex items-center gap-2">
-                                              <Avatar>
-                                                  <AvatarImage
-                                                      src={
-                                                          user.avatar
-                                                              ? user.avatar
-                                                                    ?.file
-                                                              : "/courselit_backdrop_square.webp"
-                                                      }
-                                                  />
-                                                  <AvatarFallback>
-                                                      {(user.name
-                                                          ? user.name.charAt(0)
-                                                          : user.email.charAt(0)
-                                                      ).toUpperCase()}
-                                                  </AvatarFallback>
-                                              </Avatar>
-                                              <div>
-                                                  <MemberMimicLink
-                                                      userId={
-                                                          user.active
-                                                              ? user.userId
-                                                              : null
-                                                      }
-                                                      returnTo={`/dashboard/users?${new URLSearchParams({ page: String(page), filters: JSON.stringify({ filters, aggregator: filtersAggregator }) })}`}
-                                                  >
-                                                      <span className="font-medium text-base">
-                                                          {user.name
-                                                              ? user.name
-                                                              : user.email}
-                                                      </span>
-                                                  </MemberMimicLink>
-                                                  <div className="text-xs text-muted-foreground">
-                                                      {user.email}
+                            : users.map((user, index) => {
+                                  const summary = adminSummary(
+                                      user.permissions,
+                                  );
+                                  const selected =
+                                      selection.kind !== "none" &&
+                                      selection.userId === user.userId;
+                                  return (
+                                      <TableRow
+                                          key={user.email}
+                                          ref={(element) => {
+                                              if (element)
+                                                  rows.current.set(
+                                                      user.userId,
+                                                      element,
+                                                  );
+                                              else
+                                                  rows.current.delete(
+                                                      user.userId,
+                                                  );
+                                          }}
+                                          data-kk-account={user.userId}
+                                          data-state={
+                                              selected ? "selected" : undefined
+                                          }
+                                          aria-selected={selected}
+                                          aria-label={permissionsUi.rowLabel.replace(
+                                              "{name}",
+                                              user.name || user.email,
+                                          )}
+                                          tabIndex={
+                                              user.userId === activeUserId
+                                                  ? 0
+                                                  : -1
+                                          }
+                                          onFocus={(event) => {
+                                              if (
+                                                  event.target ===
+                                                  event.currentTarget
+                                              )
+                                                  select(user.userId);
+                                          }}
+                                          onClick={(event) =>
+                                              onRowClick(event, user)
+                                          }
+                                          onKeyDown={(event) =>
+                                              onRowKeyDown(event, index, user)
+                                          }
+                                      >
+                                          <TableCell className="py-2">
+                                              <div className="flex items-center gap-2">
+                                                  <Avatar>
+                                                      <AvatarImage
+                                                          src={
+                                                              user.avatar
+                                                                  ? user.avatar
+                                                                        ?.file
+                                                                  : "/courselit_backdrop_square.webp"
+                                                          }
+                                                      />
+                                                      <AvatarFallback>
+                                                          {(user.name
+                                                              ? user.name.charAt(
+                                                                    0,
+                                                                )
+                                                              : user.email.charAt(
+                                                                    0,
+                                                                )
+                                                          ).toUpperCase()}
+                                                      </AvatarFallback>
+                                                  </Avatar>
+                                                  <div>
+                                                      <MemberMimicLink
+                                                          userId={
+                                                              user.active
+                                                                  ? user.userId
+                                                                  : null
+                                                          }
+                                                          returnTo={returnTo}
+                                                      >
+                                                          <span className="font-medium text-base">
+                                                              {user.name
+                                                                  ? user.name
+                                                                  : user.email}
+                                                          </span>
+                                                      </MemberMimicLink>
+                                                      <div className="text-xs text-muted-foreground">
+                                                          {user.email}
+                                                      </div>
+                                                      {summary.length > 0 && (
+                                                          <div
+                                                              className="text-xs text-muted-foreground"
+                                                              data-kk-permission-summary
+                                                          >
+                                                              {
+                                                                  permissionsUi.summary
+                                                              }{" "}
+                                                              {summary.join(
+                                                                  " · ",
+                                                              )}
+                                                          </div>
+                                                      )}
                                                   </div>
                                               </div>
-                                          </div>
-                                      </TableCell>
-                                      <TableCell>
-                                          <Badge
-                                              variant={
-                                                  user.active
-                                                      ? "default"
-                                                      : "secondary"
+                                          </TableCell>
+                                          <TableCell>
+                                              <Badge
+                                                  variant={
+                                                      user.active
+                                                          ? "default"
+                                                          : "secondary"
+                                                  }
+                                              >
+                                                  {user.active
+                                                      ? "Active"
+                                                      : "Restricted"}
+                                              </Badge>
+                                          </TableCell>
+                                          <TableCell>
+                                              {
+                                                  (user.content ?? []).filter(
+                                                      (content) =>
+                                                          content.entityType.toLowerCase() ===
+                                                          MembershipEntityType.COURSE,
+                                                  ).length
                                               }
-                                          >
-                                              {user.active
-                                                  ? "Active"
-                                                  : "Restricted"}
-                                          </Badge>
-                                      </TableCell>
-                                      <TableCell>
-                                          {
-                                              (user.content ?? []).filter(
-                                                  (content) =>
-                                                      content.entityType.toLowerCase() ===
-                                                      MembershipEntityType.COURSE,
-                                              ).length
-                                          }
-                                      </TableCell>
-                                      <TableCell>
-                                          {
-                                              (user.content ?? []).filter(
-                                                  (content) =>
-                                                      content.entityType.toLowerCase() ===
-                                                      MembershipEntityType.COMMUNITY,
-                                              ).length
-                                          }
-                                      </TableCell>
-                                      <TableCell className="hidden lg:table-cell">
-                                          {user.createdAt
-                                              ? formattedLocaleDate(
-                                                    user.createdAt,
-                                                )
-                                              : ""}
-                                      </TableCell>
-                                      <TableCell className="hidden lg:table-cell">
-                                          {user.updatedAt !== user.createdAt
-                                              ? user.updatedAt
+                                          </TableCell>
+                                          <TableCell>
+                                              {
+                                                  (user.content ?? []).filter(
+                                                      (content) =>
+                                                          content.entityType.toLowerCase() ===
+                                                          MembershipEntityType.COMMUNITY,
+                                                  ).length
+                                              }
+                                          </TableCell>
+                                          <TableCell className="hidden lg:table-cell">
+                                              {user.createdAt
                                                   ? formattedLocaleDate(
-                                                        user.updatedAt,
+                                                        user.createdAt,
                                                     )
-                                                  : ""
-                                              : ""}
-                                      </TableCell>
-                                  </TableRow>
-                              ))}
+                                                  : ""}
+                                          </TableCell>
+                                          <TableCell className="hidden lg:table-cell">
+                                              {user.updatedAt !== user.createdAt
+                                                  ? user.updatedAt
+                                                      ? formattedLocaleDate(
+                                                            user.updatedAt,
+                                                        )
+                                                      : ""
+                                                  : ""}
+                                          </TableCell>
+                                      </TableRow>
+                                  );
+                              })}
                     </TableBody>
                 </Table>
                 <PaginationControls
@@ -346,6 +598,28 @@ export default function UsersHub() {
                     onPageChange={setPage}
                 />
             </div>
+            {selectedUser && (
+                <PermissionsMagnet
+                    key={selectedUser.userId}
+                    user={selectedUser}
+                    rowElement={rows.current.get(selectedUser.userId) || null}
+                    panel={selection.kind === "panel"}
+                    address={address}
+                    selfUserId={profile.userId}
+                    mimicHref={mimicHrefFor(selectedUser)}
+                    onOpenPanel={() => openPanel(selectedUser.userId)}
+                    onClosePanel={closePanel}
+                    onSaved={(next) =>
+                        setUsers((current) =>
+                            current.map((user) =>
+                                user.userId === selectedUser.userId
+                                    ? { ...user, permissions: next }
+                                    : user,
+                            ),
+                        )
+                    }
+                />
+            )}
         </DashboardContent>
     );
 }

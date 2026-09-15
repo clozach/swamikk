@@ -51,19 +51,7 @@
     font-weight: 600;
     white-space: nowrap;
 }
-.kk-text-edit-key {
-    display: inline-block;
-    margin-left: 4px;
-    padding: 1px 6px;
-    border-radius: 6px;
-    background: #0000001a;
-    font: inherit;
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 18px;
-    opacity: 0.9;
-}
-.kk-text-edit-pill .kk-text-edit-key {
+.kk-text-edit-pill .kk-key {
     background: #ffffff33;
 }
 .kk-text-edit-chip {
@@ -237,7 +225,7 @@ html[data-kk-text-edit] [data-kk-editing] a {
         right: calc(max(16px, env(safe-area-inset-right)) + 56px);
         max-width: none;
     }
-    .kk-text-edit-bar .kk-text-edit-key {
+    .kk-text-edit-bar .kk-key {
         display: none;
     }
 }

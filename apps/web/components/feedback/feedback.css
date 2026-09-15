@@ -169,3 +169,16 @@
         display: none !important;
     }
 }
+/* The keyboard chord shown inside a magnet button's label. */
+.kk-key {
+    display: inline-block;
+    margin-left: 4px;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: #0000001a;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 18px;
+    opacity: 0.9;
+}

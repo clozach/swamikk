@@ -82,12 +82,7 @@ async function expectNamedCheckboxes() {
 }
 
 test("permission controls retain their visible permission names", async () => {
-    render(
-        <PermissionsEditor
-            user={{ id: "u", userId: "u", permissions: [] } as any}
-            address={{ backend: "http://example.test", frontend: "" }}
-        />,
-    );
+    render(<PermissionsEditor permissions={[]} onToggle={jest.fn()} />);
     await expectNamedCheckboxes();
 });
 

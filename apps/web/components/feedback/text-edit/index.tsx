@@ -8,6 +8,7 @@ import { textEditUi as copy } from "@config/strings";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { FeedbackNotice } from "../notice";
+import { Shortcut } from "../shortcut";
 import { SelectionTools } from "../selection-tools";
 import { usePortalHost, useVisualViewport } from "../viewport";
 import { currentAt, targetWidgetId } from "./leaves";
@@ -15,11 +16,6 @@ import { useTextEdit } from "./use-text-edit";
 import HistoryPanel from "./history";
 import "./text-edit.css";
 
-const Shortcut = ({ children }: { children: string }) => (
-    <kbd className="kk-text-edit-key" aria-hidden="true">
-        {children}
-    </kbd>
-);
 /** The run a chip belongs to may re-match under a path inside or around the saved one. */
 const related = (a: string, b: string) =>
     a === b || a.startsWith(`${b}.`) || b.startsWith(`${a}.`);

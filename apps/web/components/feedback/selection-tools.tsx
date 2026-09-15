@@ -7,10 +7,13 @@ export function SelectionTools({
     children,
     target,
     label,
+    role = "toolbar",
 }: {
     children: ReactNode;
     target: TargetBounds | null;
     label: string;
+    /** A magnet that holds a form rather than a row of actions says so. */
+    role?: "toolbar" | "group";
 }) {
     const ref = useRef<HTMLDivElement>(null);
     const host = usePortalHost();
@@ -61,7 +64,7 @@ export function SelectionTools({
             ref={ref}
             data-feedback-ui
             className="kk-feedback-magnet border bg-background text-foreground shadow-xl"
-            role="toolbar"
+            role={role}
             aria-label={label}
             style={
                 viewport ? placeMagnet(target, viewport, size, help) : undefined

@@ -7,6 +7,15 @@ import { UIConstants } from "@courselit/common-models";
 import { useMemberMimic } from "./context";
 import { safeMimicReturnTo } from "@/services/member-mimic/constants";
 
+/** The one way into a member's read-only view; `returnTo` brings the admin back to the list they left. */
+export function memberMimicHref(userId: string, returnTo: string) {
+    return `/dashboard/users/${encodeURIComponent(userId)}?${new URLSearchParams(
+        {
+            returnTo: safeMimicReturnTo(returnTo),
+        },
+    )}`;
+}
+
 /** All member tables enter the same server-authorized, read-only member view. */
 export default function MemberMimicLink({
     userId,
@@ -29,10 +38,7 @@ export default function MemberMimicLink({
     )
         return <>{children}</>;
 
-    const href = (source: string) =>
-        `/dashboard/users/${encodeURIComponent(userId)}?${new URLSearchParams({
-            returnTo: safeMimicReturnTo(source),
-        })}`;
+    const href = (source: string) => memberMimicHref(userId, source);
     return (
         <a
             className={className}
