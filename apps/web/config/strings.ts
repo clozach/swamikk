@@ -586,6 +586,11 @@ export const textEditUi = {
         "This text appears in more than one field of this block. Edit it in the page builder.",
     changed: "Changed",
     dismiss: "Dismiss",
+    imageSaving: "Saving image…",
+    imageDropHint: "Click to choose an image, or drop one here",
+    imageDropOne: "Drop one image at a time.",
+    imageFailed: "The image could not be saved. Please try again.",
+    imageCancel: "Cancel upload",
 } as const;
 
 /** Changing what an account may manage, from the Users list. A magnet control: it follows the selected row, and every button says how to reach it without a mouse. */

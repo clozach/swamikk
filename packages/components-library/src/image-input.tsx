@@ -10,6 +10,18 @@ export const IMAGE_MIME_TYPES = [
     "image/gif",
 ];
 
+/** Shared by the picker and direct page drops, before either starts an upload. */
+export function imageFileError(
+    file: File,
+    accept = IMAGE_MIME_TYPES,
+    maxBytes = 50 * 1024 * 1024,
+): string | undefined {
+    if (!accept.includes(file.type))
+        return "Choose a JPEG, PNG, WebP, AVIF or GIF image supported by this field.";
+    if (file.size > maxBytes)
+        return `This image is too large. Choose one under ${Math.round(maxBytes / 1024 / 1024)} MB.`;
+}
+
 /** One acquisition surface. The caller resolves only after the image is saved. */
 export function ImageFileInput({
     onFile,
@@ -59,14 +71,8 @@ export function ImageFileInput({
     };
     async function select(file?: File) {
         if (!mounted.current || !file || disabled || busy.current) return;
-        if (!accept.includes(file.type))
-            return report(
-                "Choose a JPEG, PNG, WebP, AVIF or GIF image supported by this field.",
-            );
-        if (file.size > maxBytes)
-            return report(
-                `This image is too large. Choose one under ${Math.round(maxBytes / 1024 / 1024)} MB.`,
-            );
+        const error = imageFileError(file, accept, maxBytes);
+        if (error) return report(error);
         busy.current = true;
         setState({
             kind: "saving",

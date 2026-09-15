@@ -37,6 +37,9 @@ jest.mock("@/components/ui/dialog", () => ({
 }));
 const mockUpload = jest.fn();
 jest.mock("@courselit/components-library/images", () => ({
+    imageFileError: jest.requireActual(
+        "../../../../../../packages/components-library/src/image-input",
+    ).imageFileError,
     ImageFileInput: ({ onFile }) => (
         <button
             onClick={() =>

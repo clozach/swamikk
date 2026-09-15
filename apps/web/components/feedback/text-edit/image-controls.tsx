@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { ImagePlus } from "lucide-react";
 import type {
     ImageSource,
     Media,
@@ -9,6 +10,7 @@ import type {
 } from "@courselit/common-models";
 import {
     ImageFileInput,
+    imageFileError,
     maybeDownsizeImage,
     useMediaLit,
 } from "@courselit/components-library/images";
@@ -20,6 +22,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { currentAt, type LeafIndex } from "./leaves";
+import { bindPlaceholderEvents } from "./placeholder-events";
+import { textEditUi as copy } from "@/config/strings";
 
 type Slot = {
     key: string;
@@ -53,12 +57,78 @@ export function ImageEditControls({
     const [slots, setSlots] = useState<Slot[]>([]);
     const [selected, setSelected] = useState<Slot | null>(null);
     const [pending, setPending] = useState(false);
+    const busy = useRef(false);
     const [hovered, setHovered] = useState<string | null>(null);
+    const [dragged, setDragged] = useState<string | null>(null);
+    const [direct, setDirect] = useState<
+        | { kind: "saving"; slot: Slot }
+        | { kind: "error"; slot: Slot; message: string }
+        | null
+    >(null);
     const { uploadFile, uploadProgress, isUploading, cancelUpload } =
         useMediaLit({
             signatureEndpoint: "/api/media/presigned",
             access: "public",
         });
+    const saveFile = useCallback(
+        async (slot: Slot, file: File) => {
+            if (disabled || busy.current) return;
+            const error = imageFileError(file);
+            if (error) throw new Error(error);
+            busy.current = true;
+            setPending(true);
+            try {
+                const result = await maybeDownsizeImage(file);
+                const media = await uploadFile(result.file, { type: "page" });
+                await onSave(slot.target, slot.path, slot.before, {
+                    kind: "media",
+                    media: media as unknown as Media,
+                });
+                setSelected(null);
+            } finally {
+                busy.current = false;
+                setPending(false);
+            }
+        },
+        [disabled, onSave, uploadFile],
+    );
+    useEffect(
+        () =>
+            bindPlaceholderEvents(
+                slots,
+                disabled || pending || !!selected,
+                (slot) => {
+                    setDirect(null);
+                    setSelected(slot);
+                },
+                (slot, files) => {
+                    if (busy.current) return;
+                    if (files.length !== 1) {
+                        setDirect({
+                            kind: "error",
+                            slot,
+                            message: copy.imageDropOne,
+                        });
+                        return;
+                    }
+                    setDirect({ kind: "saving", slot });
+                    void saveFile(slot, files[0]).then(
+                        () => setDirect(null),
+                        (error) =>
+                            setDirect({
+                                kind: "error",
+                                slot,
+                                message:
+                                    error instanceof Error
+                                        ? error.message
+                                        : copy.imageFailed,
+                            }),
+                    );
+                },
+                setDragged,
+            ),
+        [slots, disabled, pending, selected, saveFile],
+    );
     useEffect(() => {
         let frame = 0;
         const scan = () => {
@@ -173,6 +243,7 @@ export function ImageEditControls({
                 createPortal(
                     <div
                         data-feedback-ui
+                        data-kk-image-control={slot.key}
                         className={`kk-image-control ${slot.before.kind === "placeholder" ? "is-placeholder" : ""} ${hovered === slot.key ? "is-hovered" : ""}`}
                         onPointerEnter={() => setHovered(slot.key)}
                         style={{
@@ -185,6 +256,10 @@ export function ImageEditControls({
                             // Equal levels let later image portals intercept toolbar clicks.
                             zIndex: 44,
                             pointerEvents: "none",
+                            outline:
+                                dragged === slot.key
+                                    ? "3px solid #ad643f"
+                                    : undefined,
                         }}
                         key={slot.key}
                     >
@@ -192,7 +267,27 @@ export function ImageEditControls({
                             type="button"
                             className="kk-image-replace"
                             disabled={disabled || pending}
-                            style={{ pointerEvents: "auto" }}
+                            style={{
+                                pointerEvents: "auto",
+                                ...(slot.rect.width < 120 ||
+                                slot.rect.height < 64
+                                    ? {
+                                          left: Math.max(0, -slot.rect.left),
+                                          top: 0,
+                                          right: "auto",
+                                          width: 44,
+                                          height: 44,
+                                          padding: 10,
+                                          display: "grid",
+                                          placeItems: "center",
+                                      }
+                                    : {}),
+                            }}
+                            title={
+                                slot.before.kind === "placeholder"
+                                    ? copy.imageDropHint
+                                    : `Replace ${slot.label}`
+                            }
                             onFocus={(event) => {
                                 const rect =
                                     event.currentTarget.getBoundingClientRect();
@@ -207,18 +302,83 @@ export function ImageEditControls({
                                     });
                                 }
                             }}
-                            onClick={() => setSelected(slot)}
+                            onClick={() => {
+                                setDirect(null);
+                                setSelected(slot);
+                            }}
                             aria-label={`${slot.before.kind === "placeholder" ? "Add" : "Replace"} ${slot.label}`}
                         >
-                            {slot.before.kind === "placeholder"
-                                ? "＋ Add image"
-                                : "Replace image"}
+                            {slot.rect.width < 120 || slot.rect.height < 64 ? (
+                                <ImagePlus size={20} aria-hidden="true" />
+                            ) : slot.before.kind === "placeholder" ? (
+                                "＋ Add image"
+                            ) : (
+                                "Replace image"
+                            )}
                         </button>
                     </div>,
                     document.body,
                     slot.key,
                 ),
             )}
+            {direct &&
+                createPortal(
+                    <div
+                        data-feedback-ui
+                        className="rounded-md border bg-background p-3 text-sm text-foreground shadow-lg"
+                        style={{
+                            position: "fixed",
+                            zIndex: 44,
+                            left: Math.max(
+                                8,
+                                Math.min(
+                                    (
+                                        slots.find(
+                                            (slot) =>
+                                                slot.key === direct.slot.key,
+                                        ) || direct.slot
+                                    ).rect.left,
+                                    window.innerWidth - 288,
+                                ),
+                            ),
+                            bottom: 80,
+                            maxWidth: "min(280px, calc(100vw - 16px))",
+                        }}
+                    >
+                        <p role={direct.kind === "error" ? "alert" : "status"}>
+                            {direct.slot.label}:{" "}
+                            {direct.kind === "saving"
+                                ? copy.imageSaving
+                                : direct.message}
+                        </p>
+                        {direct.kind === "saving" && isUploading && (
+                            <>
+                                <progress
+                                    aria-label={copy.imageSaving}
+                                    value={uploadProgress}
+                                    max={100}
+                                />
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={cancelUpload}
+                                >
+                                    {copy.imageCancel}
+                                </Button>
+                            </>
+                        )}
+                        {direct.kind === "error" && (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setDirect(null)}
+                            >
+                                {copy.dismiss}
+                            </Button>
+                        )}
+                    </div>,
+                    document.body,
+                )}
             <Dialog
                 open={!!selected}
                 onOpenChange={(open) => {
@@ -248,29 +408,7 @@ export function ImageEditControls({
                         <ImageFileInput
                             key={selected.key}
                             progress={uploadProgress}
-                            onFile={async (file) => {
-                                setPending(true);
-                                try {
-                                    const result =
-                                        await maybeDownsizeImage(file);
-                                    const media = await uploadFile(
-                                        result.file,
-                                        { type: "page" },
-                                    );
-                                    await onSave(
-                                        selected.target,
-                                        selected.path,
-                                        selected.before,
-                                        {
-                                            kind: "media",
-                                            media: media as unknown as Media,
-                                        },
-                                    );
-                                    setSelected(null);
-                                } finally {
-                                    setPending(false);
-                                }
-                            }}
+                            onFile={(file) => saveFile(selected, file)}
                         />
                     )}
                     {isUploading && (
