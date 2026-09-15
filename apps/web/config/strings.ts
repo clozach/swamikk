@@ -300,7 +300,7 @@ export const memberMimicUi = {
     retry: "Try again",
     returnToMembers: "Back to members",
     viewing: "Viewing as",
-    readOnly: "Read-only member view",
+    readOnly: "Member view · changes are recorded as you",
     privacy:
         "Personal practice history, private messages and drafts are hidden.",
     exit: "Exit Mimic",
@@ -320,9 +320,100 @@ export const memberMimicUi = {
     privateActivity:
         "This activity contains personal learner data and is hidden in Mimic.",
     noChanges:
-        "Exit Mimic before changing account details or sending anything.",
+        "Use Edit member to change account details; nothing else can be sent from Mimic.",
 };
 export { mediaPlayerUi, catalogMediaUi } from "@courselit/common-models";
+
+/** Editing a member's record from inside Member Mimic. The panel docks beside the member's page; every button carries its chord. */
+export const memberEditUi = {
+    emailEffectsPending:
+        "The address is saved. Ending old sign-ins or sending the notice still needs to finish.",
+    retryEmailEffects: "Finish email update",
+    open: "Edit member",
+    openShortcut: "⌥⌘E",
+    openTitle: "Change this member's account details (⌥⌘E)",
+    title: "Edit member",
+    loading: "Reading this member's record…",
+    loadFailed: "This member's record could not be read.",
+    retry: "Try again",
+    fields: {
+        name: "Name",
+        email: "Sign-in email",
+        contact: "Preferred contact",
+        checkIns: "Check-ins",
+    },
+    contactKindLabel: "Reached by",
+    contactKind: {
+        email: "Email",
+        voice: "Phone call",
+        text: "Text message",
+    },
+    contactEmail: "Email address",
+    contactPhone: "Phone number",
+    checkIns: {
+        none: "None",
+        occasional: "Occasional",
+    },
+    /** Per-field labels for History rows; the compound contact row splits into its two stored fields. */
+    changeLabels: {
+        name: "Name",
+        email: "Sign-in email",
+        "contact.kind": "Preferred contact · reached by",
+        "contact.value": "Preferred contact · address or number",
+        checkIns: "Check-ins",
+    },
+    emailHelp:
+        "Sign-in codes go to this address. Changing it sends a code to the new address first, and a notice to the old one.",
+    emailLockSelf:
+        "This is your own account. Its sign-in email cannot be changed from Member Mimic.",
+    emailLockOwner:
+        "This is the site owner's account. Its sign-in email stays as it is.",
+    save: "Save",
+    saved: "Saved",
+    undone: "Undone",
+    redone: "Redone",
+    restored: "Restored",
+    undo: "Undo",
+    undoShortcut: "⌘Z",
+    redo: "Redo",
+    redoShortcut: "⇧⌘Z",
+    done: "Done",
+    doneShortcut: "⎋",
+    history: "History",
+    historyTitle: "Edits to this member",
+    historyIntro:
+        "Every change to this member's record, newest first, with who made it and the exact before and after. Restore brings that value back; the restore is recorded too.",
+    historyEmpty: "No edits to this member yet.",
+    historyMore: "Show earlier edits",
+    historyLoading: "Reading the history…",
+    restoreRed: "Restore the red text",
+    alreadyCurrent: "The record already shows the red text",
+    before: "BEFORE",
+    after: "AFTER",
+    reverses: "↶ reverses an earlier edit",
+    you: "you",
+    other: "another admin",
+    codeSent: "A code was sent to {email}. Ask the member for it.",
+    codeLabel: "Six-digit code",
+    confirm: "Confirm",
+    resend: "Send a new code",
+    cancel: "Cancel",
+    wrongCode: "That code is not right. {n} tries left.",
+    codeExpired:
+        "That code has expired. Save the address again to send a new one.",
+    codeCancelled: "The address change was cancelled. Nothing changed.",
+    codeResent: "A new code was sent to {email}.",
+    emailChanged:
+        "Sign-in email changed. The member signs in with the new address from now on.",
+    stale: "This record changed elsewhere; the values shown are current now.",
+    failed: "The result could not be confirmed. Reload the page to check the saved record before trying again.",
+    unchanged: "Nothing to change.",
+    reviewRefunds: "Review refunds",
+    reviewRefundsHelp: "Exits Mimic and opens Refund review.",
+    pendingRefund: "This member has a refund request waiting.",
+    unsaved: "Not saved yet: {fields}",
+    dismiss: "Dismiss",
+} as const;
 
 export const dripAdminUi = {
     title: "Release schedule",

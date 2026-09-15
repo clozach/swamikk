@@ -45,6 +45,7 @@ export * from "./models/content-change";
 export * from "./models/page-text-edit";
 export * from "./models/section-edit";
 export * from "./models/member-mimic";
+export * from "./models/member-edit";
 
 export * from "./models/member-access";
 export * from "./models/drip-change";

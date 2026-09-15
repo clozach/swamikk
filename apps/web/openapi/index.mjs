@@ -5,6 +5,7 @@ import { feedbackApiOpenApi } from "../app/api/feedback/openapi.mjs";
 import { contentChangesApiOpenApi } from "../app/api/content-changes/openapi.mjs";
 import { sectionEditsApiOpenApi } from "../app/api/section-edits/openapi.mjs";
 import { memberMimicApiOpenApi } from "../app/api/member-mimic/openapi.mjs";
+import { memberEditsApiOpenApi } from "../app/api/member-edits/openapi.mjs";
 import { paymentWebhookOpenApi } from "../app/api/payment/webhook/openapi.mjs";
 import feedbackMailboxOpenApi from "../app/api/feedback-mailbox/openapi.mjs";
 import memberBillingOpenApi from "../app/api/member-billing/openapi.mjs";
@@ -27,6 +28,7 @@ const routeSpecs = [
     contentChangesApiOpenApi,
     sectionEditsApiOpenApi,
     memberMimicApiOpenApi,
+    memberEditsApiOpenApi,
     paymentWebhookOpenApi,
     feedbackMailboxOpenApi,
     { paths: memberBillingOpenApi },

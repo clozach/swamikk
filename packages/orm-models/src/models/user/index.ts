@@ -8,6 +8,8 @@ export interface InternalUser extends Omit<User, "domain"> {
     _id: mongoose.Types.ObjectId;
     domain: mongoose.Types.ObjectId;
     unsubscribeToken: string;
+    /** Private support-edit receipts, atomically written with the member data. */
+    memberEditReceipts?: string[];
 }
 
 export const UserSchema = new mongoose.Schema<InternalUser>(
@@ -17,6 +19,11 @@ export const UserSchema = new mongoose.Schema<InternalUser>(
         email: { type: String, required: true },
         active: { type: Boolean, required: true, default: true },
         name: { type: String, required: false },
+        memberEditReceipts: {
+            type: [String],
+            default: undefined,
+            select: false,
+        },
         purchases: [ProgressSchema],
         bio: { type: String },
         permissions: [String],

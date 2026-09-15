@@ -121,6 +121,13 @@ test("verifies before mounting member content and keeps private children unmount
         screen.getByRole("complementary", { name: copy.title }),
     ).toHaveTextContent("Member");
     expect(screen.getByText(copy.readOnly)).toBeInTheDocument();
+    // The banner now offers the member edit panel beside Exit, chord shown.
+    const edit = screen.getByRole("button", { name: /Edit member/ });
+    expect(edit).toHaveTextContent("⌥⌘E");
+    expect(edit).toHaveAttribute("aria-keyshortcuts", "Alt+Meta+E");
+    expect(container.querySelector("[data-kk-member-edit]")).toHaveAttribute(
+        "hidden",
+    );
     expect(container.querySelector(".kk-mimic-watermark")).toHaveAttribute(
         "aria-hidden",
         "true",

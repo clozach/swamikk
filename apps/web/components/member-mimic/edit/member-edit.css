@@ -1,0 +1,238 @@
+/* The member edit panel: docked at the right beneath the Mimic banner, so the
+   member's own page stays readable beside it; a bottom sheet on a phone. It
+   sits under the banner (2147483000) and above the watermark (2147482000);
+   while its History dialog is open it drops beneath the dialog's overlay. */
+.kk-member-edit {
+    position: fixed;
+    z-index: 2147482900;
+    top: calc(
+        var(--kk-mimic-banner-height, 76px) + env(safe-area-inset-top) + 8px
+    );
+    right: 16px;
+    width: min(380px, calc(100% - 32px));
+    max-height: calc(
+        100dvh - var(--kk-mimic-banner-height, 76px) -
+            env(safe-area-inset-top) - 24px
+    );
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 14px 14px;
+    overflow: auto;
+    overscroll-behavior: contain;
+    border: 1px solid #dd942d;
+    border-radius: 12px;
+    background: hsl(var(--background, 0 0% 100%));
+    color: hsl(var(--foreground, 20 14% 4%));
+    box-shadow: 0 8px 28px #00000026;
+    font-size: 14px;
+    line-height: 1.4;
+}
+.kk-member-edit[hidden] {
+    display: none;
+}
+.kk-member-edit[data-kk-member-edit-dialog] {
+    z-index: 40;
+}
+.kk-member-edit-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.kk-member-edit-head h2 {
+    margin: 0;
+    min-width: 0;
+    font-size: 15px;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+.kk-member-edit-rows {
+    display: grid;
+    gap: 14px;
+}
+/* One row per field: the label above its control, never truncated. */
+.kk-member-edit-row {
+    display: grid;
+    gap: 6px;
+}
+.kk-member-edit-row > label,
+.kk-member-edit-row-title,
+.kk-member-edit-pair label {
+    display: block;
+    font-weight: 600;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+.kk-member-edit-pair label {
+    font-weight: 500;
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+.kk-member-edit-control {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+}
+.kk-member-edit-control > input,
+.kk-member-edit-control > select {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 44px;
+}
+.kk-member-edit-pair {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+    gap: 8px;
+}
+.kk-member-edit-pair input,
+.kk-member-edit-select {
+    min-height: 44px;
+}
+.kk-member-edit button,
+.kk-member-edit-notice > button {
+    min-height: 44px;
+    height: auto;
+    white-space: normal;
+}
+.kk-member-edit :is(input, select, button):focus-visible {
+    outline: 3px solid #875b1e;
+    outline-offset: 2px;
+}
+.kk-member-edit-help {
+    margin: 0;
+    font-size: 13px;
+    opacity: 0.8;
+    overflow-wrap: anywhere;
+}
+/* Notes and notices share the banner's saffron. */
+.kk-member-edit-lock,
+.kk-member-edit-notice,
+.kk-member-edit-verify {
+    margin: 0;
+    padding: 8px 10px;
+    border-radius: 8px;
+    color: #593c16;
+    background: #fff3d8;
+    border: 1px solid #dd942d;
+    overflow-wrap: anywhere;
+}
+.kk-member-edit-notice {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.kk-member-edit-notice > span {
+    min-width: 0;
+}
+.kk-member-edit-notice > button {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 44px;
+    border-radius: 8px;
+}
+.kk-member-edit-verify {
+    display: grid;
+    gap: 8px;
+}
+.kk-member-edit-verify p {
+    margin: 0;
+}
+.kk-member-edit-verify label {
+    font-weight: 600;
+}
+.kk-member-edit-verify input {
+    min-height: 44px;
+    font-size: 18px;
+    letter-spacing: 0.2em;
+    color: hsl(var(--foreground, 20 14% 4%));
+}
+.kk-member-edit-verify [role="alert"] {
+    color: #8a3b12;
+    font-weight: 600;
+}
+/* The result, where the click happened: Saved · Undo ⌘Z. */
+.kk-member-edit-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 6px;
+    margin: 0;
+    color: #1f3a2a;
+    overflow-wrap: anywhere;
+}
+.kk-member-edit-unsaved {
+    margin: 0;
+    font-size: 13px;
+    color: #8a3b12;
+    overflow-wrap: anywhere;
+}
+.kk-member-edit-foot {
+    display: grid;
+    gap: 8px;
+    padding-top: 4px;
+    border-top: 1px solid #0000001a;
+}
+.kk-member-edit-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+.kk-member-edit-actions > :last-child {
+    margin-left: auto;
+}
+.kk-member-edit-history-field {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+}
+.kk-member-edit-dialog {
+    z-index: 2147482960;
+}
+@media (max-width: 640px) {
+    .kk-member-edit {
+        top: auto;
+        right: 0;
+        left: 0;
+        bottom: 0;
+        width: auto;
+        max-height: 60dvh;
+        padding: 12px max(14px, env(safe-area-inset-right))
+            calc(14px + env(safe-area-inset-bottom))
+            max(14px, env(safe-area-inset-left));
+        border-radius: 12px 12px 0 0;
+        border-bottom: 0;
+    }
+    .kk-member-edit-pair {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .kk-member-edit .kk-key {
+        display: none;
+    }
+}
+/* Dark theme: the same saffron notes, inks that stay readable on the dark ground. */
+.dark .kk-member-edit-status,
+html[data-theme="dark"] .kk-member-edit-status {
+    color: #c4e1cc;
+}
+.dark .kk-member-edit-unsaved,
+html[data-theme="dark"] .kk-member-edit-unsaved {
+    color: #f0c6a3;
+}
+@media (prefers-color-scheme: dark) {
+    html:not(.light):not([data-theme="light"]) .kk-member-edit-status {
+        color: #c4e1cc;
+    }
+    html:not(.light):not([data-theme="light"]) .kk-member-edit-unsaved {
+        color: #f0c6a3;
+    }
+}
+@media print {
+    .kk-member-edit,
+    .kk-member-edit-dialog {
+        display: none !important;
+    }
+}

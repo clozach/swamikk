@@ -9,6 +9,7 @@ interface ContactPreferenceKey {
     userId: string;
     revision: number;
     updatedAt: Date;
+    memberEditReceipts?: string[];
 }
 export type InternalContactPreferences = ContactPreferenceKey &
     (
@@ -33,6 +34,11 @@ export const ContactPreferencesSchema =
         domain: { type: mongoose.Schema.Types.ObjectId, required: true },
         userId: { type: String, required: true },
         revision: { type: Number, required: true },
+        memberEditReceipts: {
+            type: [String],
+            default: undefined,
+            select: false,
+        },
         state: {
             type: String,
             enum: ["active", "deleted"],

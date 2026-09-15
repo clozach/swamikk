@@ -87,6 +87,14 @@ export async function proxy(request: NextRequest) {
             const permitted =
                 path === "/api/member-mimic" ||
                 (path === "/api/graph" && request.method === "POST") ||
+                // Editing a member from Mimic: the edit routes take the admin
+                // from the session and the member from the view; nothing else
+                // about what Mimic refuses changes.
+                (path === "/api/member-edits" &&
+                    (read || request.method === "POST")) ||
+                (path === "/api/member-edits/history" && read) ||
+                (path === "/api/member-edits/email" &&
+                    request.method === "POST") ||
                 (read &&
                     ((path.startsWith("/api/media/") &&
                         path !== "/api/media/presigned") ||

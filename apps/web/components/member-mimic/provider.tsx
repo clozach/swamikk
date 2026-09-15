@@ -9,10 +9,22 @@ import {
 } from "react";
 import { usePathname } from "next/navigation";
 import type { MemberMimicView } from "@courselit/common-models";
-import { memberMimicUi as copy } from "@/config/strings";
+import { memberEditUi, memberMimicUi as copy } from "@/config/strings";
 import { isMemberMimicPath } from "@/services/member-mimic/constants";
+import { Shortcut } from "@/components/feedback/shortcut";
 import { MemberMimicContext, announceMemberMimicChange } from "./context";
+import MemberEditPanel, { type MemberEditPanelHandle } from "./edit/panel";
 import "./member-mimic.css";
+
+const isTyping = (target: EventTarget | null) =>
+    target instanceof HTMLElement &&
+    !!target.closest(
+        "input,textarea,select,[contenteditable=true],[contenteditable=plaintext-only]",
+    );
+const inDialog = (target: EventTarget | null) =>
+    target instanceof Element && !!target.closest("[role=dialog]");
+const dialogOpen = () =>
+    !!document.querySelector('[role="dialog"]:not([data-state="closed"])');
 
 export default function MemberMimicProvider({
     initialView,
@@ -26,9 +38,17 @@ export default function MemberMimicProvider({
         "verifying" | "ready" | "unavailable" | "leaving"
     >("verifying");
     const [notice, setNotice] = useState("");
+    const [editOpen, setEditOpen] = useState(false);
+    const [appliedVersion, setAppliedVersion] = useState(0);
     const current = useRef(view);
     const path = usePathname() || "/";
     current.current = view;
+    const panel = useRef<MemberEditPanelHandle>(null);
+    const editToggle = useRef<HTMLButtonElement>(null);
+    const editOpenRef = useRef(editOpen);
+    editOpenRef.current = editOpen;
+    // A saved record needs a fresh background page once drafts are safe.
+    const editApplied = useRef(false);
 
     const verify = useCallback(async (hide = false) => {
         if (hide) setPhase("verifying");
@@ -136,9 +156,114 @@ export default function MemberMimicProvider({
         };
     }, [view]);
 
-    async function exit() {
+    const openEdit = useCallback(() => {
+        setEditOpen(true);
+    }, []);
+
+    /**
+     * Closing the panel. The pages behind it hold what they show in client
+     * state read once on mount — the profile page's name comes from its own
+     * getUser fetch (useState), its email from ProfileContext, and the contact
+     * preferences card from its own /api/contact-preferences fetch — so a
+     * router.refresh() after a save leaves them showing the old values. A
+     * full reload after an applied edit is the one way the page reflects the
+     * record; it waits until nothing typed would be lost.
+     */
+    const closeEdit = useCallback(() => {
+        if (!editOpenRef.current) return;
+        const active = document.activeElement;
+        if (
+            active instanceof HTMLElement &&
+            active.closest("[data-kk-member-edit]")
+        )
+            editToggle.current?.focus();
+        setEditOpen(false);
+    }, []);
+
+    useEffect(() => {
+        if (
+            phase === "ready" &&
+            !editOpen &&
+            editApplied.current &&
+            !panel.current?.isDirty()
+        ) {
+            editApplied.current = false;
+            // After the click's own default action (a followed link wins).
+            window.setTimeout(() => window.location.reload(), 0);
+        }
+    }, [editOpen, appliedVersion, phase]);
+
+    const toggleEdit = useCallback(() => {
+        if (editOpenRef.current) closeEdit();
+        else openEdit();
+    }, [closeEdit, openEdit]);
+
+    // Global keys while the view is active: ⌥⌘E toggles the panel; while it is
+    // open, Escape ladders out one level (a dialog closes itself first) and
+    // ⌘Z / ⇧⌘Z reverse the last edit unless the keyboard is in a field.
+    useEffect(() => {
+        if (view.kind !== "active") return;
+        const keydown = (event: KeyboardEvent) => {
+            if (
+                (event.metaKey || event.ctrlKey) &&
+                event.altKey &&
+                event.code === "KeyE"
+            ) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                if (event.repeat) return;
+                toggleEdit();
+                return;
+            }
+            if (!editOpenRef.current) return;
+            if (event.key === "Escape") {
+                if (inDialog(event.target)) return;
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                closeEdit();
+                return;
+            }
+            if (isTyping(event.target) || inDialog(event.target)) return;
+            if (
+                (event.metaKey || event.ctrlKey) &&
+                !event.altKey &&
+                event.code === "KeyZ"
+            ) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                if (event.repeat) return;
+                if (event.shiftKey) panel.current?.redo();
+                else panel.current?.undo();
+            }
+        };
+        window.addEventListener("keydown", keydown, true);
+        return () => window.removeEventListener("keydown", keydown, true);
+    }, [closeEdit, toggleEdit, view.kind]);
+
+    // A click anywhere outside the panel and the banner closes the panel; a
+    // click inside an open dialog (History) belongs to the dialog.
+    useEffect(() => {
+        if (!editOpen) return;
+        const click = (event: MouseEvent) => {
+            const target = event.target;
+            if (!(target instanceof Element)) return;
+            if (
+                target.closest(
+                    "[data-kk-member-edit], [data-member-mimic-tools], [role=dialog]",
+                ) ||
+                dialogOpen()
+            )
+                return;
+            closeEdit();
+        };
+        document.addEventListener("click", click, true);
+        return () => document.removeEventListener("click", click, true);
+    }, [closeEdit, editOpen]);
+
+    async function exit(redirectTo?: string) {
         setPhase("leaving");
         setNotice("");
+        setEditOpen(false);
         try {
             const response = await fetch("/api/member-mimic", {
                 method: "DELETE",
@@ -149,7 +274,9 @@ export default function MemberMimicProvider({
             const result = await response.json();
             document.documentElement.dataset.memberMimicSuspended = "true";
             announceMemberMimicChange();
-            window.location.replace(result.redirectTo || "/dashboard/users");
+            window.location.replace(
+                redirectTo || result.redirectTo || "/dashboard/users",
+            );
         } catch {
             setNotice(copy.exitFailed);
             setPhase("ready");
@@ -189,14 +316,48 @@ export default function MemberMimicProvider({
                             )}
                             <small>{copy.readOnly}</small>
                         </div>
-                        <button
-                            type="button"
-                            onClick={exit}
-                            disabled={phase === "leaving"}
-                        >
-                            {phase === "leaving" ? copy.exiting : copy.exit}
-                        </button>
+                        <div className="kk-mimic-banner-tools">
+                            {view.kind === "active" && (
+                                <button
+                                    ref={editToggle}
+                                    type="button"
+                                    data-kk-member-edit-toggle
+                                    aria-keyshortcuts="Alt+Meta+E"
+                                    aria-expanded={editOpen}
+                                    title={memberEditUi.openTitle}
+                                    disabled={phase === "leaving"}
+                                    onClick={toggleEdit}
+                                >
+                                    {memberEditUi.open}{" "}
+                                    <Shortcut>
+                                        {memberEditUi.openShortcut}
+                                    </Shortcut>
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => void exit()}
+                                disabled={phase === "leaving"}
+                            >
+                                {phase === "leaving" ? copy.exiting : copy.exit}
+                            </button>
+                        </div>
                     </aside>
+                    {view.kind === "active" && (
+                        <MemberEditPanel
+                            key={view.subject.userId}
+                            ref={panel}
+                            open={editOpen}
+                            subjectName={view.subject.name}
+                            onClose={closeEdit}
+                            onExit={(redirectTo) => void exit(redirectTo)}
+                            onApplied={() => {
+                                editApplied.current = true;
+                                setAppliedVersion((version) => version + 1);
+                                void verify();
+                            }}
+                        />
+                    )}
                 </>
             )}
             {notice && enabled && (

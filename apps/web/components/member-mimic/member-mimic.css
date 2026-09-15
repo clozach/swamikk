@@ -1,3 +1,8 @@
+:root {
+    /* The banner's height without the safe-area inset; the page spacing and
+       the member edit panel both dock beneath it. */
+    --kk-mimic-banner-height: 76px;
+}
 .kk-mimic-watermark {
     position: fixed;
     inset: 0;
@@ -45,8 +50,19 @@
 .kk-mimic-banner button:disabled {
     opacity: 0.65;
 }
+/* Edit member and Exit Mimic, side by side; each says how to reach it. */
+.kk-mimic-banner-tools {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.kk-mimic-banner .kk-key {
+    background: #875b1e1f;
+}
 .kk-mimic-spacing {
-    padding-top: calc(76px + env(safe-area-inset-top));
+    padding-top: calc(var(--kk-mimic-banner-height) + env(safe-area-inset-top));
 }
 .kk-mimic-notice {
     position: fixed;
@@ -94,14 +110,17 @@ html[data-member-mimic-suspended="true"] .kk-mimic-content {
     visibility: hidden;
 }
 @media (max-width: 520px) {
+    :root {
+        --kk-mimic-banner-height: 92px;
+    }
     .kk-mimic-email {
         display: none;
     }
     .kk-mimic-banner {
         align-items: flex-start;
     }
-    .kk-mimic-spacing {
-        padding-top: calc(92px + env(safe-area-inset-top));
+    .kk-mimic-banner .kk-key {
+        display: none;
     }
 }
 @media print {

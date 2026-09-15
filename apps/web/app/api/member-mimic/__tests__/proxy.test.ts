@@ -101,6 +101,35 @@ it("denies private reads and legacy GET side effects while preserving explicit E
         ).toBe("1");
 });
 
+it("admits the member edit routes under the cookie, and nothing more", async () => {
+    for (const [path, method] of [
+        ["/api/member-edits", "GET"],
+        ["/api/member-edits", "HEAD"],
+        ["/api/member-edits", "POST"],
+        ["/api/member-edits/history", "GET"],
+        ["/api/member-edits/history", "HEAD"],
+        ["/api/member-edits/email", "POST"],
+    ])
+        expect(
+            (await proxy(request(path, method))).headers.get(
+                "x-middleware-next",
+            ),
+        ).toBe("1");
+    for (const [path, method] of [
+        ["/api/member-edits", "PUT"],
+        ["/api/member-edits", "DELETE"],
+        ["/api/member-edits/history", "POST"],
+        ["/api/member-edits/history", "PUT"],
+        ["/api/member-edits/email", "GET"],
+        ["/api/member-edits/email", "PUT"],
+        ["/api/member-edits/other", "GET"],
+        ["/api/member-editsx", "POST"],
+        ["/api/contact-preferences", "POST"],
+        ["/api/user", "POST"],
+    ])
+        expect((await proxy(request(path, method))).status).toBe(403);
+});
+
 it("leaves the ordinary admin context available after the cookie is cleared", async () => {
     expect(
         (
